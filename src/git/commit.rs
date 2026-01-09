@@ -1,0 +1,85 @@
+use std::path::Path;
+use std::process::Command;
+
+use crate::errors::MagiResult;
+
+/// Result of a commit operation
+pub struct CommitResult {
+    pub success: bool,
+    pub message: String,
+}
+
+/// Runs `git commit` which opens the user's configured editor.
+/// This uses the git command directly (not git2) to ensure hooks run properly.
+///
+/// Returns a CommitResult indicating success/failure and a message.
+pub fn run_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
+    // Using `git commit` directly ensures:
+    // - Pre-commit hooks run
+    // - Commit-msg hooks run
+    // - Post-commit hooks run
+    // - User's configured editor opens correctly
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path.as_ref())
+        .arg("commit")
+        .status()?;
+
+    if status.success() {
+        // Get the commit message from the last commit
+        let log_output = Command::new("git")
+            .arg("-C")
+            .arg(repo_path.as_ref())
+            .args(["log", "-1", "--format=%s"])
+            .output()?;
+
+        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
+            .trim()
+            .to_string();
+
+        Ok(CommitResult {
+            success: true,
+            message: commit_msg,
+        })
+    } else {
+        // User aborted or hook failed
+        // Try to get more info about what happened
+        Ok(CommitResult {
+            success: false,
+            message: "Commit aborted".to_string(),
+        })
+    }
+}
+
+/// Runs `git commit --amend` to amend the last commit.
+/// Opens the user's configured editor with the previous commit message.
+#[allow(dead_code)]
+pub fn run_amend_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path.as_ref())
+        .args(["commit", "--amend"])
+        .status()?;
+
+    if status.success() {
+        let log_output = Command::new("git")
+            .arg("-C")
+            .arg(repo_path.as_ref())
+            .args(["log", "-1", "--format=%s"])
+            .output()?;
+
+        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
+            .trim()
+            .to_string();
+
+        Ok(CommitResult {
+            success: true,
+            message: format!("Amended: {}", commit_msg),
+        })
+    } else {
+        Ok(CommitResult {
+            success: false,
+            message: "Amend aborted".to_string(),
+        })
+    }
+}
