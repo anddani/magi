@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use crate::errors::MagiResult;
 
@@ -9,13 +9,14 @@ pub fn stage_files<P: AsRef<Path>>(repo_path: P, files: &[&str]) -> MagiResult<(
     if files.is_empty() {
         return Ok(());
     }
-    Command::new("git")
+    let _output = Command::new("git")
         .arg("-C")
         .arg(repo_path.as_ref())
         .arg("add")
         .arg("--")
         .args(files)
-        .status()?;
+        .stdout(Stdio::piped())
+        .output()?;
     Ok(())
 }
 
@@ -25,14 +26,15 @@ pub fn unstage_files<P: AsRef<Path>>(repo_path: P, files: &[&str]) -> MagiResult
     if files.is_empty() {
         return Ok(());
     }
-    Command::new("git")
+    let _output = Command::new("git")
         .arg("-C")
         .arg(repo_path.as_ref())
         .arg("reset")
         .arg("HEAD")
         .arg("--")
         .args(files)
-        .status()?;
+        .stdout(Stdio::piped())
+        .output()?;
     Ok(())
 }
 

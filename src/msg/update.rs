@@ -174,28 +174,16 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
                 }
             }
         }
-        Message::UserCommit => {
-            // Check if there are staged changes before initiating commit
-            match model.git_info.has_staged_changes() {
-                Ok(true) => {
-                    model.running_state =
-                        RunningState::LaunchExternalCommand(Message::OpenCommitEditor);
-                }
-                Ok(false) => {
-                    model.toast = Some(Toast {
-                        message: "Nothing staged to commit".to_string(),
-                        style: ToastStyle::Warning,
-                        expires_at: Instant::now() + TOAST_DURATION,
-                    });
-                }
-                Err(e) => {
-                    model.dialog = Some(DialogContent::Error {
-                        message: format!("Error checking staged changes: {}", e),
-                    });
-                }
+        Message::Commit => {
+            if let Ok(false) = model.git_info.has_staged_changes() {
+                model.toast = Some(Toast {
+                    message: "Nothing staged to commit".to_string(),
+                    style: ToastStyle::Warning,
+                    expires_at: Instant::now() + TOAST_DURATION,
+                });
+                return None;
             }
-        }
-        Message::OpenCommitEditor => {
+
             if let Some(repo_path) = model.git_info.repository.workdir() {
                 match commit::run_commit_with_editor(repo_path) {
                     Ok(CommitResult { success, message }) => {
@@ -1285,14 +1273,14 @@ mod tests {
         };
 
         // Send commit message (assuming no staged changes in the test repo)
-        update(&mut model, Message::UserCommit);
+        update(&mut model, Message::Commit);
 
         // If there are no staged changes, toast should show a warning
         // If there are staged changes, running_state should be LaunchExternalCommand
         // Either outcome is valid depending on repo state, but one must happen
         let has_toast = model.toast.is_some();
         let wants_editor =
-            model.running_state == RunningState::LaunchExternalCommand(Message::UserCommit);
+            model.running_state == RunningState::LaunchExternalCommand(Message::Commit);
         assert!(
             has_toast || wants_editor,
             "Commit should either show toast or trigger editor launch"

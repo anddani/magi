@@ -18,10 +18,8 @@ pub enum Message {
     /// Toggle section expand/collapse
     ToggleSection,
 
-    /// User initiated a commit
-    UserCommit,
     /// Open commit in user's default EDITOR
-    OpenCommitEditor,
+    Commit,
 
     /// Dismiss the current dialog
     DismissDialog,

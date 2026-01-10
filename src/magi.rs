@@ -95,6 +95,13 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         // Handle event
         let mut current_msg = handle_event(&model)?;
 
+        // If the message is an external command, we want to update the running state and skip the
+        // update processing below in order to pause Ratatui rendering.
+        if let Some(msg) = current_msg.take_if(|msg| is_external_command(msg)) {
+            model.running_state = RunningState::LaunchExternalCommand(msg);
+            continue;
+        }
+
         // Process updates
         while let Some(msg) = current_msg {
             current_msg = update(&mut model, msg);
@@ -139,7 +146,25 @@ fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::NONE, KeyCode::Char('k') | KeyCode::Up) => Some(Message::MoveUp),
         (KeyModifiers::NONE, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
         (KeyModifiers::NONE, KeyCode::Tab) => Some(Message::ToggleSection),
-        (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::UserCommit),
+        (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::Commit),
         _ => None,
+    }
+}
+
+/// Returns true if [`Message`] requires to pause Ratatui rendering
+fn is_external_command(msg: &Message) -> bool {
+    match msg {
+        Message::Commit => true,
+
+        Message::Quit
+        | Message::Refresh
+        | Message::MoveUp
+        | Message::MoveDown
+        | Message::HalfPageUp
+        | Message::HalfPageDown
+        | Message::ToggleSection
+        | Message::StageAllModified
+        | Message::UnstageAll
+        | Message::DismissDialog => false,
     }
 }
