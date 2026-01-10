@@ -54,10 +54,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
                     .iter()
                     .filter_map(|line| line.section.clone())
                     .collect();
-                model
-                    .ui_model
-                    .collapsed_sections
-                    .retain(|section| current_sections.contains(section) || section.file_path().is_none());
+                model.ui_model.collapsed_sections.retain(|section| {
+                    current_sections.contains(section) || section.file_path().is_none()
+                });
             }
         }
         Message::MoveUp => {
