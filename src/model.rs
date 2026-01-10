@@ -3,6 +3,7 @@ use std::time::Instant;
 
 use crate::config::Theme;
 use crate::git::{GitInfo, GitRef, TagInfo};
+use crate::msg::Message;
 
 /// The whole state of the application, including the Git repository Handle
 pub struct Model {
@@ -221,8 +222,10 @@ impl SectionType {
 pub enum RunningState {
     #[default]
     Running,
-    /// Signal to main loop to launch the commit editor
-    LaunchCommitEditor,
+    /// Signal to main loop to launch the an external command
+    /// so that it can pause the Ratatui rendering and then
+    /// resume it when the application returns to [`Running`].
+    LaunchExternalCommand(Message),
     Done,
 }
 

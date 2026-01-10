@@ -33,8 +33,7 @@ fn parse_color(s: &str) -> Option<Color> {
     }
 
     // Hex color: #rrggbb or #rgb
-    if s.starts_with('#') {
-        let hex = &s[1..];
+    if let Some(hex) = s.strip_prefix('#') {
         if hex.len() == 6 {
             let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
             let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
