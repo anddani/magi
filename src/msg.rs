@@ -15,6 +15,10 @@ pub enum Message {
     HalfPageUp,
     /// Move half a page down
     HalfPageDown,
+    /// Scroll viewport down by one line
+    ScrollLineDown,
+    /// Scroll viewport up by one line
+    ScrollLineUp,
     /// Toggle section expand/collapse
     ToggleSection,
 
