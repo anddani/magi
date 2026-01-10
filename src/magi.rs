@@ -1,3 +1,4 @@
+use crate::msg::update::update;
 use std::{
     collections::HashSet,
     time::{Duration, Instant},
@@ -9,9 +10,9 @@ use ratatui::DefaultTerminal;
 use crate::{
     config::Config,
     errors::MagiResult,
-    git::{commit, GitInfo},
+    git::GitInfo,
     model::{Model, RunningState, UiModel},
-    msg::{update, Message},
+    msg::Message,
     view::view,
 };
 
@@ -64,40 +65,20 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         }
 
         // Handle special states that need terminal control
-        if model.running_state == RunningState::LaunchCommitEditor {
+        if let RunningState::LaunchExternalCommand(msg) = model.running_state {
             model.running_state = RunningState::Running;
 
-            // Suspend TUI to allow editor to use the terminal
+            // Suspend TUI to allow external command to be run without
+            // Ratatui being rendered.
             ratatui::restore();
 
-            // Run commit with editor (this blocks until editor closes)
-            let result = if let Some(repo_path) = model.git_info.repository.workdir() {
-                commit::run_commit_with_editor(repo_path)
-            } else {
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    "Repository working directory not found",
-                )
-                .into())
-            };
+            // Process external command (blocking)
+            let mut current_msg = update(&mut model, msg);
 
             // Resume TUI
             terminal = ratatui::init();
 
-            // Process the commit result
-            let msg = match result {
-                Ok(commit_result) => Message::CommitComplete {
-                    success: commit_result.success,
-                    message: commit_result.message,
-                },
-                Err(e) => Message::CommitComplete {
-                    success: false,
-                    message: format!("Error: {}", e),
-                },
-            };
-
-            // Process the commit result message
-            let mut current_msg = Some(msg);
+            // Process the commit result message(s)
             while let Some(m) = current_msg {
                 current_msg = update(&mut model, m);
             }
@@ -113,6 +94,13 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
 
         // Handle event
         let mut current_msg = handle_event(&model)?;
+
+        // If the message is an external command, we want to update the running state and skip the
+        // update processing below in order to pause Ratatui rendering.
+        if let Some(msg) = current_msg.take_if(|msg| is_external_command(msg)) {
+            model.running_state = RunningState::LaunchExternalCommand(msg);
+            continue;
+        }
 
         // Process updates
         while let Some(msg) = current_msg {
@@ -160,5 +148,23 @@ fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::NONE, KeyCode::Tab) => Some(Message::ToggleSection),
         (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::Commit),
         _ => None,
+    }
+}
+
+/// Returns true if [`Message`] requires to pause Ratatui rendering
+fn is_external_command(msg: &Message) -> bool {
+    match msg {
+        Message::Commit => true,
+
+        Message::Quit
+        | Message::Refresh
+        | Message::MoveUp
+        | Message::MoveDown
+        | Message::HalfPageUp
+        | Message::HalfPageDown
+        | Message::ToggleSection
+        | Message::StageAllModified
+        | Message::UnstageAll
+        | Message::DismissDialog => false,
     }
 }
