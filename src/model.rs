@@ -211,10 +211,10 @@ impl SectionType {
 
     /// When the application starts, we don't want to expand all sections.
     pub fn default_collapsed(&self) -> bool {
-        match self {
-            SectionType::StagedFile { .. } | SectionType::UnstagedFile { .. } => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            SectionType::StagedFile { .. } | SectionType::UnstagedFile { .. }
+        )
     }
 }
 

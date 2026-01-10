@@ -1,5 +1,5 @@
-mod config;
+mod settings;
 mod theme;
 
-pub use config::Config;
+pub use settings::Config;
 pub use theme::Theme;
