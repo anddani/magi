@@ -174,6 +174,88 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
                 }
             }
         }
+        Message::ScrollLineDown => {
+            // Scroll viewport down by one visible line (C-e in Vim)
+            let max_pos = model.ui_model.lines.len().saturating_sub(1);
+            let viewport_height = model.ui_model.viewport_height;
+            if viewport_height == 0 {
+                return None;
+            }
+
+            // Find the next visible line after current scroll_offset
+            let mut new_scroll = model.ui_model.scroll_offset;
+            while new_scroll < max_pos {
+                new_scroll += 1;
+                if !model.ui_model.lines[new_scroll].is_hidden(&model.ui_model.collapsed_sections) {
+                    break;
+                }
+            }
+
+            // Only scroll if there's content below to show
+            if new_scroll <= max_pos
+                && !model.ui_model.lines[new_scroll].is_hidden(&model.ui_model.collapsed_sections)
+            {
+                model.ui_model.scroll_offset = new_scroll;
+
+                // If cursor is now above viewport, move it to the top visible line
+                if model.ui_model.cursor_position < model.ui_model.scroll_offset {
+                    model.ui_model.cursor_position = model.ui_model.scroll_offset;
+                }
+            }
+        }
+        Message::ScrollLineUp => {
+            // Scroll viewport up by one visible line (C-y in Vim)
+            if model.ui_model.scroll_offset == 0 {
+                return None;
+            }
+
+            let viewport_height = model.ui_model.viewport_height;
+            if viewport_height == 0 {
+                return None;
+            }
+
+            // Find the previous visible line before current scroll_offset
+            let mut new_scroll = model.ui_model.scroll_offset;
+            while new_scroll > 0 {
+                new_scroll -= 1;
+                if !model.ui_model.lines[new_scroll].is_hidden(&model.ui_model.collapsed_sections) {
+                    break;
+                }
+            }
+
+            model.ui_model.scroll_offset = new_scroll;
+
+            // If cursor is now below viewport, move it to the bottom visible line
+            let visible_before_cursor = visible_lines_between(
+                &model.ui_model.lines,
+                model.ui_model.scroll_offset,
+                model.ui_model.cursor_position,
+                &model.ui_model.collapsed_sections,
+            );
+
+            if visible_before_cursor >= viewport_height {
+                // Find the last visible line in the viewport
+                let mut new_cursor = model.ui_model.scroll_offset;
+                let mut visible_count = 0;
+                let max_pos = model.ui_model.lines.len().saturating_sub(1);
+                while new_cursor < max_pos && visible_count < viewport_height - 1 {
+                    new_cursor += 1;
+                    if !model.ui_model.lines[new_cursor]
+                        .is_hidden(&model.ui_model.collapsed_sections)
+                    {
+                        visible_count += 1;
+                    }
+                }
+                // Make sure we're on a visible line
+                while new_cursor > 0
+                    && model.ui_model.lines[new_cursor]
+                        .is_hidden(&model.ui_model.collapsed_sections)
+                {
+                    new_cursor -= 1;
+                }
+                model.ui_model.cursor_position = new_cursor;
+            }
+        }
         Message::Commit => {
             if let Ok(false) = model.git_info.has_staged_changes() {
                 model.toast = Some(Toast {
@@ -1309,5 +1391,230 @@ mod tests {
 
         // Dialog should be cleared
         assert!(model.dialog.is_none());
+    }
+
+    #[test]
+    fn test_scroll_line_down() {
+        let git_info = GitInfo::new().unwrap();
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines: create_test_lines(20),
+                cursor_position: 0,
+                scroll_offset: 0,
+                viewport_height: 10,
+                ..Default::default()
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Scroll down once
+        update(&mut model, Message::ScrollLineDown);
+        assert_eq!(model.ui_model.scroll_offset, 1);
+        assert_eq!(model.ui_model.cursor_position, 1); // Cursor moves with viewport
+
+        // Scroll down again
+        update(&mut model, Message::ScrollLineDown);
+        assert_eq!(model.ui_model.scroll_offset, 2);
+        assert_eq!(model.ui_model.cursor_position, 2);
+    }
+
+    #[test]
+    fn test_scroll_line_up() {
+        let git_info = GitInfo::new().unwrap();
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines: create_test_lines(20),
+                cursor_position: 15,
+                scroll_offset: 10,
+                viewport_height: 10,
+                ..Default::default()
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Scroll up once
+        update(&mut model, Message::ScrollLineUp);
+        assert_eq!(model.ui_model.scroll_offset, 9);
+        assert_eq!(model.ui_model.cursor_position, 15); // Cursor stays in place
+
+        // Scroll up more times until cursor would leave viewport
+        for _ in 0..6 {
+            update(&mut model, Message::ScrollLineUp);
+        }
+        // scroll_offset should be 3, cursor should move to bottom of viewport
+        assert_eq!(model.ui_model.scroll_offset, 3);
+        // Cursor should be at bottom of viewport (scroll_offset + viewport_height - 1 = 3 + 10 - 1 = 12)
+        assert_eq!(model.ui_model.cursor_position, 12);
+    }
+
+    #[test]
+    fn test_scroll_line_down_cursor_follows_top() {
+        let git_info = GitInfo::new().unwrap();
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines: create_test_lines(20),
+                cursor_position: 0,
+                scroll_offset: 0,
+                viewport_height: 5,
+                ..Default::default()
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Cursor at top of viewport, scroll down - cursor should follow
+        update(&mut model, Message::ScrollLineDown);
+        assert_eq!(model.ui_model.scroll_offset, 1);
+        assert_eq!(model.ui_model.cursor_position, 1);
+    }
+
+    #[test]
+    fn test_scroll_line_up_cursor_follows_bottom() {
+        let git_info = GitInfo::new().unwrap();
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines: create_test_lines(20),
+                cursor_position: 14, // At bottom of viewport (10 + 5 - 1)
+                scroll_offset: 10,
+                viewport_height: 5,
+                ..Default::default()
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Cursor at bottom of viewport, scroll up - cursor should stay in viewport
+        update(&mut model, Message::ScrollLineUp);
+        assert_eq!(model.ui_model.scroll_offset, 9);
+        assert_eq!(model.ui_model.cursor_position, 13); // Follows bottom of viewport
+    }
+
+    #[test]
+    fn test_scroll_line_down_at_end() {
+        let git_info = GitInfo::new().unwrap();
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines: create_test_lines(10),
+                cursor_position: 9,
+                scroll_offset: 5, // Already scrolled down
+                viewport_height: 10,
+                ..Default::default()
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Try to scroll past end
+        update(&mut model, Message::ScrollLineDown);
+        update(&mut model, Message::ScrollLineDown);
+        update(&mut model, Message::ScrollLineDown);
+        update(&mut model, Message::ScrollLineDown);
+        // Should stop at max_pos (9) since viewport can't go beyond content
+        assert!(model.ui_model.scroll_offset <= 9);
+    }
+
+    #[test]
+    fn test_scroll_line_up_at_start() {
+        let git_info = GitInfo::new().unwrap();
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines: create_test_lines(20),
+                cursor_position: 0,
+                scroll_offset: 0,
+                viewport_height: 10,
+                ..Default::default()
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Try to scroll up at top - should have no effect
+        update(&mut model, Message::ScrollLineUp);
+        assert_eq!(model.ui_model.scroll_offset, 0);
+        assert_eq!(model.ui_model.cursor_position, 0);
+    }
+
+    #[test]
+    fn test_scroll_line_down_with_collapsed_sections() {
+        use crate::model::SectionType;
+
+        let git_info = GitInfo::new().unwrap();
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines: create_section_lines(),
+                cursor_position: 0,
+                scroll_offset: 0,
+                viewport_height: 10,
+                ..Default::default()
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Collapse untracked files (hides lines 1, 2)
+        model
+            .ui_model
+            .collapsed_sections
+            .insert(SectionType::UntrackedFiles);
+
+        // Scroll down should skip hidden lines
+        update(&mut model, Message::ScrollLineDown);
+        // Should land on line 3 (empty line) which is the next visible line
+        assert_eq!(model.ui_model.scroll_offset, 3);
+        assert_eq!(model.ui_model.cursor_position, 3);
+    }
+
+    #[test]
+    fn test_scroll_with_zero_viewport() {
+        let git_info = GitInfo::new().unwrap();
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines: create_test_lines(10),
+                cursor_position: 5,
+                scroll_offset: 3,
+                viewport_height: 0,
+                ..Default::default()
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // With zero viewport, scrolling should do nothing
+        let original_scroll = model.ui_model.scroll_offset;
+        let original_cursor = model.ui_model.cursor_position;
+
+        update(&mut model, Message::ScrollLineDown);
+        assert_eq!(model.ui_model.scroll_offset, original_scroll);
+        assert_eq!(model.ui_model.cursor_position, original_cursor);
+
+        update(&mut model, Message::ScrollLineUp);
+        assert_eq!(model.ui_model.scroll_offset, original_scroll);
+        assert_eq!(model.ui_model.cursor_position, original_cursor);
     }
 }

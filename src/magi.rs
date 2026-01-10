@@ -140,6 +140,8 @@ fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::CONTROL, KeyCode::Char('r')) => Some(Message::Refresh),
         (KeyModifiers::CONTROL, KeyCode::Char('u')) => Some(Message::HalfPageUp),
         (KeyModifiers::CONTROL, KeyCode::Char('d')) => Some(Message::HalfPageDown),
+        (KeyModifiers::CONTROL, KeyCode::Char('e')) => Some(Message::ScrollLineDown),
+        (KeyModifiers::CONTROL, KeyCode::Char('y')) => Some(Message::ScrollLineUp),
         (KeyModifiers::SHIFT, KeyCode::Char('S')) => Some(Message::StageAllModified),
         (KeyModifiers::SHIFT, KeyCode::Char('U')) => Some(Message::UnstageAll),
         (KeyModifiers::NONE, KeyCode::Char('q')) => Some(Message::Quit),
@@ -162,6 +164,8 @@ fn is_external_command(msg: &Message) -> bool {
         | Message::MoveDown
         | Message::HalfPageUp
         | Message::HalfPageDown
+        | Message::ScrollLineDown
+        | Message::ScrollLineUp
         | Message::ToggleSection
         | Message::StageAllModified
         | Message::UnstageAll
