@@ -17,6 +17,15 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
     match msg {
         Message::Quit => model.running_state = RunningState::Done,
         Message::Refresh => {
+            // Collect file paths that are currently collapsed (before refresh)
+            // This handles files moving between unstaged and staged sections
+            let collapsed_file_paths: std::collections::HashSet<String> = model
+                .ui_model
+                .collapsed_sections
+                .iter()
+                .filter_map(|section| section.file_path().map(String::from))
+                .collect();
+
             // Refresh the UI model by regenerating lines from git info
             if let Ok(lines) = model.git_info.get_lines() {
                 model.ui_model.lines = lines;
@@ -25,6 +34,29 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
                 if model.ui_model.cursor_position > max_pos {
                     model.ui_model.cursor_position = max_pos;
                 }
+
+                // Restore collapsed state for files based on their paths
+                // This preserves collapsed state when files move between staged/unstaged
+                for line in &model.ui_model.lines {
+                    if let Some(section) = &line.section {
+                        if let Some(path) = section.file_path() {
+                            if collapsed_file_paths.contains(path) {
+                                model.ui_model.collapsed_sections.insert(section.clone());
+                            }
+                        }
+                    }
+                }
+
+                // Clean up old file sections that no longer exist in the new lines
+                let current_sections: std::collections::HashSet<_> = model
+                    .ui_model
+                    .lines
+                    .iter()
+                    .filter_map(|line| line.section.clone())
+                    .collect();
+                model.ui_model.collapsed_sections.retain(|section| {
+                    current_sections.contains(section) || section.file_path().is_none()
+                });
             }
         }
         Message::MoveUp => {
@@ -1616,5 +1648,224 @@ mod tests {
         update(&mut model, Message::ScrollLineUp);
         assert_eq!(model.ui_model.scroll_offset, original_scroll);
         assert_eq!(model.ui_model.cursor_position, original_cursor);
+    }
+
+    #[test]
+    fn test_collapsed_state_preserved_when_staging_all() {
+        use crate::git::test_repo::TestRepo;
+        use std::fs;
+
+        // Create a test repo with a modified file
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Modify the tracked file to create unstaged changes
+        let file_path = repo_path.join("test.txt");
+        fs::write(&file_path, "modified content").unwrap();
+
+        // Create GitInfo from test repo
+        let git_info = GitInfo::new_from_path(repo_path).unwrap();
+        let lines = git_info.get_lines().unwrap();
+
+        // Find the unstaged file section and collapse it
+        let mut collapsed_sections = HashSet::new();
+        for line in &lines {
+            if let Some(section) = &line.section {
+                if let SectionType::UnstagedFile { path } = section {
+                    if path == "test.txt" {
+                        collapsed_sections.insert(section.clone());
+                    }
+                }
+            }
+        }
+
+        // Verify we found and collapsed the file
+        assert!(
+            collapsed_sections.contains(&SectionType::UnstagedFile {
+                path: "test.txt".to_string()
+            }),
+            "Should have found and collapsed the unstaged file"
+        );
+
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines,
+                cursor_position: 0,
+                scroll_offset: 0,
+                viewport_height: 20,
+                collapsed_sections,
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Stage all modified files
+        let follow_up = update(&mut model, Message::StageAllModified);
+        assert_eq!(follow_up, Some(Message::Refresh));
+
+        // Process the refresh
+        update(&mut model, Message::Refresh);
+
+        // Verify the file is now in staged section and still collapsed
+        assert!(
+            model
+                .ui_model
+                .collapsed_sections
+                .contains(&SectionType::StagedFile {
+                    path: "test.txt".to_string()
+                }),
+            "Staged file should be collapsed after StageAllModified"
+        );
+
+        // The old unstaged file section should be cleaned up
+        assert!(
+            !model
+                .ui_model
+                .collapsed_sections
+                .contains(&SectionType::UnstagedFile {
+                    path: "test.txt".to_string()
+                }),
+            "Old unstaged file section should be cleaned up"
+        );
+    }
+
+    #[test]
+    fn test_collapsed_state_preserved_when_unstaging_all() {
+        use crate::git::test_repo::TestRepo;
+        use std::fs;
+
+        // Create a test repo
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Modify and stage the file
+        let file_path = repo_path.join("test.txt");
+        fs::write(&file_path, "modified content").unwrap();
+        crate::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+
+        // Create GitInfo from test repo
+        let git_info = GitInfo::new_from_path(repo_path).unwrap();
+        let lines = git_info.get_lines().unwrap();
+
+        // Find the staged file section and collapse it
+        let mut collapsed_sections = HashSet::new();
+        for line in &lines {
+            if let Some(section) = &line.section {
+                if let SectionType::StagedFile { path } = section {
+                    if path == "test.txt" {
+                        collapsed_sections.insert(section.clone());
+                    }
+                }
+            }
+        }
+
+        // Verify we found and collapsed the file
+        assert!(
+            collapsed_sections.contains(&SectionType::StagedFile {
+                path: "test.txt".to_string()
+            }),
+            "Should have found and collapsed the staged file"
+        );
+
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines,
+                cursor_position: 0,
+                scroll_offset: 0,
+                viewport_height: 20,
+                collapsed_sections,
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Unstage all files
+        let follow_up = update(&mut model, Message::UnstageAll);
+        assert_eq!(follow_up, Some(Message::Refresh));
+
+        // Process the refresh
+        update(&mut model, Message::Refresh);
+
+        // Verify the file is now in unstaged section and still collapsed
+        assert!(
+            model
+                .ui_model
+                .collapsed_sections
+                .contains(&SectionType::UnstagedFile {
+                    path: "test.txt".to_string()
+                }),
+            "Unstaged file should be collapsed after UnstageAll"
+        );
+
+        // The old staged file section should be cleaned up
+        assert!(
+            !model
+                .ui_model
+                .collapsed_sections
+                .contains(&SectionType::StagedFile {
+                    path: "test.txt".to_string()
+                }),
+            "Old staged file section should be cleaned up"
+        );
+    }
+
+    #[test]
+    fn test_expanded_state_preserved_when_staging() {
+        use crate::git::test_repo::TestRepo;
+        use std::fs;
+
+        // Create a test repo with a modified file
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Modify the tracked file
+        let file_path = repo_path.join("test.txt");
+        fs::write(&file_path, "modified content").unwrap();
+
+        // Create GitInfo from test repo
+        let git_info = GitInfo::new_from_path(repo_path).unwrap();
+        let lines = git_info.get_lines().unwrap();
+
+        // Don't collapse the file - leave it expanded
+        let collapsed_sections = HashSet::new();
+
+        let mut model = Model {
+            git_info,
+            running_state: RunningState::Running,
+            ui_model: UiModel {
+                lines,
+                cursor_position: 0,
+                scroll_offset: 0,
+                viewport_height: 20,
+                collapsed_sections,
+            },
+            theme: Theme::default(),
+            dialog: None,
+            toast: None,
+        };
+
+        // Stage all modified files
+        let follow_up = update(&mut model, Message::StageAllModified);
+        assert_eq!(follow_up, Some(Message::Refresh));
+
+        // Process the refresh
+        update(&mut model, Message::Refresh);
+
+        // Verify the file is NOT collapsed (stayed expanded)
+        assert!(
+            !model
+                .ui_model
+                .collapsed_sections
+                .contains(&SectionType::StagedFile {
+                    path: "test.txt".to_string()
+                }),
+            "File should remain expanded when moving"
+        );
     }
 }

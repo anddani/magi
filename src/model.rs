@@ -216,6 +216,14 @@ impl SectionType {
             SectionType::StagedFile { .. } | SectionType::UnstagedFile { .. }
         )
     }
+
+    /// Returns the file path if this is a file-level section (UnstagedFile or StagedFile).
+    pub fn file_path(&self) -> Option<&str> {
+        match self {
+            SectionType::UnstagedFile { path } | SectionType::StagedFile { path } => Some(path),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Default, PartialEq, Eq, Debug)]
@@ -419,5 +427,32 @@ mod tests {
             section: None,
         };
         assert_eq!(empty_line.collapsible_section(), None);
+    }
+
+    #[test]
+    fn test_file_path() {
+        // UnstagedFile returns the path
+        let unstaged = SectionType::UnstagedFile {
+            path: "foo.rs".to_string(),
+        };
+        assert_eq!(unstaged.file_path(), Some("foo.rs"));
+
+        // StagedFile returns the path
+        let staged = SectionType::StagedFile {
+            path: "bar.rs".to_string(),
+        };
+        assert_eq!(staged.file_path(), Some("bar.rs"));
+
+        // Other section types return None
+        assert_eq!(SectionType::Info.file_path(), None);
+        assert_eq!(SectionType::UntrackedFiles.file_path(), None);
+        assert_eq!(SectionType::UnstagedChanges.file_path(), None);
+        assert_eq!(SectionType::StagedChanges.file_path(), None);
+
+        let hunk = SectionType::UnstagedHunk {
+            path: "foo.rs".to_string(),
+            hunk_index: 0,
+        };
+        assert_eq!(hunk.file_path(), None);
     }
 }
