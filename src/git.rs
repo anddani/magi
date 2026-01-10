@@ -1,5 +1,4 @@
 use git2::{DiffOptions, Error as Git2Error, Repository};
-use std::path::Path;
 
 use crate::{errors::MagiResult, model::LineContent};
 
