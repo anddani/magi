@@ -6,11 +6,12 @@ use crate::{
 };
 use git2::Diff;
 
+/// A collection of file changes with their associated hunks and diff lines
+pub type FileChangesWithDiffs = Vec<(FileChange, Vec<(DiffHunk, Vec<DiffLine>)>)>;
+
 /// Collects file changes with their associated hunks and diff lines from a git diff
-pub fn collect_file_changes(
-    diff: &Diff,
-) -> MagiResult<Vec<(FileChange, Vec<(DiffHunk, Vec<DiffLine>)>)>> {
-    let mut result: Vec<(FileChange, Vec<(DiffHunk, Vec<DiffLine>)>)> = Vec::new();
+pub fn collect_file_changes(diff: &Diff) -> MagiResult<FileChangesWithDiffs> {
+    let mut result: FileChangesWithDiffs = Vec::new();
 
     diff.print(git2::DiffFormat::Patch, |delta, hunk, line| {
         let file_path = delta
@@ -88,7 +89,7 @@ pub fn collect_file_changes(
 /// This function takes file changes and closures that create the appropriate
 /// section types and line content for either staged or unstaged changes.
 pub fn build_change_lines<F, G, H>(
-    file_changes: Vec<(FileChange, Vec<(DiffHunk, Vec<DiffLine>)>)>,
+    file_changes: FileChangesWithDiffs,
     header_title: &str,
     header_section: SectionType,
     make_file_content: F,
