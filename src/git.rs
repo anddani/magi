@@ -1,3 +1,6 @@
+#[cfg(test)]
+use std::path::Path;
+
 use git2::{DiffOptions, Error as Git2Error, Repository};
 
 use crate::{errors::MagiResult, model::LineContent};
