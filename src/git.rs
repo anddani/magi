@@ -1,4 +1,3 @@
-#[cfg(test)]
 use std::path::Path;
 
 use git2::{DiffOptions, Error as Git2Error, Repository};
@@ -7,13 +6,12 @@ use crate::{errors::MagiResult, model::LineContent};
 
 pub mod commit;
 mod diff_utils;
-mod info;
+pub mod info;
 pub mod stage;
-mod staged_changes;
-#[cfg(test)]
-pub(crate) mod test_repo;
-mod unstaged_changes;
-mod untracked_files;
+pub mod staged_changes;
+pub mod test_repo;
+pub mod unstaged_changes;
+pub mod untracked_files;
 
 pub struct GitInfo {
     pub repository: Repository,
@@ -25,7 +23,6 @@ impl GitInfo {
         Ok(Self { repository })
     }
 
-    #[cfg(test)]
     pub fn new_from_path<P: AsRef<Path>>(path: P) -> Result<Self, Git2Error> {
         let repository = Repository::open(path)?;
         Ok(Self { repository })
