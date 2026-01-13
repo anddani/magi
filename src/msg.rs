@@ -1,5 +1,5 @@
 pub mod update;
-mod util;
+pub mod util;
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Message {

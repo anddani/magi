@@ -1,14 +1,6 @@
-use errors::MagiResult;
-
-mod config;
-mod errors;
-mod git;
-mod magi;
-mod model;
-mod msg;
-mod view;
+use magi::errors::MagiResult;
 
 fn main() -> MagiResult<()> {
-    magi::run()?;
+    magi::magi::run()?;
     Ok(())
 }

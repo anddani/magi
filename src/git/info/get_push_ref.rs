@@ -42,32 +42,3 @@ pub fn get_push_ref(repo: &Repository) -> Result<Option<GitRef>, git2::Error> {
         commit_message,
     )))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::git::test_repo;
-
-    #[test]
-    fn test_get_push_ref_no_upstream() -> Result<(), git2::Error> {
-        // Test case where there's no upstream branch configured
-        let test_repo = test_repo::TestRepo::new();
-        let repo = &test_repo.repo;
-        let push_ref = get_push_ref(&repo)?;
-        assert!(push_ref.is_none());
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_get_push_ref_detached_head() -> Result<(), git2::Error> {
-        // Test case where HEAD is detached (should return None)
-        let test_repo = test_repo::TestRepo::new();
-        test_repo.detach_head();
-        let repo = &test_repo.repo;
-        let push_ref = get_push_ref(&repo)?;
-        assert!(push_ref.is_none());
-
-        Ok(())
-    }
-}
