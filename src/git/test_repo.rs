@@ -7,6 +7,12 @@ pub struct TestRepo {
     _temp_dir: TempDir,
 }
 
+impl Default for TestRepo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TestRepo {
     pub fn new() -> Self {
         let local_dir = tempfile::tempdir().unwrap();
@@ -30,7 +36,7 @@ impl TestRepo {
         let signature = Signature::now("Test User", "test@example.com").unwrap();
         local_repo
             .commit(
-                Some(&"refs/heads/main".to_string()),
+                Some("refs/heads/main"),
                 &signature,
                 &signature,
                 "Initial commit",
