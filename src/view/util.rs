@@ -1,11 +1,33 @@
+use std::collections::HashSet;
+
 use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line as TextLine, Span},
 };
 
-use crate::config::Theme;
 use crate::git::{GitRef, ReferenceType};
 use crate::model::{FileChange, FileStatus, LineContent, SectionType};
+use crate::{config::Theme, model::Line};
+
+/// Style for the highlighted section (faded background)
+pub fn selection_style(bg_color: Color) -> Style {
+    Style::default().bg(bg_color)
+}
+
+/// Converts a raw line index scroll offset to visible line count.
+/// The model stores scroll_offset as a raw index into the lines array,
+/// but Paragraph::scroll expects the number of rendered (visible) lines to skip.
+pub fn visible_scroll_offset(
+    lines: &[Line],
+    scroll_offset: usize,
+    collapsed_sections: &HashSet<SectionType>,
+) -> usize {
+    lines
+        .iter()
+        .take(scroll_offset)
+        .filter(|line| !line.is_hidden(collapsed_sections))
+        .count()
+}
 
 /// Format a GitRef with appropriate colors for different parts using Ratatui's styling system
 pub fn format_ref_with_colors<'a>(ref_info: &GitRef, label: &str, theme: &Theme) -> Vec<Span<'a>> {

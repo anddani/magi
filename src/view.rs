@@ -1,14 +1,16 @@
 use ratatui::{
-    layout::Rect,
-    style::{Color, Style},
     text::{Line as TextLine, Span},
-    widgets::{Block, Borders, Clear, Paragraph},
+    widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
-use std::collections::HashSet;
-
-use crate::model::{DialogContent, Line, Model, SectionType, Toast, ToastStyle};
+use crate::{
+    model::Model,
+    view::{
+        render::{render_dialog, render_toast},
+        util::{selection_style, visible_scroll_offset},
+    },
+};
 
 mod util;
 
@@ -17,30 +19,11 @@ mod diff_line;
 mod head_ref;
 mod latest_tag;
 mod push_ref;
+mod render;
 mod section_header;
 mod staged_file;
 mod unstaged_file;
 mod untracked_file;
-
-/// Style for the highlighted section (faded background)
-fn selection_style(bg_color: Color) -> Style {
-    Style::default().bg(bg_color)
-}
-
-/// Converts a raw line index scroll offset to visible line count.
-/// The model stores scroll_offset as a raw index into the lines array,
-/// but Paragraph::scroll expects the number of rendered (visible) lines to skip.
-fn visible_scroll_offset(
-    lines: &[Line],
-    scroll_offset: usize,
-    collapsed_sections: &HashSet<SectionType>,
-) -> usize {
-    lines
-        .iter()
-        .take(scroll_offset)
-        .filter(|line| !line.is_hidden(collapsed_sections))
-        .count()
-}
 
 /// The view functions draws the UI using the application
 /// state (Model).
@@ -187,90 +170,12 @@ pub fn view(model: &Model, frame: &mut Frame) {
     }
 }
 
-/// Calculate a centered rectangle within the given area
-fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
-    let x = area.x + (area.width.saturating_sub(width)) / 2;
-    let y = area.y + (area.height.saturating_sub(height)) / 2;
-    Rect::new(x, y, width.min(area.width), height.min(area.height))
-}
-
-/// Calculate a rectangle in the bottom-right corner
-fn bottom_right_rect(width: u16, height: u16, area: Rect) -> Rect {
-    let x = area.x + area.width.saturating_sub(width + 1);
-    let y = area.y + area.height.saturating_sub(height + 1);
-    Rect::new(x, y, width.min(area.width), height.min(area.height))
-}
-
-/// Render a toast notification in the bottom-right corner
-fn render_toast(toast: &Toast, frame: &mut Frame, area: Rect, theme: &crate::config::Theme) {
-    let border_color = match toast.style {
-        ToastStyle::Success => theme.staged_status,
-        ToastStyle::Info => theme.local_branch,
-        ToastStyle::Warning => theme.section_header,
-    };
-
-    // Calculate toast size based on content
-    let content_width = toast.message.len() + 4; // padding
-    let toast_width = (content_width as u16).clamp(20, area.width.saturating_sub(4));
-    let toast_height = 3; // border + content + border
-
-    let toast_area = bottom_right_rect(toast_width, toast_height, area);
-
-    // Clear the area behind the toast
-    frame.render_widget(Clear, toast_area);
-
-    let toast_block = Block::default()
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(border_color));
-
-    let toast_paragraph = Paragraph::new(toast.message.as_str()).block(toast_block);
-
-    frame.render_widget(toast_paragraph, toast_area);
-}
-
-/// Render a modal dialog overlay (centered, requires user action)
-fn render_dialog(
-    dialog: &DialogContent,
-    frame: &mut Frame,
-    area: Rect,
-    theme: &crate::config::Theme,
-) {
-    let (title, content, border_color) = match dialog {
-        DialogContent::Error { message } => ("Error", message.as_str(), theme.diff_deletion),
-    };
-
-    // Calculate dialog size based on content
-    let content_width = content.len().max(title.len()) + 4; // padding
-    let dialog_width = (content_width as u16).clamp(30, area.width.saturating_sub(4));
-    let dialog_height = 5; // title bar + content + border + hint
-
-    let dialog_area = centered_rect(dialog_width, dialog_height, area);
-
-    // Clear the area behind the dialog
-    frame.render_widget(Clear, dialog_area);
-
-    // Build dialog content with hint
-    let hint = "Press Enter or Esc to dismiss";
-    let dialog_text = vec![
-        TextLine::from(content),
-        TextLine::from(""),
-        TextLine::from(Span::styled(hint, Style::default().fg(Color::DarkGray))),
-    ];
-
-    let dialog_block = Block::default()
-        .title(title)
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(border_color));
-
-    let dialog_paragraph = Paragraph::new(dialog_text).block(dialog_block);
-
-    frame.render_widget(dialog_paragraph, dialog_area);
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{DiffHunk, DiffLine, DiffLineType, FileChange, Line, LineContent};
+    use crate::model::{
+        DiffHunk, DiffLine, DiffLineType, FileChange, Line, LineContent, SectionType,
+    };
     use std::collections::HashSet;
 
     fn create_test_lines_with_sections() -> Vec<Line> {
