@@ -1,5 +1,5 @@
 use ratatui::{
-    text::{Line as TextLine, Span},
+    text::Line as TextLine,
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
@@ -8,7 +8,7 @@ use crate::{
     model::Model,
     view::{
         render::{render_dialog, render_toast},
-        util::{selection_style, visible_scroll_offset},
+        util::{apply_selection_style, visible_scroll_offset},
     },
 };
 
@@ -66,6 +66,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
     let mut text = Vec::new();
     let theme = &model.theme;
     let cursor_pos = model.ui_model.cursor_position;
+
     // Content width is area width minus 2 for borders
     let content_width = area.width.saturating_sub(2) as usize;
 
@@ -125,24 +126,13 @@ pub fn view(model: &Model, frame: &mut Frame) {
 
         let is_cursor_line = index == cursor_pos;
 
-        // Apply cursor highlighting to all lines in the selected section
         if is_in_selected_section {
-            let sel_style = selection_style(theme.selection_bg);
-            for text_line in &mut line_texts {
-                // Calculate current line width and add padding to fill the screen
-                let line_width: usize = text_line.spans.iter().map(|s| s.content.len()).sum();
-                let padding = content_width.saturating_sub(line_width);
-                let mut spans: Vec<Span> = text_line.spans.clone();
-                if padding > 0 {
-                    spans.push(Span::styled(" ".repeat(padding), sel_style));
-                }
-                *text_line = TextLine::from(spans).style(sel_style);
-
-                // Apply block cursor only on the actual cursor line, at column 1 (second character)
-                if is_cursor_line {
-                    util::apply_block_cursor(text_line, 1);
-                }
-            }
+            apply_selection_style(
+                &mut line_texts,
+                content_width,
+                is_cursor_line,
+                theme.selection_bg,
+            );
         }
 
         text.extend(line_texts);

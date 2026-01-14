@@ -163,6 +163,30 @@ pub fn apply_block_cursor(text_line: &mut TextLine, column: usize) {
     text_line.spans = new_spans;
 }
 
+/// Apply selection highlighting and optional block cursor to text lines.
+/// Pads lines to fill the content width with the selection background.
+pub fn apply_selection_style(
+    line_texts: &mut Vec<TextLine>,
+    content_width: usize,
+    is_cursor_line: bool,
+    selection_bg: Color,
+) {
+    let sel_style = selection_style(selection_bg);
+    for text_line in line_texts {
+        let line_width: usize = text_line.spans.iter().map(|s| s.content.len()).sum();
+        let padding = content_width.saturating_sub(line_width);
+        let mut spans: Vec<Span> = text_line.spans.clone();
+        if padding > 0 {
+            spans.push(Span::styled(" ".repeat(padding), sel_style));
+        }
+        *text_line = TextLine::from(spans).style(sel_style);
+
+        if is_cursor_line {
+            apply_block_cursor(text_line, 1);
+        }
+    }
+}
+
 /// Determines whether a line should be highlighted based on cursor position and section context.
 ///
 /// # Arguments
