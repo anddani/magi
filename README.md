@@ -26,7 +26,7 @@ Magi is inspired by [Magit](https://magit.vc/), the legendary Emacs Git interfac
 - [x] Expand/Collapse sections
 - [ ] Keyboard navigation
     - [x] Move up/down
-    - [ ] Scroll viewport
+    - [x] Scroll viewport
     - [ ] Visual select
 - [x] User dismissable dialog
 - [x] Toast
@@ -79,11 +79,6 @@ Magi is inspired by [Magit](https://magit.vc/), the legendary Emacs Git interfac
     - [ ] Unstage
     - [ ] Stage all
     - [ ] Unstage all
-- [ ] Push and pull operations
-- [ ] Branch management (create, checkout, delete)
-- [ ] Stash support
-- [ ] Interactive rebasing
-- [ ] Log view with commit history
 
 ## How does Magi differ from Gitu?
 
