@@ -37,6 +37,8 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ToggleSection
         | Message::StageAllModified
         | Message::UnstageAll
-        | Message::DismissDialog => false,
+        | Message::DismissDialog
+        | Message::EnterVisualMode
+        | Message::ExitVisualMode => false,
     }
 }

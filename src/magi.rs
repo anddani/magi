@@ -48,6 +48,7 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         scroll_offset: 0,
         viewport_height: 0,
         collapsed_sections,
+        visual_mode_anchor: None,
     };
 
     let mut model = Model {
