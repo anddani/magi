@@ -70,7 +70,10 @@ pub fn view(model: &Model, frame: &mut Frame) {
     // Content width is area width minus 2 for borders
     let content_width = area.width.saturating_sub(2) as usize;
 
-    // Determine what should be highlighted based on cursor position
+    // Get visual selection range if visual mode is active
+    let visual_range = model.ui_model.visual_selection_range();
+
+    // Determine what should be highlighted based on cursor position (for normal mode)
     let cursor_line = model.ui_model.lines.get(cursor_pos);
     let cursor_content = cursor_line.map(|l| &l.content);
     let cursor_section = cursor_line.and_then(|l| l.section.as_ref());
@@ -84,13 +87,18 @@ pub fn view(model: &Model, frame: &mut Frame) {
         }
 
         // Determine if this line should be highlighted
-        let is_in_selected_section = util::should_highlight_line(
-            index,
-            cursor_pos,
-            cursor_content,
-            cursor_section,
-            line.section.as_ref(),
-        );
+        // In visual mode, highlight all visible lines between anchor and cursor
+        let is_in_selected_section = if let Some((start, end)) = visual_range {
+            index >= start && index <= end
+        } else {
+            util::should_highlight_line(
+                index,
+                cursor_pos,
+                cursor_content,
+                cursor_section,
+                line.section.as_ref(),
+            )
+        };
 
         // Check if this line's section is collapsed (for showing the indicator)
         let is_section_collapsed = if let Some(section) = line.collapsible_section() {

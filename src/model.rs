@@ -43,6 +43,27 @@ pub struct UiModel {
     pub scroll_offset: usize,
     pub viewport_height: usize,
     pub collapsed_sections: HashSet<SectionType>,
+    /// When Some, visual mode is active and this is the anchor position
+    /// (the line where visual mode was started). The selection spans from
+    /// this anchor to the current cursor_position.
+    pub visual_mode_anchor: Option<usize>,
+}
+
+impl UiModel {
+    /// Returns true if visual mode is currently active
+    pub fn is_visual_mode(&self) -> bool {
+        self.visual_mode_anchor.is_some()
+    }
+
+    /// Returns the visual selection range (start, end) inclusive, if visual mode is active.
+    /// The range is always ordered with start <= end regardless of cursor direction.
+    pub fn visual_selection_range(&self) -> Option<(usize, usize)> {
+        self.visual_mode_anchor.map(|anchor| {
+            let start = anchor.min(self.cursor_position);
+            let end = anchor.max(self.cursor_position);
+            (start, end)
+        })
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -454,5 +475,55 @@ mod tests {
             hunk_index: 0,
         };
         assert_eq!(hunk.file_path(), None);
+    }
+
+    #[test]
+    fn test_is_visual_mode() {
+        let mut ui_model = UiModel::default();
+
+        // Not in visual mode by default
+        assert!(!ui_model.is_visual_mode());
+
+        // Set anchor to enter visual mode
+        ui_model.visual_mode_anchor = Some(5);
+        assert!(ui_model.is_visual_mode());
+
+        // Clear anchor to exit visual mode
+        ui_model.visual_mode_anchor = None;
+        assert!(!ui_model.is_visual_mode());
+    }
+
+    #[test]
+    fn test_visual_selection_range_none_when_not_active() {
+        let ui_model = UiModel::default();
+        assert_eq!(ui_model.visual_selection_range(), None);
+    }
+
+    #[test]
+    fn test_visual_selection_range_ordered() {
+        let mut ui_model = UiModel::default();
+        ui_model.cursor_position = 3;
+        ui_model.visual_mode_anchor = Some(7);
+
+        // Range should be ordered (start, end) regardless of anchor vs cursor position
+        let range = ui_model.visual_selection_range();
+        assert_eq!(range, Some((3, 7)));
+
+        // Swap positions
+        ui_model.cursor_position = 7;
+        ui_model.visual_mode_anchor = Some(3);
+
+        let range = ui_model.visual_selection_range();
+        assert_eq!(range, Some((3, 7)));
+    }
+
+    #[test]
+    fn test_visual_selection_range_same_position() {
+        let mut ui_model = UiModel::default();
+        ui_model.cursor_position = 5;
+        ui_model.visual_mode_anchor = Some(5);
+
+        let range = ui_model.visual_selection_range();
+        assert_eq!(range, Some((5, 5)));
     }
 }

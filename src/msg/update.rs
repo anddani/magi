@@ -2,6 +2,8 @@ use crate::{model::Model, msg::Message};
 
 mod commit;
 mod dismiss_dialog;
+mod enter_visual_mode;
+mod exit_visual_mode;
 mod half_page_down;
 mod half_page_up;
 mod move_down;
@@ -33,5 +35,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::DismissDialog => dismiss_dialog::update(model),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::UnstageAll => unstage_all::update(model),
+        Message::EnterVisualMode => enter_visual_mode::update(model),
+        Message::ExitVisualMode => exit_visual_mode::update(model),
     }
 }

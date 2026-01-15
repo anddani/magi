@@ -31,4 +31,9 @@ pub enum Message {
     StageAllModified,
     /// Unstage all staged files
     UnstageAll,
+
+    /// Enter visual selection mode (sets anchor at current cursor position)
+    EnterVisualMode,
+    /// Exit visual selection mode (clears the anchor)
+    ExitVisualMode,
 }
