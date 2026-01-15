@@ -16,8 +16,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     // Check for visual mode exit keys first (ESC and Ctrl-g)
     if model.ui_model.is_visual_mode() {
         match (key.modifiers, key.code) {
-            (KeyModifiers::NONE, KeyCode::Esc)
-            | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
+            (KeyModifiers::NONE, KeyCode::Esc) | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
                 return Some(Message::ExitVisualMode);
             }
             // Disable ToggleSection in visual mode to prevent confusing selection behavior
