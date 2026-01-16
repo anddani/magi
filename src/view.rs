@@ -151,8 +151,21 @@ pub fn view(model: &Model, frame: &mut Frame) {
         model.ui_model.scroll_offset,
         collapsed_sections,
     ) as u16;
+
+    let directory = model
+        .git_info
+        .repository
+        .workdir()
+        .and_then(|p| p.to_str())
+        .unwrap_or(".");
+
     let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).title("Magi"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Magi")
+                .title_top(TextLine::from(directory).right_aligned()),
+        )
         .scroll((scroll, 0));
 
     frame.render_widget(paragraph, area);
