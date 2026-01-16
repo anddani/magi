@@ -36,4 +36,7 @@ pub enum Message {
     EnterVisualMode,
     /// Exit visual selection mode (clears the anchor)
     ExitVisualMode,
+
+    /// Show help popup with keybindings
+    ShowHelp,
 }

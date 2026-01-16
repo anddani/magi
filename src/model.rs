@@ -296,6 +296,7 @@ pub enum RunningState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DialogContent {
     Error { message: String },
+    Help,
 }
 
 #[cfg(test)]

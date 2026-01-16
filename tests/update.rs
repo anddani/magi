@@ -1259,3 +1259,45 @@ fn test_visual_mode_survives_cursor_movement() {
     assert!(model.ui_model.is_visual_mode());
     assert_eq!(model.ui_model.visual_mode_anchor, anchor);
 }
+
+// ============================================================================
+// Help Popup Tests
+// ============================================================================
+
+#[test]
+fn test_show_help_sets_dialog() {
+    let mut model = create_test_model_with_lines(10);
+
+    // Dialog should be None initially
+    assert!(model.dialog.is_none());
+
+    // Show help
+    update(&mut model, Message::ShowHelp);
+
+    // Dialog should now be Help
+    assert_eq!(model.dialog, Some(DialogContent::Help));
+}
+
+#[test]
+fn test_dismiss_dialog_clears_help() {
+    let mut model = create_test_model_with_lines(10);
+
+    // Show help first
+    update(&mut model, Message::ShowHelp);
+    assert_eq!(model.dialog, Some(DialogContent::Help));
+
+    // Dismiss the dialog
+    update(&mut model, Message::DismissDialog);
+
+    // Dialog should be cleared
+    assert!(model.dialog.is_none());
+}
+
+#[test]
+fn test_show_help_returns_none() {
+    let mut model = create_test_model_with_lines(10);
+
+    // ShowHelp should not trigger a follow-up message
+    let follow_up = update(&mut model, Message::ShowHelp);
+    assert_eq!(follow_up, None);
+}

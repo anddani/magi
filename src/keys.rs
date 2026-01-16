@@ -2,13 +2,22 @@ use crossterm::event::{self, KeyCode, KeyModifiers};
 
 use crate::{model::Model, msg::Message};
 
+use crate::model::DialogContent;
+
 /// Maps a key event into a [`Message`] given the application state.
 /// If function returns [`None`], no action should be triggered.
 pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
-    // If a dialog is showing, only allow dismissing it
-    if model.dialog.is_some() {
+    if let Some(DialogContent::Error { .. }) = &model.dialog {
         return match key.code {
             KeyCode::Enter | KeyCode::Esc => Some(Message::DismissDialog),
+            _ => None,
+        };
+    }
+
+    if let Some(DialogContent::Help) = &model.dialog {
+        return match (key.modifiers, key.code) {
+            (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
+            | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissDialog),
             _ => None,
         };
     }
@@ -38,6 +47,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::SHIFT, KeyCode::Char('S')) => Some(Message::StageAllModified),
         (KeyModifiers::SHIFT, KeyCode::Char('U')) => Some(Message::UnstageAll),
         (KeyModifiers::SHIFT, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
+        (KeyModifiers::NONE, KeyCode::Char('?')) => Some(Message::ShowHelp),
         (KeyModifiers::NONE, KeyCode::Char('q')) => Some(Message::Quit),
         (KeyModifiers::NONE, KeyCode::Char('k') | KeyCode::Up) => Some(Message::MoveUp),
         (KeyModifiers::NONE, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
@@ -159,5 +169,47 @@ mod tests {
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Tab);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ToggleSection));
+    }
+
+    #[test]
+    fn test_question_mark_shows_help() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('?'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowHelp));
+    }
+
+    #[test]
+    fn test_question_mark_does_nothing_when_error_dialog_shown() {
+        let mut model = create_test_model();
+        model.dialog = Some(crate::model::DialogContent::Error {
+            message: "Test error".to_string(),
+        });
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('?'));
+        let result = handle_key(key, &model);
+        // When error dialog is shown, only Enter/Esc should work
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_esc_dismisses_help_dialog() {
+        let mut model = create_test_model();
+        model.dialog = Some(crate::model::DialogContent::Help);
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissDialog));
+    }
+
+    #[test]
+    fn test_q_dismisses_help_dialog() {
+        let mut model = create_test_model();
+        model.dialog = Some(crate::model::DialogContent::Help);
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissDialog));
     }
 }
