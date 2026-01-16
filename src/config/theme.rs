@@ -72,12 +72,12 @@ impl Theme {
             selection_bg: Color::Rgb(60, 60, 80),
             status_bar_bg: Color::Rgb(40, 40, 50),
             status_bar_fg: Color::White,
-            status_mode_normal_bg: Color::Blue,
-            status_mode_normal_fg: Color::White,
-            status_mode_visual_bg: Color::Magenta,
-            status_mode_visual_fg: Color::White,
-            status_mode_search_bg: Color::Yellow,
-            status_mode_search_fg: Color::Black,
+            status_mode_normal_bg: Color::Rgb(100, 149, 237), // Cornflower blue
+            status_mode_normal_fg: Color::Rgb(30, 30, 40),
+            status_mode_visual_bg: Color::Rgb(186, 133, 217), // Bright purple
+            status_mode_visual_fg: Color::Rgb(30, 30, 40),
+            status_mode_search_bg: Color::Rgb(250, 215, 140), // Warm yellow
+            status_mode_search_fg: Color::Rgb(30, 30, 40),
         }
     }
 

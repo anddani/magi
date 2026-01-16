@@ -1,15 +1,14 @@
 use ratatui::{
-    layout::{Constraint, Layout},
-    text::Line as TextLine,
+    style::Style,
+    text::{Line as TextLine, Span},
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
 use crate::{
-    model::Model,
+    model::{InputMode, Model},
     view::{
         render::{render_dialog, render_toast},
-        status_bar::render_status_bar,
         util::{apply_selection_style, visible_scroll_offset},
     },
 };
@@ -24,7 +23,6 @@ mod push_ref;
 mod render;
 mod section_header;
 mod staged_file;
-mod status_bar;
 mod unstaged_file;
 mod untracked_file;
 
@@ -65,17 +63,7 @@ mod untracked_file;
 ///
 ///
 pub fn view(model: &Model, frame: &mut Frame) {
-    let full_area = frame.area();
-
-    // Split the area into main content and status bar
-    let layout = Layout::vertical([
-        Constraint::Min(1),    // Main content takes all available space
-        Constraint::Length(1), // Status bar is 1 line
-    ])
-    .split(full_area);
-
-    let area = layout[0];
-    let status_bar_area = layout[1];
+    let area = frame.area();
 
     let mut text = Vec::new();
     let theme = &model.theme;
@@ -173,32 +161,29 @@ pub fn view(model: &Model, frame: &mut Frame) {
         .and_then(|p| p.to_str())
         .unwrap_or(".");
 
+    // Create mode pill for status bar
+    let mode = model.ui_model.current_mode();
+    let (mode_bg, mode_fg) = match mode {
+        InputMode::Normal => (theme.status_mode_normal_bg, theme.status_mode_normal_fg),
+        InputMode::Visual => (theme.status_mode_visual_bg, theme.status_mode_visual_fg),
+        InputMode::Search => (theme.status_mode_search_bg, theme.status_mode_search_fg),
+    };
+    let mode_pill = Span::styled(
+        format!(" {} ", mode.display_name()),
+        Style::default().bg(mode_bg).fg(mode_fg),
+    );
+
     let paragraph = Paragraph::new(text)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .title("Magi")
-                .title_top(TextLine::from(directory).right_aligned()),
+                .title_top(TextLine::from(directory).right_aligned())
+                .title_bottom(TextLine::from(mode_pill)),
         )
         .scroll((scroll, 0));
 
     frame.render_widget(paragraph, area);
-
-    // Render status bar at the bottom
-    let directory = model
-        .git_info
-        .repository
-        .workdir()
-        .and_then(|p| p.to_str())
-        .unwrap_or(".");
-    render_status_bar(
-        frame,
-        status_bar_area,
-        model.ui_model.current_mode(),
-        &model.ui_model.search_query,
-        directory,
-        theme,
-    );
 
     // Render toast in bottom-right corner if present
     if let Some(toast) = &model.toast {
