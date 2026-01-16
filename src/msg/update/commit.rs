@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use crate::{
     git::commit::{self, CommitResult},
-    model::{DialogContent, Model, Toast, ToastStyle},
+    model::{popup::PopupContent, Model, Toast, ToastStyle},
     msg::Message,
 };
 
@@ -33,13 +33,13 @@ pub fn update(model: &mut Model) -> Option<Message> {
                 });
             }
             Err(e) => {
-                model.dialog = Some(DialogContent::Error {
+                model.popup = Some(PopupContent::Error {
                     message: e.to_string(),
                 });
             }
         }
     } else {
-        model.dialog = Some(DialogContent::Error {
+        model.popup = Some(PopupContent::Error {
             message: "Repository working directory not found".into(),
         });
     };

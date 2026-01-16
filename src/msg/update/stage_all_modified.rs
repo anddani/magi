@@ -1,5 +1,5 @@
 use crate::{
-    model::{DialogContent, LineContent, Model},
+    model::{popup::PopupContent, LineContent, Model},
     msg::Message,
 };
 
@@ -15,7 +15,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
         })
         .collect();
     if let Err(e) = crate::git::stage::stage_files(repo_path, &files) {
-        model.dialog = Some(DialogContent::Error {
+        model.popup = Some(PopupContent::Error {
             message: format!("Error staging files: {}", e),
         });
     }

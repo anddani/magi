@@ -6,7 +6,12 @@ use ratatui::{
     Frame,
 };
 
-use crate::model::{DialogContent, Toast, ToastStyle};
+use crate::model::{
+    popup::{PopupContent, PopupContentCommand},
+    Toast, ToastStyle,
+};
+
+mod help_popup;
 
 /// Calculate a centered rectangle within the given area
 fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
@@ -19,6 +24,13 @@ fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
 fn bottom_right_rect(width: u16, height: u16, area: Rect) -> Rect {
     let x = area.x + area.width.saturating_sub(width + 1);
     let y = area.y + area.height.saturating_sub(height + 1);
+    Rect::new(x, y, width.min(area.width), height.min(area.height))
+}
+
+/// Calculate a rectangle in the bottom half of the screen, centered horizontally
+fn bottom_half_rect(width: u16, height: u16, area: Rect) -> Rect {
+    let x = area.x + (area.width.saturating_sub(width)) / 2;
+    let y = area.y + area.height.saturating_sub(height);
     Rect::new(x, y, width.min(area.width), height.min(area.height))
 }
 
@@ -49,41 +61,82 @@ pub fn render_toast(toast: &Toast, frame: &mut Frame, area: Rect, theme: &crate:
     frame.render_widget(toast_paragraph, toast_area);
 }
 
-/// Render a modal dialog overlay (centered, requires user action)
-pub fn render_dialog(
-    dialog: &DialogContent,
+/// Render a modal popup overlay (centered, requires user action)
+pub fn render_popup(
+    popup: &PopupContent,
     frame: &mut Frame,
     area: Rect,
     theme: &crate::config::Theme,
 ) {
-    let (title, content, border_color) = match dialog {
-        DialogContent::Error { message } => ("Error", message.as_str(), theme.diff_deletion),
-    };
+    match popup {
+        PopupContent::Error { message } => {
+            render_error_popup(message, frame, area, theme);
+        }
+        PopupContent::Command(command) => {
+            render_command_popup(frame, area, theme, command);
+        }
+    }
+}
 
-    // Calculate dialog size based on content
-    let content_width = content.len().max(title.len()) + 4; // padding
-    let dialog_width = (content_width as u16).clamp(30, area.width.saturating_sub(4));
-    let dialog_height = 5; // title bar + content + border + hint
+/// Render an error popup (centered)
+fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crate::config::Theme) {
+    let title = "Error";
+    let border_color = theme.diff_deletion;
 
-    let dialog_area = centered_rect(dialog_width, dialog_height, area);
+    // Calculate popup size based on content
+    let content_width = message.len().max(title.len()) + 4; // padding
+    let popup_width = (content_width as u16).clamp(30, area.width.saturating_sub(4));
+    let popup_height = 5; // title bar + content + border + hint
 
-    // Clear the area behind the dialog
-    frame.render_widget(Clear, dialog_area);
+    let popup_area = centered_rect(popup_width, popup_height, area);
 
-    // Build dialog content with hint
+    // Clear the area behind the popup
+    frame.render_widget(Clear, popup_area);
+
+    // Build popup content with hint
     let hint = "Press Enter or Esc to dismiss";
-    let dialog_text = vec![
-        TextLine::from(content),
+    let popup_text = vec![
+        TextLine::from(message),
         TextLine::from(""),
         TextLine::from(Span::styled(hint, Style::default().fg(Color::DarkGray))),
     ];
 
-    let dialog_block = Block::default()
+    let popup_block = Block::default()
         .title(title)
         .borders(Borders::ALL)
         .border_style(Style::default().fg(border_color));
 
-    let dialog_paragraph = Paragraph::new(dialog_text).block(dialog_block);
+    let popup_paragraph = Paragraph::new(popup_text).block(popup_block);
 
-    frame.render_widget(dialog_paragraph, dialog_area);
+    frame.render_widget(popup_paragraph, popup_area);
+}
+
+/// Render the help popup showing keybindings (bottom half of screen)
+fn render_command_popup(
+    frame: &mut Frame,
+    area: Rect,
+    theme: &crate::config::Theme,
+    command: &PopupContentCommand,
+) {
+    // Define keybindings grouped by category
+    let (title, content) = match command {
+        PopupContentCommand::Help => help_popup::content(theme),
+    };
+
+    let popup_height = (content.len() + 2) as u16; // +2 for border
+    let popup_width = area.width;
+
+    let popup_area = bottom_half_rect(popup_width, popup_height, area);
+
+    // Clear the area behind the popup
+    frame.render_widget(Clear, popup_area);
+
+    let popup_block = Block::default()
+        .title(title)
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.local_branch));
+
+    let popup_paragraph = Paragraph::new(content).block(popup_block);
+
+    frame.render_widget(popup_paragraph, popup_area);
 }

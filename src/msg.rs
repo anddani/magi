@@ -25,8 +25,8 @@ pub enum Message {
     /// Open commit in user's default EDITOR
     Commit,
 
-    /// Dismiss the current dialog
-    DismissDialog,
+    /// Dismiss the current popup
+    DismissPopup,
     /// Stage all modified files (does not include untracked files)
     StageAllModified,
     /// Unstage all staged files
@@ -36,4 +36,7 @@ pub enum Message {
     EnterVisualMode,
     /// Exit visual selection mode (clears the anchor)
     ExitVisualMode,
+
+    /// Show help popup with keybindings
+    ShowHelp,
 }
