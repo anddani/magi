@@ -36,6 +36,26 @@ pub enum ToastStyle {
     Warning,
 }
 
+/// The current input mode of the application
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum InputMode {
+    #[default]
+    Normal,
+    Visual,
+    Search,
+}
+
+impl InputMode {
+    /// Returns the display name for the mode
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            InputMode::Normal => "NORMAL",
+            InputMode::Visual => "VISUAL",
+            InputMode::Search => "SEARCH",
+        }
+    }
+}
+
 #[derive(Default, Clone)]
 pub struct UiModel {
     pub lines: Vec<Line>,
@@ -47,6 +67,10 @@ pub struct UiModel {
     /// (the line where visual mode was started). The selection spans from
     /// this anchor to the current cursor_position.
     pub visual_mode_anchor: Option<usize>,
+    /// The current search query text (only visible in Search mode)
+    pub search_query: String,
+    /// Whether we are currently in search input mode
+    pub search_mode_active: bool,
 }
 
 impl UiModel {
@@ -63,6 +87,17 @@ impl UiModel {
             let end = anchor.max(self.cursor_position);
             (start, end)
         })
+    }
+
+    /// Returns the current input mode based on UI state
+    pub fn current_mode(&self) -> InputMode {
+        if self.search_mode_active {
+            InputMode::Search
+        } else if self.is_visual_mode() {
+            InputMode::Visual
+        } else {
+            InputMode::Normal
+        }
     }
 }
 
@@ -525,5 +560,41 @@ mod tests {
 
         let range = ui_model.visual_selection_range();
         assert_eq!(range, Some((5, 5)));
+    }
+
+    #[test]
+    fn test_input_mode_display_names() {
+        assert_eq!(InputMode::Normal.display_name(), "NORMAL");
+        assert_eq!(InputMode::Visual.display_name(), "VISUAL");
+        assert_eq!(InputMode::Search.display_name(), "SEARCH");
+    }
+
+    #[test]
+    fn test_current_mode_defaults_to_normal() {
+        let ui_model = UiModel::default();
+        assert_eq!(ui_model.current_mode(), InputMode::Normal);
+    }
+
+    #[test]
+    fn test_current_mode_returns_visual_when_anchor_set() {
+        let mut ui_model = UiModel::default();
+        ui_model.visual_mode_anchor = Some(5);
+        assert_eq!(ui_model.current_mode(), InputMode::Visual);
+    }
+
+    #[test]
+    fn test_current_mode_returns_search_when_search_active() {
+        let mut ui_model = UiModel::default();
+        ui_model.search_mode_active = true;
+        assert_eq!(ui_model.current_mode(), InputMode::Search);
+    }
+
+    #[test]
+    fn test_search_mode_takes_priority_over_visual() {
+        let mut ui_model = UiModel::default();
+        ui_model.visual_mode_anchor = Some(5);
+        ui_model.search_mode_active = true;
+        // Search mode should take priority
+        assert_eq!(ui_model.current_mode(), InputMode::Search);
     }
 }

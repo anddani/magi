@@ -1,11 +1,12 @@
 use ratatui::{
-    text::Line as TextLine,
+    style::Style,
+    text::{Line as TextLine, Span},
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
 use crate::{
-    model::Model,
+    model::{InputMode, Model},
     view::{
         render::{render_dialog, render_toast},
         util::{apply_selection_style, visible_scroll_offset},
@@ -63,6 +64,7 @@ mod untracked_file;
 ///
 pub fn view(model: &Model, frame: &mut Frame) {
     let area = frame.area();
+
     let mut text = Vec::new();
     let theme = &model.theme;
     let cursor_pos = model.ui_model.cursor_position;
@@ -151,8 +153,34 @@ pub fn view(model: &Model, frame: &mut Frame) {
         model.ui_model.scroll_offset,
         collapsed_sections,
     ) as u16;
+
+    let directory = model
+        .git_info
+        .repository
+        .workdir()
+        .and_then(|p| p.to_str())
+        .unwrap_or(".");
+
+    // Create mode pill for status bar
+    let mode = model.ui_model.current_mode();
+    let (mode_bg, mode_fg) = match mode {
+        InputMode::Normal => (theme.status_mode_normal_bg, theme.status_mode_normal_fg),
+        InputMode::Visual => (theme.status_mode_visual_bg, theme.status_mode_visual_fg),
+        InputMode::Search => (theme.status_mode_search_bg, theme.status_mode_search_fg),
+    };
+    let mode_pill = Span::styled(
+        format!(" {} ", mode.display_name()),
+        Style::default().bg(mode_bg).fg(mode_fg),
+    );
+
     let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).title("Magi"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Magi")
+                .title_top(TextLine::from(directory).right_aligned())
+                .title_bottom(TextLine::from(mode_pill)),
+        )
         .scroll((scroll, 0));
 
     frame.render_widget(paragraph, area);

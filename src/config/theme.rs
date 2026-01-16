@@ -31,6 +31,16 @@ pub struct Theme {
 
     // Selection
     pub selection_bg: Color,
+
+    // Status bar
+    pub status_bar_bg: Color,
+    pub status_bar_fg: Color,
+    pub status_mode_normal_bg: Color,
+    pub status_mode_normal_fg: Color,
+    pub status_mode_visual_bg: Color,
+    pub status_mode_visual_fg: Color,
+    pub status_mode_search_bg: Color,
+    pub status_mode_search_fg: Color,
 }
 
 impl Default for Theme {
@@ -60,52 +70,76 @@ impl Theme {
             commit_hash: Color::Rgb(139, 69, 19),
             text: Color::Reset,
             selection_bg: Color::Rgb(60, 60, 80),
+            status_bar_bg: Color::Rgb(40, 40, 50),
+            status_bar_fg: Color::White,
+            status_mode_normal_bg: Color::Rgb(100, 149, 237), // Cornflower blue
+            status_mode_normal_fg: Color::Rgb(30, 30, 40),
+            status_mode_visual_bg: Color::Rgb(186, 133, 217), // Bright purple
+            status_mode_visual_fg: Color::Rgb(30, 30, 40),
+            status_mode_search_bg: Color::Rgb(250, 215, 140), // Warm yellow
+            status_mode_search_fg: Color::Rgb(30, 30, 40),
         }
     }
 
     /// Catppuccin Frappe theme
     pub fn catppuccin_frappe() -> Self {
         Self {
-            section_header: Color::Rgb(229, 200, 144),  // Yellow
-            ref_label: Color::Rgb(229, 200, 144),       // Yellow
-            tag_label: Color::Rgb(229, 200, 144),       // Yellow
-            diff_addition: Color::Rgb(166, 209, 137),   // Green
-            diff_deletion: Color::Rgb(231, 130, 132),   // Red
-            diff_context: Color::Rgb(198, 208, 245),    // Text
-            diff_hunk: Color::Rgb(140, 170, 238),       // Blue
-            remote_branch: Color::Rgb(166, 209, 137),   // Green
-            local_branch: Color::Rgb(140, 170, 238),    // Blue
-            detached_head: Color::Rgb(231, 130, 132),   // Red
-            untracked_file: Color::Rgb(231, 130, 132),  // Red
-            unstaged_status: Color::Rgb(244, 184, 228), // Pink
-            staged_status: Color::Rgb(166, 209, 137),   // Green
-            file_path: Color::Rgb(198, 208, 245),       // Text
-            commit_hash: Color::Rgb(239, 159, 118),     // Peach
-            text: Color::Rgb(198, 208, 245),            // Text
-            selection_bg: Color::Rgb(65, 69, 89),       // Surface0
+            section_header: Color::Rgb(229, 200, 144),        // Yellow
+            ref_label: Color::Rgb(229, 200, 144),             // Yellow
+            tag_label: Color::Rgb(229, 200, 144),             // Yellow
+            diff_addition: Color::Rgb(166, 209, 137),         // Green
+            diff_deletion: Color::Rgb(231, 130, 132),         // Red
+            diff_context: Color::Rgb(198, 208, 245),          // Text
+            diff_hunk: Color::Rgb(140, 170, 238),             // Blue
+            remote_branch: Color::Rgb(166, 209, 137),         // Green
+            local_branch: Color::Rgb(140, 170, 238),          // Blue
+            detached_head: Color::Rgb(231, 130, 132),         // Red
+            untracked_file: Color::Rgb(231, 130, 132),        // Red
+            unstaged_status: Color::Rgb(244, 184, 228),       // Pink
+            staged_status: Color::Rgb(166, 209, 137),         // Green
+            file_path: Color::Rgb(198, 208, 245),             // Text
+            commit_hash: Color::Rgb(239, 159, 118),           // Peach
+            text: Color::Rgb(198, 208, 245),                  // Text
+            selection_bg: Color::Rgb(65, 69, 89),             // Surface0
+            status_bar_bg: Color::Rgb(48, 52, 70),            // Surface0
+            status_bar_fg: Color::Rgb(198, 208, 245),         // Text
+            status_mode_normal_bg: Color::Rgb(140, 170, 238), // Blue
+            status_mode_normal_fg: Color::Rgb(48, 52, 70),    // Surface0
+            status_mode_visual_bg: Color::Rgb(202, 158, 230), // Mauve
+            status_mode_visual_fg: Color::Rgb(48, 52, 70),    // Surface0
+            status_mode_search_bg: Color::Rgb(229, 200, 144), // Yellow
+            status_mode_search_fg: Color::Rgb(48, 52, 70),    // Surface0
         }
     }
 
     /// Catppuccin Mocha theme
     pub fn catppuccin_mocha() -> Self {
         Self {
-            section_header: Color::Rgb(249, 226, 175),  // Yellow
-            ref_label: Color::Rgb(249, 226, 175),       // Yellow
-            tag_label: Color::Rgb(249, 226, 175),       // Yellow
-            diff_addition: Color::Rgb(166, 227, 161),   // Green
-            diff_deletion: Color::Rgb(243, 139, 168),   // Red
-            diff_context: Color::Rgb(205, 214, 244),    // Text
-            diff_hunk: Color::Rgb(137, 180, 250),       // Blue
-            remote_branch: Color::Rgb(166, 227, 161),   // Green
-            local_branch: Color::Rgb(137, 180, 250),    // Blue
-            detached_head: Color::Rgb(243, 139, 168),   // Red
-            untracked_file: Color::Rgb(243, 139, 168),  // Red
-            unstaged_status: Color::Rgb(245, 194, 231), // Pink
-            staged_status: Color::Rgb(166, 227, 161),   // Green
-            file_path: Color::Rgb(205, 214, 244),       // Text
-            commit_hash: Color::Rgb(250, 179, 135),     // Peach
-            text: Color::Rgb(205, 214, 244),            // Text
-            selection_bg: Color::Rgb(49, 50, 68),       // Surface0
+            section_header: Color::Rgb(249, 226, 175),        // Yellow
+            ref_label: Color::Rgb(249, 226, 175),             // Yellow
+            tag_label: Color::Rgb(249, 226, 175),             // Yellow
+            diff_addition: Color::Rgb(166, 227, 161),         // Green
+            diff_deletion: Color::Rgb(243, 139, 168),         // Red
+            diff_context: Color::Rgb(205, 214, 244),          // Text
+            diff_hunk: Color::Rgb(137, 180, 250),             // Blue
+            remote_branch: Color::Rgb(166, 227, 161),         // Green
+            local_branch: Color::Rgb(137, 180, 250),          // Blue
+            detached_head: Color::Rgb(243, 139, 168),         // Red
+            untracked_file: Color::Rgb(243, 139, 168),        // Red
+            unstaged_status: Color::Rgb(245, 194, 231),       // Pink
+            staged_status: Color::Rgb(166, 227, 161),         // Green
+            file_path: Color::Rgb(205, 214, 244),             // Text
+            commit_hash: Color::Rgb(250, 179, 135),           // Peach
+            text: Color::Rgb(205, 214, 244),                  // Text
+            selection_bg: Color::Rgb(49, 50, 68),             // Surface0
+            status_bar_bg: Color::Rgb(30, 30, 46),            // Base
+            status_bar_fg: Color::Rgb(205, 214, 244),         // Text
+            status_mode_normal_bg: Color::Rgb(137, 180, 250), // Blue
+            status_mode_normal_fg: Color::Rgb(30, 30, 46),    // Base
+            status_mode_visual_bg: Color::Rgb(203, 166, 247), // Mauve
+            status_mode_visual_fg: Color::Rgb(30, 30, 46),    // Base
+            status_mode_search_bg: Color::Rgb(249, 226, 175), // Yellow
+            status_mode_search_fg: Color::Rgb(30, 30, 46),    // Base
         }
     }
 
