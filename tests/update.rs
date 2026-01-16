@@ -4,9 +4,10 @@ use magi::config::Theme;
 use magi::git::stage::stage_files;
 use magi::git::test_repo::TestRepo;
 use magi::git::GitInfo;
+use magi::model::popup::{PopupContent, PopupContentCommand};
 use magi::model::{
-    DialogContent, DiffHunk, DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent,
-    Model, RunningState, SectionType, UiModel,
+    DiffHunk, DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model,
+    RunningState, SectionType, UiModel,
 };
 use magi::msg::update::update;
 use magi::msg::util::visible_lines_between;
@@ -30,7 +31,7 @@ fn test_refresh_message() -> Result<(), git2::Error> {
             ..Default::default()
         },
         theme: Theme::default(),
-        dialog: None,
+        popup: None,
         toast: None,
     };
 
@@ -58,7 +59,7 @@ fn test_quit_message() {
         running_state: RunningState::Running,
         ui_model: UiModel::default(),
         theme: Theme::default(),
-        dialog: None,
+        popup: None,
         toast: None,
     };
 
@@ -93,7 +94,7 @@ fn create_test_model_with_lines(count: usize) -> Model {
             ..Default::default()
         },
         theme: Theme::default(),
-        dialog: None,
+        popup: None,
         toast: None,
     }
 }
@@ -731,7 +732,7 @@ fn test_commit_without_staged_changes_shows_toast() {
         running_state: RunningState::Running,
         ui_model: UiModel::default(),
         theme: Theme::default(),
-        dialog: None,
+        popup: None,
         toast: None,
     };
 
@@ -746,7 +747,7 @@ fn test_commit_without_staged_changes_shows_toast() {
 }
 
 #[test]
-fn test_dismiss_dialog_clears_dialog() {
+fn test_dismiss_popup_clears_popup() {
     let test_repo = TestRepo::new();
     let repo_path = test_repo.repo.workdir().unwrap();
     let git_info = GitInfo::new_from_path(repo_path).unwrap();
@@ -755,20 +756,20 @@ fn test_dismiss_dialog_clears_dialog() {
         running_state: RunningState::Running,
         ui_model: UiModel::default(),
         theme: Theme::default(),
-        dialog: Some(DialogContent::Error {
+        popup: Some(PopupContent::Error {
             message: "Test error".to_string(),
         }),
         toast: None,
     };
 
-    // Dialog should be present
-    assert!(model.dialog.is_some());
+    // Popup should be present
+    assert!(model.popup.is_some());
 
     // Send dismiss message
-    update(&mut model, Message::DismissDialog);
+    update(&mut model, Message::DismissPopup);
 
-    // Dialog should be cleared
-    assert!(model.dialog.is_none());
+    // Popup should be cleared
+    assert!(model.popup.is_none());
 }
 
 #[test]
@@ -940,7 +941,7 @@ fn test_collapsed_state_preserved_when_staging_all() {
             ..Default::default()
         },
         theme: Theme::default(),
-        dialog: None,
+        popup: None,
         toast: None,
     };
 
@@ -1021,7 +1022,7 @@ fn test_collapsed_state_preserved_when_unstaging_all() {
             ..Default::default()
         },
         theme: Theme::default(),
-        dialog: None,
+        popup: None,
         toast: None,
     };
 
@@ -1084,7 +1085,7 @@ fn test_expanded_state_preserved_when_staging() {
             ..Default::default()
         },
         theme: Theme::default(),
-        dialog: None,
+        popup: None,
         toast: None,
     };
 
@@ -1265,32 +1266,38 @@ fn test_visual_mode_survives_cursor_movement() {
 // ============================================================================
 
 #[test]
-fn test_show_help_sets_dialog() {
+fn test_show_help_sets_popup() {
     let mut model = create_test_model_with_lines(10);
 
-    // Dialog should be None initially
-    assert!(model.dialog.is_none());
+    // Popup should be None initially
+    assert!(model.popup.is_none());
 
     // Show help
     update(&mut model, Message::ShowHelp);
 
-    // Dialog should now be Help
-    assert_eq!(model.dialog, Some(DialogContent::Help));
+    // Popup should now be Help
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Help))
+    );
 }
 
 #[test]
-fn test_dismiss_dialog_clears_help() {
+fn test_dismiss_popup_clears_help() {
     let mut model = create_test_model_with_lines(10);
 
     // Show help first
     update(&mut model, Message::ShowHelp);
-    assert_eq!(model.dialog, Some(DialogContent::Help));
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Help))
+    );
 
-    // Dismiss the dialog
-    update(&mut model, Message::DismissDialog);
+    // Dismiss the popup
+    update(&mut model, Message::DismissPopup);
 
-    // Dialog should be cleared
-    assert!(model.dialog.is_none());
+    // Popup should be cleared
+    assert!(model.popup.is_none());
 }
 
 #[test]

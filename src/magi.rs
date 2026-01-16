@@ -58,7 +58,7 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         running_state: RunningState::Running,
         ui_model: initial_ui_model,
         theme,
-        dialog: None,
+        popup: None,
         toast: None,
     };
 

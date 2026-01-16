@@ -8,7 +8,7 @@ use ratatui::{
 use crate::{
     model::{InputMode, Model},
     view::{
-        render::{render_dialog, render_toast},
+        render::{render_popup, render_toast},
         util::{apply_selection_style, visible_scroll_offset},
     },
 };
@@ -190,8 +190,8 @@ pub fn view(model: &Model, frame: &mut Frame) {
         render_toast(toast, frame, area, theme);
     }
 
-    // Render dialog overlay if present (on top of toast)
-    if let Some(dialog) = &model.dialog {
-        render_dialog(dialog, frame, area, theme);
+    // Render popup overlay if present (on top of toast)
+    if let Some(popup) = &model.popup {
+        render_popup(popup, frame, area, theme);
     }
 }

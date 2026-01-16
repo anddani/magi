@@ -1,9 +1,12 @@
 use crate::{
-    model::{DialogContent, Model},
+    model::{
+        popup::{PopupContent, PopupContentCommand},
+        Model,
+    },
     msg::Message,
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    model.dialog = Some(DialogContent::Help);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Help));
     None
 }

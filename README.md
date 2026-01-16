@@ -24,11 +24,11 @@ Magi is inspired by [Magit](https://magit.vc/), the legendary Emacs Git interfac
 - [x] Staged/unstaged changes with inline diffs
 - [x] Stage and unstage files
 - [x] Expand/Collapse sections
-- [ ] Keyboard navigation
+- [x] Keyboard navigation
     - [x] Move up/down
     - [x] Scroll viewport
-    - [ ] Visual select
-- [x] User dismissable dialog
+    - [x] Visual select
+- [x] User dismissable popup
 - [x] Toast
 - [x] Configurable color themes
 - [ ] Commands

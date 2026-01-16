@@ -5,6 +5,10 @@ use crate::config::Theme;
 use crate::git::{GitInfo, GitRef, TagInfo};
 use crate::msg::Message;
 
+use popup::PopupContent;
+
+pub mod popup;
+
 /// The whole state of the application, including the Git repository Handle
 pub struct Model {
     /// Running state of the application
@@ -15,8 +19,8 @@ pub struct Model {
     pub git_info: GitInfo,
     /// Magi color scheme constants
     pub theme: Theme,
-    /// Modal dialog that requires user action to dismiss
-    pub dialog: Option<DialogContent>,
+    /// Modal popup that requires user action to dismiss
+    pub popup: Option<PopupContent>,
     /// Toast notification that auto-dismisses after a timeout
     pub toast: Option<Toast>,
 }
@@ -291,12 +295,6 @@ pub enum RunningState {
     /// resume it when the application returns to [`Running`].
     LaunchExternalCommand(Message),
     Done,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DialogContent {
-    Error { message: String },
-    Help,
 }
 
 #[cfg(test)]

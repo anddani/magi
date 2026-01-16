@@ -1,12 +1,17 @@
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Line as TextLine, Span},
     widgets::{Block, Borders, Clear, Paragraph},
     Frame,
 };
 
-use crate::model::{DialogContent, Toast, ToastStyle};
+use crate::model::{
+    popup::{PopupContent, PopupContentCommand},
+    Toast, ToastStyle,
+};
+
+mod help_popup;
 
 /// Calculate a centered rectangle within the given area
 fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
@@ -56,143 +61,69 @@ pub fn render_toast(toast: &Toast, frame: &mut Frame, area: Rect, theme: &crate:
     frame.render_widget(toast_paragraph, toast_area);
 }
 
-/// Render a modal dialog overlay (centered, requires user action)
-pub fn render_dialog(
-    dialog: &DialogContent,
+/// Render a modal popup overlay (centered, requires user action)
+pub fn render_popup(
+    popup: &PopupContent,
     frame: &mut Frame,
     area: Rect,
     theme: &crate::config::Theme,
 ) {
-    match dialog {
-        DialogContent::Error { message } => {
-            render_error_dialog(message, frame, area, theme);
+    match popup {
+        PopupContent::Error { message } => {
+            render_error_popup(message, frame, area, theme);
         }
-        DialogContent::Help => {
-            render_help_popup(frame, area, theme);
+        PopupContent::Command(command) => {
+            render_command_popup(frame, area, theme, command);
         }
     }
 }
 
-/// Render an error dialog (centered)
-fn render_error_dialog(
-    message: &str,
-    frame: &mut Frame,
-    area: Rect,
-    theme: &crate::config::Theme,
-) {
+/// Render an error popup (centered)
+fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crate::config::Theme) {
     let title = "Error";
     let border_color = theme.diff_deletion;
 
-    // Calculate dialog size based on content
+    // Calculate popup size based on content
     let content_width = message.len().max(title.len()) + 4; // padding
-    let dialog_width = (content_width as u16).clamp(30, area.width.saturating_sub(4));
-    let dialog_height = 5; // title bar + content + border + hint
+    let popup_width = (content_width as u16).clamp(30, area.width.saturating_sub(4));
+    let popup_height = 5; // title bar + content + border + hint
 
-    let dialog_area = centered_rect(dialog_width, dialog_height, area);
+    let popup_area = centered_rect(popup_width, popup_height, area);
 
-    // Clear the area behind the dialog
-    frame.render_widget(Clear, dialog_area);
+    // Clear the area behind the popup
+    frame.render_widget(Clear, popup_area);
 
-    // Build dialog content with hint
+    // Build popup content with hint
     let hint = "Press Enter or Esc to dismiss";
-    let dialog_text = vec![
+    let popup_text = vec![
         TextLine::from(message),
         TextLine::from(""),
         TextLine::from(Span::styled(hint, Style::default().fg(Color::DarkGray))),
     ];
 
-    let dialog_block = Block::default()
+    let popup_block = Block::default()
         .title(title)
         .borders(Borders::ALL)
         .border_style(Style::default().fg(border_color));
 
-    let dialog_paragraph = Paragraph::new(dialog_text).block(dialog_block);
+    let popup_paragraph = Paragraph::new(popup_text).block(popup_block);
 
-    frame.render_widget(dialog_paragraph, dialog_area);
+    frame.render_widget(popup_paragraph, popup_area);
 }
 
 /// Render the help popup showing keybindings (bottom half of screen)
-fn render_help_popup(frame: &mut Frame, area: Rect, theme: &crate::config::Theme) {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-    let section_style = Style::default()
-        .fg(theme.section_header)
-        .add_modifier(Modifier::BOLD);
-    let hint_style = Style::default().fg(Color::DarkGray);
-
+fn render_command_popup(
+    frame: &mut Frame,
+    area: Rect,
+    theme: &crate::config::Theme,
+    command: &PopupContentCommand,
+) {
     // Define keybindings grouped by category
-    let keybindings: Vec<TextLine> = vec![
-        // Navigation section
-        TextLine::from(Span::styled("Navigation", section_style)),
-        TextLine::from(vec![
-            Span::styled("  j/Down  ", key_style),
-            Span::styled("Move down", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  k/Up    ", key_style),
-            Span::styled("Move up", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  Ctrl-d  ", key_style),
-            Span::styled("Half page down", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  Ctrl-u  ", key_style),
-            Span::styled("Half page up", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  Ctrl-e  ", key_style),
-            Span::styled("Scroll line down", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  Ctrl-y  ", key_style),
-            Span::styled("Scroll line up", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  Tab     ", key_style),
-            Span::styled("Toggle section collapse/expand", desc_style),
-        ]),
-        TextLine::from(""),
-        // Actions section
-        TextLine::from(Span::styled("Actions", section_style)),
-        TextLine::from(vec![
-            Span::styled("  c       ", key_style),
-            Span::styled("Commit", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  S       ", key_style),
-            Span::styled("Stage all modified files", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  U       ", key_style),
-            Span::styled("Unstage all files", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  V       ", key_style),
-            Span::styled("Enter visual selection mode", desc_style),
-        ]),
-        TextLine::from(""),
-        // General section
-        TextLine::from(Span::styled("General", section_style)),
-        TextLine::from(vec![
-            Span::styled("  q       ", key_style),
-            Span::styled("Quit", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  Ctrl-r  ", key_style),
-            Span::styled("Refresh", desc_style),
-        ]),
-        TextLine::from(vec![
-            Span::styled("  ?       ", key_style),
-            Span::styled("Show this help", desc_style),
-        ]),
-        TextLine::from(""),
-        TextLine::from(Span::styled("Press Enter or Esc to dismiss", hint_style)),
-    ];
+    let (title, content) = match command {
+        PopupContentCommand::Help => help_popup::content(theme),
+    };
 
-    let popup_height = (keybindings.len() + 2) as u16; // +2 for border
+    let popup_height = (content.len() + 2) as u16; // +2 for border
     let popup_width = area.width;
 
     let popup_area = bottom_half_rect(popup_width, popup_height, area);
@@ -201,11 +132,11 @@ fn render_help_popup(frame: &mut Frame, area: Rect, theme: &crate::config::Theme
     frame.render_widget(Clear, popup_area);
 
     let popup_block = Block::default()
-        .title("Help")
+        .title(title)
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.local_branch));
 
-    let popup_paragraph = Paragraph::new(keybindings).block(popup_block);
+    let popup_paragraph = Paragraph::new(content).block(popup_block);
 
     frame.render_widget(popup_paragraph, popup_area);
 }
