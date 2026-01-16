@@ -49,6 +49,8 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         viewport_height: 0,
         collapsed_sections,
         visual_mode_anchor: None,
+        search_query: String::new(),
+        search_mode_active: false,
     };
 
     let mut model = Model {
