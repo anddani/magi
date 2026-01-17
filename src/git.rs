@@ -7,6 +7,7 @@ use crate::{errors::MagiResult, model::LineContent};
 pub mod commit;
 mod diff_utils;
 pub mod info;
+pub mod recent_commits;
 pub mod stage;
 pub mod staged_changes;
 pub mod test_repo;
@@ -49,8 +50,15 @@ impl GitInfo {
         let untracked_files = untracked_files::get_lines(&self.repository)?;
         let unstaged_changes = unstaged_changes::get_lines(&self.repository)?;
         let staged_changes = staged_changes::get_lines(&self.repository)?;
+        let recent_commits = recent_commits::get_lines(&self.repository)?;
 
-        let all_sections = [lines, untracked_files, unstaged_changes, staged_changes];
+        let all_sections = [
+            lines,
+            untracked_files,
+            unstaged_changes,
+            staged_changes,
+            recent_commits,
+        ];
         let result = all_sections
             .into_iter()
             .filter(|section| !section.is_empty())
@@ -75,6 +83,37 @@ pub struct GitRef {
 pub struct TagInfo {
     pub name: String,
     pub commits_ahead: usize,
+}
+
+/// Represents a commit in the recent commits list
+#[derive(Debug, Clone)]
+pub struct CommitInfo {
+    /// Short commit hash (7 characters)
+    pub hash: String,
+    /// References pointing to this commit, in display order
+    pub refs: Vec<CommitRef>,
+    /// Tag name if this commit has a tag
+    pub tag: Option<String>,
+    /// Commit message (first line)
+    pub message: String,
+}
+
+/// A reference (branch) pointing to a commit
+#[derive(Debug, Clone, PartialEq)]
+pub struct CommitRef {
+    pub name: String,
+    pub ref_type: CommitRefType,
+}
+
+/// Type of reference pointing to a commit
+#[derive(Debug, Clone, PartialEq)]
+pub enum CommitRefType {
+    /// "@" indicator for detached HEAD
+    Head,
+    /// Local branch (e.g., "main", "feature-branch")
+    LocalBranch,
+    /// Remote branch (e.g., "origin/main")
+    RemoteBranch,
 }
 
 /// Enum representing different types of Git references

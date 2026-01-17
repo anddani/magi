@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::time::Instant;
 
 use crate::config::Theme;
-use crate::git::{GitInfo, GitRef, TagInfo};
+use crate::git::{CommitInfo, GitInfo, GitRef, TagInfo};
 use crate::msg::Message;
 
 use popup::PopupContent;
@@ -117,6 +117,7 @@ pub enum LineContent {
     StagedFile(FileChange),
     DiffHunk(DiffHunk),
     DiffLine(DiffLine),
+    Commit(CommitInfo),
 }
 
 /// Represents a file change (modified, deleted, renamed, etc.)
@@ -234,6 +235,8 @@ pub enum SectionType {
         path: String,
         hunk_index: usize,
     },
+    /// The "Recent commits" section
+    RecentCommits,
 }
 
 impl SectionType {
@@ -253,6 +256,7 @@ impl SectionType {
             SectionType::StagedHunk { path, .. } => {
                 Some(SectionType::StagedFile { path: path.clone() })
             }
+            SectionType::RecentCommits => None,
         }
     }
 
