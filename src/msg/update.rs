@@ -12,6 +12,7 @@ mod quit;
 mod refresh;
 mod scroll_line_down;
 mod scroll_line_up;
+mod show_commit_popup;
 mod show_help;
 mod stage_all_modified;
 mod toggle_section;
@@ -39,5 +40,6 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::EnterVisualMode => enter_visual_mode::update(model),
         Message::ExitVisualMode => exit_visual_mode::update(model),
         Message::ShowHelp => show_help::update(model),
+        Message::ShowCommitPopup => show_commit_popup::update(model),
     }
 }

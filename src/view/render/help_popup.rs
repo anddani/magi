@@ -1,11 +1,12 @@
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
 };
 
+use super::popup_content::CommandPopupContent;
 use crate::config::Theme;
 
-pub fn content(theme: &Theme) -> (&str, Vec<Line<'_>>) {
+pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     let key_style = Style::default()
         .fg(theme.local_branch)
         .add_modifier(Modifier::BOLD);
@@ -13,9 +14,7 @@ pub fn content(theme: &Theme) -> (&str, Vec<Line<'_>>) {
     let section_style = Style::default()
         .fg(theme.section_header)
         .add_modifier(Modifier::BOLD);
-    let hint_style = Style::default().fg(Color::DarkGray);
 
-    let title = "Help";
     let body: Vec<Line> = vec![
         // Navigation section
         Line::from(Span::styled("Navigation", section_style)),
@@ -81,8 +80,7 @@ pub fn content(theme: &Theme) -> (&str, Vec<Line<'_>>) {
             Span::styled("  ?       ", key_style),
             Span::styled("Show this help", desc_style),
         ]),
-        Line::from(""),
-        Line::from(Span::styled("Press Enter or Esc to dismiss", hint_style)),
     ];
-    (title, body)
+
+    CommandPopupContent::single_column("Help", body)
 }

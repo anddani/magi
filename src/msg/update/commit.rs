@@ -10,6 +10,9 @@ use crate::{
 pub const TOAST_DURATION: Duration = Duration::from_secs(5);
 
 pub fn update(model: &mut Model) -> Option<Message> {
+    // Dismiss any open popup (e.g., commit popup)
+    model.popup = None;
+
     if let Ok(false) = model.git_info.has_staged_changes() {
         model.toast = Some(Toast {
             message: "Nothing staged to commit".to_string(),

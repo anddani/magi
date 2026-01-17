@@ -1,6 +1,6 @@
 use ratatui::{
-    layout::Rect,
-    style::{Color, Style},
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Modifier, Style},
     text::{Line as TextLine, Span},
     widgets::{Block, Borders, Clear, Paragraph},
     Frame,
@@ -11,7 +11,9 @@ use crate::model::{
     Toast, ToastStyle,
 };
 
+mod commit_popup;
 mod help_popup;
+mod popup_content;
 
 /// Calculate a centered rectangle within the given area
 fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
@@ -111,32 +113,67 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
     frame.render_widget(popup_paragraph, popup_area);
 }
 
-/// Render the help popup showing keybindings (bottom half of screen)
+/// Render a command popup (bottom half of screen)
 fn render_command_popup(
     frame: &mut Frame,
     area: Rect,
     theme: &crate::config::Theme,
     command: &PopupContentCommand,
 ) {
-    // Define keybindings grouped by category
-    let (title, content) = match command {
+    let content = match command {
         PopupContentCommand::Help => help_popup::content(theme),
+        PopupContentCommand::Commit => commit_popup::content(theme),
     };
 
-    let popup_height = (content.len() + 2) as u16; // +2 for border
-    let popup_width = area.width;
+    let column_title_style = Style::default()
+        .fg(theme.section_header)
+        .add_modifier(Modifier::BOLD);
 
+    // Calculate popup dimensions
+    let popup_height = (content.max_content_height() + 2) as u16; // +2 for border
+    let popup_width = area.width;
     let popup_area = bottom_half_rect(popup_width, popup_height, area);
 
     // Clear the area behind the popup
     frame.render_widget(Clear, popup_area);
 
+    // Render outer block with title
     let popup_block = Block::default()
-        .title(title)
+        .title(content.title)
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.local_branch));
 
-    let popup_paragraph = Paragraph::new(content).block(popup_block);
+    frame.render_widget(popup_block, popup_area);
 
-    frame.render_widget(popup_paragraph, popup_area);
+    // Inner area for content (inside the border)
+    let inner_area = Rect::new(
+        popup_area.x + 1,
+        popup_area.y + 1,
+        popup_area.width.saturating_sub(2),
+        popup_area.height.saturating_sub(2),
+    );
+
+    // Create layout constraints based on number of columns
+    let constraints: Vec<Constraint> = content
+        .columns
+        .iter()
+        .map(|_| Constraint::Ratio(1, content.columns.len() as u32))
+        .collect();
+
+    let column_areas = Layout::horizontal(constraints).split(inner_area);
+
+    // Render each column
+    for (i, column) in content.columns.iter().enumerate() {
+        let mut column_content: Vec<TextLine> = Vec::new();
+
+        // Add column title if present
+        if let Some(title) = column.title {
+            column_content.push(TextLine::from(Span::styled(title, column_title_style)));
+        }
+
+        column_content.extend(column.content.clone());
+
+        let paragraph = Paragraph::new(column_content);
+        frame.render_widget(paragraph, column_areas[i]);
+    }
 }
