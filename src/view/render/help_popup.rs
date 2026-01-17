@@ -1,5 +1,5 @@
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
 };
 
@@ -14,7 +14,6 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     let section_style = Style::default()
         .fg(theme.section_header)
         .add_modifier(Modifier::BOLD);
-    let hint_style = Style::default().fg(Color::DarkGray);
 
     let body: Vec<Line> = vec![
         // Navigation section
