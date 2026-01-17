@@ -133,9 +133,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
             crate::model::LineContent::DiffLine(diff_line) => {
                 diff_line::get_lines(diff_line, theme)
             }
-            crate::model::LineContent::Commit(commit_info) => {
-                commit::get_lines(commit_info, theme)
-            }
+            crate::model::LineContent::Commit(commit_info) => commit::get_lines(commit_info, theme),
         };
 
         let is_cursor_line = index == cursor_pos;

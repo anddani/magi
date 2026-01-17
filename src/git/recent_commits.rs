@@ -49,7 +49,10 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     let mut revwalk = repository.revwalk()?;
     revwalk.push(head_commit.id())?;
 
-    let commits: Vec<_> = revwalk.take(MAX_COMMITS).filter_map(|oid| oid.ok()).collect();
+    let commits: Vec<_> = revwalk
+        .take(MAX_COMMITS)
+        .filter_map(|oid| oid.ok())
+        .collect();
 
     if commits.is_empty() {
         return Ok(lines);
@@ -72,10 +75,7 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
         };
 
         let hash = format!("{:.7}", oid);
-        let message = commit
-            .summary()
-            .unwrap_or("")
-            .to_string();
+        let message = commit.summary().unwrap_or("").to_string();
 
         // Determine branch/upstream for this commit
         let (branch, upstream) = if index == 0 {
@@ -113,7 +113,9 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
 /// Get the upstream branch name for the current branch
 fn get_upstream_name(repository: &Repository, branch_name: Option<&str>) -> Option<String> {
     let branch_name = branch_name?;
-    let branch = repository.find_branch(branch_name, git2::BranchType::Local).ok()?;
+    let branch = repository
+        .find_branch(branch_name, git2::BranchType::Local)
+        .ok()?;
     let upstream = branch.upstream().ok()?;
     upstream.name().ok()?.map(|s| s.to_string())
 }

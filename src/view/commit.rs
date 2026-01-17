@@ -73,8 +73,12 @@ mod tests {
         Theme::default()
     }
 
+    fn get_span_content(line: &TextLine) -> Vec<String> {
+        line.spans.iter().map(|s| s.content.to_string()).collect()
+    }
+
     #[test]
-    fn test_basic_commit_rendering() {
+    fn test_basic_commit_has_hash_and_message() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
             branch: None,
@@ -86,10 +90,13 @@ mod tests {
         let lines = get_lines(&commit, &theme);
 
         assert_eq!(lines.len(), 1);
+        let content = get_span_content(&lines[0]);
+        assert!(content.iter().any(|s| s == "abc1234"));
+        assert!(content.iter().any(|s| s == "Initial commit"));
     }
 
     #[test]
-    fn test_commit_with_branch() {
+    fn test_commit_with_branch_includes_branch_name() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
             branch: Some("main".to_string()),
@@ -100,11 +107,12 @@ mod tests {
         let theme = test_theme();
         let lines = get_lines(&commit, &theme);
 
-        assert_eq!(lines.len(), 1);
+        let content = get_span_content(&lines[0]);
+        assert!(content.iter().any(|s| s == "main"));
     }
 
     #[test]
-    fn test_commit_with_all_info() {
+    fn test_commit_with_all_info_includes_all_elements() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
             branch: Some("main".to_string()),
@@ -115,11 +123,16 @@ mod tests {
         let theme = test_theme();
         let lines = get_lines(&commit, &theme);
 
-        assert_eq!(lines.len(), 1);
+        let content = get_span_content(&lines[0]);
+        assert!(content.iter().any(|s| s == "abc1234"));
+        assert!(content.iter().any(|s| s == "main"));
+        assert!(content.iter().any(|s| s == "origin/main"));
+        assert!(content.iter().any(|s| s == "v1.0.0"));
+        assert!(content.iter().any(|s| s == "Release commit"));
     }
 
     #[test]
-    fn test_detached_head_commit() {
+    fn test_detached_head_shows_at_symbol() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
             branch: Some("@".to_string()),
@@ -130,6 +143,59 @@ mod tests {
         let theme = test_theme();
         let lines = get_lines(&commit, &theme);
 
-        assert_eq!(lines.len(), 1);
+        let content = get_span_content(&lines[0]);
+        assert!(content.iter().any(|s| s == "@"));
+    }
+
+    #[test]
+    fn test_detached_head_uses_detached_head_color() {
+        let commit = CommitInfo {
+            hash: "abc1234".to_string(),
+            branch: Some("@".to_string()),
+            upstream: None,
+            tag: None,
+            message: "Detached commit".to_string(),
+        };
+        let theme = test_theme();
+        let lines = get_lines(&commit, &theme);
+
+        let at_span = lines[0].spans.iter().find(|s| s.content == "@").unwrap();
+        assert_eq!(at_span.style.fg, Some(theme.detached_head));
+    }
+
+    #[test]
+    fn test_branch_uses_local_branch_color() {
+        let commit = CommitInfo {
+            hash: "abc1234".to_string(),
+            branch: Some("main".to_string()),
+            upstream: None,
+            tag: None,
+            message: "Commit".to_string(),
+        };
+        let theme = test_theme();
+        let lines = get_lines(&commit, &theme);
+
+        let branch_span = lines[0].spans.iter().find(|s| s.content == "main").unwrap();
+        assert_eq!(branch_span.style.fg, Some(theme.local_branch));
+    }
+
+    #[test]
+    fn test_hash_uses_commit_hash_color() {
+        let commit = CommitInfo {
+            hash: "abc1234".to_string(),
+            branch: None,
+            upstream: None,
+            tag: None,
+            message: "Commit".to_string(),
+        };
+        let theme = test_theme();
+        let lines = get_lines(&commit, &theme);
+
+        let hash_span = lines[0]
+            .spans
+            .iter()
+            .find(|s| s.content == "abc1234")
+            .unwrap();
+        assert_eq!(hash_span.style.fg, Some(theme.commit_hash));
     }
 }
