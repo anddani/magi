@@ -15,6 +15,7 @@ use crate::{
 
 mod util;
 
+mod commit;
 mod diff_hunk;
 mod diff_line;
 mod head_ref;
@@ -131,6 +132,9 @@ pub fn view(model: &Model, frame: &mut Frame) {
             crate::model::LineContent::DiffHunk(hunk) => diff_hunk::get_lines(hunk, theme),
             crate::model::LineContent::DiffLine(diff_line) => {
                 diff_line::get_lines(diff_line, theme)
+            }
+            crate::model::LineContent::Commit(commit_info) => {
+                commit::get_lines(commit_info, theme)
             }
         };
 
