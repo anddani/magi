@@ -39,4 +39,6 @@ pub enum Message {
 
     /// Show help popup with keybindings
     ShowHelp,
+    /// Show commit popup with options
+    ShowCommitPopup,
 }

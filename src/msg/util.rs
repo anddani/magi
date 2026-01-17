@@ -40,6 +40,7 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::DismissPopup
         | Message::EnterVisualMode
         | Message::ExitVisualMode
-        | Message::ShowHelp => false,
+        | Message::ShowHelp
+        | Message::ShowCommitPopup => false,
     }
 }

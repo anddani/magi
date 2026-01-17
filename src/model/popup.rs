@@ -7,4 +7,5 @@ pub enum PopupContent {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContentCommand {
     Help,
+    Commit,
 }

@@ -15,12 +15,23 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         };
     }
 
-    // TODO: Handle keys based on command
-    if let Some(PopupContent::Command(_command)) = &model.popup {
-        return match (key.modifiers, key.code) {
-            (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
-            | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
-            _ => None,
+    if let Some(PopupContent::Command(command)) = &model.popup {
+        return match command {
+            crate::model::popup::PopupContentCommand::Help => {
+                match (key.modifiers, key.code) {
+                    (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
+                    | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
+                    _ => None,
+                }
+            }
+            crate::model::popup::PopupContentCommand::Commit => {
+                match (key.modifiers, key.code) {
+                    (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
+                    | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
+                    (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::Commit),
+                    _ => None,
+                }
+            }
         };
     }
 
@@ -54,7 +65,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::NONE, KeyCode::Char('k') | KeyCode::Up) => Some(Message::MoveUp),
         (KeyModifiers::NONE, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
         (KeyModifiers::NONE, KeyCode::Tab) => Some(Message::ToggleSection),
-        (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::Commit),
+        (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::ShowCommitPopup),
         _ => None,
     }
 }
@@ -210,6 +221,45 @@ mod tests {
     fn test_q_dismisses_help_popup() {
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Help));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_c_shows_commit_popup() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('c'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowCommitPopup));
+    }
+
+    #[test]
+    fn test_c_in_commit_popup_triggers_commit() {
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('c'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Commit));
+    }
+
+    #[test]
+    fn test_esc_dismisses_commit_popup() {
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_q_dismisses_commit_popup() {
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
         let result = handle_key(key, &model);
