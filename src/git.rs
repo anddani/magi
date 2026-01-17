@@ -90,14 +90,30 @@ pub struct TagInfo {
 pub struct CommitInfo {
     /// Short commit hash (7 characters)
     pub hash: String,
-    /// Branch name if on a branch, "@" if detached head
-    pub branch: Option<String>,
-    /// Upstream branch name if on a branch with upstream
-    pub upstream: Option<String>,
+    /// References pointing to this commit, in display order
+    pub refs: Vec<CommitRef>,
     /// Tag name if this commit has a tag
     pub tag: Option<String>,
     /// Commit message (first line)
     pub message: String,
+}
+
+/// A reference (branch) pointing to a commit
+#[derive(Debug, Clone, PartialEq)]
+pub struct CommitRef {
+    pub name: String,
+    pub ref_type: CommitRefType,
+}
+
+/// Type of reference pointing to a commit
+#[derive(Debug, Clone, PartialEq)]
+pub enum CommitRefType {
+    /// "@" indicator for detached HEAD
+    Head,
+    /// Local branch (e.g., "main", "feature-branch")
+    LocalBranch,
+    /// Remote branch (e.g., "origin/main")
+    RemoteBranch,
 }
 
 /// Enum representing different types of Git references

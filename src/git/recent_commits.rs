@@ -7,7 +7,7 @@ use crate::{
     model::{Line, LineContent, SectionType},
 };
 
-use super::CommitInfo;
+use super::{CommitInfo, CommitRef, CommitRefType};
 
 const MAX_COMMITS: usize = 10;
 
@@ -15,7 +15,6 @@ const MAX_COMMITS: usize = 10;
 pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     let mut lines = Vec::new();
 
-    // Get HEAD commit to start the walk
     let head = match repository.head() {
         Ok(head) => head,
         Err(_) => return Ok(lines), // No commits yet
@@ -26,24 +25,20 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
         Err(_) => return Ok(lines),
     };
 
-    // Check if HEAD is detached
     let is_detached = repository.head_detached().unwrap_or(false);
 
-    // Get the current branch name if not detached
     let current_branch = if is_detached {
         None
     } else {
         head.shorthand().map(|s| s.to_string())
     };
 
-    // Get upstream branch name if available
-    let upstream_name = get_upstream_name(repository, current_branch.as_deref());
-
     // Build a map of commit OID -> tag names
     let tag_map = build_tag_map(repository)?;
 
-    // Build a map of commit OID -> branch names (for commits other than HEAD)
-    let branch_map = build_branch_map(repository)?;
+    // Build maps of commit OID -> branch names
+    let local_branch_map = build_local_branch_map(repository)?;
+    let remote_branch_map = build_remote_branch_map(repository)?;
 
     // Walk through commits
     let mut revwalk = repository.revwalk()?;
@@ -58,7 +53,6 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
         return Ok(lines);
     }
 
-    // Add section header
     lines.push(Line {
         content: LineContent::SectionHeader {
             title: "Recent commits".to_string(),
@@ -67,7 +61,6 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
         section: Some(SectionType::RecentCommits),
     });
 
-    // Add commit lines
     for (index, oid) in commits.iter().enumerate() {
         let commit = match repository.find_commit(*oid) {
             Ok(c) => c,
@@ -77,26 +70,53 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
         let hash = format!("{:.7}", oid);
         let message = commit.summary().unwrap_or("").to_string();
 
-        // Determine branch/upstream for this commit
-        let (branch, upstream) = if index == 0 {
-            // First commit is HEAD
-            if is_detached {
-                (Some("@".to_string()), None)
-            } else {
-                (current_branch.clone(), upstream_name.clone())
-            }
-        } else {
-            // For other commits, check if any branch points to them
-            (branch_map.get(oid).cloned(), None)
-        };
+        // Build the refs list in order: HEAD indicator, current branch, other local, remote
+        let mut refs = Vec::new();
 
-        // Check for tag
+        if index == 0 {
+            // This is HEAD
+            if is_detached {
+                refs.push(CommitRef {
+                    name: "@".to_string(),
+                    ref_type: CommitRefType::Head,
+                });
+            } else if let Some(ref branch) = current_branch {
+                refs.push(CommitRef {
+                    name: branch.clone(),
+                    ref_type: CommitRefType::LocalBranch,
+                });
+            }
+        }
+
+        // Add other local branches (excluding current branch if this is HEAD)
+        if let Some(local_branches) = local_branch_map.get(oid) {
+            for branch in local_branches {
+                // Skip current branch on HEAD commit (already added)
+                if index == 0 && Some(branch.as_str()) == current_branch.as_deref() {
+                    continue;
+                }
+                refs.push(CommitRef {
+                    name: branch.clone(),
+                    ref_type: CommitRefType::LocalBranch,
+                });
+            }
+        }
+
+        // Add remote branches
+        if let Some(remote_branches) = remote_branch_map.get(oid) {
+            for branch in remote_branches {
+                refs.push(CommitRef {
+                    name: branch.clone(),
+                    ref_type: CommitRefType::RemoteBranch,
+                });
+            }
+        }
+
         let tag = tag_map.get(oid).cloned();
 
         let commit_info = CommitInfo {
             hash,
-            branch,
-            upstream,
+            refs,
             tag,
             message,
         };
@@ -108,16 +128,6 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     }
 
     Ok(lines)
-}
-
-/// Get the upstream branch name for the current branch
-fn get_upstream_name(repository: &Repository, branch_name: Option<&str>) -> Option<String> {
-    let branch_name = branch_name?;
-    let branch = repository
-        .find_branch(branch_name, git2::BranchType::Local)
-        .ok()?;
-    let upstream = branch.upstream().ok()?;
-    upstream.name().ok()?.map(|s| s.to_string())
 }
 
 /// Build a map of commit OID -> tag name
@@ -148,17 +158,53 @@ fn build_tag_map(repository: &Repository) -> MagiResult<HashMap<git2::Oid, Strin
     Ok(tag_map)
 }
 
-/// Build a map of commit OID -> branch name for all local branches
-fn build_branch_map(repository: &Repository) -> MagiResult<HashMap<git2::Oid, String>> {
-    let mut branch_map = HashMap::new();
+/// Build a map of commit OID -> list of local branch names
+fn build_local_branch_map(repository: &Repository) -> MagiResult<HashMap<git2::Oid, Vec<String>>> {
+    let mut branch_map: HashMap<git2::Oid, Vec<String>> = HashMap::new();
 
     let branches = repository.branches(Some(git2::BranchType::Local))?;
     for (branch, _) in branches.flatten() {
         if let Ok(Some(name)) = branch.name() {
             if let Ok(commit) = branch.get().peel_to_commit() {
-                branch_map.insert(commit.id(), name.to_string());
+                branch_map
+                    .entry(commit.id())
+                    .or_default()
+                    .push(name.to_string());
             }
         }
+    }
+
+    // Sort branch names for consistent ordering
+    for branches in branch_map.values_mut() {
+        branches.sort();
+    }
+
+    Ok(branch_map)
+}
+
+/// Build a map of commit OID -> list of remote branch names
+fn build_remote_branch_map(repository: &Repository) -> MagiResult<HashMap<git2::Oid, Vec<String>>> {
+    let mut branch_map: HashMap<git2::Oid, Vec<String>> = HashMap::new();
+
+    let branches = repository.branches(Some(git2::BranchType::Remote))?;
+    for (branch, _) in branches.flatten() {
+        if let Ok(Some(name)) = branch.name() {
+            // Skip HEAD references like "origin/HEAD"
+            if name.ends_with("/HEAD") {
+                continue;
+            }
+            if let Ok(commit) = branch.get().peel_to_commit() {
+                branch_map
+                    .entry(commit.id())
+                    .or_default()
+                    .push(name.to_string());
+            }
+        }
+    }
+
+    // Sort branch names for consistent ordering
+    for branches in branch_map.values_mut() {
+        branches.sort();
     }
 
     Ok(branch_map)
@@ -262,8 +308,9 @@ mod tests {
 
         // The first commit should have branch info (main branch)
         if let LineContent::Commit(ref info) = lines[1].content {
-            assert!(info.branch.is_some());
-            assert_eq!(info.branch.as_deref(), Some("main"));
+            assert!(!info.refs.is_empty());
+            assert_eq!(info.refs[0].name, "main");
+            assert_eq!(info.refs[0].ref_type, CommitRefType::LocalBranch);
         } else {
             panic!("Expected Commit content");
         }
@@ -278,7 +325,9 @@ mod tests {
 
         // The first commit should show "@" for detached head
         if let LineContent::Commit(ref info) = lines[1].content {
-            assert_eq!(info.branch.as_deref(), Some("@"));
+            assert!(!info.refs.is_empty());
+            assert_eq!(info.refs[0].name, "@");
+            assert_eq!(info.refs[0].ref_type, CommitRefType::Head);
         } else {
             panic!("Expected Commit content");
         }

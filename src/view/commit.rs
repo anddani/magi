@@ -4,7 +4,7 @@ use ratatui::{
 };
 
 use crate::config::Theme;
-use crate::git::CommitInfo;
+use crate::git::{CommitInfo, CommitRefType};
 
 /// Generate the view lines for a commit
 pub fn get_lines(commit: &CommitInfo, theme: &Theme) -> Vec<TextLine<'static>> {
@@ -19,30 +19,17 @@ pub fn get_lines(commit: &CommitInfo, theme: &Theme) -> Vec<TextLine<'static>> {
         Style::default().fg(theme.commit_hash),
     ));
 
-    // Branch name (if present)
-    if let Some(ref branch) = commit.branch {
+    // All refs (branches) in order: HEAD/@, current branch, other local, remote
+    for commit_ref in &commit.refs {
         spans.push(Span::raw(" "));
-        if branch == "@" {
-            // Detached head - use detached_head color
-            spans.push(Span::styled(
-                branch.clone(),
-                Style::default().fg(theme.detached_head),
-            ));
-        } else {
-            // Local branch - use local_branch color
-            spans.push(Span::styled(
-                branch.clone(),
-                Style::default().fg(theme.local_branch),
-            ));
-        }
-    }
-
-    // Upstream branch (if present)
-    if let Some(ref upstream) = commit.upstream {
-        spans.push(Span::raw(" "));
+        let color = match commit_ref.ref_type {
+            CommitRefType::Head => theme.detached_head,
+            CommitRefType::LocalBranch => theme.local_branch,
+            CommitRefType::RemoteBranch => theme.remote_branch,
+        };
         spans.push(Span::styled(
-            upstream.clone(),
-            Style::default().fg(theme.remote_branch),
+            commit_ref.name.clone(),
+            Style::default().fg(color),
         ));
     }
 
@@ -68,6 +55,7 @@ pub fn get_lines(commit: &CommitInfo, theme: &Theme) -> Vec<TextLine<'static>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::git::CommitRef;
 
     fn test_theme() -> Theme {
         Theme::default()
@@ -81,8 +69,7 @@ mod tests {
     fn test_basic_commit_has_hash_and_message() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
-            branch: None,
-            upstream: None,
+            refs: vec![],
             tag: None,
             message: "Initial commit".to_string(),
         };
@@ -99,8 +86,10 @@ mod tests {
     fn test_commit_with_branch_includes_branch_name() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
-            branch: Some("main".to_string()),
-            upstream: None,
+            refs: vec![CommitRef {
+                name: "main".to_string(),
+                ref_type: CommitRefType::LocalBranch,
+            }],
             tag: None,
             message: "Initial commit".to_string(),
         };
@@ -115,8 +104,16 @@ mod tests {
     fn test_commit_with_all_info_includes_all_elements() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
-            branch: Some("main".to_string()),
-            upstream: Some("origin/main".to_string()),
+            refs: vec![
+                CommitRef {
+                    name: "main".to_string(),
+                    ref_type: CommitRefType::LocalBranch,
+                },
+                CommitRef {
+                    name: "origin/main".to_string(),
+                    ref_type: CommitRefType::RemoteBranch,
+                },
+            ],
             tag: Some("v1.0.0".to_string()),
             message: "Release commit".to_string(),
         };
@@ -135,8 +132,10 @@ mod tests {
     fn test_detached_head_shows_at_symbol() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
-            branch: Some("@".to_string()),
-            upstream: None,
+            refs: vec![CommitRef {
+                name: "@".to_string(),
+                ref_type: CommitRefType::Head,
+            }],
             tag: None,
             message: "Detached commit".to_string(),
         };
@@ -151,8 +150,10 @@ mod tests {
     fn test_detached_head_uses_detached_head_color() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
-            branch: Some("@".to_string()),
-            upstream: None,
+            refs: vec![CommitRef {
+                name: "@".to_string(),
+                ref_type: CommitRefType::Head,
+            }],
             tag: None,
             message: "Detached commit".to_string(),
         };
@@ -164,11 +165,13 @@ mod tests {
     }
 
     #[test]
-    fn test_branch_uses_local_branch_color() {
+    fn test_local_branch_uses_local_branch_color() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
-            branch: Some("main".to_string()),
-            upstream: None,
+            refs: vec![CommitRef {
+                name: "main".to_string(),
+                ref_type: CommitRefType::LocalBranch,
+            }],
             tag: None,
             message: "Commit".to_string(),
         };
@@ -180,11 +183,32 @@ mod tests {
     }
 
     #[test]
+    fn test_remote_branch_uses_remote_branch_color() {
+        let commit = CommitInfo {
+            hash: "abc1234".to_string(),
+            refs: vec![CommitRef {
+                name: "origin/main".to_string(),
+                ref_type: CommitRefType::RemoteBranch,
+            }],
+            tag: None,
+            message: "Commit".to_string(),
+        };
+        let theme = test_theme();
+        let lines = get_lines(&commit, &theme);
+
+        let branch_span = lines[0]
+            .spans
+            .iter()
+            .find(|s| s.content == "origin/main")
+            .unwrap();
+        assert_eq!(branch_span.style.fg, Some(theme.remote_branch));
+    }
+
+    #[test]
     fn test_hash_uses_commit_hash_color() {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
-            branch: None,
-            upstream: None,
+            refs: vec![],
             tag: None,
             message: "Commit".to_string(),
         };
@@ -197,5 +221,35 @@ mod tests {
             .find(|s| s.content == "abc1234")
             .unwrap();
         assert_eq!(hash_span.style.fg, Some(theme.commit_hash));
+    }
+
+    #[test]
+    fn test_multiple_branches_all_shown() {
+        let commit = CommitInfo {
+            hash: "abc1234".to_string(),
+            refs: vec![
+                CommitRef {
+                    name: "main".to_string(),
+                    ref_type: CommitRefType::LocalBranch,
+                },
+                CommitRef {
+                    name: "feature".to_string(),
+                    ref_type: CommitRefType::LocalBranch,
+                },
+                CommitRef {
+                    name: "origin/main".to_string(),
+                    ref_type: CommitRefType::RemoteBranch,
+                },
+            ],
+            tag: None,
+            message: "Commit".to_string(),
+        };
+        let theme = test_theme();
+        let lines = get_lines(&commit, &theme);
+
+        let content = get_span_content(&lines[0]);
+        assert!(content.iter().any(|s| s == "main"));
+        assert!(content.iter().any(|s| s == "feature"));
+        assert!(content.iter().any(|s| s == "origin/main"));
     }
 }
