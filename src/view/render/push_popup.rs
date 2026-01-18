@@ -57,10 +57,7 @@ pub fn content<'a>(theme: &Theme, state: &PushPopupState) -> CommandPopupContent
                 // No upstream - show suggestion with ", creating it"
                 vec![
                     Span::styled("u", key_style),
-                    Span::styled(
-                        format!(" origin/{}, creating it", state.local_branch),
-                        desc_style,
-                    ),
+                    Span::styled(format!(" ${{upstream}}, creating it"), desc_style),
                 ]
             }
         };
