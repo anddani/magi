@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use crate::errors::MagiResult;
 
@@ -12,13 +12,15 @@ pub struct PushResult {
 /// Pushes to the upstream branch.
 /// If upstream is set, pushes to it. Otherwise, returns an error.
 pub fn push_to_upstream<P: AsRef<Path>>(repo_path: P) -> MagiResult<PushResult> {
-    let status = Command::new("git")
+    let output = Command::new("git")
         .arg("-C")
         .arg(repo_path.as_ref())
         .arg("push")
-        .status()?;
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
 
-    if status.success() {
+    if output.status.success() {
         Ok(PushResult {
             success: true,
             message: "Pushed to upstream".to_string(),
@@ -38,13 +40,15 @@ pub fn push_with_set_upstream<P: AsRef<Path>>(
     remote: &str,
     branch: &str,
 ) -> MagiResult<PushResult> {
-    let status = Command::new("git")
+    let output = Command::new("git")
         .arg("-C")
         .arg(repo_path.as_ref())
         .args(["push", "-u", remote, branch])
-        .status()?;
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
 
-    if status.success() {
+    if output.status.success() {
         Ok(PushResult {
             success: true,
             message: format!("Pushed to {}/{}", remote, branch),
