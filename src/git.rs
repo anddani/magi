@@ -7,6 +7,7 @@ use crate::{errors::MagiResult, model::LineContent};
 pub mod commit;
 mod diff_utils;
 pub mod info;
+pub mod push;
 pub mod recent_commits;
 pub mod stage;
 pub mod staged_changes;

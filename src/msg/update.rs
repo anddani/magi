@@ -9,12 +9,18 @@ mod half_page_down;
 mod half_page_up;
 mod move_down;
 mod move_up;
+mod push_confirm_input;
+mod push_enter_input_mode;
+mod push_input_backspace;
+mod push_input_char;
+mod push_upstream;
 mod quit;
 mod refresh;
 mod scroll_line_down;
 mod scroll_line_up;
 mod show_commit_popup;
 mod show_help;
+mod show_push_popup;
 mod stage_all_modified;
 mod toggle_section;
 mod unstage_all;
@@ -43,5 +49,11 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ExitVisualMode => exit_visual_mode::update(model),
         Message::ShowHelp => show_help::update(model),
         Message::ShowCommitPopup => show_commit_popup::update(model),
+        Message::ShowPushPopup => show_push_popup::update(model),
+        Message::PushUpstream => push_upstream::update(model),
+        Message::PushEnterInputMode => push_enter_input_mode::update(model),
+        Message::PushInputChar(c) => push_input_char::update(model, c),
+        Message::PushInputBackspace => push_input_backspace::update(model),
+        Message::PushConfirmInput => push_confirm_input::update(model),
     }
 }

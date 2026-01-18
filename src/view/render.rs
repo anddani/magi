@@ -14,6 +14,7 @@ use crate::model::{
 mod commit_popup;
 mod help_popup;
 mod popup_content;
+mod push_popup;
 
 /// Calculate a centered rectangle within the given area
 fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
@@ -123,6 +124,7 @@ fn render_command_popup(
     let content = match command {
         PopupContentCommand::Help => help_popup::content(theme),
         PopupContentCommand::Commit => commit_popup::content(theme),
+        PopupContentCommand::Push(state) => push_popup::content(theme, state),
     };
 
     let column_title_style = Style::default()

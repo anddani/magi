@@ -43,4 +43,16 @@ pub enum Message {
     ShowHelp,
     /// Show commit popup with options
     ShowCommitPopup,
+    /// Show push popup with options
+    ShowPushPopup,
+    /// Push to upstream (or create it if specified)
+    PushUpstream,
+    /// Enter input mode in push popup to set custom upstream
+    PushEnterInputMode,
+    /// Handle text input in push popup
+    PushInputChar(char),
+    /// Handle backspace in push popup input
+    PushInputBackspace,
+    /// Confirm push with the entered upstream name
+    PushConfirmInput,
 }
