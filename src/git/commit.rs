@@ -53,7 +53,6 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<Commit
 
 /// Runs `git commit --amend` to amend the last commit.
 /// Opens the user's configured editor with the previous commit message.
-#[allow(dead_code)]
 pub fn run_amend_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
     let status = Command::new("git")
         .arg("-C")

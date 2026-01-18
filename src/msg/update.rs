@@ -1,5 +1,6 @@
 use crate::{model::Model, msg::Message};
 
+mod amend;
 mod commit;
 mod dismiss_popup;
 mod enter_visual_mode;
@@ -34,6 +35,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ScrollLineDown => scroll_line_down::update(model),
         Message::ScrollLineUp => scroll_line_up::update(model),
         Message::Commit => commit::update(model),
+        Message::Amend => amend::update(model),
         Message::DismissPopup => dismiss_popup::update(model),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::UnstageAll => unstage_all::update(model),

@@ -26,6 +26,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                 (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
                 | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
                 (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::Commit),
+                (KeyModifiers::NONE, KeyCode::Char('a')) => Some(Message::Amend),
                 _ => None,
             },
         };
@@ -260,5 +261,15 @@ mod tests {
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_a_in_commit_popup_triggers_amend() {
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Amend));
     }
 }

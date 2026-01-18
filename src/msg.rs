@@ -24,6 +24,8 @@ pub enum Message {
 
     /// Open commit in user's default EDITOR
     Commit,
+    /// Amend the last commit
+    Amend,
 
     /// Dismiss the current popup
     DismissPopup,

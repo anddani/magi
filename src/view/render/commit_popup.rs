@@ -12,10 +12,16 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
 
-    let commands: Vec<Line> = vec![Line::from(vec![
-        Span::styled("c", key_style),
-        Span::styled(" Commit", desc_style),
-    ])];
+    let commands: Vec<Line> = vec![
+        Line::from(vec![
+            Span::styled("c", key_style),
+            Span::styled(" Commit", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("a", key_style),
+            Span::styled(" Amend", desc_style),
+        ]),
+    ];
 
     let arguments: Vec<Line> = vec![];
 
