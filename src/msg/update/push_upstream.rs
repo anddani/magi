@@ -16,15 +16,16 @@ pub fn update(model: &mut Model) -> Option<Message> {
     if let Some(repo_path) = model.git_info.repository.workdir() {
         match push_to_upstream(repo_path) {
             Ok(PushResult { success, message }) => {
-                model.toast = Some(Toast {
-                    message,
-                    style: if success {
-                        ToastStyle::Success
-                    } else {
-                        ToastStyle::Warning
-                    },
-                    expires_at: Instant::now() + TOAST_DURATION,
-                });
+                if success {
+                    model.toast = Some(Toast {
+                        message,
+                        style: ToastStyle::Success,
+                        expires_at: Instant::now() + TOAST_DURATION,
+                    });
+                } else {
+                    // Show error popup with git output
+                    model.popup = Some(PopupContent::Error { message });
+                }
             }
             Err(e) => {
                 model.popup = Some(PopupContent::Error {

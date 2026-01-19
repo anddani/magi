@@ -331,6 +331,7 @@ mod tests {
             PushPopupState {
                 local_branch: "main".to_string(),
                 upstream: Some("origin/main".to_string()),
+                default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
             },
@@ -350,6 +351,7 @@ mod tests {
             PushPopupState {
                 local_branch: "main".to_string(),
                 upstream: None,
+                default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
             },
@@ -369,6 +371,7 @@ mod tests {
             PushPopupState {
                 local_branch: "main".to_string(),
                 upstream: None,
+                default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
             },
@@ -388,6 +391,7 @@ mod tests {
             PushPopupState {
                 local_branch: "main".to_string(),
                 upstream: None,
+                default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: String::new(),
             },
@@ -407,6 +411,7 @@ mod tests {
             PushPopupState {
                 local_branch: "main".to_string(),
                 upstream: None,
+                default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: "test".to_string(),
             },
@@ -426,6 +431,7 @@ mod tests {
             PushPopupState {
                 local_branch: "main".to_string(),
                 upstream: None,
+                default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: "feature".to_string(),
             },
@@ -445,6 +451,7 @@ mod tests {
             PushPopupState {
                 local_branch: "main".to_string(),
                 upstream: None,
+                default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: String::new(),
             },

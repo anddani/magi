@@ -9,13 +9,36 @@ pub struct PushResult {
     pub message: String,
 }
 
+/// Gets the list of configured remotes.
+/// Returns an empty vec if no remotes are configured.
+pub fn get_remotes<P: AsRef<Path>>(repo_path: P) -> MagiResult<Vec<String>> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo_path.as_ref())
+        .arg("remote")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+
+    if output.status.success() {
+        let remotes = String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        Ok(remotes)
+    } else {
+        Ok(vec![])
+    }
+}
+
 /// Pushes to the upstream branch.
 /// If upstream is set, pushes to it. Otherwise, returns an error.
 pub fn push_to_upstream<P: AsRef<Path>>(repo_path: P) -> MagiResult<PushResult> {
     let output = Command::new("git")
         .arg("-C")
         .arg(repo_path.as_ref())
-        .arg("push")
+        .args(["push", "-v"])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()?;
@@ -26,9 +49,14 @@ pub fn push_to_upstream<P: AsRef<Path>>(repo_path: P) -> MagiResult<PushResult> 
             message: "Pushed to upstream".to_string(),
         })
     } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         Ok(PushResult {
             success: false,
-            message: "Push failed".to_string(),
+            message: if stderr.is_empty() {
+                "Push failed".to_string()
+            } else {
+                stderr
+            },
         })
     }
 }
@@ -43,7 +71,7 @@ pub fn push_with_set_upstream<P: AsRef<Path>>(
     let output = Command::new("git")
         .arg("-C")
         .arg(repo_path.as_ref())
-        .args(["push", "-u", remote, branch])
+        .args(["push", "-v", "--set-upstream", remote, branch])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()?;
@@ -54,9 +82,14 @@ pub fn push_with_set_upstream<P: AsRef<Path>>(
             message: format!("Pushed to {}/{}", remote, branch),
         })
     } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         Ok(PushResult {
             success: false,
-            message: "Push failed".to_string(),
+            message: if stderr.is_empty() {
+                "Push failed".to_string()
+            } else {
+                stderr
+            },
         })
     }
 }
@@ -67,6 +100,8 @@ pub fn get_current_branch<P: AsRef<Path>>(repo_path: P) -> MagiResult<Option<Str
         .arg("-C")
         .arg(repo_path.as_ref())
         .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .output()?;
 
     if output.status.success() {
@@ -89,6 +124,8 @@ pub fn get_upstream_branch<P: AsRef<Path>>(repo_path: P) -> MagiResult<Option<St
         .arg("-C")
         .arg(repo_path.as_ref())
         .args(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .output()?;
 
     if output.status.success() {
