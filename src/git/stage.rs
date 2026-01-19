@@ -16,6 +16,7 @@ pub fn stage_files<P: AsRef<Path>>(repo_path: P, files: &[&str]) -> MagiResult<(
         .arg("--")
         .args(files)
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .output()?;
     Ok(())
 }
@@ -34,6 +35,7 @@ pub fn unstage_files<P: AsRef<Path>>(repo_path: P, files: &[&str]) -> MagiResult
         .arg("--")
         .args(files)
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .output()?;
     Ok(())
 }

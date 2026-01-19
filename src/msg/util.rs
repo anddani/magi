@@ -41,6 +41,13 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::EnterVisualMode
         | Message::ExitVisualMode
         | Message::ShowHelp
-        | Message::ShowCommitPopup => false,
+        | Message::ShowCommitPopup
+        | Message::ShowPushPopup
+        | Message::PushUpstream
+        | Message::PushEnterInputMode
+        | Message::PushInputChar(_)
+        | Message::PushInputBackspace
+        | Message::PushInputComplete
+        | Message::PushConfirmInput => false,
     }
 }
