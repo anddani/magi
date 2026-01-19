@@ -86,10 +86,19 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
     let title = "Error";
     let border_color = theme.diff_deletion;
 
+    // Split message into lines
+    let message_lines: Vec<&str> = message.lines().collect();
+    let line_count = message_lines.len();
+
     // Calculate popup size based on content
-    let content_width = message.len().max(title.len()) + 4; // padding
+    let max_line_width = message_lines
+        .iter()
+        .map(|line| line.len())
+        .max()
+        .unwrap_or(0);
+    let content_width = max_line_width.max(title.len()) + 4; // padding
     let popup_width = (content_width as u16).clamp(30, area.width.saturating_sub(4));
-    let popup_height = 5; // title bar + content + border + hint
+    let popup_height = (line_count + 4) as u16; // border + content lines + empty line + hint + border
 
     let popup_area = centered_rect(popup_width, popup_height, area);
 
@@ -98,11 +107,12 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
 
     // Build popup content with hint
     let hint = "Press Enter or Esc to dismiss";
-    let popup_text = vec![
-        TextLine::from(message),
-        TextLine::from(""),
-        TextLine::from(Span::styled(hint, Style::default().fg(Color::DarkGray))),
-    ];
+    let mut popup_text: Vec<TextLine> = message_lines.into_iter().map(TextLine::from).collect();
+    popup_text.push(TextLine::from(""));
+    popup_text.push(TextLine::from(Span::styled(
+        hint,
+        Style::default().fg(Color::DarkGray),
+    )));
 
     let popup_block = Block::default()
         .title(title)

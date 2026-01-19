@@ -44,6 +44,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                         (KeyModifiers::NONE, KeyCode::Backspace) => {
                             Some(Message::PushInputBackspace)
                         }
+                        (KeyModifiers::NONE, KeyCode::Tab) => Some(Message::PushInputComplete),
                         (KeyModifiers::NONE, KeyCode::Char(c))
                         | (KeyModifiers::SHIFT, KeyCode::Char(c)) => {
                             Some(Message::PushInputChar(c))

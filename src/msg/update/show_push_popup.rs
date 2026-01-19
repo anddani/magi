@@ -27,7 +27,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
     };
 
     // Get configured remotes
-    let remotes = get_remotes(repo_path).unwrap_or_default();
+    let remotes = get_remotes(&model.git_info.repository);
 
     if remotes.is_empty() {
         model.popup = Some(PopupContent::Error {

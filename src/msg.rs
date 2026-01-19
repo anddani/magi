@@ -53,6 +53,8 @@ pub enum Message {
     PushInputChar(char),
     /// Handle backspace in push popup input
     PushInputBackspace,
+    /// Complete input with suggested text (Tab)
+    PushInputComplete,
     /// Confirm push with the entered upstream name
     PushConfirmInput,
 }

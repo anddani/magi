@@ -13,6 +13,7 @@ mod push_confirm_input;
 mod push_enter_input_mode;
 mod push_input_backspace;
 mod push_input_char;
+mod push_input_complete;
 mod push_upstream;
 mod quit;
 mod refresh;
@@ -54,6 +55,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PushEnterInputMode => push_enter_input_mode::update(model),
         Message::PushInputChar(c) => push_input_char::update(model, c),
         Message::PushInputBackspace => push_input_backspace::update(model),
+        Message::PushInputComplete => push_input_complete::update(model),
         Message::PushConfirmInput => push_confirm_input::update(model),
     }
 }

@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use crate::{
-    git::push::{push_with_set_upstream, PushResult},
+    git::push::{push, PushResult},
     model::{
         popup::{PopupContent, PopupContentCommand},
         Model, Toast, ToastStyle,
@@ -33,7 +33,11 @@ pub fn update(model: &mut Model) -> Option<Message> {
     // Get the remote and branch to push to
     let (remote, branch) =
         if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
-            parse_remote_branch(&state.input_text, &state.default_remote, &state.local_branch)
+            parse_remote_branch(
+                &state.input_text,
+                &state.default_remote,
+                &state.local_branch,
+            )
         } else {
             return None;
         };
@@ -42,18 +46,18 @@ pub fn update(model: &mut Model) -> Option<Message> {
     model.popup = None;
 
     if let Some(repo_path) = model.git_info.repository.workdir() {
-        match push_with_set_upstream(repo_path, &remote, &branch) {
-            Ok(PushResult { success, message }) => {
-                if success {
-                    model.toast = Some(Toast {
-                        message,
-                        style: ToastStyle::Success,
-                        expires_at: Instant::now() + TOAST_DURATION,
-                    });
-                } else {
-                    // Show error popup with git output
-                    model.popup = Some(PopupContent::Error { message });
-                }
+        let refspec = format!("HEAD:{}", branch);
+        match push(repo_path, &["--set-upstream", &remote, &refspec]) {
+            Ok(PushResult::Success) => {
+                let message = format!("Pushed to {}/{}", remote, branch);
+                model.toast = Some(Toast {
+                    message,
+                    style: ToastStyle::Success,
+                    expires_at: Instant::now() + TOAST_DURATION,
+                });
+            }
+            Ok(PushResult::Error(message)) => {
+                model.popup = Some(PopupContent::Error { message });
             }
             Err(e) => {
                 model.popup = Some(PopupContent::Error {

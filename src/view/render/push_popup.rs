@@ -36,7 +36,7 @@ pub fn content<'a>(theme: &Theme, state: &PushPopupState) -> CommandPopupContent
         vec![
             Line::from(input_display),
             Line::from(vec![Span::styled(
-                "  Press Enter to confirm, Esc to cancel",
+                "  Tab to complete, Enter to confirm, Esc to cancel",
                 Style::default().fg(Color::DarkGray),
             )]),
         ]

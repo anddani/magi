@@ -1,96 +1,47 @@
 use std::path::Path;
 use std::process::{Command, Stdio};
 
+use git2::Repository;
+
 use crate::errors::MagiResult;
 
 /// Result of a push operation
-pub struct PushResult {
-    pub success: bool,
-    pub message: String,
+pub enum PushResult {
+    Success,
+    Error(String),
 }
 
 /// Gets the list of configured remotes.
 /// Returns an empty vec if no remotes are configured.
-pub fn get_remotes<P: AsRef<Path>>(repo_path: P) -> MagiResult<Vec<String>> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .arg("remote")
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()?;
-
-    if output.status.success() {
-        let remotes = String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .collect();
-        Ok(remotes)
-    } else {
-        Ok(vec![])
-    }
+pub fn get_remotes(repo: &Repository) -> Vec<String> {
+    repo.remotes()
+        .map(|remotes| remotes.iter().flatten().map(|s| s.to_string()).collect())
+        .unwrap_or_default()
 }
 
-/// Pushes to the upstream branch.
-/// If upstream is set, pushes to it. Otherwise, returns an error.
-pub fn push_to_upstream<P: AsRef<Path>>(repo_path: P) -> MagiResult<PushResult> {
+/// Pushes with the given arguments.
+/// The caller provides extra args (e.g., `["--set-upstream", "origin", "HEAD:main"]`)
+/// and a success message to display on success.
+pub fn push<P: AsRef<Path>>(repo_path: P, args: &[&str]) -> MagiResult<PushResult> {
     let output = Command::new("git")
         .arg("-C")
         .arg(repo_path.as_ref())
-        .args(["push", "-v"])
+        .arg("push")
+        .arg("-v")
+        .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()?;
 
     if output.status.success() {
-        Ok(PushResult {
-            success: true,
-            message: "Pushed to upstream".to_string(),
-        })
+        Ok(PushResult::Success)
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Ok(PushResult {
-            success: false,
-            message: if stderr.is_empty() {
-                "Push failed".to_string()
-            } else {
-                stderr
-            },
-        })
-    }
-}
-
-/// Pushes to a specified remote branch, setting it as upstream.
-/// This is used when no upstream is configured.
-pub fn push_with_set_upstream<P: AsRef<Path>>(
-    repo_path: P,
-    remote: &str,
-    branch: &str,
-) -> MagiResult<PushResult> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .args(["push", "-v", "--set-upstream", remote, branch])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()?;
-
-    if output.status.success() {
-        Ok(PushResult {
-            success: true,
-            message: format!("Pushed to {}/{}", remote, branch),
-        })
-    } else {
-        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        Ok(PushResult {
-            success: false,
-            message: if stderr.is_empty() {
-                "Push failed".to_string()
-            } else {
-                stderr
-            },
-        })
+        Ok(PushResult::Error(if stderr.is_empty() {
+            "Push failed".to_string()
+        } else {
+            stderr
+        }))
     }
 }
 
