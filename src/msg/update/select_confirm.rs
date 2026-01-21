@@ -1,6 +1,6 @@
 use crate::{
     model::{
-        popup::{PopupContent, PopupContentCommand, SelectResult},
+        popup::{PopupContent, PopupContentCommand, SelectContext, SelectResult},
         Model,
     },
     msg::Message,
@@ -19,9 +19,17 @@ pub fn update(model: &mut Model) -> Option<Message> {
         };
 
     // Store the result for the caller to retrieve
-    model.select_result = Some(result);
+    model.select_result = Some(result.clone());
 
     // Dismiss the popup
     model.popup = None;
-    None
+
+    // Check context and return appropriate follow-up message
+    let context = model.select_context.take();
+    match (context, result) {
+        (Some(SelectContext::CheckoutBranch), SelectResult::Selected(branch)) => {
+            Some(Message::CheckoutBranch(branch))
+        }
+        _ => None,
+    }
 }

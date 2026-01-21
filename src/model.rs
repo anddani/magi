@@ -6,7 +6,7 @@ use crate::git::{CommitInfo, GitInfo, GitRef, TagInfo};
 use crate::msg::Message;
 
 use popup::PopupContent;
-use select_popup::SelectResult;
+use select_popup::{SelectContext, SelectResult};
 
 pub mod popup;
 pub mod select_popup;
@@ -27,6 +27,8 @@ pub struct Model {
     pub toast: Option<Toast>,
     /// Result from the most recent select popup (cleared when consumed)
     pub select_result: Option<SelectResult>,
+    /// Context for what action the select popup is performing
+    pub select_context: Option<SelectContext>,
 }
 
 #[derive(Debug, Clone)]

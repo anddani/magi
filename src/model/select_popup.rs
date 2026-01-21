@@ -9,6 +9,13 @@ pub enum SelectResult {
     Cancelled,
 }
 
+/// Context for what action the select popup is performing
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SelectContext {
+    /// Selecting a branch to checkout
+    CheckoutBranch,
+}
+
 /// State for the select popup (fuzzy finder style)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectPopupState {

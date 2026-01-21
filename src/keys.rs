@@ -32,6 +32,12 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                 (KeyModifiers::NONE, KeyCode::Char('a')) => Some(Message::Amend),
                 _ => None,
             },
+            PopupContentCommand::Branch => match (key.modifiers, key.code) {
+                (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
+                | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
+                (KeyModifiers::NONE, KeyCode::Char('b')) => Some(Message::ShowCheckoutBranchPopup),
+                _ => None,
+            },
             PopupContentCommand::Push(state) => {
                 if state.input_mode {
                     // In input mode, handle text input
@@ -126,6 +132,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::NONE, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
         (KeyModifiers::NONE, KeyCode::Tab) => Some(Message::ToggleSection),
         (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::ShowCommitPopup),
+        (KeyModifiers::NONE, KeyCode::Char('b')) => Some(Message::ShowBranchPopup),
         _ => None,
     }
 }
@@ -161,6 +168,7 @@ mod tests {
             popup: None,
             toast: None,
             select_result: None,
+            select_context: None,
         }
     }
 
@@ -589,5 +597,49 @@ mod tests {
         let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('n'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::MoveDown)));
+    }
+
+    // Branch popup tests
+
+    #[test]
+    fn test_b_shows_branch_popup() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowBranchPopup));
+    }
+
+    fn create_branch_popup_model() -> Model {
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Branch));
+        model
+    }
+
+    #[test]
+    fn test_esc_dismisses_branch_popup() {
+        let model = create_branch_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_q_dismisses_branch_popup() {
+        let model = create_branch_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_b_in_branch_popup_shows_checkout_select() {
+        let model = create_branch_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowCheckoutBranchPopup));
     }
 }

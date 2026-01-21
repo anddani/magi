@@ -4,6 +4,7 @@ use git2::{DiffOptions, Error as Git2Error, Repository};
 
 use crate::{errors::MagiResult, model::LineContent};
 
+pub mod checkout;
 pub mod commit;
 mod diff_utils;
 pub mod info;

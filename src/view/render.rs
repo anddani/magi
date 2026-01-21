@@ -11,6 +11,7 @@ use crate::model::{
     Toast, ToastStyle,
 };
 
+mod branch_popup;
 mod commit_popup;
 mod help_popup;
 mod popup_content;
@@ -142,6 +143,7 @@ fn render_command_popup(
         PopupContentCommand::Help => help_popup::content(theme),
         PopupContentCommand::Commit => commit_popup::content(theme),
         PopupContentCommand::Push(state) => push_popup::content(theme, state),
+        PopupContentCommand::Branch => branch_popup::content(theme),
         PopupContentCommand::Select(_) => unreachable!(), // Handled above
     };
 

@@ -45,6 +45,12 @@ pub enum Message {
     ShowCommitPopup,
     /// Show push popup with options
     ShowPushPopup,
+    /// Show branch popup with options
+    ShowBranchPopup,
+    /// Show the checkout branch select popup
+    ShowCheckoutBranchPopup,
+    /// Checkout the selected branch
+    CheckoutBranch(String),
     /// Push to upstream (or create it if specified)
     PushUpstream,
     /// Enter input mode in push popup to set custom upstream

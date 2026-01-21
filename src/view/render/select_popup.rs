@@ -9,22 +9,18 @@ use ratatui::{
 use crate::config::Theme;
 use crate::model::popup::SelectPopupState;
 
-/// Render the select popup (fuzzy finder style)
+/// Render the select popup as a bottom sheet (like command popups)
 pub fn render(state: &SelectPopupState, frame: &mut Frame, area: Rect, theme: &Theme) {
     // Calculate popup dimensions
-    // Width: 60% of screen, minimum 40, maximum screen width - 4
-    let popup_width = (area.width * 60 / 100)
-        .max(40)
-        .min(area.width.saturating_sub(4));
+    // Width: full width
+    let popup_width = area.width;
 
-    // Height: header (1) + list (up to half screen) + border (2)
-    let max_list_height = (area.height / 2).saturating_sub(3);
-    let list_height = (state.filtered_count() as u16).min(max_list_height).max(1);
-    let popup_height = list_height + 3; // +1 header, +2 border
+    // Height: 25% of screen height (minimum 5 for header + border + at least 1 item)
+    let popup_height = (area.height / 4).max(5);
 
-    // Position: centered horizontally, upper third vertically
-    let x = area.x + (area.width.saturating_sub(popup_width)) / 2;
-    let y = area.y + area.height / 4;
+    // Position: bottom of screen, full width
+    let x = area.x;
+    let y = area.y + area.height.saturating_sub(popup_height);
     let popup_area = Rect::new(x, y, popup_width, popup_height);
 
     // Clear background
@@ -73,12 +69,21 @@ pub fn render(state: &SelectPopupState, frame: &mut Frame, area: Rect, theme: &T
         inner.height.saturating_sub(1),
     );
 
-    // Build list items
+    // Calculate scroll offset to keep selected item visible
+    let visible_count = list_area.height as usize;
+    let scroll_offset = if state.selected_index >= visible_count {
+        state.selected_index - visible_count + 1
+    } else {
+        0
+    };
+
+    // Build list items with scrolling
     let items: Vec<ListItem> = state
         .filtered_indices
         .iter()
         .enumerate()
-        .take(list_area.height as usize) // Only render what fits
+        .skip(scroll_offset)
+        .take(visible_count)
         .map(|(i, &opt_idx)| {
             let opt = &state.all_options[opt_idx];
             let style = if i == state.selected_index {

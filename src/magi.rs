@@ -61,6 +61,7 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         popup: None,
         toast: None,
         select_result: None,
+        select_context: None,
     };
 
     while model.running_state != RunningState::Done {

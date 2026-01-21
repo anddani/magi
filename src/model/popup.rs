@@ -1,4 +1,4 @@
-pub use super::select_popup::{SelectPopupState, SelectResult};
+pub use super::select_popup::{SelectContext, SelectPopupState, SelectResult};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContent {
@@ -11,6 +11,7 @@ pub enum PopupContentCommand {
     Help,
     Commit,
     Push(PushPopupState),
+    Branch,
     Select(SelectPopupState),
 }
 
