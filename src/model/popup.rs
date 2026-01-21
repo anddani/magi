@@ -1,3 +1,5 @@
+pub use super::select_popup::{SelectPopupState, SelectResult};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContent {
     Error { message: String },
@@ -9,6 +11,7 @@ pub enum PopupContentCommand {
     Help,
     Commit,
     Push(PushPopupState),
+    Select(SelectPopupState),
 }
 
 /// State for the Push popup

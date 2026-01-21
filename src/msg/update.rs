@@ -1,4 +1,7 @@
-use crate::{model::Model, msg::Message};
+use crate::{
+    model::Model,
+    msg::{Message, SelectMessage},
+};
 
 mod amend;
 mod commit;
@@ -19,9 +22,15 @@ mod quit;
 mod refresh;
 mod scroll_line_down;
 mod scroll_line_up;
+mod select_confirm;
+mod select_input_backspace;
+mod select_input_char;
+mod select_move_down;
+mod select_move_up;
 mod show_commit_popup;
 mod show_help;
 mod show_push_popup;
+mod show_select_popup;
 mod stage_all_modified;
 mod toggle_section;
 mod unstage_all;
@@ -57,5 +66,15 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PushInputBackspace => push_input_backspace::update(model),
         Message::PushInputComplete => push_input_complete::update(model),
         Message::PushConfirmInput => push_confirm_input::update(model),
+        Message::Select(select_msg) => match select_msg {
+            SelectMessage::Show { title, options } => {
+                show_select_popup::update(model, title, options)
+            }
+            SelectMessage::InputChar(c) => select_input_char::update(model, c),
+            SelectMessage::InputBackspace => select_input_backspace::update(model),
+            SelectMessage::MoveUp => select_move_up::update(model),
+            SelectMessage::MoveDown => select_move_down::update(model),
+            SelectMessage::Confirm => select_confirm::update(model),
+        },
     }
 }

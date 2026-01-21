@@ -48,6 +48,7 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::PushInputChar(_)
         | Message::PushInputBackspace
         | Message::PushInputComplete
-        | Message::PushConfirmInput => false,
+        | Message::PushConfirmInput
+        | Message::Select(_) => false,
     }
 }
