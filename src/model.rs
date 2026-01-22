@@ -5,10 +5,12 @@ use crate::config::Theme;
 use crate::git::{CommitInfo, GitInfo, GitRef, TagInfo};
 use crate::msg::Message;
 
-use popup::PopupContent;
+pub use popup::{CredentialPopupState, PopupContent};
+pub use pty_state::PtyState;
 use select_popup::{SelectContext, SelectResult};
 
 pub mod popup;
+pub mod pty_state;
 pub mod select_popup;
 
 /// The whole state of the application, including the Git repository Handle
@@ -29,6 +31,8 @@ pub struct Model {
     pub select_result: Option<SelectResult>,
     /// Context for what action the select popup is performing
     pub select_context: Option<SelectContext>,
+    /// State for an ongoing PTY command that may require credentials
+    pub pty_state: Option<PtyState>,
 }
 
 #[derive(Debug, Clone)]

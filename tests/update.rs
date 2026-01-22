@@ -35,6 +35,7 @@ fn test_refresh_message() -> Result<(), git2::Error> {
         toast: None,
         select_result: None,
         select_context: None,
+        pty_state: None,
     };
 
     // Clear the lines to simulate outdated state
@@ -65,6 +66,7 @@ fn test_quit_message() {
         toast: None,
         select_result: None,
         select_context: None,
+        pty_state: None,
     };
 
     // Send quit message
@@ -102,6 +104,7 @@ fn create_test_model_with_lines(count: usize) -> Model {
         toast: None,
         select_result: None,
         select_context: None,
+        pty_state: None,
     }
 }
 
@@ -742,6 +745,7 @@ fn test_commit_without_staged_changes_shows_toast() {
         toast: None,
         select_result: None,
         select_context: None,
+        pty_state: None,
     };
 
     // Send commit message (no staged changes in test repo)
@@ -770,6 +774,7 @@ fn test_dismiss_popup_clears_popup() {
         toast: None,
         select_result: None,
         select_context: None,
+        pty_state: None,
     };
 
     // Popup should be present
@@ -955,6 +960,7 @@ fn test_collapsed_state_preserved_when_staging_all() {
         toast: None,
         select_result: None,
         select_context: None,
+        pty_state: None,
     };
 
     // Stage all modified files
@@ -1038,6 +1044,7 @@ fn test_collapsed_state_preserved_when_unstaging_all() {
         toast: None,
         select_result: None,
         select_context: None,
+        pty_state: None,
     };
 
     // Unstage all files
@@ -1103,6 +1110,7 @@ fn test_expanded_state_preserved_when_staging() {
         toast: None,
         select_result: None,
         select_context: None,
+        pty_state: None,
     };
 
     // Stage all modified files
