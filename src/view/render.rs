@@ -11,10 +11,12 @@ use crate::model::{
     Toast, ToastStyle,
 };
 
+mod branch_popup;
 mod commit_popup;
 mod help_popup;
 mod popup_content;
 mod push_popup;
+mod select_popup;
 
 /// Calculate a centered rectangle within the given area
 fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
@@ -131,10 +133,18 @@ fn render_command_popup(
     theme: &crate::config::Theme,
     command: &PopupContentCommand,
 ) {
+    // Select popup uses custom rendering, not the column layout
+    if let PopupContentCommand::Select(state) = command {
+        select_popup::render(state, frame, area, theme);
+        return;
+    }
+
     let content = match command {
         PopupContentCommand::Help => help_popup::content(theme),
         PopupContentCommand::Commit => commit_popup::content(theme),
         PopupContentCommand::Push(state) => push_popup::content(theme, state),
+        PopupContentCommand::Branch => branch_popup::content(theme),
+        PopupContentCommand::Select(_) => unreachable!(), // Handled above
     };
 
     let column_title_style = Style::default()

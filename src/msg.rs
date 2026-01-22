@@ -45,6 +45,12 @@ pub enum Message {
     ShowCommitPopup,
     /// Show push popup with options
     ShowPushPopup,
+    /// Show branch popup with options
+    ShowBranchPopup,
+    /// Show the checkout branch select popup
+    ShowCheckoutBranchPopup,
+    /// Checkout the selected branch
+    CheckoutBranch(String),
     /// Push to upstream (or create it if specified)
     PushUpstream,
     /// Enter input mode in push popup to set custom upstream
@@ -57,4 +63,24 @@ pub enum Message {
     PushInputComplete,
     /// Confirm push with the entered upstream name
     PushConfirmInput,
+
+    /// Select popup messages
+    Select(SelectMessage),
+}
+
+/// Messages for the select popup
+#[derive(PartialEq, Eq, Debug)]
+pub enum SelectMessage {
+    /// Show a select popup with the given title and options
+    Show { title: String, options: Vec<String> },
+    /// Input a character into select popup filter
+    InputChar(char),
+    /// Delete last character from select popup filter
+    InputBackspace,
+    /// Move selection up in select popup
+    MoveUp,
+    /// Move selection down in select popup
+    MoveDown,
+    /// Confirm selection in select popup
+    Confirm,
 }

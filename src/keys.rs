@@ -5,7 +5,7 @@ use crate::{
         popup::{PopupContent, PopupContentCommand},
         Model,
     },
-    msg::Message,
+    msg::{Message, SelectMessage},
 };
 
 /// Maps a key event into a [`Message`] given the application state.
@@ -30,6 +30,12 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                 | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
                 (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::Commit),
                 (KeyModifiers::NONE, KeyCode::Char('a')) => Some(Message::Amend),
+                _ => None,
+            },
+            PopupContentCommand::Branch => match (key.modifiers, key.code) {
+                (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
+                | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
+                (KeyModifiers::NONE, KeyCode::Char('b')) => Some(Message::ShowCheckoutBranchPopup),
                 _ => None,
             },
             PopupContentCommand::Push(state) => {
@@ -69,6 +75,28 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     }
                 }
             }
+            PopupContentCommand::Select(_) => match (key.modifiers, key.code) {
+                (KeyModifiers::NONE, KeyCode::Esc)
+                | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
+                (KeyModifiers::NONE, KeyCode::Enter) => {
+                    Some(Message::Select(SelectMessage::Confirm))
+                }
+                (KeyModifiers::NONE, KeyCode::Backspace) => {
+                    Some(Message::Select(SelectMessage::InputBackspace))
+                }
+                (KeyModifiers::NONE, KeyCode::Up) | (KeyModifiers::CONTROL, KeyCode::Char('p')) => {
+                    Some(Message::Select(SelectMessage::MoveUp))
+                }
+                (KeyModifiers::NONE, KeyCode::Down)
+                | (KeyModifiers::CONTROL, KeyCode::Char('n')) => {
+                    Some(Message::Select(SelectMessage::MoveDown))
+                }
+                (KeyModifiers::NONE, KeyCode::Char(c))
+                | (KeyModifiers::SHIFT, KeyCode::Char(c)) => {
+                    Some(Message::Select(SelectMessage::InputChar(c)))
+                }
+                _ => None,
+            },
         };
     }
 
@@ -104,6 +132,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::NONE, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
         (KeyModifiers::NONE, KeyCode::Tab) => Some(Message::ToggleSection),
         (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::ShowCommitPopup),
+        (KeyModifiers::NONE, KeyCode::Char('b')) => Some(Message::ShowBranchPopup),
         _ => None,
     }
 }
@@ -138,6 +167,8 @@ mod tests {
             theme: Theme::default(),
             popup: None,
             toast: None,
+            select_result: None,
+            select_context: None,
         }
     }
 
@@ -461,5 +492,154 @@ mod tests {
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    // Select popup tests
+
+    fn create_select_popup_model() -> Model {
+        use crate::model::popup::SelectPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+            SelectPopupState::new(
+                "Checkout".to_string(),
+                vec!["main".to_string(), "feature".to_string()],
+            ),
+        )));
+        model
+    }
+
+    #[test]
+    fn test_select_popup_esc_dismisses() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_select_popup_ctrl_g_dismisses() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('g'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_select_popup_enter_confirms() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Select(SelectMessage::Confirm)));
+    }
+
+    #[test]
+    fn test_select_popup_char_input() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Select(SelectMessage::InputChar('a'))));
+    }
+
+    #[test]
+    fn test_select_popup_shift_char_input() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('A'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Select(SelectMessage::InputChar('A'))));
+    }
+
+    #[test]
+    fn test_select_popup_backspace() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Backspace);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Select(SelectMessage::InputBackspace)));
+    }
+
+    #[test]
+    fn test_select_popup_up_arrow() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Up);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Select(SelectMessage::MoveUp)));
+    }
+
+    #[test]
+    fn test_select_popup_down_arrow() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Down);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Select(SelectMessage::MoveDown)));
+    }
+
+    #[test]
+    fn test_select_popup_ctrl_p_moves_up() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Select(SelectMessage::MoveUp)));
+    }
+
+    #[test]
+    fn test_select_popup_ctrl_n_moves_down() {
+        let model = create_select_popup_model();
+
+        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('n'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Select(SelectMessage::MoveDown)));
+    }
+
+    // Branch popup tests
+
+    #[test]
+    fn test_b_shows_branch_popup() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowBranchPopup));
+    }
+
+    fn create_branch_popup_model() -> Model {
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Branch));
+        model
+    }
+
+    #[test]
+    fn test_esc_dismisses_branch_popup() {
+        let model = create_branch_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_q_dismisses_branch_popup() {
+        let model = create_branch_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_b_in_branch_popup_shows_checkout_select() {
+        let model = create_branch_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowCheckoutBranchPopup));
     }
 }
