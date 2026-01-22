@@ -10,7 +10,12 @@ pub fn update(model: &mut Model) -> Option<Message> {
     let result =
         if let Some(PopupContent::Command(PopupContentCommand::Select(ref state))) = model.popup {
             if let Some(item) = state.selected_item() {
+                // Use the selected item from filtered results
                 SelectResult::Selected(item.to_string())
+            } else if !state.input_text.is_empty() {
+                // No matches, but user entered text - use the input text directly
+                // This allows entering arbitrary values like git hashes
+                SelectResult::Selected(state.input_text.clone())
             } else {
                 SelectResult::NoneSelected
             }
