@@ -4,7 +4,9 @@ use crate::git::credential::CredentialType;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContent {
-    Error { message: String },
+    Error {
+        message: String,
+    },
     Command(PopupContentCommand),
     /// Credential input popup for password/passphrase/etc.
     Credential(CredentialPopupState),

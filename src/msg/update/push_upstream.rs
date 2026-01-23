@@ -1,8 +1,5 @@
 use crate::{
-    git::{
-        credential::CredentialStrategy,
-        pty_command::spawn_git_with_pty,
-    },
+    git::{credential::CredentialStrategy, pty_command::spawn_git_with_pty},
     model::{popup::PopupContent, Model, PtyState},
     msg::Message,
 };

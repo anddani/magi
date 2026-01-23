@@ -20,12 +20,14 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
 
     if let Some(PopupContent::Credential(_)) = &model.popup {
         return match (key.modifiers, key.code) {
-            (KeyModifiers::NONE, KeyCode::Esc)
-            | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
+            (KeyModifiers::NONE, KeyCode::Esc) | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
+                Some(Message::DismissPopup)
+            }
             (KeyModifiers::NONE, KeyCode::Enter) => Some(Message::CredentialConfirm),
             (KeyModifiers::NONE, KeyCode::Backspace) => Some(Message::CredentialInputBackspace),
-            (KeyModifiers::NONE, KeyCode::Char(c))
-            | (KeyModifiers::SHIFT, KeyCode::Char(c)) => Some(Message::CredentialInputChar(c)),
+            (KeyModifiers::NONE, KeyCode::Char(c)) | (KeyModifiers::SHIFT, KeyCode::Char(c)) => {
+                Some(Message::CredentialInputChar(c))
+            }
             _ => None,
         };
     }

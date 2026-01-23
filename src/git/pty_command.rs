@@ -164,7 +164,8 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
                 }
 
                 // Check for credential prompt
-                if let Some(cred_type) = check_for_credential_request(&mut detection_buffer, byte[0])
+                if let Some(cred_type) =
+                    check_for_credential_request(&mut detection_buffer, byte[0])
                 {
                     match strategy {
                         CredentialStrategy::Prompt => {
@@ -183,7 +184,8 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
                                     Ok(CredentialResponse::Input(input)) => {
                                         // Write credential to PTY (with newline)
                                         let input_with_newline = format!("{}\n", input);
-                                        if writer.write_all(input_with_newline.as_bytes()).is_err() {
+                                        if writer.write_all(input_with_newline.as_bytes()).is_err()
+                                        {
                                             return PtyCommandResult::Error {
                                                 message: "Failed to write credential to PTY"
                                                     .to_string(),

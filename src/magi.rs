@@ -77,7 +77,8 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         if model.pty_state.is_some() {
             // Check for credential request (only if we're not already showing a credential popup)
             if !matches!(model.popup, Some(PopupContent::Credential(_))) {
-                if let Some(cred_type) = model.pty_state.as_ref().unwrap().check_credential_request()
+                if let Some(cred_type) =
+                    model.pty_state.as_ref().unwrap().check_credential_request()
                 {
                     model.popup = Some(PopupContent::Credential(CredentialPopupState {
                         credential_type: cred_type,
