@@ -5,10 +5,8 @@ use crate::{
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    // Dismiss the popup
     model.popup = None;
 
-    // Check if there's already a PTY command running
     if model.pty_state.is_some() {
         model.popup = Some(PopupContent::Error {
             message: "A command is already in progress".to_string(),

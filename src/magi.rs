@@ -90,11 +90,9 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
             // Check for command completion
             if let Some(result) = model.pty_state.as_ref().unwrap().check_result() {
                 // Command finished, handle result
-                if let Some(msg) = handle_pty_result(&mut model, result) {
-                    let mut current_msg = Some(msg);
-                    while let Some(m) = current_msg {
-                        current_msg = update(&mut model, m);
-                    }
+                let mut current_msg = handle_pty_result(&mut model, result);
+                while let Some(msg) = current_msg {
+                    current_msg = update(&mut model, msg);
                 }
             }
         }

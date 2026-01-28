@@ -6,6 +6,8 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
+const BUFFER_LEN: usize = 256;
+
 /// Types of credentials that can be requested by commands.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CredentialType {
@@ -116,9 +118,9 @@ pub fn check_for_credential_request(buffer: &mut String, new_byte: u8) -> Option
         *buffer = buffer[idx + 1..].to_string();
     }
 
-    // Prevent buffer from growing unbounded (keep last 256 bytes)
-    if buffer.len() > 256 {
-        let start = buffer.len() - 256;
+    // Prevent buffer from growing unbounded (keep last `BUFFER_LEN` bytes)
+    if buffer.len() > BUFFER_LEN {
+        let start = buffer.len() - BUFFER_LEN;
         *buffer = buffer[start..].to_string();
     }
 
@@ -259,12 +261,12 @@ mod tests {
         let mut buffer = String::new();
 
         // Add more than 256 bytes without a match
-        let long_string = "x".repeat(300);
+        let long_string = "x".repeat(BUFFER_LEN + 10);
         for byte in long_string.bytes() {
             check_for_credential_request(&mut buffer, byte);
         }
 
         // Buffer should be truncated to prevent unbounded growth
-        assert!(buffer.len() <= 256);
+        assert!(buffer.len() <= BUFFER_LEN);
     }
 }

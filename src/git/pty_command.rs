@@ -245,41 +245,13 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
             if status.success() {
                 PtyCommandResult::Success { output }
             } else {
-                // Try to extract error message from output
-                let error_msg = extract_error_message(&output);
-                PtyCommandResult::Error {
-                    message: error_msg.unwrap_or_else(|| "Command failed".to_string()),
-                }
+                PtyCommandResult::Error { message: output }
             }
         }
         Err(e) => PtyCommandResult::Error {
             message: format!("Failed to wait for command: {}", e),
         },
     }
-}
-
-/// Extracts an error message from git output.
-/// Git typically writes errors to stderr, but with PTY they're mixed with stdout.
-fn extract_error_message(output: &str) -> Option<String> {
-    // Look for common git error patterns
-    for line in output.lines().rev() {
-        let line = line.trim();
-        if line.starts_with("fatal:")
-            || line.starts_with("error:")
-            || line.starts_with("remote:")
-            || line.contains("Permission denied")
-            || line.contains("Authentication failed")
-        {
-            return Some(line.to_string());
-        }
-    }
-
-    // If no specific error found, return last non-empty line
-    output
-        .lines()
-        .rev()
-        .find(|line| !line.trim().is_empty())
-        .map(|s| s.trim().to_string())
 }
 
 /// Spawns a git command in a background thread with PTY and credential handling.
@@ -318,48 +290,4 @@ pub fn spawn_git_with_pty(
     });
 
     (result_rx, ui_channels)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_extract_error_message_fatal() {
-        let output = "Counting objects: 3\nfatal: could not read from remote repository";
-        let msg = extract_error_message(output);
-        assert_eq!(
-            msg,
-            Some("fatal: could not read from remote repository".to_string())
-        );
-    }
-
-    #[test]
-    fn test_extract_error_message_permission_denied() {
-        let output = "Cloning...\nPermission denied (publickey).";
-        let msg = extract_error_message(output);
-        assert_eq!(msg, Some("Permission denied (publickey).".to_string()));
-    }
-
-    #[test]
-    fn test_extract_error_message_auth_failed() {
-        let output = "remote: Support for password authentication was removed.\nAuthentication failed for 'https://github.com/user/repo.git'";
-        let msg = extract_error_message(output);
-        assert!(msg.is_some());
-        assert!(msg.unwrap().contains("Authentication failed"));
-    }
-
-    #[test]
-    fn test_extract_error_message_fallback() {
-        let output = "Something went wrong\n";
-        let msg = extract_error_message(output);
-        assert_eq!(msg, Some("Something went wrong".to_string()));
-    }
-
-    #[test]
-    fn test_extract_error_message_empty() {
-        let output = "";
-        let msg = extract_error_message(output);
-        assert!(msg.is_none());
-    }
 }
