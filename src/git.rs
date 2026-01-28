@@ -6,8 +6,10 @@ use crate::{errors::MagiResult, model::LineContent};
 
 pub mod checkout;
 pub mod commit;
+pub mod credential;
 mod diff_utils;
 pub mod info;
+pub mod pty_command;
 pub mod push;
 pub mod recent_commits;
 pub mod stage;

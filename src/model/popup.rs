@@ -1,9 +1,15 @@
 pub use super::select_popup::{SelectContext, SelectPopupState, SelectResult};
 
+use crate::git::credential::CredentialType;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContent {
-    Error { message: String },
+    Error {
+        message: String,
+    },
     Command(PopupContentCommand),
+    /// Credential input popup for password/passphrase/etc.
+    Credential(CredentialPopupState),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,6 +19,15 @@ pub enum PopupContentCommand {
     Push(PushPopupState),
     Branch,
     Select(SelectPopupState),
+}
+
+/// State for the credential input popup.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CredentialPopupState {
+    /// The type of credential being requested.
+    pub credential_type: CredentialType,
+    /// The text the user has entered so far.
+    pub input_text: String,
 }
 
 /// State for the Push popup

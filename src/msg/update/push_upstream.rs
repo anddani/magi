@@ -1,41 +1,48 @@
-use std::time::{Duration, Instant};
-
 use crate::{
-    git::push::{push, PushResult},
-    model::{popup::PopupContent, Model, Toast, ToastStyle},
+    git::{credential::CredentialStrategy, pty_command::spawn_git_with_pty},
+    model::{popup::PopupContent, Model, PtyState},
     msg::Message,
 };
 
-/// Duration for toast notifications
-const TOAST_DURATION: Duration = Duration::from_secs(5);
-
 pub fn update(model: &mut Model) -> Option<Message> {
-    // Dismiss the popup
     model.popup = None;
 
-    if let Some(repo_path) = model.git_info.repository.workdir() {
-        match push(repo_path, &[]) {
-            Ok(PushResult::Success) => {
-                model.toast = Some(Toast {
-                    message: "Pushed to upstream".to_string(),
-                    style: ToastStyle::Success,
-                    expires_at: Instant::now() + TOAST_DURATION,
-                });
-            }
-            Ok(PushResult::Error(message)) => {
-                model.popup = Some(PopupContent::Error { message });
-            }
-            Err(e) => {
-                model.popup = Some(PopupContent::Error {
-                    message: e.to_string(),
-                });
-            }
-        }
-    } else {
+    if model.pty_state.is_some() {
+        model.popup = Some(PopupContent::Error {
+            message: "A command is already in progress".to_string(),
+        });
+        return None;
+    }
+
+    let Some(repo_path) = model.git_info.repository.workdir() else {
         model.popup = Some(PopupContent::Error {
             message: "Repository working directory not found".into(),
         });
+        return None;
+    };
+
+    // Spawn push command in background thread with PTY
+    let (result_rx, ui_channels) = spawn_git_with_pty(
+        repo_path.to_path_buf(),
+        vec!["push".to_string(), "-v".to_string()],
+        CredentialStrategy::Prompt,
+    );
+
+    // Store PTY state for main loop to monitor
+    if let Some(ui_channels) = ui_channels {
+        model.pty_state = Some(PtyState::new(
+            result_rx,
+            ui_channels.request_rx,
+            ui_channels.response_tx,
+            "Push".to_string(),
+        ));
+    } else {
+        // This shouldn't happen with Prompt strategy, but handle it
+        model.popup = Some(PopupContent::Error {
+            message: "Failed to initialize credential handling".to_string(),
+        });
     }
 
-    Some(Message::Refresh)
+    // Don't refresh yet - wait for command to complete
+    None
 }

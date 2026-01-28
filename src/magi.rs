@@ -13,8 +13,8 @@ use ratatui::DefaultTerminal;
 use crate::{
     config::Config,
     errors::MagiResult,
-    git::GitInfo,
-    model::{Model, RunningState, UiModel},
+    git::{pty_command::PtyCommandResult, GitInfo},
+    model::{CredentialPopupState, Model, PopupContent, RunningState, Toast, ToastStyle, UiModel},
     msg::Message,
     view::view,
 };
@@ -62,6 +62,7 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         toast: None,
         select_result: None,
         select_context: None,
+        pty_state: None,
     };
 
     while model.running_state != RunningState::Done {
@@ -69,6 +70,30 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         if let Some(ref toast) = model.toast {
             if Instant::now() >= toast.expires_at {
                 model.toast = None;
+            }
+        }
+
+        // Check for PTY state updates (credential requests and command completion)
+        if model.pty_state.is_some() {
+            // Check for credential request (only if we're not already showing a credential popup)
+            if !matches!(model.popup, Some(PopupContent::Credential(_))) {
+                if let Some(cred_type) =
+                    model.pty_state.as_ref().unwrap().check_credential_request()
+                {
+                    model.popup = Some(PopupContent::Credential(CredentialPopupState {
+                        credential_type: cred_type,
+                        input_text: String::new(),
+                    }));
+                }
+            }
+
+            // Check for command completion
+            if let Some(result) = model.pty_state.as_ref().unwrap().check_result() {
+                // Command finished, handle result
+                let mut current_msg = handle_pty_result(&mut model, result);
+                while let Some(msg) = current_msg {
+                    current_msg = update(&mut model, msg);
+                }
             }
         }
 
@@ -130,4 +155,47 @@ fn handle_event(model: &Model) -> MagiResult<Option<Message>> {
         }
     }
     Ok(None)
+}
+
+/// Duration for toast notifications
+const TOAST_DURATION: Duration = Duration::from_secs(5);
+
+/// Handles the result of a PTY command.
+/// Returns a message to process (usually Refresh).
+fn handle_pty_result(model: &mut Model, result: PtyCommandResult) -> Option<Message> {
+    // Get operation name before clearing PTY state
+    let operation = model
+        .pty_state
+        .as_ref()
+        .map(|s| s.operation.clone())
+        .unwrap_or_else(|| "Operation".to_string());
+
+    // Clear PTY state
+    model.pty_state = None;
+
+    // Clear credential popup if showing
+    if matches!(model.popup, Some(PopupContent::Credential(_))) {
+        model.popup = None;
+    }
+
+    match result {
+        PtyCommandResult::Success { .. } => {
+            model.toast = Some(Toast {
+                message: format!("{} completed successfully", operation),
+                style: ToastStyle::Success,
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        PtyCommandResult::Error { message } => {
+            model.popup = Some(PopupContent::Error { message });
+        }
+        PtyCommandResult::CredentialRequired => {
+            model.popup = Some(PopupContent::Error {
+                message: "Authentication required but not available".to_string(),
+            });
+        }
+    }
+
+    // Trigger refresh to update the UI
+    Some(Message::Refresh)
 }

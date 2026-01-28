@@ -6,6 +6,7 @@ use crate::{
 mod amend;
 mod checkout_branch;
 mod commit;
+mod credentials_input;
 mod dismiss_popup;
 mod enter_visual_mode;
 mod exit_visual_mode;
@@ -82,5 +83,6 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             SelectMessage::MoveDown => select_move_down::update(model),
             SelectMessage::Confirm => select_confirm::update(model),
         },
+        Message::Credentials(credentials_msg) => credentials_input::update(model, credentials_msg),
     }
 }

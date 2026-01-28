@@ -13,6 +13,7 @@ use crate::model::{
 
 mod branch_popup;
 mod commit_popup;
+mod credential_popup;
 mod help_popup;
 mod popup_content;
 mod push_popup;
@@ -79,6 +80,9 @@ pub fn render_popup(
         }
         PopupContent::Command(command) => {
             render_command_popup(frame, area, theme, command);
+        }
+        PopupContent::Credential(state) => {
+            credential_popup::render(state, frame, area, theme);
         }
     }
 }

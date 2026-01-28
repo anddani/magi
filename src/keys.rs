@@ -5,7 +5,7 @@ use crate::{
         popup::{PopupContent, PopupContentCommand},
         Model,
     },
-    msg::{Message, SelectMessage},
+    msg::{CredentialsMessage, Message, SelectMessage},
 };
 
 /// Maps a key event into a [`Message`] given the application state.
@@ -14,6 +14,24 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     if let Some(PopupContent::Error { .. }) = &model.popup {
         return match key.code {
             KeyCode::Enter | KeyCode::Esc => Some(Message::DismissPopup),
+            _ => None,
+        };
+    }
+
+    if let Some(PopupContent::Credential(_)) = &model.popup {
+        return match (key.modifiers, key.code) {
+            (KeyModifiers::NONE, KeyCode::Esc) | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
+                Some(Message::DismissPopup)
+            }
+            (KeyModifiers::NONE, KeyCode::Enter) => {
+                Some(Message::Credentials(CredentialsMessage::CredentialConfirm))
+            }
+            (KeyModifiers::NONE, KeyCode::Backspace) => Some(Message::Credentials(
+                CredentialsMessage::CredentialInputBackspace,
+            )),
+            (_, KeyCode::Char(c)) => Some(Message::Credentials(
+                CredentialsMessage::CredentialInputChar(c),
+            )),
             _ => None,
         };
     }
@@ -169,6 +187,7 @@ mod tests {
             toast: None,
             select_result: None,
             select_context: None,
+            pty_state: None,
         }
     }
 

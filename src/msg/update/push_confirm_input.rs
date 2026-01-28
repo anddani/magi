@@ -1,16 +1,11 @@
-use std::time::{Duration, Instant};
-
 use crate::{
-    git::push::{push, PushResult},
+    git::{credential::CredentialStrategy, pty_command::spawn_git_with_pty},
     model::{
         popup::{PopupContent, PopupContentCommand},
-        Model, Toast, ToastStyle,
+        Model, PtyState,
     },
     msg::Message,
 };
-
-/// Duration for toast notifications
-const TOAST_DURATION: Duration = Duration::from_secs(5);
 
 /// Parse input into (remote, branch) tuple.
 /// If input contains "/", split on first "/" to get remote and branch.
@@ -45,31 +40,52 @@ pub fn update(model: &mut Model) -> Option<Message> {
     // Dismiss the popup
     model.popup = None;
 
-    if let Some(repo_path) = model.git_info.repository.workdir() {
-        let refspec = format!("HEAD:{}", branch);
-        match push(repo_path, &["--set-upstream", &remote, &refspec]) {
-            Ok(PushResult::Success) => {
-                let message = format!("Pushed to {}/{}", remote, branch);
-                model.toast = Some(Toast {
-                    message,
-                    style: ToastStyle::Success,
-                    expires_at: Instant::now() + TOAST_DURATION,
-                });
-            }
-            Ok(PushResult::Error(message)) => {
-                model.popup = Some(PopupContent::Error { message });
-            }
-            Err(e) => {
-                model.popup = Some(PopupContent::Error {
-                    message: e.to_string(),
-                });
-            }
-        }
-    } else {
+    // Check if there's already a PTY command running
+    if model.pty_state.is_some() {
+        model.popup = Some(PopupContent::Error {
+            message: "A command is already in progress".to_string(),
+        });
+        return None;
+    }
+
+    let Some(repo_path) = model.git_info.repository.workdir() else {
         model.popup = Some(PopupContent::Error {
             message: "Repository working directory not found".into(),
         });
+        return None;
+    };
+
+    // Build the refspec for setting upstream
+    let refspec = format!("HEAD:{}", branch);
+
+    // Spawn push command in background thread with PTY
+    let (result_rx, ui_channels) = spawn_git_with_pty(
+        repo_path.to_path_buf(),
+        vec![
+            "push".to_string(),
+            "-v".to_string(),
+            "--set-upstream".to_string(),
+            remote.clone(),
+            refspec,
+        ],
+        CredentialStrategy::Prompt,
+    );
+
+    // Store PTY state for main loop to monitor
+    if let Some(ui_channels) = ui_channels {
+        model.pty_state = Some(PtyState::new(
+            result_rx,
+            ui_channels.request_rx,
+            ui_channels.response_tx,
+            format!("Push to {}/{}", remote, branch),
+        ));
+    } else {
+        // This shouldn't happen with Prompt strategy, but handle it
+        model.popup = Some(PopupContent::Error {
+            message: "Failed to initialize credential handling".to_string(),
+        });
     }
 
-    Some(Message::Refresh)
+    // Don't refresh yet - wait for command to complete
+    None
 }
