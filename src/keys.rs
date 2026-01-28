@@ -5,7 +5,7 @@ use crate::{
         popup::{PopupContent, PopupContentCommand},
         Model,
     },
-    msg::{Message, SelectMessage},
+    msg::{CredentialsMessage, Message, SelectMessage},
 };
 
 /// Maps a key event into a [`Message`] given the application state.
@@ -23,10 +23,16 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
             (KeyModifiers::NONE, KeyCode::Esc) | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
                 Some(Message::DismissPopup)
             }
-            (KeyModifiers::NONE, KeyCode::Enter) => Some(Message::CredentialConfirm),
-            (KeyModifiers::NONE, KeyCode::Backspace) => Some(Message::CredentialInputBackspace),
+            (KeyModifiers::NONE, KeyCode::Enter) => {
+                Some(Message::Credentials(CredentialsMessage::CredentialConfirm))
+            }
+            (KeyModifiers::NONE, KeyCode::Backspace) => Some(Message::Credentials(
+                CredentialsMessage::CredentialInputBackspace,
+            )),
             (KeyModifiers::NONE, KeyCode::Char(c)) | (KeyModifiers::SHIFT, KeyCode::Char(c)) => {
-                Some(Message::CredentialInputChar(c))
+                Some(Message::Credentials(
+                    CredentialsMessage::CredentialInputChar(c),
+                ))
             }
             _ => None,
         };

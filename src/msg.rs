@@ -67,12 +67,8 @@ pub enum Message {
     /// Select popup messages
     Select(SelectMessage),
 
-    /// Handle text input in credential popup
-    CredentialInputChar(char),
-    /// Handle backspace in credential popup input
-    CredentialInputBackspace,
-    /// Confirm credential input (submit the credential)
-    CredentialConfirm,
+    /// Credentials popup
+    Credentials(CredentialsMessage),
 }
 
 /// Messages for the select popup
@@ -90,4 +86,14 @@ pub enum SelectMessage {
     MoveDown,
     /// Confirm selection in select popup
     Confirm,
+}
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum CredentialsMessage {
+    /// Handle text input in credential popup
+    CredentialInputChar(char),
+    /// Handle backspace in credential popup input
+    CredentialInputBackspace,
+    /// Confirm credential input (submit the credential)
+    CredentialConfirm,
 }
