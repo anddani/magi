@@ -25,14 +25,15 @@ fn parse_remote_branch(input: &str, default_remote: &str, local_branch: &str) ->
 }
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    // Get the remote and branch to push to
-    let (remote, branch) =
+    // Get the remote, branch, and force_with_lease setting from popup state
+    let (remote, branch, force_with_lease) =
         if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
-            parse_remote_branch(
+            let (remote, branch) = parse_remote_branch(
                 &state.input_text,
                 &state.default_remote,
                 &state.local_branch,
-            )
+            );
+            (remote, branch, state.force_with_lease)
         } else {
             return None;
         };
@@ -58,18 +59,21 @@ pub fn update(model: &mut Model) -> Option<Message> {
     // Build the refspec for setting upstream
     let refspec = format!("HEAD:{}", branch);
 
+    // Build push command arguments
+    let mut args = vec![
+        "push".to_string(),
+        "-v".to_string(),
+        "--set-upstream".to_string(),
+    ];
+    if force_with_lease {
+        args.push("--force-with-lease".to_string());
+    }
+    args.push(remote.clone());
+    args.push(refspec);
+
     // Spawn push command in background thread with PTY
-    let (result_rx, ui_channels) = spawn_git_with_pty(
-        repo_path.to_path_buf(),
-        vec![
-            "push".to_string(),
-            "-v".to_string(),
-            "--set-upstream".to_string(),
-            remote.clone(),
-            refspec,
-        ],
-        CredentialStrategy::Prompt,
-    );
+    let (result_rx, ui_channels) =
+        spawn_git_with_pty(repo_path.to_path_buf(), args, CredentialStrategy::Prompt);
 
     // Store PTY state for main loop to monitor
     if let Some(ui_channels) = ui_channels {

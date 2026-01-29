@@ -75,6 +75,19 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                         }
                         _ => None,
                     }
+                } else if state.arg_mode {
+                    // In argument selection mode
+                    match (key.modifiers, key.code) {
+                        (KeyModifiers::NONE, KeyCode::Esc)
+                        | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
+                            Some(Message::DismissPopup)
+                        }
+                        (KeyModifiers::NONE, KeyCode::Char('f')) => {
+                            Some(Message::PushToggleForceWithLease)
+                        }
+                        // Any other key exits argument mode
+                        _ => Some(Message::PushExitArgMode),
+                    }
                 } else {
                     // Normal push popup mode
                     match (key.modifiers, key.code) {
@@ -89,6 +102,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                                 Some(Message::PushEnterInputMode)
                             }
                         }
+                        (KeyModifiers::NONE, KeyCode::Char('-')) => Some(Message::PushEnterArgMode),
                         _ => None,
                     }
                 }
@@ -385,6 +399,8 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
+                arg_mode: false,
+                force_with_lease: false,
             },
         )));
 
@@ -405,6 +421,8 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
+                arg_mode: false,
+                force_with_lease: false,
             },
         )));
 
@@ -425,6 +443,8 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
+                arg_mode: false,
+                force_with_lease: false,
             },
         )));
 
@@ -445,6 +465,8 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: String::new(),
+                arg_mode: false,
+                force_with_lease: false,
             },
         )));
 
@@ -465,6 +487,8 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: "test".to_string(),
+                arg_mode: false,
+                force_with_lease: false,
             },
         )));
 
@@ -485,6 +509,8 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: "feature".to_string(),
+                arg_mode: false,
+                force_with_lease: false,
             },
         )));
 
@@ -505,6 +531,96 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: String::new(),
+                arg_mode: false,
+                force_with_lease: false,
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_minus_in_push_popup_enters_arg_mode() {
+        use crate::model::popup::PushPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+            PushPopupState {
+                local_branch: "main".to_string(),
+                upstream: None,
+                default_remote: "origin".to_string(),
+                input_mode: false,
+                input_text: String::new(),
+                arg_mode: false,
+                force_with_lease: false,
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::PushEnterArgMode));
+    }
+
+    #[test]
+    fn test_f_in_arg_mode_toggles_force_with_lease() {
+        use crate::model::popup::PushPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+            PushPopupState {
+                local_branch: "main".to_string(),
+                upstream: None,
+                default_remote: "origin".to_string(),
+                input_mode: false,
+                input_text: String::new(),
+                arg_mode: true,
+                force_with_lease: false,
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::PushToggleForceWithLease));
+    }
+
+    #[test]
+    fn test_other_key_in_arg_mode_exits_arg_mode() {
+        use crate::model::popup::PushPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+            PushPopupState {
+                local_branch: "main".to_string(),
+                upstream: None,
+                default_remote: "origin".to_string(),
+                input_mode: false,
+                input_text: String::new(),
+                arg_mode: true,
+                force_with_lease: false,
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('x'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::PushExitArgMode));
+    }
+
+    #[test]
+    fn test_esc_in_arg_mode_dismisses_popup() {
+        use crate::model::popup::PushPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+            PushPopupState {
+                local_branch: "main".to_string(),
+                upstream: None,
+                default_remote: "origin".to_string(),
+                input_mode: false,
+                input_text: String::new(),
+                arg_mode: true,
+                force_with_lease: false,
             },
         )));
 
