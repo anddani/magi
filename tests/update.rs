@@ -1332,3 +1332,133 @@ fn test_show_help_returns_none() {
     let follow_up = update(&mut model, Message::ShowHelp);
     assert_eq!(follow_up, None);
 }
+
+// ============================================================================
+// Push Popup Argument Mode Tests
+// ============================================================================
+
+use magi::model::popup::PushPopupState;
+
+fn create_push_popup_model() -> Model {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+    let git_info = GitInfo::new_from_path(repo_path).unwrap();
+    let lines = git_info.get_lines().unwrap();
+
+    let mut model = Model {
+        git_info,
+        running_state: RunningState::Running,
+        ui_model: UiModel {
+            lines,
+            cursor_position: 0,
+            scroll_offset: 0,
+            viewport_height: 20,
+            ..Default::default()
+        },
+        theme: Theme::default(),
+        popup: None,
+        toast: None,
+        select_result: None,
+        select_context: None,
+        pty_state: None,
+    };
+
+    // Set up push popup state
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+        PushPopupState {
+            local_branch: "main".to_string(),
+            upstream: None,
+            default_remote: "origin".to_string(),
+            input_mode: false,
+            input_text: String::new(),
+            arg_mode: false,
+            force_with_lease: false,
+        },
+    )));
+
+    model
+}
+
+#[test]
+fn test_push_enter_arg_mode() {
+    let mut model = create_push_popup_model();
+
+    // Verify arg_mode starts false
+    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
+        assert!(!state.arg_mode);
+    }
+
+    // Enter arg mode
+    update(&mut model, Message::PushEnterArgMode);
+
+    // Verify arg_mode is now true
+    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
+        assert!(state.arg_mode);
+    } else {
+        panic!("Expected Push popup");
+    }
+}
+
+#[test]
+fn test_push_exit_arg_mode() {
+    let mut model = create_push_popup_model();
+
+    // Set arg_mode to true first
+    if let Some(PopupContent::Command(PopupContentCommand::Push(ref mut state))) = model.popup {
+        state.arg_mode = true;
+    }
+
+    // Exit arg mode
+    update(&mut model, Message::PushExitArgMode);
+
+    // Verify arg_mode is now false
+    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
+        assert!(!state.arg_mode);
+    } else {
+        panic!("Expected Push popup");
+    }
+}
+
+#[test]
+fn test_push_toggle_force_with_lease_enables() {
+    let mut model = create_push_popup_model();
+
+    // Set arg_mode to true first (as would happen in real usage)
+    if let Some(PopupContent::Command(PopupContentCommand::Push(ref mut state))) = model.popup {
+        state.arg_mode = true;
+        assert!(!state.force_with_lease);
+    }
+
+    // Toggle force_with_lease
+    update(&mut model, Message::PushToggleForceWithLease);
+
+    // Verify force_with_lease is now true and arg_mode is false
+    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
+        assert!(state.force_with_lease);
+        assert!(!state.arg_mode); // Should exit arg mode after toggle
+    } else {
+        panic!("Expected Push popup");
+    }
+}
+
+#[test]
+fn test_push_toggle_force_with_lease_disables() {
+    let mut model = create_push_popup_model();
+
+    // Set force_with_lease to true and arg_mode to true
+    if let Some(PopupContent::Command(PopupContentCommand::Push(ref mut state))) = model.popup {
+        state.arg_mode = true;
+        state.force_with_lease = true;
+    }
+
+    // Toggle force_with_lease
+    update(&mut model, Message::PushToggleForceWithLease);
+
+    // Verify force_with_lease is now false and arg_mode is false
+    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
+        assert!(!state.force_with_lease);
+        assert!(!state.arg_mode); // Should exit arg mode after toggle
+    } else {
+        panic!("Expected Push popup");
+    }
+}

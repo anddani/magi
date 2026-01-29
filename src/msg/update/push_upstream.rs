@@ -1,10 +1,21 @@
 use crate::{
     git::{credential::CredentialStrategy, pty_command::spawn_git_with_pty},
-    model::{popup::PopupContent, Model, PtyState},
+    model::{
+        popup::{PopupContent, PopupContentCommand},
+        Model, PtyState,
+    },
     msg::Message,
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
+    // Check if force_with_lease is enabled before dismissing popup
+    let force_with_lease =
+        if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
+            state.force_with_lease
+        } else {
+            false
+        };
+
     model.popup = None;
 
     if model.pty_state.is_some() {
@@ -21,12 +32,15 @@ pub fn update(model: &mut Model) -> Option<Message> {
         return None;
     };
 
+    // Build push command arguments
+    let mut args = vec!["push".to_string(), "-v".to_string()];
+    if force_with_lease {
+        args.push("--force-with-lease".to_string());
+    }
+
     // Spawn push command in background thread with PTY
-    let (result_rx, ui_channels) = spawn_git_with_pty(
-        repo_path.to_path_buf(),
-        vec!["push".to_string(), "-v".to_string()],
-        CredentialStrategy::Prompt,
-    );
+    let (result_rx, ui_channels) =
+        spawn_git_with_pty(repo_path.to_path_buf(), args, CredentialStrategy::Prompt);
 
     // Store PTY state for main loop to monitor
     if let Some(ui_channels) = ui_channels {
