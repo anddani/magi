@@ -63,6 +63,12 @@ pub enum Message {
     PushInputComplete,
     /// Confirm push with the entered upstream name
     PushConfirmInput,
+    /// Enter argument selection mode in push popup (user pressed '-')
+    PushEnterArgMode,
+    /// Exit argument selection mode (user pressed non-matching key)
+    PushExitArgMode,
+    /// Toggle the force-with-lease argument
+    PushToggleForceWithLease,
 
     /// Select popup messages
     Select(SelectMessage),

@@ -15,10 +15,13 @@ mod half_page_up;
 mod move_down;
 mod move_up;
 mod push_confirm_input;
+mod push_enter_arg_mode;
 mod push_enter_input_mode;
+mod push_exit_arg_mode;
 mod push_input_backspace;
 mod push_input_char;
 mod push_input_complete;
+mod push_toggle_force_with_lease;
 mod push_upstream;
 mod quit;
 mod refresh;
@@ -73,6 +76,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PushInputBackspace => push_input_backspace::update(model),
         Message::PushInputComplete => push_input_complete::update(model),
         Message::PushConfirmInput => push_confirm_input::update(model),
+        Message::PushEnterArgMode => push_enter_arg_mode::update(model),
+        Message::PushExitArgMode => push_exit_arg_mode::update(model),
+        Message::PushToggleForceWithLease => push_toggle_force_with_lease::update(model),
         Message::Select(select_msg) => match select_msg {
             SelectMessage::Show { title, options } => {
                 show_select_popup::update(model, title, options)
