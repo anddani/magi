@@ -57,7 +57,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Bisect
     - [ ] Commit
         - [x] Commit
-        - [ ] Amend
+        - [x] Amend
         - [ ] Reword
         - [ ] Extend
         - [ ] Fixup
@@ -71,7 +71,14 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Diff
     - [ ] Diff (change)
     - [ ] Fetch
+        - [ ] Prune deleted branches
+        - [ ] Fetch all tags
+        - [ ] Force
     - [ ] Pull
+        - [ ] Fast forward only
+        - [ ] Rebase local commits
+        - [ ] Autostash
+        - [ ] Force
     - [ ] Help
     - [ ] Jump to section
     - [ ] Log
@@ -81,6 +88,13 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Submodule
     - [ ] Subtree
     - [ ] Push
+        - [x] Force with lease
+        - [ ] Force
+        - [ ] Disable hooks
+        - [ ] Dry run
+        - [ ] Set upstream
+        - [ ] Include all tags
+        - [ ] Include related annotated tags
     - [ ] Rebase
     - [ ] Tag
     - [ ] Note
@@ -97,8 +111,8 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Discard
     - [ ] Stage
     - [ ] Unstage
-    - [ ] Stage all
-    - [ ] Unstage all
+    - [x] Stage all
+    - [x] Unstage all
 
 
 ## License
