@@ -43,9 +43,9 @@ pub enum PullArgument {
     Force,
 }
 
-impl Into<String> for PushArgument {
-    fn into(self) -> String {
-        String::from(match self {
+impl From<PushArgument> for String {
+    fn from(val: PushArgument) -> Self {
+        String::from(match val {
             PushArgument::ForceWithLease => "--force-with-lease",
             PushArgument::Force => "--force",
         })
