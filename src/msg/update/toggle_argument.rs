@@ -23,5 +23,7 @@ pub fn update(model: &mut Model, argument: PushArgument) -> Option<Message> {
             model.arguments = Some(PushArguments(set));
         }
     }
-    Some(Message::ExitArgMode)
+    // Exit arg mode after toggling
+    model.arg_mode = false;
+    None
 }

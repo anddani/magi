@@ -451,6 +451,7 @@ mod tests {
         use crate::model::popup::PushPopupState;
 
         let mut model = create_test_model();
+        model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
             PushPopupState {
                 local_branch: "main".to_string(),
@@ -474,6 +475,7 @@ mod tests {
         use crate::model::popup::PushPopupState;
 
         let mut model = create_test_model();
+        model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
             PushPopupState {
                 local_branch: "main".to_string(),
