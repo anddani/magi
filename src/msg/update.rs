@@ -8,20 +8,19 @@ mod checkout_branch;
 mod commit;
 mod credentials_input;
 mod dismiss_popup;
+mod enter_arg_mode;
 mod enter_visual_mode;
+mod exit_arg_mode;
 mod exit_visual_mode;
 mod half_page_down;
 mod half_page_up;
 mod move_down;
 mod move_up;
 mod push_confirm_input;
-mod push_enter_arg_mode;
 mod push_enter_input_mode;
-mod push_exit_arg_mode;
 mod push_input_backspace;
 mod push_input_char;
 mod push_input_complete;
-mod push_toggle_force_with_lease;
 mod push_upstream;
 mod quit;
 mod refresh;
@@ -39,6 +38,7 @@ mod show_help;
 mod show_push_popup;
 mod show_select_popup;
 mod stage_all_modified;
+mod toggle_argument;
 mod toggle_section;
 mod unstage_all;
 
@@ -76,9 +76,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PushInputBackspace => push_input_backspace::update(model),
         Message::PushInputComplete => push_input_complete::update(model),
         Message::PushConfirmInput => push_confirm_input::update(model),
-        Message::PushEnterArgMode => push_enter_arg_mode::update(model),
-        Message::PushExitArgMode => push_exit_arg_mode::update(model),
-        Message::PushToggleForceWithLease => push_toggle_force_with_lease::update(model),
+        Message::EnterArgMode => enter_arg_mode::update(model),
+        Message::ExitArgMode => exit_arg_mode::update(model),
+        Message::ToggleArgument(push_argument) => toggle_argument::update(model, push_argument),
         Message::Select(select_msg) => match select_msg {
             SelectMessage::Show { title, options } => {
                 show_select_popup::update(model, title, options)

@@ -1,0 +1,36 @@
+use ratatui::{
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+};
+
+use crate::config::Theme;
+
+pub fn argument_line<'a>(
+    theme: &Theme,
+    key: &'a str,
+    description: &'a str,
+    flag: &'a str,
+    arg_mode: bool,
+    selected: bool,
+) -> Line<'a> {
+    let faded_style = Style::default().fg(Color::DarkGray);
+    let desc_style = Style::default();
+    let key_style = Style::default()
+        .fg(theme.diff_addition)
+        .add_modifier(Modifier::BOLD);
+
+    let dash_style = if arg_mode { faded_style } else { key_style };
+
+    let flag_style = if selected {
+        Style::default().fg(theme.diff_addition) // Green when selected
+    } else {
+        faded_style // Gray when not selected
+    };
+    Line::from(vec![
+        Span::styled("-", dash_style),
+        Span::styled(key, key_style),
+        Span::styled(format!(" {description} ("), desc_style),
+        Span::styled(flag, flag_style),
+        Span::styled(")", desc_style),
+    ])
+}

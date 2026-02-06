@@ -36,6 +36,8 @@ fn test_refresh_message() -> Result<(), git2::Error> {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Clear the lines to simulate outdated state
@@ -67,6 +69,8 @@ fn test_quit_message() {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Send quit message
@@ -105,6 +109,8 @@ fn create_test_model_with_lines(count: usize) -> Model {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     }
 }
 
@@ -746,6 +752,8 @@ fn test_commit_without_staged_changes_shows_toast() {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Send commit message (no staged changes in test repo)
@@ -775,6 +783,8 @@ fn test_dismiss_popup_clears_popup() {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Popup should be present
@@ -961,6 +971,8 @@ fn test_collapsed_state_preserved_when_staging_all() {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Stage all modified files
@@ -1045,6 +1057,8 @@ fn test_collapsed_state_preserved_when_unstaging_all() {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Unstage all files
@@ -1111,6 +1125,8 @@ fn test_expanded_state_preserved_when_staging() {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Stage all modified files
@@ -1361,6 +1377,8 @@ fn create_push_popup_model() -> Model {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Set up push popup state
@@ -1371,8 +1389,6 @@ fn create_push_popup_model() -> Model {
             default_remote: "origin".to_string(),
             input_mode: false,
             input_text: String::new(),
-            arg_mode: false,
-            force_with_lease: false,
         },
     )));
 

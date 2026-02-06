@@ -48,8 +48,6 @@ pub fn update(model: &mut Model) -> Option<Message> {
         default_remote,
         input_mode: false,
         input_text: String::new(),
-        arg_mode: false,
-        force_with_lease: false,
     };
 
     model.popup = Some(PopupContent::Command(PopupContentCommand::Push(state)));

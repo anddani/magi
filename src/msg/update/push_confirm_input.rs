@@ -1,6 +1,9 @@
+use std::collections::HashSet;
+
 use crate::{
     git::{credential::CredentialStrategy, pty_command::spawn_git_with_pty},
     model::{
+        arguments::{Arguments::PushArguments, PushArgument},
         popup::{PopupContent, PopupContentCommand},
         Model, PtyState,
     },
@@ -26,14 +29,14 @@ fn parse_remote_branch(input: &str, default_remote: &str, local_branch: &str) ->
 
 pub fn update(model: &mut Model) -> Option<Message> {
     // Get the remote, branch, and force_with_lease setting from popup state
-    let (remote, branch, force_with_lease) =
+    let (remote, branch) =
         if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
             let (remote, branch) = parse_remote_branch(
                 &state.input_text,
                 &state.default_remote,
                 &state.local_branch,
             );
-            (remote, branch, state.force_with_lease)
+            (remote, branch)
         } else {
             return None;
         };
@@ -65,8 +68,14 @@ pub fn update(model: &mut Model) -> Option<Message> {
         "-v".to_string(),
         "--set-upstream".to_string(),
     ];
-    if force_with_lease {
-        args.push("--force-with-lease".to_string());
+    let arguments: HashSet<PushArgument> =
+        if let Some(PushArguments(arguments)) = model.arguments.take() {
+            arguments
+        } else {
+            HashSet::new()
+        };
+    for argument in arguments {
+        args.push(argument.into())
     }
     args.push(remote.clone());
     args.push(refspec);

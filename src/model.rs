@@ -3,12 +3,14 @@ use std::time::Instant;
 
 use crate::config::Theme;
 use crate::git::{CommitInfo, GitInfo, GitRef, TagInfo};
+use crate::model::arguments::Arguments;
 use crate::msg::Message;
 
 pub use popup::{CredentialPopupState, PopupContent};
 pub use pty_state::PtyState;
 use select_popup::{SelectContext, SelectResult};
 
+pub mod arguments;
 pub mod popup;
 pub mod pty_state;
 pub mod select_popup;
@@ -33,6 +35,10 @@ pub struct Model {
     pub select_context: Option<SelectContext>,
     /// State for an ongoing PTY command that may require credentials
     pub pty_state: Option<PtyState>,
+    /// When true, user is selecting an argument (pressed '-')
+    pub arg_mode: bool,
+    /// Flags to add to the next command
+    pub arguments: Option<Arguments>,
 }
 
 #[derive(Debug, Clone)]

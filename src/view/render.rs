@@ -8,7 +8,7 @@ use ratatui::{
 
 use crate::model::{
     popup::{PopupContent, PopupContentCommand},
-    Toast, ToastStyle,
+    Model, Toast, ToastStyle,
 };
 
 mod branch_popup;
@@ -18,6 +18,7 @@ mod help_popup;
 mod popup_content;
 mod push_popup;
 mod select_popup;
+mod util;
 
 /// Calculate a centered rectangle within the given area
 fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
@@ -69,6 +70,7 @@ pub fn render_toast(toast: &Toast, frame: &mut Frame, area: Rect, theme: &crate:
 
 /// Render a modal popup overlay (centered, requires user action)
 pub fn render_popup(
+    model: &Model,
     popup: &PopupContent,
     frame: &mut Frame,
     area: Rect,
@@ -79,7 +81,7 @@ pub fn render_popup(
             render_error_popup(message, frame, area, theme);
         }
         PopupContent::Command(command) => {
-            render_command_popup(frame, area, theme, command);
+            render_command_popup(model, frame, area, theme, command);
         }
         PopupContent::Credential(state) => {
             credential_popup::render(state, frame, area, theme);
@@ -132,6 +134,7 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
 
 /// Render a command popup (bottom half of screen)
 fn render_command_popup(
+    model: &Model,
     frame: &mut Frame,
     area: Rect,
     theme: &crate::config::Theme,
@@ -146,7 +149,7 @@ fn render_command_popup(
     let content = match command {
         PopupContentCommand::Help => help_popup::content(theme),
         PopupContentCommand::Commit => commit_popup::content(theme),
-        PopupContentCommand::Push(state) => push_popup::content(theme, state),
+        PopupContentCommand::Push(state) => push_popup::content(theme, model, state),
         PopupContentCommand::Branch => branch_popup::content(theme),
         PopupContentCommand::Select(_) => unreachable!(), // Handled above
     };

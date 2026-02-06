@@ -1,21 +1,16 @@
+use std::collections::HashSet;
+
 use crate::{
     git::{credential::CredentialStrategy, pty_command::spawn_git_with_pty},
     model::{
-        popup::{PopupContent, PopupContentCommand},
+        arguments::{Arguments::PushArguments, PushArgument},
+        popup::PopupContent,
         Model, PtyState,
     },
     msg::Message,
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    // Check if force_with_lease is enabled before dismissing popup
-    let force_with_lease =
-        if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
-            state.force_with_lease
-        } else {
-            false
-        };
-
     model.popup = None;
 
     if model.pty_state.is_some() {
@@ -34,8 +29,15 @@ pub fn update(model: &mut Model) -> Option<Message> {
 
     // Build push command arguments
     let mut args = vec!["push".to_string(), "-v".to_string()];
-    if force_with_lease {
-        args.push("--force-with-lease".to_string());
+
+    let arguments: HashSet<PushArgument> =
+        if let Some(PushArguments(arguments)) = model.arguments.take() {
+            arguments
+        } else {
+            HashSet::new()
+        };
+    for argument in arguments {
+        args.push(argument.into())
     }
 
     // Spawn push command in background thread with PTY
