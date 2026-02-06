@@ -1,12 +1,12 @@
 use crossterm::event::{self, KeyCode, KeyModifiers};
 
 use crate::{
-    model::{
-        popup::{PopupContent, PopupContentCommand},
-        Model,
-    },
-    msg::{CredentialsMessage, Message, SelectMessage},
+    model::{popup::PopupContent, Model},
+    msg::Message,
 };
+
+mod command_popup;
+mod credentials_popup;
 
 /// Maps a key event into a [`Message`] given the application state.
 /// If function returns [`None`], no action should be triggered.
@@ -19,117 +19,11 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     }
 
     if let Some(PopupContent::Credential(_)) = &model.popup {
-        return match (key.modifiers, key.code) {
-            (KeyModifiers::NONE, KeyCode::Esc) | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
-                Some(Message::DismissPopup)
-            }
-            (KeyModifiers::NONE, KeyCode::Enter) => {
-                Some(Message::Credentials(CredentialsMessage::CredentialConfirm))
-            }
-            (KeyModifiers::NONE, KeyCode::Backspace) => Some(Message::Credentials(
-                CredentialsMessage::CredentialInputBackspace,
-            )),
-            (_, KeyCode::Char(c)) => Some(Message::Credentials(
-                CredentialsMessage::CredentialInputChar(c),
-            )),
-            _ => None,
-        };
+        return credentials_popup::handle_credentials_popup_key(key);
     }
 
     if let Some(PopupContent::Command(command)) = &model.popup {
-        return match command {
-            PopupContentCommand::Help => match (key.modifiers, key.code) {
-                (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
-                | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
-                _ => None,
-            },
-            PopupContentCommand::Commit => match (key.modifiers, key.code) {
-                (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
-                | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
-                (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::Commit),
-                (KeyModifiers::NONE, KeyCode::Char('a')) => Some(Message::Amend),
-                _ => None,
-            },
-            PopupContentCommand::Branch => match (key.modifiers, key.code) {
-                (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
-                | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
-                (KeyModifiers::NONE, KeyCode::Char('b')) => Some(Message::ShowCheckoutBranchPopup),
-                _ => None,
-            },
-            PopupContentCommand::Push(state) => {
-                if state.input_mode {
-                    // In input mode, handle text input
-                    match (key.modifiers, key.code) {
-                        (KeyModifiers::NONE, KeyCode::Esc)
-                        | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
-                            Some(Message::DismissPopup)
-                        }
-                        (KeyModifiers::NONE, KeyCode::Enter) => Some(Message::PushConfirmInput),
-                        (KeyModifiers::NONE, KeyCode::Backspace) => {
-                            Some(Message::PushInputBackspace)
-                        }
-                        (KeyModifiers::NONE, KeyCode::Tab) => Some(Message::PushInputComplete),
-                        (KeyModifiers::NONE, KeyCode::Char(c))
-                        | (KeyModifiers::SHIFT, KeyCode::Char(c)) => {
-                            Some(Message::PushInputChar(c))
-                        }
-                        _ => None,
-                    }
-                } else if state.arg_mode {
-                    // In argument selection mode
-                    match (key.modifiers, key.code) {
-                        (KeyModifiers::NONE, KeyCode::Esc)
-                        | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
-                            Some(Message::DismissPopup)
-                        }
-                        (KeyModifiers::NONE, KeyCode::Char('f')) => {
-                            Some(Message::PushToggleForceWithLease)
-                        }
-                        // Any other key exits argument mode
-                        _ => Some(Message::PushExitArgMode),
-                    }
-                } else {
-                    // Normal push popup mode
-                    match (key.modifiers, key.code) {
-                        (KeyModifiers::NONE, KeyCode::Esc | KeyCode::Char('q'))
-                        | (KeyModifiers::CONTROL, KeyCode::Char('g')) => {
-                            Some(Message::DismissPopup)
-                        }
-                        (KeyModifiers::NONE, KeyCode::Char('u')) => {
-                            if state.upstream.is_some() {
-                                Some(Message::PushUpstream)
-                            } else {
-                                Some(Message::PushEnterInputMode)
-                            }
-                        }
-                        (KeyModifiers::NONE, KeyCode::Char('-')) => Some(Message::PushEnterArgMode),
-                        _ => None,
-                    }
-                }
-            }
-            PopupContentCommand::Select(_) => match (key.modifiers, key.code) {
-                (KeyModifiers::NONE, KeyCode::Esc)
-                | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
-                (KeyModifiers::NONE, KeyCode::Enter) => {
-                    Some(Message::Select(SelectMessage::Confirm))
-                }
-                (KeyModifiers::NONE, KeyCode::Backspace) => {
-                    Some(Message::Select(SelectMessage::InputBackspace))
-                }
-                (KeyModifiers::NONE, KeyCode::Up) | (KeyModifiers::CONTROL, KeyCode::Char('p')) => {
-                    Some(Message::Select(SelectMessage::MoveUp))
-                }
-                (KeyModifiers::NONE, KeyCode::Down)
-                | (KeyModifiers::CONTROL, KeyCode::Char('n')) => {
-                    Some(Message::Select(SelectMessage::MoveDown))
-                }
-                (KeyModifiers::NONE, KeyCode::Char(c))
-                | (KeyModifiers::SHIFT, KeyCode::Char(c)) => {
-                    Some(Message::Select(SelectMessage::InputChar(c)))
-                }
-                _ => None,
-            },
-        };
+        return command_popup::handle_command_popup_key(key, command, model.arg_mode);
     }
 
     // Check for visual mode exit keys first (ESC and Ctrl-g)
@@ -154,17 +48,18 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::CONTROL, KeyCode::Char('d')) => Some(Message::HalfPageDown),
         (KeyModifiers::CONTROL, KeyCode::Char('e')) => Some(Message::ScrollLineDown),
         (KeyModifiers::CONTROL, KeyCode::Char('y')) => Some(Message::ScrollLineUp),
-        (KeyModifiers::SHIFT, KeyCode::Char('S')) => Some(Message::StageAllModified),
-        (KeyModifiers::SHIFT, KeyCode::Char('U')) => Some(Message::UnstageAll),
-        (KeyModifiers::SHIFT, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
-        (KeyModifiers::SHIFT, KeyCode::Char('P')) => Some(Message::ShowPushPopup),
-        (KeyModifiers::NONE, KeyCode::Char('?')) => Some(Message::ShowHelp),
-        (KeyModifiers::NONE, KeyCode::Char('q')) => Some(Message::Quit),
-        (KeyModifiers::NONE, KeyCode::Char('k') | KeyCode::Up) => Some(Message::MoveUp),
-        (KeyModifiers::NONE, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
-        (KeyModifiers::NONE, KeyCode::Tab) => Some(Message::ToggleSection),
-        (KeyModifiers::NONE, KeyCode::Char('c')) => Some(Message::ShowCommitPopup),
-        (KeyModifiers::NONE, KeyCode::Char('b')) => Some(Message::ShowBranchPopup),
+        (_, KeyCode::Char('S')) => Some(Message::StageAllModified),
+        (_, KeyCode::Char('U')) => Some(Message::UnstageAll),
+        (_, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
+        (_, KeyCode::Char('p')) => Some(Message::ShowPushPopup),
+        (_, KeyCode::Char('P')) => Some(Message::ShowPushPopup),
+        (_, KeyCode::Char('?')) => Some(Message::ShowHelp),
+        (_, KeyCode::Char('q')) => Some(Message::Quit),
+        (_, KeyCode::Char('k') | KeyCode::Up) => Some(Message::MoveUp),
+        (_, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
+        (_, KeyCode::Char('c')) => Some(Message::ShowCommitPopup),
+        (_, KeyCode::Char('b')) => Some(Message::ShowBranchPopup),
+        (_, KeyCode::Tab) => Some(Message::ToggleSection),
         _ => None,
     }
 }
@@ -175,8 +70,10 @@ mod tests {
     use crate::config::Theme;
     use crate::git::test_repo::TestRepo;
     use crate::git::GitInfo;
+    use crate::model::arguments::PushArgument;
     use crate::model::popup::PopupContentCommand;
     use crate::model::{RunningState, UiModel};
+    use crate::msg::SelectMessage;
     use crossterm::event::{KeyEvent, KeyEventKind, KeyEventState};
 
     fn create_key_event(modifiers: KeyModifiers, code: KeyCode) -> KeyEvent {
@@ -202,6 +99,8 @@ mod tests {
             select_result: None,
             select_context: None,
             pty_state: None,
+            arg_mode: false,
+            arguments: None,
         }
     }
 
@@ -399,8 +298,6 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
-                arg_mode: false,
-                force_with_lease: false,
             },
         )));
 
@@ -421,8 +318,6 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
-                arg_mode: false,
-                force_with_lease: false,
             },
         )));
 
@@ -443,8 +338,6 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
-                arg_mode: false,
-                force_with_lease: false,
             },
         )));
 
@@ -465,8 +358,6 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: String::new(),
-                arg_mode: false,
-                force_with_lease: false,
             },
         )));
 
@@ -487,8 +378,6 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: "test".to_string(),
-                arg_mode: false,
-                force_with_lease: false,
             },
         )));
 
@@ -509,8 +398,6 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: "feature".to_string(),
-                arg_mode: false,
-                force_with_lease: false,
             },
         )));
 
@@ -531,8 +418,6 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: true,
                 input_text: String::new(),
-                arg_mode: false,
-                force_with_lease: false,
             },
         )));
 
@@ -553,14 +438,12 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
-                arg_mode: false,
-                force_with_lease: false,
             },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::PushEnterArgMode));
+        assert_eq!(result, Some(Message::EnterArgMode));
     }
 
     #[test]
@@ -568,6 +451,7 @@ mod tests {
         use crate::model::popup::PushPopupState;
 
         let mut model = create_test_model();
+        model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
             PushPopupState {
                 local_branch: "main".to_string(),
@@ -575,14 +459,15 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
-                arg_mode: true,
-                force_with_lease: false,
             },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::PushToggleForceWithLease));
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(PushArgument::ForceWithLease))
+        );
     }
 
     #[test]
@@ -590,6 +475,7 @@ mod tests {
         use crate::model::popup::PushPopupState;
 
         let mut model = create_test_model();
+        model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
             PushPopupState {
                 local_branch: "main".to_string(),
@@ -597,14 +483,12 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
-                arg_mode: true,
-                force_with_lease: false,
             },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('x'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::PushExitArgMode));
+        assert_eq!(result, Some(Message::ExitArgMode));
     }
 
     #[test]
@@ -619,8 +503,6 @@ mod tests {
                 default_remote: "origin".to_string(),
                 input_mode: false,
                 input_text: String::new(),
-                arg_mode: true,
-                force_with_lease: false,
             },
         )));
 

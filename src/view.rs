@@ -194,6 +194,6 @@ pub fn view(model: &Model, frame: &mut Frame) {
 
     // Render popup overlay if present (on top of toast)
     if let Some(popup) = &model.popup {
-        render_popup(popup, frame, area, theme);
+        render_popup(model, popup, frame, area, theme);
     }
 }

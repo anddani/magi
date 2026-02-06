@@ -25,7 +25,6 @@ pub fn visible_lines_between(
 pub fn is_external_command(msg: &Message) -> bool {
     match msg {
         Message::Commit | Message::Amend => true,
-
         Message::Quit
         | Message::Refresh
         | Message::MoveUp
@@ -52,9 +51,9 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::PushInputBackspace
         | Message::PushInputComplete
         | Message::PushConfirmInput
-        | Message::PushEnterArgMode
-        | Message::PushExitArgMode
-        | Message::PushToggleForceWithLease
+        | Message::EnterArgMode
+        | Message::ToggleArgument(_)
+        | Message::ExitArgMode
         | Message::Select(_)
         | Message::Credentials(_) => false,
     }

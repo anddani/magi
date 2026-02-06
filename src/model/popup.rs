@@ -43,8 +43,4 @@ pub struct PushPopupState {
     pub input_mode: bool,
     /// The text input for the remote/branch (e.g., "origin/feature-branch")
     pub input_text: String,
-    /// When true, user is selecting an argument (pressed '-')
-    pub arg_mode: bool,
-    /// When true, push with --force-with-lease flag
-    pub force_with_lease: bool,
 }

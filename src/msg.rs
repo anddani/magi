@@ -1,3 +1,5 @@
+use crate::model::arguments::PushArgument;
+
 pub mod update;
 pub mod util;
 
@@ -63,12 +65,10 @@ pub enum Message {
     PushInputComplete,
     /// Confirm push with the entered upstream name
     PushConfirmInput,
-    /// Enter argument selection mode in push popup (user pressed '-')
-    PushEnterArgMode,
-    /// Exit argument selection mode (user pressed non-matching key)
-    PushExitArgMode,
-    /// Toggle the force-with-lease argument
-    PushToggleForceWithLease,
+
+    EnterArgMode,
+    ToggleArgument(PushArgument),
+    ExitArgMode,
 
     /// Select popup messages
     Select(SelectMessage),

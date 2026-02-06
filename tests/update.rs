@@ -4,6 +4,7 @@ use magi::config::Theme;
 use magi::git::stage::stage_files;
 use magi::git::test_repo::TestRepo;
 use magi::git::GitInfo;
+use magi::model::arguments::{Arguments, PushArgument};
 use magi::model::popup::{PopupContent, PopupContentCommand};
 use magi::model::{
     DiffHunk, DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model,
@@ -14,20 +15,18 @@ use magi::msg::util::visible_lines_between;
 use magi::msg::Message;
 use std::fs;
 
-#[test]
-fn test_refresh_message() -> Result<(), git2::Error> {
-    // Create a test repo to ensure we're in a git repository
+/// Creates a test model with default values. Lines are populated from the git repo.
+fn create_test_model() -> Model {
     let test_repo = TestRepo::new();
     let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create GitInfo from test repo
-    let git_info = GitInfo::new_from_path(repo_path)?;
-    let initial_lines = git_info.get_lines().unwrap();
-    let mut model = Model {
+    let git_info = GitInfo::new_from_path(repo_path).unwrap();
+    // Get lines while TestRepo is still alive (temp directory exists)
+    let lines = git_info.get_lines().unwrap();
+    Model {
         git_info,
         running_state: RunningState::Running,
         ui_model: UiModel {
-            lines: initial_lines.clone(),
+            lines,
             ..Default::default()
         },
         theme: Theme::default(),
@@ -36,6 +35,34 @@ fn test_refresh_message() -> Result<(), git2::Error> {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
+    }
+}
+
+#[test]
+fn test_refresh_message() {
+    // This test needs the TestRepo to stay alive since Refresh reads from the git repo
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+    let git_info = GitInfo::new_from_path(repo_path).unwrap();
+    let lines = git_info.get_lines().unwrap();
+
+    let mut model = Model {
+        git_info,
+        running_state: RunningState::Running,
+        ui_model: UiModel {
+            lines,
+            ..Default::default()
+        },
+        theme: Theme::default(),
+        popup: None,
+        toast: None,
+        select_result: None,
+        select_context: None,
+        pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Clear the lines to simulate outdated state
@@ -48,26 +75,11 @@ fn test_refresh_message() -> Result<(), git2::Error> {
     // Verify that lines were refreshed
     assert!(!model.ui_model.lines.is_empty());
     assert_eq!(model.running_state, RunningState::Running);
-
-    Ok(())
 }
 
 #[test]
 fn test_quit_message() {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    let mut model = Model {
-        git_info,
-        running_state: RunningState::Running,
-        ui_model: UiModel::default(),
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-    };
+    let mut model = create_test_model();
 
     // Send quit message
     update(&mut model, Message::Quit);
@@ -86,26 +98,15 @@ fn create_test_lines(count: usize) -> Vec<Line> {
 }
 
 fn create_test_model_with_lines(count: usize) -> Model {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    Model {
-        git_info,
-        running_state: RunningState::Running,
-        ui_model: UiModel {
-            lines: create_test_lines(count),
-            cursor_position: 0,
-            scroll_offset: 0,
-            viewport_height: 10,
-            ..Default::default()
-        },
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-    }
+    let mut model = create_test_model();
+    model.ui_model = UiModel {
+        lines: create_test_lines(count),
+        cursor_position: 0,
+        scroll_offset: 0,
+        viewport_height: 10,
+        ..Default::default()
+    };
+    model
 }
 
 #[test]
@@ -733,20 +734,7 @@ fn test_half_page_up_with_collapsed_sections() {
 fn test_commit_without_staged_changes_shows_toast() {
     // This test verifies that trying to commit without staged changes
     // shows a toast instead of launching the editor
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    let mut model = Model {
-        git_info,
-        running_state: RunningState::Running,
-        ui_model: UiModel::default(),
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-    };
+    let mut model = create_test_model();
 
     // Send commit message (no staged changes in test repo)
     update(&mut model, Message::Commit);
@@ -760,22 +748,10 @@ fn test_commit_without_staged_changes_shows_toast() {
 
 #[test]
 fn test_dismiss_popup_clears_popup() {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    let mut model = Model {
-        git_info,
-        running_state: RunningState::Running,
-        ui_model: UiModel::default(),
-        theme: Theme::default(),
-        popup: Some(PopupContent::Error {
-            message: "Test error".to_string(),
-        }),
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-    };
+    let mut model = create_test_model();
+    model.popup = Some(PopupContent::Error {
+        message: "Test error".to_string(),
+    });
 
     // Popup should be present
     assert!(model.popup.is_some());
@@ -961,6 +937,8 @@ fn test_collapsed_state_preserved_when_staging_all() {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Stage all modified files
@@ -1045,6 +1023,8 @@ fn test_collapsed_state_preserved_when_unstaging_all() {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Unstage all files
@@ -1111,6 +1091,8 @@ fn test_expanded_state_preserved_when_staging() {
         select_result: None,
         select_context: None,
         pty_state: None,
+        arg_mode: false,
+        arguments: None,
     };
 
     // Stage all modified files
@@ -1340,28 +1322,8 @@ fn test_show_help_returns_none() {
 use magi::model::popup::PushPopupState;
 
 fn create_push_popup_model() -> Model {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    let lines = git_info.get_lines().unwrap();
-
-    let mut model = Model {
-        git_info,
-        running_state: RunningState::Running,
-        ui_model: UiModel {
-            lines,
-            cursor_position: 0,
-            scroll_offset: 0,
-            viewport_height: 20,
-            ..Default::default()
-        },
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-    };
+    let mut model = create_test_model();
+    model.ui_model.viewport_height = 20;
 
     // Set up push popup state
     model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
@@ -1371,8 +1333,6 @@ fn create_push_popup_model() -> Model {
             default_remote: "origin".to_string(),
             input_mode: false,
             input_text: String::new(),
-            arg_mode: false,
-            force_with_lease: false,
         },
     )));
 
@@ -1384,19 +1344,13 @@ fn test_push_enter_arg_mode() {
     let mut model = create_push_popup_model();
 
     // Verify arg_mode starts false
-    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
-        assert!(!state.arg_mode);
-    }
+    assert!(!model.arg_mode);
 
     // Enter arg mode
-    update(&mut model, Message::PushEnterArgMode);
+    update(&mut model, Message::EnterArgMode);
 
     // Verify arg_mode is now true
-    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
-        assert!(state.arg_mode);
-    } else {
-        panic!("Expected Push popup");
-    }
+    assert!(model.arg_mode);
 }
 
 #[test]
@@ -1404,19 +1358,13 @@ fn test_push_exit_arg_mode() {
     let mut model = create_push_popup_model();
 
     // Set arg_mode to true first
-    if let Some(PopupContent::Command(PopupContentCommand::Push(ref mut state))) = model.popup {
-        state.arg_mode = true;
-    }
+    model.arg_mode = true;
 
     // Exit arg mode
-    update(&mut model, Message::PushExitArgMode);
+    update(&mut model, Message::ExitArgMode);
 
     // Verify arg_mode is now false
-    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
-        assert!(!state.arg_mode);
-    } else {
-        panic!("Expected Push popup");
-    }
+    assert!(!model.arg_mode);
 }
 
 #[test]
@@ -1424,21 +1372,23 @@ fn test_push_toggle_force_with_lease_enables() {
     let mut model = create_push_popup_model();
 
     // Set arg_mode to true first (as would happen in real usage)
-    if let Some(PopupContent::Command(PopupContentCommand::Push(ref mut state))) = model.popup {
-        state.arg_mode = true;
-        assert!(!state.force_with_lease);
-    }
+    model.arg_mode = true;
+    assert!(model.arguments.is_none());
 
     // Toggle force_with_lease
-    update(&mut model, Message::PushToggleForceWithLease);
+    update(
+        &mut model,
+        Message::ToggleArgument(PushArgument::ForceWithLease),
+    );
 
-    // Verify force_with_lease is now true and arg_mode is false
-    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
-        assert!(state.force_with_lease);
-        assert!(!state.arg_mode); // Should exit arg mode after toggle
-    } else {
-        panic!("Expected Push popup");
+    // Verify force_with_lease is now enabled and arg_mode is false
+    match &model.arguments {
+        Some(Arguments::PushArguments(args)) => {
+            assert!(args.contains(&PushArgument::ForceWithLease));
+        }
+        _ => panic!("Expected PushArguments"),
     }
+    assert!(!model.arg_mode); // Should exit arg mode after toggle
 }
 
 #[test]
@@ -1446,19 +1396,23 @@ fn test_push_toggle_force_with_lease_disables() {
     let mut model = create_push_popup_model();
 
     // Set force_with_lease to true and arg_mode to true
-    if let Some(PopupContent::Command(PopupContentCommand::Push(ref mut state))) = model.popup {
-        state.arg_mode = true;
-        state.force_with_lease = true;
-    }
+    model.arg_mode = true;
+    let mut args = HashSet::new();
+    args.insert(PushArgument::ForceWithLease);
+    model.arguments = Some(Arguments::PushArguments(args));
 
     // Toggle force_with_lease
-    update(&mut model, Message::PushToggleForceWithLease);
+    update(
+        &mut model,
+        Message::ToggleArgument(PushArgument::ForceWithLease),
+    );
 
-    // Verify force_with_lease is now false and arg_mode is false
-    if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
-        assert!(!state.force_with_lease);
-        assert!(!state.arg_mode); // Should exit arg mode after toggle
-    } else {
-        panic!("Expected Push popup");
+    // Verify force_with_lease is now disabled and arg_mode is false
+    match &model.arguments {
+        Some(Arguments::PushArguments(args)) => {
+            assert!(!args.contains(&PushArgument::ForceWithLease));
+        }
+        _ => panic!("Expected PushArguments"),
     }
+    assert!(!model.arg_mode); // Should exit arg mode after toggle
 }
