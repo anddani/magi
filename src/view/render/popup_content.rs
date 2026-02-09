@@ -18,7 +18,7 @@ pub struct CommandPopupContent<'a> {
 
 impl<'a> CommandPopupContent<'a> {
     /// Create a single-column popup
-    pub fn single_column(title: &'a str, content: Vec<Line<'a>>) -> Self {
+    pub fn _single_column(title: &'a str, content: Vec<Line<'a>>) -> Self {
         Self {
             title,
             columns: vec![PopupColumn {

@@ -7,6 +7,7 @@ pub enum PopupContent {
     Error {
         message: String,
     },
+    Help,
     Command(PopupContentCommand),
     /// Credential input popup for password/passphrase/etc.
     Credential(CredentialPopupState),
@@ -14,7 +15,6 @@ pub enum PopupContent {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContentCommand {
-    Help,
     Commit,
     Push(PushPopupState),
     Branch,

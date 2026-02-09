@@ -8,6 +8,19 @@ use crate::{
 mod command_popup;
 mod credentials_popup;
 
+fn command_popup_keys(c: char) -> Option<Message> {
+    match c {
+        'S' => Some(Message::StageAllModified),
+        'U' => Some(Message::UnstageAll),
+        'V' => Some(Message::EnterVisualMode),
+        'p' => Some(Message::ShowPushPopup),
+        'P' => Some(Message::ShowPushPopup),
+        'c' => Some(Message::ShowCommitPopup),
+        'b' => Some(Message::ShowBranchPopup),
+        _ => None,
+    }
+}
+
 /// Maps a key event into a [`Message`] given the application state.
 /// If function returns [`None`], no action should be triggered.
 pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
@@ -24,6 +37,17 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
 
     if let Some(PopupContent::Command(command)) = &model.popup {
         return command_popup::handle_command_popup_key(key, command, model.arg_mode);
+    }
+
+    // Let commands from help popup open dialogs
+    if model.popup == Some(PopupContent::Help) {
+        return match (key.modifiers, key.code) {
+            (_, KeyCode::Esc)
+            | (_, KeyCode::Char('q'))
+            | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
+            (_, KeyCode::Char(c)) => command_popup_keys(c),
+            _ => None,
+        };
     }
 
     // Check for visual mode exit keys first (ESC and Ctrl-g)
@@ -44,22 +68,19 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
 
     match (key.modifiers, key.code) {
         (KeyModifiers::CONTROL, KeyCode::Char('r')) => Some(Message::Refresh),
+        (_, KeyCode::Char('?')) => Some(Message::ShowHelp),
+        (_, KeyCode::Char('q')) => Some(Message::Quit),
+
+        // Navigation
         (KeyModifiers::CONTROL, KeyCode::Char('u')) => Some(Message::HalfPageUp),
         (KeyModifiers::CONTROL, KeyCode::Char('d')) => Some(Message::HalfPageDown),
         (KeyModifiers::CONTROL, KeyCode::Char('e')) => Some(Message::ScrollLineDown),
         (KeyModifiers::CONTROL, KeyCode::Char('y')) => Some(Message::ScrollLineUp),
-        (_, KeyCode::Char('S')) => Some(Message::StageAllModified),
-        (_, KeyCode::Char('U')) => Some(Message::UnstageAll),
-        (_, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
-        (_, KeyCode::Char('p')) => Some(Message::ShowPushPopup),
-        (_, KeyCode::Char('P')) => Some(Message::ShowPushPopup),
-        (_, KeyCode::Char('?')) => Some(Message::ShowHelp),
-        (_, KeyCode::Char('q')) => Some(Message::Quit),
         (_, KeyCode::Char('k') | KeyCode::Up) => Some(Message::MoveUp),
         (_, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
-        (_, KeyCode::Char('c')) => Some(Message::ShowCommitPopup),
-        (_, KeyCode::Char('b')) => Some(Message::ShowBranchPopup),
         (_, KeyCode::Tab) => Some(Message::ToggleSection),
+
+        (_, KeyCode::Char(c)) => command_popup_keys(c),
         _ => None,
     }
 }
@@ -211,7 +232,7 @@ mod tests {
     #[test]
     fn test_esc_dismisses_help_popup() {
         let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Help));
+        model.popup = Some(PopupContent::Help);
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
@@ -221,7 +242,7 @@ mod tests {
     #[test]
     fn test_q_dismisses_help_popup() {
         let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Help));
+        model.popup = Some(PopupContent::Help);
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
         let result = handle_key(key, &model);

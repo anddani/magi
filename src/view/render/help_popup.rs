@@ -15,9 +15,45 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
         .fg(theme.section_header)
         .add_modifier(Modifier::BOLD);
 
-    let body: Vec<Line> = vec![
-        // Navigation section
-        Line::from(Span::styled("Navigation", section_style)),
+    let commands: Vec<Line> = vec![
+        Line::from(vec![
+            Span::styled("  b       ", key_style),
+            Span::styled("Branch", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  c       ", key_style),
+            Span::styled("Commit", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  P       ", key_style),
+            Span::styled("Push", desc_style),
+        ]),
+        Line::from(""),
+        // General section
+        Line::from(Span::styled("Applying changes", section_style)),
+        Line::from(vec![
+            Span::styled("  S       ", key_style),
+            Span::styled("Stage all modified files", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  U       ", key_style),
+            Span::styled("Unstage all files", desc_style),
+        ]),
+    ];
+
+    let general: Vec<Line> = vec![
+        Line::from(vec![
+            Span::styled("  q       ", key_style),
+            Span::styled("Quit", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  Ctrl-r  ", key_style),
+            Span::styled("Refresh", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  ?       ", key_style),
+            Span::styled("Show this help", desc_style),
+        ]),
         Line::from(vec![
             Span::styled("  j/Down  ", key_style),
             Span::styled("Move down", desc_style),
@@ -46,41 +82,11 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled("  Tab     ", key_style),
             Span::styled("Toggle section collapse/expand", desc_style),
         ]),
-        Line::from(""),
-        // Actions section
-        Line::from(Span::styled("Actions", section_style)),
-        Line::from(vec![
-            Span::styled("  c       ", key_style),
-            Span::styled("Commit", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  S       ", key_style),
-            Span::styled("Stage all modified files", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  U       ", key_style),
-            Span::styled("Unstage all files", desc_style),
-        ]),
         Line::from(vec![
             Span::styled("  V       ", key_style),
             Span::styled("Enter visual selection mode", desc_style),
         ]),
-        Line::from(""),
-        // General section
-        Line::from(Span::styled("General", section_style)),
-        Line::from(vec![
-            Span::styled("  q       ", key_style),
-            Span::styled("Quit", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  Ctrl-r  ", key_style),
-            Span::styled("Refresh", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  ?       ", key_style),
-            Span::styled("Show this help", desc_style),
-        ]),
     ];
 
-    CommandPopupContent::single_column("Help", body)
+    CommandPopupContent::two_columns("Help", "Commands", commands, "General", general)
 }

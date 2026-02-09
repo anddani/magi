@@ -1282,10 +1282,7 @@ fn test_show_help_sets_popup() {
     update(&mut model, Message::ShowHelp);
 
     // Popup should now be Help
-    assert_eq!(
-        model.popup,
-        Some(PopupContent::Command(PopupContentCommand::Help))
-    );
+    assert_eq!(model.popup, Some(PopupContent::Help));
 }
 
 #[test]
@@ -1294,10 +1291,7 @@ fn test_dismiss_popup_clears_help() {
 
     // Show help first
     update(&mut model, Message::ShowHelp);
-    assert_eq!(
-        model.popup,
-        Some(PopupContent::Command(PopupContentCommand::Help))
-    );
+    assert_eq!(model.popup, Some(PopupContent::Help));
 
     // Dismiss the popup
     update(&mut model, Message::DismissPopup);
