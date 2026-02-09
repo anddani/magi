@@ -17,6 +17,7 @@ use crate::{
 mod branch_popup;
 mod commit_popup;
 mod credential_popup;
+mod fetch_popup;
 mod help_popup;
 mod popup_content;
 mod push_popup;
@@ -87,6 +88,7 @@ pub fn render_popup(
             let content = match command {
                 PopupContentCommand::Commit => commit_popup::content(theme),
                 PopupContentCommand::Push(state) => push_popup::content(theme, model, state),
+                PopupContentCommand::Fetch => fetch_popup::content(theme),
                 PopupContentCommand::Branch => branch_popup::content(theme),
 
                 // Select popup uses custom rendering, not the column layout
