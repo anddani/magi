@@ -1,7 +1,10 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
-    model::{arguments::PushArgument, popup::PushPopupState},
+    model::{
+        arguments::{Argument::Push, PushArgument},
+        popup::PushPopupState,
+    },
     msg::Message,
 };
 
@@ -18,8 +21,8 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PushPopupState) -> Option<Mes
 
     if arg_mode {
         return match key.code {
-            KeyCode::Char('f') => Some(Message::ToggleArgument(PushArgument::ForceWithLease)),
-            KeyCode::Char('F') => Some(Message::ToggleArgument(PushArgument::Force)),
+            KeyCode::Char('f') => Some(Message::ToggleArgument(Push(PushArgument::ForceWithLease))),
+            KeyCode::Char('F') => Some(Message::ToggleArgument(Push(PushArgument::Force))),
             // Any other key exits argument mode
             _ => Some(Message::ExitArgMode),
         };

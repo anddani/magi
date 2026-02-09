@@ -84,7 +84,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PushConfirmInput => push_confirm_input::update(model),
         Message::EnterArgMode => enter_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
-        Message::ToggleArgument(push_argument) => toggle_argument::update(model, push_argument),
+        Message::ToggleArgument(argument) => toggle_argument::update(model, argument),
         Message::Select(select_msg) => match select_msg {
             SelectMessage::Show { title, options } => {
                 show_select_popup::update(model, title, options)

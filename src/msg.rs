@@ -1,4 +1,4 @@
-use crate::model::arguments::PushArgument;
+use crate::model::arguments::Argument;
 
 pub mod update;
 pub mod util;
@@ -71,7 +71,7 @@ pub enum Message {
     PushConfirmInput,
 
     EnterArgMode,
-    ToggleArgument(PushArgument),
+    ToggleArgument(Argument),
     ExitArgMode,
 
     /// Select popup messages

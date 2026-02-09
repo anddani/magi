@@ -4,7 +4,7 @@ use magi::config::Theme;
 use magi::git::stage::stage_files;
 use magi::git::test_repo::TestRepo;
 use magi::git::GitInfo;
-use magi::model::arguments::{Arguments, PushArgument};
+use magi::model::arguments::{Argument, Arguments, PushArgument};
 use magi::model::popup::{PopupContent, PopupContentCommand};
 use magi::model::{
     DiffHunk, DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model,
@@ -1372,7 +1372,7 @@ fn test_push_toggle_force_with_lease_enables() {
     // Toggle force_with_lease
     update(
         &mut model,
-        Message::ToggleArgument(PushArgument::ForceWithLease),
+        Message::ToggleArgument(Argument::Push(PushArgument::ForceWithLease)),
     );
 
     // Verify force_with_lease is now enabled and arg_mode is false
@@ -1398,7 +1398,7 @@ fn test_push_toggle_force_with_lease_disables() {
     // Toggle force_with_lease
     update(
         &mut model,
-        Message::ToggleArgument(PushArgument::ForceWithLease),
+        Message::ToggleArgument(Argument::Push(PushArgument::ForceWithLease)),
     );
 
     // Verify force_with_lease is now disabled and arg_mode is false

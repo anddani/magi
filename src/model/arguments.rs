@@ -1,8 +1,45 @@
 use std::collections::HashSet;
 
 pub enum Arguments {
+    FetchArguments(HashSet<FetchArgument>),
     PushArguments(HashSet<PushArgument>),
     PullArguments(HashSet<PullArgument>),
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum Argument {
+    Fetch(FetchArgument),
+    Push(PushArgument),
+    Pull(PullArgument),
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum FetchArgument {
+    Prune,
+}
+
+impl FetchArgument {
+    pub fn all() -> Vec<FetchArgument> {
+        vec![FetchArgument::Prune]
+    }
+
+    pub fn key(&self) -> &'static str {
+        match self {
+            FetchArgument::Prune => "p",
+        }
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            FetchArgument::Prune => "Prune deleted branches",
+        }
+    }
+
+    pub fn flag(&self) -> &'static str {
+        match self {
+            FetchArgument::Prune => "--prune",
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -26,8 +63,8 @@ impl PushArgument {
 
     pub fn description(&self) -> &'static str {
         match self {
-            PushArgument::ForceWithLease => "force with lease",
-            PushArgument::Force => "force",
+            PushArgument::ForceWithLease => "Force with lease",
+            PushArgument::Force => "Force",
         }
     }
 
@@ -39,15 +76,7 @@ impl PushArgument {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum PullArgument {
     Force,
-}
-
-impl From<PushArgument> for String {
-    fn from(val: PushArgument) -> Self {
-        String::from(match val {
-            PushArgument::ForceWithLease => "--force-with-lease",
-            PushArgument::Force => "--force",
-        })
-    }
 }
