@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use ratatui::{
-    style::{Modifier, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
 };
 
@@ -10,21 +10,64 @@ use crate::{
     config::Theme,
     model::{
         arguments::{Arguments::FetchArguments, FetchArgument},
+        popup::FetchPopupState,
         Model,
     },
     view::render::util::argument_line,
 };
 
-pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
+pub fn content<'a>(
+    theme: &Theme,
+    model: &Model,
+    state: &FetchPopupState,
+) -> CommandPopupContent<'a> {
     let key_style = Style::default()
         .fg(theme.local_branch)
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
+    let faded_style = Style::default().fg(Color::DarkGray);
 
-    let commands: Vec<Line> = vec![Line::from(vec![
-        Span::styled("a", key_style),
-        Span::styled(" all remotes", desc_style),
-    ])];
+    // When in arg_mode, fade the command text
+    let cmd_key_style = if model.arg_mode {
+        faded_style
+    } else {
+        key_style
+    };
+    let cmd_desc_style = if model.arg_mode {
+        faded_style
+    } else {
+        desc_style
+    };
+
+    let upstream_description = match &state.upstream {
+        Some(upstream) => {
+            // Upstream is set - show in remote branch color (or faded if in arg_mode)
+            let upstream_style = if model.arg_mode {
+                faded_style
+            } else {
+                Style::default().fg(theme.remote_branch)
+            };
+            vec![
+                Span::styled("u", cmd_key_style),
+                Span::styled(" ", cmd_desc_style),
+                Span::styled(upstream.clone(), upstream_style),
+            ]
+        }
+        None => {
+            // No upstream - show suggestion with ", setting it"
+            vec![
+                Span::styled("u", cmd_key_style),
+                Span::styled(" ${upstream}, setting it", cmd_desc_style),
+            ]
+        }
+    };
+
+    let all_remotes_line = Line::from(vec![
+        Span::styled("a", cmd_key_style),
+        Span::styled(" all remotes", cmd_desc_style),
+    ]);
+
+    let commands: Vec<Line> = vec![Line::from(upstream_description), all_remotes_line];
 
     let selected_args: HashSet<FetchArgument> =
         if let Some(FetchArguments(ref args)) = model.arguments {

@@ -40,6 +40,38 @@ pub fn get_branches(repo: &Repository) -> Vec<String> {
     branches
 }
 
+/// Gets remote branches for the push/fetch upstream select popup.
+/// Returns only remote branches (e.g., "origin/main", "origin/feature").
+/// Optionally prepends a suggested upstream if it doesn't already exist in the list.
+pub fn get_remote_branches_for_upstream(
+    repo: &Repository,
+    suggested_upstream: Option<&str>,
+) -> Vec<String> {
+    let mut branches = Vec::new();
+
+    // Add suggested upstream first if provided
+    if let Some(suggested) = suggested_upstream {
+        branches.push(suggested.to_string());
+    }
+
+    // Get remote branches (excluding HEAD references)
+    if let Ok(remote_branches) = repo.branches(Some(git2::BranchType::Remote)) {
+        for branch_result in remote_branches.flatten() {
+            if let Ok(Some(name)) = branch_result.0.name() {
+                // Skip origin/HEAD type references
+                if !name.ends_with("/HEAD") {
+                    // Don't add duplicates of the suggested upstream
+                    if suggested_upstream != Some(name) {
+                        branches.push(name.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    branches
+}
+
 /// Checkout a branch using git2.
 /// For local branches, it does a simple checkout.
 /// For remote branches (e.g., origin/feature), it creates a local tracking branch.

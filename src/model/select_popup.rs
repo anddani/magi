@@ -14,6 +14,10 @@ pub enum SelectResult {
 pub enum SelectContext {
     /// Selecting a branch to checkout
     CheckoutBranch,
+    /// Selecting an upstream to push to
+    PushUpstream,
+    /// Selecting an upstream to fetch from
+    FetchUpstream,
 }
 
 /// State for the select popup (fuzzy finder style)

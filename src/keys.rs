@@ -91,8 +91,8 @@ mod tests {
     use crate::config::Theme;
     use crate::git::test_repo::TestRepo;
     use crate::git::GitInfo;
-    use crate::model::arguments::Argument::Push;
-    use crate::model::arguments::PushArgument;
+    use crate::model::arguments::Argument::{Fetch, Push};
+    use crate::model::arguments::{FetchArgument, PushArgument};
     use crate::model::popup::PopupContentCommand;
     use crate::model::{RunningState, UiModel};
     use crate::msg::SelectMessage;
@@ -315,11 +315,7 @@ mod tests {
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
             PushPopupState {
-                local_branch: "main".to_string(),
                 upstream: Some("origin/main".to_string()),
-                default_remote: "origin".to_string(),
-                input_mode: false,
-                input_text: String::new(),
             },
         )));
 
@@ -329,23 +325,17 @@ mod tests {
     }
 
     #[test]
-    fn test_u_in_push_popup_without_upstream_enters_input_mode() {
+    fn test_u_in_push_popup_without_upstream_shows_select() {
         use crate::model::popup::PushPopupState;
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: false,
-                input_text: String::new(),
-            },
+            PushPopupState { upstream: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::PushEnterInputMode));
+        assert_eq!(result, Some(Message::ShowPushUpstreamSelect));
     }
 
     #[test]
@@ -354,93 +344,7 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: false,
-                input_text: String::new(),
-            },
-        )));
-
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
-        let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::DismissPopup));
-    }
-
-    #[test]
-    fn test_push_popup_input_mode_handles_chars() {
-        use crate::model::popup::PushPopupState;
-
-        let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: true,
-                input_text: String::new(),
-            },
-        )));
-
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
-        let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::PushInputChar('a')));
-    }
-
-    #[test]
-    fn test_push_popup_input_mode_handles_backspace() {
-        use crate::model::popup::PushPopupState;
-
-        let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: true,
-                input_text: "test".to_string(),
-            },
-        )));
-
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Backspace);
-        let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::PushInputBackspace));
-    }
-
-    #[test]
-    fn test_push_popup_input_mode_handles_enter() {
-        use crate::model::popup::PushPopupState;
-
-        let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: true,
-                input_text: "feature".to_string(),
-            },
-        )));
-
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
-        let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::PushConfirmInput));
-    }
-
-    #[test]
-    fn test_push_popup_input_mode_esc_dismisses() {
-        use crate::model::popup::PushPopupState;
-
-        let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: true,
-                input_text: String::new(),
-            },
+            PushPopupState { upstream: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
@@ -454,13 +358,7 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: false,
-                input_text: String::new(),
-            },
+            PushPopupState { upstream: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
@@ -475,13 +373,7 @@ mod tests {
         let mut model = create_test_model();
         model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: false,
-                input_text: String::new(),
-            },
+            PushPopupState { upstream: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
@@ -499,13 +391,7 @@ mod tests {
         let mut model = create_test_model();
         model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: false,
-                input_text: String::new(),
-            },
+            PushPopupState { upstream: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('x'));
@@ -519,13 +405,7 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState {
-                local_branch: "main".to_string(),
-                upstream: None,
-                default_remote: "origin".to_string(),
-                input_mode: false,
-                input_text: String::new(),
-            },
+            PushPopupState { upstream: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
@@ -680,5 +560,142 @@ mod tests {
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ShowCheckoutBranchPopup));
+    }
+
+    // Fetch popup tests
+
+    #[test]
+    fn test_f_shows_fetch_popup() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowFetchPopup));
+    }
+
+    #[test]
+    fn test_u_in_fetch_popup_with_upstream_fetches() {
+        use crate::model::popup::FetchPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(
+            FetchPopupState {
+                upstream: Some("origin/main".to_string()),
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::FetchUpstream));
+    }
+
+    #[test]
+    fn test_u_in_fetch_popup_without_upstream_shows_select() {
+        use crate::model::popup::FetchPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(
+            FetchPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowFetchUpstreamSelect));
+    }
+
+    #[test]
+    fn test_a_in_fetch_popup_fetches_all_remotes() {
+        use crate::model::popup::FetchPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(
+            FetchPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::FetchAllRemotes));
+    }
+
+    #[test]
+    fn test_esc_dismisses_fetch_popup() {
+        use crate::model::popup::FetchPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(
+            FetchPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_minus_in_fetch_popup_enters_arg_mode() {
+        use crate::model::popup::FetchPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(
+            FetchPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::EnterArgMode));
+    }
+
+    #[test]
+    fn test_p_in_fetch_arg_mode_toggles_prune() {
+        use crate::model::popup::FetchPopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(
+            FetchPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Fetch(FetchArgument::Prune)))
+        );
+    }
+
+    #[test]
+    fn test_t_in_fetch_arg_mode_toggles_tags() {
+        use crate::model::popup::FetchPopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(
+            FetchPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('t'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Fetch(FetchArgument::Tags)))
+        );
+    }
+
+    #[test]
+    fn test_shift_f_in_fetch_arg_mode_toggles_force() {
+        use crate::model::popup::FetchPopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(
+            FetchPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('F'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Fetch(FetchArgument::Force)))
+        );
     }
 }

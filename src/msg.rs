@@ -57,18 +57,18 @@ pub enum Message {
     CheckoutBranch(String),
     /// Fetch all remotes
     FetchAllRemotes,
+    /// Fetch from upstream
+    FetchUpstream,
+    /// Show select popup to choose upstream for fetch
+    ShowFetchUpstreamSelect,
+    /// Fetch from a specific remote/branch
+    FetchFromRemote(String),
     /// Push to upstream (or create it if specified)
     PushUpstream,
-    /// Enter input mode in push popup to set custom upstream
-    PushEnterInputMode,
-    /// Handle text input in push popup
-    PushInputChar(char),
-    /// Handle backspace in push popup input
-    PushInputBackspace,
-    /// Complete input with suggested text (Tab)
-    PushInputComplete,
-    /// Confirm push with the entered upstream name
-    PushConfirmInput,
+    /// Show select popup to choose upstream for push
+    ShowPushUpstreamSelect,
+    /// Push to a specific remote/branch (setting it as upstream)
+    PushToRemote(String),
 
     EnterArgMode,
     ToggleArgument(Argument),

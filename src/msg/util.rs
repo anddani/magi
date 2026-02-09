@@ -47,12 +47,12 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ShowCheckoutBranchPopup
         | Message::CheckoutBranch(_)
         | Message::FetchAllRemotes
+        | Message::FetchUpstream
+        | Message::ShowFetchUpstreamSelect
+        | Message::FetchFromRemote(_)
         | Message::PushUpstream
-        | Message::PushEnterInputMode
-        | Message::PushInputChar(_)
-        | Message::PushInputBackspace
-        | Message::PushInputComplete
-        | Message::PushConfirmInput
+        | Message::ShowPushUpstreamSelect
+        | Message::PushToRemote(_)
         | Message::EnterArgMode
         | Message::ToggleArgument(_)
         | Message::ExitArgMode
