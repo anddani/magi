@@ -72,8 +72,8 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Diff (change)
     - [ ] Fetch
         - [x] Fetch all remotes
-        - [ ] Prune deleted branches
-        - [ ] Fetch all tags
+        - [x] Prune deleted branches
+        - [x] Fetch all tags
         - [ ] Force
     - [ ] Pull
         - [ ] Fast forward only
@@ -90,10 +90,10 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Subtree
     - [ ] Push
         - [x] Force with lease
-        - [ ] Force
+        - [x] Force
         - [ ] Disable hooks
         - [ ] Dry run
-        - [ ] Set upstream
+        - [x] Set upstream
         - [ ] Include all tags
         - [ ] Include related annotated tags
     - [ ] Rebase
