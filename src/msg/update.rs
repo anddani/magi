@@ -18,6 +18,7 @@ mod move_down;
 mod move_up;
 mod push_confirm_input;
 mod push_enter_input_mode;
+mod push_helper;
 mod push_input_backspace;
 mod push_input_char;
 mod push_input_complete;

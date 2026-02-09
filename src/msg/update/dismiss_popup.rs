@@ -20,6 +20,8 @@ pub fn update(model: &mut Model) -> Option<Message> {
         }
     }
 
+    // If dismissing a push popup, reset the arguments
+    model.arguments = None;
     model.popup = None;
     None
 }

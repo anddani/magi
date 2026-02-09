@@ -1,14 +1,12 @@
-use std::collections::HashSet;
-
 use crate::{
-    git::{credential::CredentialStrategy, pty_command::spawn_git_with_pty},
     model::{
-        arguments::{Arguments::PushArguments, PushArgument},
         popup::{PopupContent, PopupContentCommand},
-        Model, PtyState,
+        Model,
     },
     msg::Message,
 };
+
+use super::push_helper::execute_push;
 
 /// Parse input into (remote, branch) tuple.
 /// If input contains "/", split on first "/" to get remote and branch.
@@ -28,77 +26,25 @@ fn parse_remote_branch(input: &str, default_remote: &str, local_branch: &str) ->
 }
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    // Get the remote, branch, and force_with_lease setting from popup state
+    // Get the remote and branch from popup state
     let (remote, branch) =
         if let Some(PopupContent::Command(PopupContentCommand::Push(ref state))) = model.popup {
-            let (remote, branch) = parse_remote_branch(
+            parse_remote_branch(
                 &state.input_text,
                 &state.default_remote,
                 &state.local_branch,
-            );
-            (remote, branch)
+            )
         } else {
             return None;
         };
 
-    // Dismiss the popup
-    model.popup = None;
-
-    // Check if there's already a PTY command running
-    if model.pty_state.is_some() {
-        model.popup = Some(PopupContent::Error {
-            message: "A command is already in progress".to_string(),
-        });
-        return None;
-    }
-
-    let Some(repo_path) = model.git_info.repository.workdir() else {
-        model.popup = Some(PopupContent::Error {
-            message: "Repository working directory not found".into(),
-        });
-        return None;
-    };
-
     // Build the refspec for setting upstream
     let refspec = format!("HEAD:{}", branch);
 
-    // Build push command arguments
-    let mut args = vec![
-        "push".to_string(),
-        "-v".to_string(),
-        "--set-upstream".to_string(),
-    ];
-    let arguments: HashSet<PushArgument> =
-        if let Some(PushArguments(arguments)) = model.arguments.take() {
-            arguments
-        } else {
-            HashSet::new()
-        };
-    for argument in arguments {
-        args.push(argument.into())
-    }
-    args.push(remote.clone());
-    args.push(refspec);
+    // Build extra arguments for setting upstream
+    let extra_args = vec!["--set-upstream".to_string(), remote.clone(), refspec];
 
-    // Spawn push command in background thread with PTY
-    let (result_rx, ui_channels) =
-        spawn_git_with_pty(repo_path.to_path_buf(), args, CredentialStrategy::Prompt);
+    let operation_name = format!("Push to {}/{}", remote, branch);
 
-    // Store PTY state for main loop to monitor
-    if let Some(ui_channels) = ui_channels {
-        model.pty_state = Some(PtyState::new(
-            result_rx,
-            ui_channels.request_rx,
-            ui_channels.response_tx,
-            format!("Push to {}/{}", remote, branch),
-        ));
-    } else {
-        // This shouldn't happen with Prompt strategy, but handle it
-        model.popup = Some(PopupContent::Error {
-            message: "Failed to initialize credential handling".to_string(),
-        });
-    }
-
-    // Don't refresh yet - wait for command to complete
-    None
+    execute_push(model, extra_args, operation_name)
 }
