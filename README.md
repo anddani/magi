@@ -71,6 +71,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Diff
     - [ ] Diff (change)
     - [ ] Fetch
+        - [x] Fetch all remotes
         - [ ] Prune deleted branches
         - [ ] Fetch all tags
         - [ ] Force

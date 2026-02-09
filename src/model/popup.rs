@@ -17,6 +17,7 @@ pub enum PopupContent {
 pub enum PopupContentCommand {
     Commit,
     Push(PushPopupState),
+    Fetch,
     Branch,
     Select(SelectPopupState),
 }

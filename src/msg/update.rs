@@ -12,10 +12,12 @@ mod enter_arg_mode;
 mod enter_visual_mode;
 mod exit_arg_mode;
 mod exit_visual_mode;
+mod fetch_all_remotes;
 mod half_page_down;
 mod half_page_up;
 mod move_down;
 mod move_up;
+mod pty_helper;
 mod push_confirm_input;
 mod push_enter_input_mode;
 mod push_helper;
@@ -35,6 +37,7 @@ mod select_move_up;
 mod show_branch_popup;
 mod show_checkout_branch_popup;
 mod show_commit_popup;
+mod show_fetch_popup;
 mod show_help;
 mod show_push_popup;
 mod show_select_popup;
@@ -68,9 +71,11 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowHelp => show_help::update(model),
         Message::ShowCommitPopup => show_commit_popup::update(model),
         Message::ShowPushPopup => show_push_popup::update(model),
+        Message::ShowFetchPopup => show_fetch_popup::update(model),
         Message::ShowBranchPopup => show_branch_popup::update(model),
         Message::ShowCheckoutBranchPopup => show_checkout_branch_popup::update(model),
         Message::CheckoutBranch(branch) => checkout_branch::update(model, branch),
+        Message::FetchAllRemotes => fetch_all_remotes::update(model),
         Message::PushUpstream => push_upstream::update(model),
         Message::PushEnterInputMode => push_enter_input_mode::update(model),
         Message::PushInputChar(c) => push_input_char::update(model, c),

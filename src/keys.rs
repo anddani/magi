@@ -10,11 +10,8 @@ mod credentials_popup;
 
 fn command_popup_keys(c: char) -> Option<Message> {
     match c {
-        'S' => Some(Message::StageAllModified),
-        'U' => Some(Message::UnstageAll),
-        'V' => Some(Message::EnterVisualMode),
-        'p' => Some(Message::ShowPushPopup),
-        'P' => Some(Message::ShowPushPopup),
+        'p' | 'P' => Some(Message::ShowPushPopup),
+        'f' => Some(Message::ShowFetchPopup),
         'c' => Some(Message::ShowCommitPopup),
         'b' => Some(Message::ShowBranchPopup),
         _ => None,
@@ -70,6 +67,9 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::CONTROL, KeyCode::Char('r')) => Some(Message::Refresh),
         (_, KeyCode::Char('?')) => Some(Message::ShowHelp),
         (_, KeyCode::Char('q')) => Some(Message::Quit),
+        (_, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
+        (_, KeyCode::Char('S')) => Some(Message::StageAllModified),
+        (_, KeyCode::Char('U')) => Some(Message::UnstageAll),
 
         // Navigation
         (KeyModifiers::CONTROL, KeyCode::Char('u')) => Some(Message::HalfPageUp),

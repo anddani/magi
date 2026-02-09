@@ -42,9 +42,11 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ShowHelp
         | Message::ShowCommitPopup
         | Message::ShowPushPopup
+        | Message::ShowFetchPopup
         | Message::ShowBranchPopup
         | Message::ShowCheckoutBranchPopup
         | Message::CheckoutBranch(_)
+        | Message::FetchAllRemotes
         | Message::PushUpstream
         | Message::PushEnterInputMode
         | Message::PushInputChar(_)
