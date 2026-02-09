@@ -6,9 +6,12 @@ use ratatui::{
     Frame,
 };
 
-use crate::model::{
-    popup::{PopupContent, PopupContentCommand},
-    Model, Toast, ToastStyle,
+use crate::{
+    model::{
+        popup::{PopupContent, PopupContentCommand},
+        Model, Toast, ToastStyle,
+    },
+    view::render::popup_content::CommandPopupContent,
 };
 
 mod branch_popup;
@@ -81,11 +84,23 @@ pub fn render_popup(
             render_error_popup(message, frame, area, theme);
         }
         PopupContent::Command(command) => {
-            render_command_popup(model, frame, area, theme, command);
+            let content = match command {
+                PopupContentCommand::Commit => commit_popup::content(theme),
+                PopupContentCommand::Push(state) => push_popup::content(theme, model, state),
+                PopupContentCommand::Branch => branch_popup::content(theme),
+
+                // Select popup uses custom rendering, not the column layout
+                PopupContentCommand::Select(state) => {
+                    select_popup::render(state, frame, area, theme);
+                    return;
+                }
+            };
+            render_command_popup(frame, area, theme, &content);
         }
         PopupContent::Credential(state) => {
             credential_popup::render(state, frame, area, theme);
         }
+        PopupContent::Help => render_command_popup(frame, area, theme, &help_popup::content(theme)),
     }
 }
 
@@ -134,26 +149,11 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
 
 /// Render a command popup (bottom half of screen)
 fn render_command_popup(
-    model: &Model,
     frame: &mut Frame,
     area: Rect,
     theme: &crate::config::Theme,
-    command: &PopupContentCommand,
+    content: &CommandPopupContent,
 ) {
-    // Select popup uses custom rendering, not the column layout
-    if let PopupContentCommand::Select(state) = command {
-        select_popup::render(state, frame, area, theme);
-        return;
-    }
-
-    let content = match command {
-        PopupContentCommand::Help => help_popup::content(theme),
-        PopupContentCommand::Commit => commit_popup::content(theme),
-        PopupContentCommand::Push(state) => push_popup::content(theme, model, state),
-        PopupContentCommand::Branch => branch_popup::content(theme),
-        PopupContentCommand::Select(_) => unreachable!(), // Handled above
-    };
-
     let column_title_style = Style::default()
         .fg(theme.section_header)
         .add_modifier(Modifier::BOLD);

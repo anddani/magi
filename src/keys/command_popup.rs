@@ -4,7 +4,6 @@ use crate::{model::popup::PopupContentCommand, msg::Message};
 
 mod branch;
 mod commit;
-mod help;
 mod push;
 mod select;
 
@@ -20,7 +19,6 @@ pub fn handle_command_popup_key(
     }
 
     match command {
-        PopupContentCommand::Help => help::keys(key),
         PopupContentCommand::Commit => commit::keys(key),
         PopupContentCommand::Branch => branch::keys(key),
         PopupContentCommand::Push(state) => push::keys(key, arg_mode, state),
