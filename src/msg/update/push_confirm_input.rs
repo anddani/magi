@@ -42,11 +42,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
     let refspec = format!("HEAD:{}", branch);
 
     // Build extra arguments for setting upstream
-    let extra_args = vec![
-        "--set-upstream".to_string(),
-        remote.clone(),
-        refspec,
-    ];
+    let extra_args = vec!["--set-upstream".to_string(), remote.clone(), refspec];
 
     let operation_name = format!("Push to {}/{}", remote, branch);
 
