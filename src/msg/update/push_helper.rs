@@ -1,8 +1,7 @@
-use std::collections::HashSet;
 
 use crate::{
     model::{
-        arguments::{Arguments::PushArguments, PushArgument},
+        arguments::Arguments::PushArguments,
         Model,
     },
     msg::Message,
@@ -29,14 +28,8 @@ pub fn execute_push(
     let mut args = vec!["push".to_string(), "-v".to_string()];
 
     // Add push arguments from model (e.g., --force-with-lease, --force)
-    let arguments: HashSet<PushArgument> =
-        if let Some(PushArguments(arguments)) = model.arguments.take() {
-            arguments
-        } else {
-            HashSet::new()
-        };
-    for argument in arguments {
-        args.push(argument.flag().to_string());
+    if let Some(PushArguments(arguments)) = model.arguments.take() {
+        args.extend(arguments.into_iter().map(|a| a.flag().to_string()));
     }
 
     // Add extra arguments
