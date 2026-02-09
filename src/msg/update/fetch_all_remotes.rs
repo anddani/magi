@@ -1,9 +1,5 @@
-
 use crate::{
-    model::{
-        arguments::Arguments::FetchArguments,
-        Model,
-    },
+    model::{arguments::Arguments::FetchArguments, Model},
     msg::Message,
 };
 
