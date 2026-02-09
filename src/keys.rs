@@ -91,6 +91,7 @@ mod tests {
     use crate::config::Theme;
     use crate::git::test_repo::TestRepo;
     use crate::git::GitInfo;
+    use crate::model::arguments::Argument::Push;
     use crate::model::arguments::PushArgument;
     use crate::model::popup::PopupContentCommand;
     use crate::model::{RunningState, UiModel};
@@ -487,7 +488,7 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ToggleArgument(PushArgument::ForceWithLease))
+            Some(Message::ToggleArgument(Push(PushArgument::ForceWithLease)))
         );
     }
 

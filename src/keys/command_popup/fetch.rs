@@ -1,10 +1,22 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::msg::Message;
+use crate::{
+    model::arguments::{Argument::Fetch, FetchArgument},
+    msg::Message,
+};
 
-pub fn keys(key: KeyEvent) -> Option<Message> {
+pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
+    if arg_mode {
+        return match key.code {
+            KeyCode::Char('p') => Some(Message::ToggleArgument(Fetch(FetchArgument::Prune))),
+            // Any other key exits argument mode
+            _ => Some(Message::ExitArgMode),
+        };
+    }
+
     match key.code {
         KeyCode::Char('a') => Some(Message::FetchAllRemotes),
+        KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }
 }

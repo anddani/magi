@@ -36,7 +36,7 @@ pub fn execute_push(
             HashSet::new()
         };
     for argument in arguments {
-        args.push(argument.into());
+        args.push(argument.flag().to_string());
     }
 
     // Add extra arguments
