@@ -16,28 +16,32 @@ pub enum Argument {
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum FetchArgument {
     Prune,
+    Tags,
 }
 
 impl FetchArgument {
     pub fn all() -> Vec<FetchArgument> {
-        vec![FetchArgument::Prune]
+        vec![FetchArgument::Prune, FetchArgument::Tags]
     }
 
     pub fn key(&self) -> &'static str {
         match self {
             FetchArgument::Prune => "p",
+            FetchArgument::Tags => "t",
         }
     }
 
     pub fn description(&self) -> &'static str {
         match self {
             FetchArgument::Prune => "Prune deleted branches",
+            FetchArgument::Tags => "Fetch all tags",
         }
     }
 
     pub fn flag(&self) -> &'static str {
         match self {
             FetchArgument::Prune => "--prune",
+            FetchArgument::Tags => "--tags",
         }
     }
 }
