@@ -74,7 +74,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Fetch all remotes
         - [x] Prune deleted branches
         - [x] Fetch all tags
-        - [ ] Force
+        - [x] Force
     - [ ] Pull
         - [ ] Fast forward only
         - [ ] Rebase local commits

@@ -17,17 +17,23 @@ pub enum Argument {
 pub enum FetchArgument {
     Prune,
     Tags,
+    Force,
 }
 
 impl FetchArgument {
     pub fn all() -> Vec<FetchArgument> {
-        vec![FetchArgument::Prune, FetchArgument::Tags]
+        vec![
+            FetchArgument::Prune,
+            FetchArgument::Tags,
+            FetchArgument::Force,
+        ]
     }
 
     pub fn key(&self) -> &'static str {
         match self {
             FetchArgument::Prune => "p",
             FetchArgument::Tags => "t",
+            FetchArgument::Force => "F",
         }
     }
 
@@ -35,6 +41,7 @@ impl FetchArgument {
         match self {
             FetchArgument::Prune => "Prune deleted branches",
             FetchArgument::Tags => "Fetch all tags",
+            FetchArgument::Force => "Force",
         }
     }
 
@@ -42,6 +49,7 @@ impl FetchArgument {
         match self {
             FetchArgument::Prune => "--prune",
             FetchArgument::Tags => "--tags",
+            FetchArgument::Force => "--force",
         }
     }
 }
