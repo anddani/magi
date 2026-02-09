@@ -10,6 +10,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         return match key.code {
             KeyCode::Char('p') => Some(Message::ToggleArgument(Fetch(FetchArgument::Prune))),
             KeyCode::Char('t') => Some(Message::ToggleArgument(Fetch(FetchArgument::Tags))),
+            KeyCode::Char('F') => Some(Message::ToggleArgument(Fetch(FetchArgument::Force))),
             // Any other key exits argument mode
             _ => Some(Message::ExitArgMode),
         };
