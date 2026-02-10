@@ -57,6 +57,9 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ToggleArgument(_)
         | Message::ExitArgMode
         | Message::Select(_)
-        | Message::Credentials(_) => false,
+        | Message::Credentials(_)
+        | Message::MoveToTop
+        | Message::MoveToBottom
+        | Message::PendingG => false,
     }
 }

@@ -21,6 +21,12 @@ pub enum Message {
     ScrollLineDown,
     /// Scroll viewport up by one line
     ScrollLineUp,
+    /// Move cursor to the first visible line
+    MoveToTop,
+    /// Move cursor to the last visible line
+    MoveToBottom,
+    /// First 'g' press — waiting for second 'g' to trigger MoveToTop
+    PendingG,
     /// Toggle section expand/collapse
     ToggleSection,
 

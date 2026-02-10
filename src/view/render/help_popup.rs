@@ -75,6 +75,14 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled("Half page up", desc_style),
         ]),
         Line::from(vec![
+            Span::styled("  gg      ", key_style),
+            Span::styled("Go to first line", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  G       ", key_style),
+            Span::styled("Go to last line", desc_style),
+        ]),
+        Line::from(vec![
             Span::styled("  Ctrl-e  ", key_style),
             Span::styled("Scroll line down", desc_style),
         ]),
