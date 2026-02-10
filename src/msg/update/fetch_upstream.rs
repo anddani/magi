@@ -18,9 +18,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             return None;
         };
 
-    let Some(upstream) = upstream else {
-        return None;
-    };
+    let upstream = upstream?;
 
     // Parse upstream into remote and branch (e.g., "origin/main" -> ("origin", "main"))
     let (remote, branch) = if let Some((r, b)) = upstream.split_once('/') {
