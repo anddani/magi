@@ -5,8 +5,8 @@ use crate::{
 
 mod amend;
 mod checkout_branch;
-mod confirm_delete_branch;
 mod commit;
+mod confirm_delete_branch;
 mod credentials_input;
 mod delete_branch;
 mod dismiss_popup;
@@ -39,8 +39,8 @@ mod select_move_down;
 mod select_move_up;
 mod show_branch_popup;
 mod show_checkout_branch_popup;
-mod show_delete_branch_popup;
 mod show_commit_popup;
+mod show_delete_branch_popup;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
 mod show_help;
