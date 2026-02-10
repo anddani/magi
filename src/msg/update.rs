@@ -18,8 +18,11 @@ mod fetch_upstream;
 mod half_page_down;
 mod half_page_up;
 mod move_down;
+mod move_to_bottom;
+mod move_to_top;
 mod move_up;
 mod pty_helper;
+mod pending_g;
 mod push_helper;
 mod push_to_remote;
 mod push_upstream;
@@ -51,6 +54,11 @@ mod unstage_all;
 /// Returns a follow up [`Message`] for sequences of actions.
 /// e.g. after a stage, a [`Message::Refresh`] should be triggered.
 pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
+    // Clear pending 'g' state for any message except PendingG itself
+    if !matches!(msg, Message::PendingG) {
+        model.pending_g = false;
+    }
+
     match msg {
         Message::Quit => quit::update(model),
         Message::Refresh => refresh::update(model),
@@ -61,6 +69,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::HalfPageDown => half_page_down::update(model),
         Message::ScrollLineDown => scroll_line_down::update(model),
         Message::ScrollLineUp => scroll_line_up::update(model),
+        Message::MoveToTop => move_to_top::update(model),
+        Message::MoveToBottom => move_to_bottom::update(model),
+        Message::PendingG => pending_g::update(model),
         Message::Commit => commit::update(model),
         Message::Amend => amend::update(model),
         Message::DismissPopup => dismiss_popup::update(model),

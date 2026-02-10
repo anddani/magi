@@ -36,6 +36,7 @@ fn create_test_model() -> Model {
         select_context: None,
         pty_state: None,
         arg_mode: false,
+        pending_g: false,
         arguments: None,
     }
 }
@@ -62,6 +63,7 @@ fn test_refresh_message() {
         select_context: None,
         pty_state: None,
         arg_mode: false,
+        pending_g: false,
         arguments: None,
     };
 
@@ -938,6 +940,7 @@ fn test_collapsed_state_preserved_when_staging_all() {
         select_context: None,
         pty_state: None,
         arg_mode: false,
+        pending_g: false,
         arguments: None,
     };
 
@@ -1024,6 +1027,7 @@ fn test_collapsed_state_preserved_when_unstaging_all() {
         select_context: None,
         pty_state: None,
         arg_mode: false,
+        pending_g: false,
         arguments: None,
     };
 
@@ -1092,6 +1096,7 @@ fn test_expanded_state_preserved_when_staging() {
         select_context: None,
         pty_state: None,
         arg_mode: false,
+        pending_g: false,
         arguments: None,
     };
 

@@ -63,6 +63,17 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         }
     }
 
+    // Handle pending 'g' for 'gg' (go to first line)
+    if model.pending_g {
+        if key.modifiers == KeyModifiers::NONE && key.code == KeyCode::Char('g') {
+            return Some(Message::MoveToTop);
+        }
+        if key.modifiers == KeyModifiers::NONE && key.code == KeyCode::Char('r') {
+            return Some(Message::Refresh);
+        }
+        // Any other key cancels the pending 'g' and falls through to normal handling
+    }
+
     match (key.modifiers, key.code) {
         (KeyModifiers::CONTROL, KeyCode::Char('r')) => Some(Message::Refresh),
         (_, KeyCode::Char('?')) => Some(Message::ShowHelp),
@@ -78,6 +89,8 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::CONTROL, KeyCode::Char('y')) => Some(Message::ScrollLineUp),
         (_, KeyCode::Char('k') | KeyCode::Up) => Some(Message::MoveUp),
         (_, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
+        (KeyModifiers::NONE, KeyCode::Char('g')) => Some(Message::PendingG),
+        (_, KeyCode::Char('G')) => Some(Message::MoveToBottom),
         (_, KeyCode::Tab) => Some(Message::ToggleSection),
 
         (_, KeyCode::Char(c)) => command_popup_keys(c),
@@ -122,6 +135,7 @@ mod tests {
             select_context: None,
             pty_state: None,
             arg_mode: false,
+            pending_g: false,
             arguments: None,
         }
     }

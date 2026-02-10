@@ -64,6 +64,7 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         select_context: None,
         pty_state: None,
         arg_mode: false,
+        pending_g: false,
         arguments: None,
     };
 
