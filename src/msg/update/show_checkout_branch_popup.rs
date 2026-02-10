@@ -1,24 +1,16 @@
 use crate::{
-    git::{
-        checkout::{get_branches, get_last_checked_out_branch},
-        CommitRefType,
-    },
+    git::checkout::{get_branches, get_last_checked_out_branch},
     model::{
         popup::{PopupContent, PopupContentCommand, SelectPopupState},
         select_popup::SelectContext,
-        LineContent, Model,
+        suggestions_from_line, BranchSuggestion, Model,
     },
     msg::Message,
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
     // Get all branches, excluding the currently checked out branch
-    let current_branch = model
-        .git_info
-        .repository
-        .head()
-        .ok()
-        .and_then(|head| head.shorthand().map(String::from));
+    let current_branch = model.git_info.current_branch();
     let mut branches: Vec<String> = get_branches(&model.git_info.repository)
         .into_iter()
         .filter(|b| current_branch.as_deref() != Some(b.as_str()))
@@ -39,35 +31,32 @@ pub fn update(model: &mut Model) -> Option<Message> {
         .ui_model
         .lines
         .get(model.ui_model.cursor_position)
-        .and_then(|line| match &line.content {
-            LineContent::Commit(commit_info) => {
-                // Prefer a local branch, fall back to a remote branch
+        .and_then(|line| {
+            let suggestions = suggestions_from_line(line);
+            suggestions
+                .into_iter()
                 // Skip the current branch since it's already checked out
-                let local = commit_info.refs.iter().find(|r| {
-                    r.ref_type == CommitRefType::LocalBranch
-                        && current_branch.as_deref() != Some(r.name.as_str())
-                });
-                let remote = commit_info
-                    .refs
-                    .iter()
-                    .find(|r| r.ref_type == CommitRefType::RemoteBranch);
-                local
-                    .or(remote)
-                    .map(|r| r.name.clone())
-                    .or_else(|| Some(commit_info.hash.clone()))
-            }
-            _ => None,
+                .find(|s| match s {
+                    BranchSuggestion::LocalBranch(name) => {
+                        current_branch.as_deref() != Some(name.as_str())
+                    }
+                    _ => true,
+                })
         })
-        .or_else(|| get_last_checked_out_branch(&model.git_info.repository));
+        .or_else(|| {
+            get_last_checked_out_branch(&model.git_info.repository)
+                .map(BranchSuggestion::LocalBranch)
+        });
 
-    // Move the preferred option to the top, or insert the commit hash
+    // Move the preferred option to the top, or insert the revision
     if let Some(ref preferred) = preferred {
-        if let Some(idx) = branches.iter().position(|b| b == preferred) {
+        let name = preferred.name();
+        if let Some(idx) = branches.iter().position(|b| b == name) {
             let branch = branches.remove(idx);
             branches.insert(0, branch);
         } else {
-            // Hash not in the branch list — insert it at the top
-            branches.insert(0, preferred.clone());
+            // Revision not in the branch list — insert it at the top
+            branches.insert(0, name.to_string());
         }
     }
 

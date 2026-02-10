@@ -114,6 +114,106 @@ pub fn checkout<P: AsRef<Path>>(repo_path: P, branch_name: &str) -> MagiResult<C
     }
 }
 
+/// Result of a delete branch operation
+pub enum DeleteBranchResult {
+    Success,
+    Error(String),
+}
+
+/// Delete a branch. For local branches, deletes with `git branch -D`.
+/// For remote branches (e.g., `origin/feature`), deletes with `git push --delete`.
+/// If the user is currently on the branch being deleted, detaches HEAD first.
+pub fn delete_branch<P: AsRef<Path>>(
+    repo_path: P,
+    branch_name: &str,
+) -> MagiResult<DeleteBranchResult> {
+    let repo_path = repo_path.as_ref();
+
+    // Check if this is a remote branch (contains '/')
+    if let Some((remote, branch)) = branch_name.split_once('/') {
+        // Remote branch: git push --delete <remote> <branch>
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .arg("push")
+            .arg("--delete")
+            .arg(remote)
+            .arg(branch)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()?;
+
+        if output.status.success() {
+            Ok(DeleteBranchResult::Success)
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+            Ok(DeleteBranchResult::Error(if stderr.is_empty() {
+                "Failed to delete remote branch".to_string()
+            } else {
+                stderr
+            }))
+        }
+    } else {
+        // Local branch: check if we're on it and detach HEAD if so
+        let head_output = Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .arg("symbolic-ref")
+            .arg("--short")
+            .arg("HEAD")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()?;
+
+        if head_output.status.success() {
+            let current_branch = String::from_utf8_lossy(&head_output.stdout)
+                .trim()
+                .to_string();
+            if current_branch == branch_name {
+                // Detach HEAD before deleting the current branch
+                let detach = Command::new("git")
+                    .arg("-C")
+                    .arg(repo_path)
+                    .arg("checkout")
+                    .arg("--detach")
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output()?;
+
+                if !detach.status.success() {
+                    let stderr = String::from_utf8_lossy(&detach.stderr).trim().to_string();
+                    return Ok(DeleteBranchResult::Error(format!(
+                        "Failed to detach HEAD: {}",
+                        stderr
+                    )));
+                }
+            }
+        }
+
+        // Delete local branch with -D (force)
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .arg("branch")
+            .arg("-D")
+            .arg(branch_name)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()?;
+
+        if output.status.success() {
+            Ok(DeleteBranchResult::Success)
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+            Ok(DeleteBranchResult::Error(if stderr.is_empty() {
+                "Failed to delete branch".to_string()
+            } else {
+                stderr
+            }))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

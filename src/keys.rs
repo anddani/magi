@@ -1,7 +1,8 @@
 use crossterm::event::{self, KeyCode, KeyModifiers};
 
 use crate::{
-    model::{popup::PopupContent, Model},
+    model::popup::{ConfirmAction, PopupContent},
+    model::Model,
     msg::Message,
 };
 
@@ -24,6 +25,24 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     if let Some(PopupContent::Error { .. }) = &model.popup {
         return match key.code {
             KeyCode::Enter | KeyCode::Esc => Some(Message::DismissPopup),
+            _ => None,
+        };
+    }
+
+    if let Some(PopupContent::Confirm(state)) = &model.popup {
+        return match (key.modifiers, key.code) {
+            (_, KeyCode::Char('y')) | (_, KeyCode::Enter) => {
+                let msg = match &state.on_confirm {
+                    ConfirmAction::DeleteBranch(branch) => {
+                        Message::ConfirmDeleteBranch(branch.clone())
+                    }
+                };
+                Some(msg)
+            }
+            (_, KeyCode::Char('n'))
+            | (_, KeyCode::Esc)
+            | (KeyModifiers::CONTROL, KeyCode::Char('c'))
+            | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
             _ => None,
         };
     }

@@ -71,6 +71,13 @@ impl GitInfo {
 
         Ok(result)
     }
+
+    pub fn current_branch(&self) -> Option<String> {
+        self.repository
+            .head()
+            .ok()
+            .and_then(|head| head.shorthand().map(String::from))
+    }
 }
 
 /// Represents a Git reference with its name, commit hash, and message

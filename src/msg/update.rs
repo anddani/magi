@@ -6,7 +6,9 @@ use crate::{
 mod amend;
 mod checkout_branch;
 mod commit;
+mod confirm_delete_branch;
 mod credentials_input;
+mod delete_branch;
 mod dismiss_popup;
 mod enter_arg_mode;
 mod enter_visual_mode;
@@ -38,6 +40,7 @@ mod select_move_up;
 mod show_branch_popup;
 mod show_checkout_branch_popup;
 mod show_commit_popup;
+mod show_delete_branch_popup;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
 mod show_help;
@@ -85,7 +88,10 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowFetchPopup => show_fetch_popup::update(model),
         Message::ShowBranchPopup => show_branch_popup::update(model),
         Message::ShowCheckoutBranchPopup => show_checkout_branch_popup::update(model),
+        Message::ShowDeleteBranchPopup => show_delete_branch_popup::update(model),
         Message::CheckoutBranch(branch) => checkout_branch::update(model, branch),
+        Message::DeleteBranch(branch) => delete_branch::update(model, branch),
+        Message::ConfirmDeleteBranch(branch) => confirm_delete_branch::update(model, branch),
         Message::FetchAllRemotes => fetch_all_remotes::update(model),
         Message::FetchUpstream => fetch_upstream::update(model),
         Message::ShowFetchUpstreamSelect => show_fetch_upstream_select::update(model),

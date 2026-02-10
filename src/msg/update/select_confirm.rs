@@ -41,6 +41,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::FetchUpstream), SelectResult::Selected(upstream)) => {
             Some(Message::FetchFromRemote(upstream))
         }
+        (Some(SelectContext::DeleteBranch), SelectResult::Selected(branch)) => {
+            Some(Message::DeleteBranch(branch))
+        }
         _ => None,
     }
 }

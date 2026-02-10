@@ -11,6 +11,25 @@ pub enum PopupContent {
     Command(PopupContentCommand),
     /// Credential input popup for password/passphrase/etc.
     Credential(CredentialPopupState),
+    /// Confirmation popup that requires y/Enter to confirm or n/Esc to cancel.
+    /// The message field stores the associated data needed after confirmation.
+    Confirm(ConfirmPopupState),
+}
+
+/// State for a confirmation popup (e.g., "Are you sure you want to delete?")
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfirmPopupState {
+    /// The question to display to the user
+    pub message: String,
+    /// The message to dispatch if the user confirms
+    pub on_confirm: ConfirmAction,
+}
+
+/// Actions that can be triggered by a confirmation popup
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConfirmAction {
+    /// Delete a branch (stores the branch name)
+    DeleteBranch(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

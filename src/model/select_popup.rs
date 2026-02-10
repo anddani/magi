@@ -18,6 +18,8 @@ pub enum SelectContext {
     PushUpstream,
     /// Selecting an upstream to fetch from
     FetchUpstream,
+    /// Selecting a branch to delete
+    DeleteBranch,
 }
 
 /// State for the select popup (fuzzy finder style)

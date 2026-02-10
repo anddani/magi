@@ -60,6 +60,9 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::Credentials(_)
         | Message::MoveToTop
         | Message::MoveToBottom
-        | Message::PendingG => false,
+        | Message::PendingG
+        | Message::ShowDeleteBranchPopup
+        | Message::DeleteBranch(_)
+        | Message::ConfirmDeleteBranch(_) => false,
     }
 }

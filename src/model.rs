@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::time::Instant;
 
 use crate::config::Theme;
-use crate::git::{CommitInfo, GitInfo, GitRef, TagInfo};
+use crate::git::{CommitInfo, CommitRefType, GitInfo, GitRef, TagInfo};
 use crate::model::arguments::Arguments;
 use crate::msg::Message;
 
@@ -136,6 +136,50 @@ pub enum LineContent {
     DiffHunk(DiffHunk),
     DiffLine(DiffLine),
     Commit(CommitInfo),
+}
+
+/// A suggestion derived from the line under the cursor.
+/// Ordered by specificity: local branch > remote branch > revision hash.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BranchSuggestion {
+    LocalBranch(String),
+    RemoteBranch(String),
+    Revision(String),
+}
+
+impl BranchSuggestion {
+    /// Returns the name/value of the suggestion.
+    pub fn name(&self) -> &str {
+        match self {
+            BranchSuggestion::LocalBranch(s)
+            | BranchSuggestion::RemoteBranch(s)
+            | BranchSuggestion::Revision(s) => s,
+        }
+    }
+}
+
+/// Returns all branch/revision suggestions from a line, ordered by
+/// priority: local branches first, then remote branches, then the revision hash.
+pub fn suggestions_from_line(line: &Line) -> Vec<BranchSuggestion> {
+    match &line.content {
+        LineContent::Commit(commit_info) => {
+            let mut suggestions = Vec::new();
+            for r in &commit_info.refs {
+                match r.ref_type {
+                    CommitRefType::LocalBranch => {
+                        suggestions.push(BranchSuggestion::LocalBranch(r.name.clone()));
+                    }
+                    CommitRefType::RemoteBranch => {
+                        suggestions.push(BranchSuggestion::RemoteBranch(r.name.clone()));
+                    }
+                    CommitRefType::Head => {}
+                }
+            }
+            suggestions.push(BranchSuggestion::Revision(commit_info.hash.clone()));
+            suggestions
+        }
+        _ => Vec::new(),
+    }
 }
 
 /// Represents a file change (modified, deleted, renamed, etc.)
