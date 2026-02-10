@@ -13,17 +13,15 @@ mod enter_visual_mode;
 mod exit_arg_mode;
 mod exit_visual_mode;
 mod fetch_all_remotes;
+mod fetch_from_remote;
+mod fetch_upstream;
 mod half_page_down;
 mod half_page_up;
 mod move_down;
 mod move_up;
 mod pty_helper;
-mod push_confirm_input;
-mod push_enter_input_mode;
 mod push_helper;
-mod push_input_backspace;
-mod push_input_char;
-mod push_input_complete;
+mod push_to_remote;
 mod push_upstream;
 mod quit;
 mod refresh;
@@ -38,8 +36,10 @@ mod show_branch_popup;
 mod show_checkout_branch_popup;
 mod show_commit_popup;
 mod show_fetch_popup;
+mod show_fetch_upstream_select;
 mod show_help;
 mod show_push_popup;
+mod show_push_upstream_select;
 mod show_select_popup;
 mod stage_all_modified;
 mod toggle_argument;
@@ -76,12 +76,12 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowCheckoutBranchPopup => show_checkout_branch_popup::update(model),
         Message::CheckoutBranch(branch) => checkout_branch::update(model, branch),
         Message::FetchAllRemotes => fetch_all_remotes::update(model),
+        Message::FetchUpstream => fetch_upstream::update(model),
+        Message::ShowFetchUpstreamSelect => show_fetch_upstream_select::update(model),
+        Message::FetchFromRemote(upstream) => fetch_from_remote::update(model, upstream),
         Message::PushUpstream => push_upstream::update(model),
-        Message::PushEnterInputMode => push_enter_input_mode::update(model),
-        Message::PushInputChar(c) => push_input_char::update(model, c),
-        Message::PushInputBackspace => push_input_backspace::update(model),
-        Message::PushInputComplete => push_input_complete::update(model),
-        Message::PushConfirmInput => push_confirm_input::update(model),
+        Message::ShowPushUpstreamSelect => show_push_upstream_select::update(model),
+        Message::PushToRemote(upstream) => push_to_remote::update(model, upstream),
         Message::EnterArgMode => enter_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),

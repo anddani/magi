@@ -1321,13 +1321,7 @@ fn create_push_popup_model() -> Model {
 
     // Set up push popup state
     model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-        PushPopupState {
-            local_branch: "main".to_string(),
-            upstream: None,
-            default_remote: "origin".to_string(),
-            input_mode: false,
-            input_text: String::new(),
-        },
+        PushPopupState { upstream: None },
     )));
 
     model

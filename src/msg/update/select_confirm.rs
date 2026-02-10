@@ -35,6 +35,12 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::CheckoutBranch), SelectResult::Selected(branch)) => {
             Some(Message::CheckoutBranch(branch))
         }
+        (Some(SelectContext::PushUpstream), SelectResult::Selected(upstream)) => {
+            Some(Message::PushToRemote(upstream))
+        }
+        (Some(SelectContext::FetchUpstream), SelectResult::Selected(upstream)) => {
+            Some(Message::FetchFromRemote(upstream))
+        }
         _ => None,
     }
 }
