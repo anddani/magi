@@ -102,6 +102,9 @@ pub fn render_popup(
         PopupContent::Credential(state) => {
             credential_popup::render(state, frame, area, theme);
         }
+        PopupContent::Confirm(state) => {
+            render_confirm_popup(&state.message, frame, area, theme);
+        }
         PopupContent::Help => render_command_popup(frame, area, theme, &help_popup::content(theme)),
     }
 }
@@ -145,6 +148,34 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
         .border_style(Style::default().fg(border_color));
 
     let popup_paragraph = Paragraph::new(popup_text).block(popup_block);
+
+    frame.render_widget(popup_paragraph, popup_area);
+}
+
+/// Render a confirmation popup (centered, y/n)
+fn render_confirm_popup(
+    message: &str,
+    frame: &mut Frame,
+    area: Rect,
+    theme: &crate::config::Theme,
+) {
+    let title = "Confirm";
+    let border_color = theme.section_header;
+
+    let content_width = message.len().max(title.len()) + 4;
+    let popup_width = (content_width as u16).clamp(30, area.width.saturating_sub(4));
+    let popup_height = 3; // border + message + border
+
+    let popup_area = centered_rect(popup_width, popup_height, area);
+
+    frame.render_widget(Clear, popup_area);
+
+    let popup_block = Block::default()
+        .title(title)
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(border_color));
+
+    let popup_paragraph = Paragraph::new(TextLine::from(message)).block(popup_block);
 
     frame.render_widget(popup_paragraph, popup_area);
 }

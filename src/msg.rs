@@ -59,8 +59,14 @@ pub enum Message {
     ShowBranchPopup,
     /// Show the checkout branch select popup
     ShowCheckoutBranchPopup,
+    /// Show the delete branch select popup
+    ShowDeleteBranchPopup,
     /// Checkout the selected branch
     CheckoutBranch(String),
+    /// Show confirmation popup before deleting the selected branch
+    DeleteBranch(String),
+    /// Actually delete the branch after user confirmation
+    ConfirmDeleteBranch(String),
     /// Fetch all remotes
     FetchAllRemotes,
     /// Fetch from upstream
