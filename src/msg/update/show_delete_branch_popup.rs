@@ -22,15 +22,20 @@ pub fn update(model: &mut Model) -> Option<Message> {
     model.select_context = Some(SelectContext::DeleteBranch);
 
     // Determine the preferred option from the commit under the cursor
-    // For delete, only suggest actual branches (not revisions)
+    // For delete, suggest non-checked-out local branches first, then remote branches
+    let current_branch = model.git_info.current_branch();
     let preferred = model
         .ui_model
         .lines
         .get(model.ui_model.cursor_position)
         .and_then(|line| {
-            suggestions_from_line(line)
-                .into_iter()
-                .find(|s| matches!(s, BranchSuggestion::RemoteBranch(_)))
+            suggestions_from_line(line).into_iter().find(|s| match s {
+                BranchSuggestion::LocalBranch(name) => {
+                    current_branch.as_deref() != Some(name.as_str())
+                }
+                BranchSuggestion::RemoteBranch(_) => true,
+                BranchSuggestion::Revision(_) => false,
+            })
         });
 
     // Move the preferred option to the top

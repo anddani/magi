@@ -10,12 +10,7 @@ use crate::{
 
 pub fn update(model: &mut Model) -> Option<Message> {
     // Get all branches, excluding the currently checked out branch
-    let current_branch = model
-        .git_info
-        .repository
-        .head()
-        .ok()
-        .and_then(|head| head.shorthand().map(String::from));
+    let current_branch = model.git_info.current_branch();
     let mut branches: Vec<String> = get_branches(&model.git_info.repository)
         .into_iter()
         .filter(|b| current_branch.as_deref() != Some(b.as_str()))
