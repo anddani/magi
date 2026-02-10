@@ -72,6 +72,22 @@ pub fn get_remote_branches_for_upstream(
     branches
 }
 
+/// Returns the last checked-out branch by scanning the HEAD reflog for
+/// "checkout: moving from X to Y" entries and returning the most recent "from" branch
+/// that differs from the current HEAD.
+pub fn get_last_checked_out_branch(repo: &Repository) -> Option<String> {
+    let reflog = repo.reflog("HEAD").ok()?;
+    for entry in reflog.iter() {
+        let msg = entry.message()?;
+        if let Some(rest) = msg.strip_prefix("checkout: moving from ") {
+            if let Some((from, _to)) = rest.split_once(" to ") {
+                return Some(from.to_string());
+            }
+        }
+    }
+    None
+}
+
 /// Checkout a branch using git2.
 /// For local branches, it does a simple checkout.
 /// For remote branches (e.g., origin/feature), it creates a local tracking branch.
