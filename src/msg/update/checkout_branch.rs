@@ -1,6 +1,6 @@
 use crate::{
-    git::checkout::{checkout, CheckoutResult},
-    model::{popup::PopupContent, Model},
+    git::checkout::{CheckoutResult, checkout},
+    model::{Model, popup::PopupContent},
     msg::Message,
 };
 

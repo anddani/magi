@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 pub enum Arguments {
+    CommitArguments(HashSet<CommitArgument>),
     FetchArguments(HashSet<FetchArgument>),
     PushArguments(HashSet<PushArgument>),
     PullArguments(HashSet<PullArgument>),
@@ -8,9 +9,38 @@ pub enum Arguments {
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum Argument {
+    Commit(CommitArgument),
     Fetch(FetchArgument),
     Push(PushArgument),
     Pull(PullArgument),
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum CommitArgument {
+    StageAll,
+}
+impl CommitArgument {
+    pub fn all() -> Vec<CommitArgument> {
+        vec![CommitArgument::StageAll]
+    }
+
+    pub fn key(&self) -> &'static str {
+        match self {
+            CommitArgument::StageAll => "a",
+        }
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            CommitArgument::StageAll => "Stage all modified and deleted files",
+        }
+    }
+
+    pub fn flag(&self) -> &'static str {
+        match self {
+            CommitArgument::StageAll => "--all",
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]

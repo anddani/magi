@@ -1,6 +1,6 @@
 use crate::{
     model::Model,
-    msg::{util::visible_lines_between, Message},
+    msg::{Message, util::visible_lines_between},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {

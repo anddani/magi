@@ -1,8 +1,8 @@
 use crate::{
     git::push::get_upstream_branch,
     model::{
-        popup::{FetchPopupState, PopupContent, PopupContentCommand},
         Model,
+        popup::{FetchPopupState, PopupContent, PopupContentCommand},
     },
     msg::Message,
 };

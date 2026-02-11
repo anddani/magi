@@ -1,18 +1,18 @@
 use std::collections::HashSet;
 
 use magi::config::Theme;
+use magi::git::GitInfo;
 use magi::git::stage::stage_files;
 use magi::git::test_repo::TestRepo;
-use magi::git::GitInfo;
 use magi::model::arguments::{Argument, Arguments, PushArgument};
 use magi::model::popup::{PopupContent, PopupContentCommand};
 use magi::model::{
     DiffHunk, DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model,
     RunningState, SectionType, UiModel,
 };
+use magi::msg::Message;
 use magi::msg::update::update;
 use magi::msg::util::visible_lines_between;
-use magi::msg::Message;
 use std::fs;
 
 /// Creates a test model with default values. Lines are populated from the git repo.
@@ -369,24 +369,30 @@ fn test_toggle_section_on_header() {
     model.ui_model.cursor_position = 0; // On section header
 
     // Initially not collapsed
-    assert!(!model
-        .ui_model
-        .collapsed_sections
-        .contains(&SectionType::UntrackedFiles));
+    assert!(
+        !model
+            .ui_model
+            .collapsed_sections
+            .contains(&SectionType::UntrackedFiles)
+    );
 
     // Toggle should collapse
     update(&mut model, Message::ToggleSection);
-    assert!(model
-        .ui_model
-        .collapsed_sections
-        .contains(&SectionType::UntrackedFiles));
+    assert!(
+        model
+            .ui_model
+            .collapsed_sections
+            .contains(&SectionType::UntrackedFiles)
+    );
 
     // Toggle again should expand
     update(&mut model, Message::ToggleSection);
-    assert!(!model
-        .ui_model
-        .collapsed_sections
-        .contains(&SectionType::UntrackedFiles));
+    assert!(
+        !model
+            .ui_model
+            .collapsed_sections
+            .contains(&SectionType::UntrackedFiles)
+    );
 }
 
 #[test]

@@ -1,7 +1,7 @@
 use crate::{
     model::{
-        popup::{PopupContent, PopupContentCommand},
         Model,
+        popup::{PopupContent, PopupContentCommand},
     },
     msg::Message,
 };

@@ -13,7 +13,12 @@ pub struct CommitResult {
 /// This uses the git command directly (not git2) to ensure hooks run properly.
 ///
 /// Returns a CommitResult indicating success/failure and a message.
-pub fn run_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
+///
+/// * `flags` - list of flags. e.g. `["--all", "--no-verify"]`
+pub fn run_commit_with_editor<P: AsRef<Path>>(
+    repo_path: P,
+    flags: Vec<String>,
+) -> MagiResult<CommitResult> {
     // Using `git commit` directly ensures:
     // - Pre-commit hooks run
     // - Commit-msg hooks run
@@ -23,6 +28,7 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<Commit
         .arg("-C")
         .arg(repo_path.as_ref())
         .arg("commit")
+        .args(flags)
         .status()?;
 
     if status.success() {

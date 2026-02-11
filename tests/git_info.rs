@@ -1,6 +1,6 @@
+use magi::git::ReferenceType;
 use magi::git::info::{get_head_ref, get_push_ref};
 use magi::git::test_repo::TestRepo;
-use magi::git::ReferenceType;
 
 #[test]
 fn test_get_head_ref_attached() -> Result<(), git2::Error> {

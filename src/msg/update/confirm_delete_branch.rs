@@ -1,6 +1,6 @@
 use crate::{
-    git::checkout::{delete_branch, DeleteBranchResult},
-    model::{popup::PopupContent, Model},
+    git::checkout::{DeleteBranchResult, delete_branch},
+    model::{Model, popup::PopupContent},
     msg::Message,
 };
 

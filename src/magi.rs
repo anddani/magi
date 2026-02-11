@@ -13,7 +13,7 @@ use ratatui::DefaultTerminal;
 use crate::{
     config::Config,
     errors::MagiResult,
-    git::{pty_command::PtyCommandResult, GitInfo},
+    git::{GitInfo, pty_command::PtyCommandResult},
     model::{CredentialPopupState, Model, PopupContent, RunningState, Toast, ToastStyle, UiModel},
     msg::Message,
     view::view,

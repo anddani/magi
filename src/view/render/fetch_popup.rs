@@ -9,9 +9,9 @@ use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
     model::{
+        Model,
         arguments::{Arguments::FetchArguments, FetchArgument},
         popup::FetchPopupState,
-        Model,
     },
     view::render::util::argument_line,
 };

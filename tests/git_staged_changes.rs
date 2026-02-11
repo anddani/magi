@@ -116,10 +116,14 @@ fn test_diff_lines_have_correct_types() {
         .collect();
 
     // Should have both additions and deletions
-    assert!(diff_lines
-        .iter()
-        .any(|dl| dl.line_type == DiffLineType::Deletion));
-    assert!(diff_lines
-        .iter()
-        .any(|dl| dl.line_type == DiffLineType::Addition));
+    assert!(
+        diff_lines
+            .iter()
+            .any(|dl| dl.line_type == DiffLineType::Deletion)
+    );
+    assert!(
+        diff_lines
+            .iter()
+            .any(|dl| dl.line_type == DiffLineType::Addition)
+    );
 }

@@ -1,8 +1,8 @@
 use crate::{
     git::credential::CredentialResponse,
     model::{
-        popup::{PopupContent, PopupContentCommand, SelectResult},
         Model,
+        popup::{PopupContent, PopupContentCommand, SelectResult},
     },
     msg::Message,
 };

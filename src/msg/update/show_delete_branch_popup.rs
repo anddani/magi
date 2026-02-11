@@ -1,9 +1,10 @@
 use crate::{
     git::checkout::get_branches,
     model::{
+        BranchSuggestion, Model,
         popup::{PopupContent, PopupContentCommand, SelectPopupState},
         select_popup::SelectContext,
-        suggestions_from_line, BranchSuggestion, Model,
+        suggestions_from_line,
     },
     msg::Message,
 };
