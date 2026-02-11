@@ -115,6 +115,7 @@ pub enum PushArgument {
     ForceWithLease,
     Force,
     DisableHooks,
+    DryRun,
 }
 
 impl PushArgument {
@@ -124,6 +125,7 @@ impl PushArgument {
             PushArgument::ForceWithLease,
             PushArgument::Force,
             PushArgument::DisableHooks,
+            PushArgument::DryRun,
         ]
     }
 
@@ -132,6 +134,7 @@ impl PushArgument {
             PushArgument::ForceWithLease => 'f',
             PushArgument::Force => 'F',
             PushArgument::DisableHooks => 'h',
+            PushArgument::DryRun => 'n',
         }
     }
 
@@ -144,6 +147,7 @@ impl PushArgument {
             PushArgument::ForceWithLease => "Force with lease",
             PushArgument::Force => "Force",
             PushArgument::DisableHooks => "Disable hooks",
+            PushArgument::DryRun => "Dry run",
         }
     }
 
@@ -152,6 +156,7 @@ impl PushArgument {
             PushArgument::ForceWithLease => "--force-with-lease",
             PushArgument::Force => "--force",
             PushArgument::DisableHooks => "--no-verify",
+            PushArgument::DryRun => "--dry-run",
         }
     }
 }
