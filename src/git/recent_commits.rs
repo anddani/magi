@@ -164,13 +164,13 @@ fn build_local_branch_map(repository: &Repository) -> MagiResult<HashMap<git2::O
 
     let branches = repository.branches(Some(git2::BranchType::Local))?;
     for (branch, _) in branches.flatten() {
-        if let Ok(Some(name)) = branch.name() {
-            if let Ok(commit) = branch.get().peel_to_commit() {
-                branch_map
-                    .entry(commit.id())
-                    .or_default()
-                    .push(name.to_string());
-            }
+        if let Ok(Some(name)) = branch.name()
+            && let Ok(commit) = branch.get().peel_to_commit()
+        {
+            branch_map
+                .entry(commit.id())
+                .or_default()
+                .push(name.to_string());
         }
     }
 
