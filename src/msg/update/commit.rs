@@ -16,14 +16,14 @@ pub fn update(model: &mut Model) -> Option<Message> {
     // Dismiss any open popup (e.g., commit popup)
     model.popup = None;
 
-    let stage_all_selected: bool = if let Some(CommitArguments(ref args)) = model.arguments {
-        args.contains(&CommitArgument::StageAll)
+    let allow_no_staged: bool = if let Some(CommitArguments(ref args)) = model.arguments {
+        args.contains(&CommitArgument::StageAll) || args.contains(&CommitArgument::AllowEmpty)
     } else {
         false
     };
 
-    // If stage all is selected, we want to allow the user to not have anything staged
-    if !stage_all_selected && let Ok(false) = model.git_info.has_staged_changes() {
+    // If argument allowing no staged files is selected, we want to allow the user to not have anything staged
+    if !allow_no_staged && let Ok(false) = model.git_info.has_staged_changes() {
         model.toast = Some(Toast {
             message: "Nothing staged to commit".to_string(),
             style: ToastStyle::Warning,
