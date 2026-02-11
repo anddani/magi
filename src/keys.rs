@@ -380,7 +380,7 @@ mod tests {
             PushPopupState { upstream: None },
         )));
 
-        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('T'));
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('t'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ShowPushAllTagsSelect));
     }
