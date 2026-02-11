@@ -130,6 +130,8 @@ pub enum LineContent {
     PushRef(GitRef),
     Tag(TagInfo),
     SectionHeader { title: String, count: Option<usize> },
+    /// Section header for "Unpulled from [remote]" with separate remote name for coloring
+    UnpulledSectionHeader { remote_name: String, count: usize },
     UntrackedFile(String),
     UnstagedFile(FileChange),
     StagedFile(FileChange),
@@ -238,11 +240,12 @@ impl Line {
                 return true;
             }
             // Also check if this section itself is collapsed AND this is not a header line.
-            // Headers (SectionHeader, UnstagedFile, HeadRef) should remain visible when collapsed.
+            // Headers (SectionHeader, UnpulledSectionHeader, UnstagedFile, HeadRef) should remain visible when collapsed.
             if collapsed_sections.contains(section)
                 && !matches!(
                     self.content,
                     LineContent::SectionHeader { .. }
+                        | LineContent::UnpulledSectionHeader { .. }
                         | LineContent::UnstagedFile(_)
                         | LineContent::StagedFile(_)
                         | LineContent::HeadRef(_)
@@ -259,6 +262,7 @@ impl Line {
     pub fn collapsible_section(&self) -> Option<SectionType> {
         match (&self.content, &self.section) {
             (LineContent::SectionHeader { .. }, Some(section)) => Some(section.clone()),
+            (LineContent::UnpulledSectionHeader { .. }, Some(section)) => Some(section.clone()),
             (LineContent::HeadRef(_), _) => Some(SectionType::Info),
             (LineContent::UnstagedFile(file_change), _) => Some(SectionType::UnstagedFile {
                 path: file_change.path.clone(),
@@ -299,6 +303,8 @@ pub enum SectionType {
     },
     /// The "Recent commits" section
     RecentCommits,
+    /// The "Unpulled from upstream" section
+    Unpulled,
 }
 
 impl SectionType {
@@ -319,6 +325,7 @@ impl SectionType {
                 Some(SectionType::StagedFile { path: path.clone() })
             }
             SectionType::RecentCommits => None,
+            SectionType::Unpulled => None,
         }
     }
 
