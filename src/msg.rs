@@ -81,6 +81,10 @@ pub enum Message {
     ShowPushUpstreamSelect,
     /// Push to a specific remote/branch (setting it as upstream)
     PushToRemote(String),
+    /// Show select popup to choose remote for pushing all tags
+    ShowPushAllTagsSelect,
+    /// Push all tags to a specific remote
+    PushAllTags(String),
 
     EnterArgMode,
     ToggleArgument(Argument),

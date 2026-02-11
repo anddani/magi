@@ -25,6 +25,7 @@ mod move_to_top;
 mod move_up;
 mod pending_g;
 mod pty_helper;
+mod push_all_tags;
 mod push_helper;
 mod push_to_remote;
 mod push_upstream;
@@ -44,6 +45,7 @@ mod show_delete_branch_popup;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
 mod show_help;
+mod show_push_all_tags_select;
 mod show_push_popup;
 mod show_push_upstream_select;
 mod show_select_popup;
@@ -99,6 +101,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PushUpstream => push_upstream::update(model),
         Message::ShowPushUpstreamSelect => show_push_upstream_select::update(model),
         Message::PushToRemote(upstream) => push_to_remote::update(model, upstream),
+        Message::ShowPushAllTagsSelect => show_push_all_tags_select::update(model),
+        Message::PushAllTags(remote) => push_all_tags::update(model, remote),
         Message::EnterArgMode => enter_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),

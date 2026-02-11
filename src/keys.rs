@@ -372,6 +372,20 @@ mod tests {
     }
 
     #[test]
+    fn test_shift_t_in_push_popup_shows_push_all_tags_select() {
+        use crate::model::popup::PushPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+            PushPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('t'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowPushAllTagsSelect));
+    }
+
+    #[test]
     fn test_esc_dismisses_push_popup() {
         use crate::model::popup::PushPopupState;
 
