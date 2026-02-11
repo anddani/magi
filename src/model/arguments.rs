@@ -114,18 +114,24 @@ impl FetchArgument {
 pub enum PushArgument {
     ForceWithLease,
     Force,
+    DisableHooks,
 }
 
 impl PushArgument {
     /// Returns all possible push arguments
     pub fn all() -> Vec<PushArgument> {
-        vec![PushArgument::ForceWithLease, PushArgument::Force]
+        vec![
+            PushArgument::ForceWithLease,
+            PushArgument::Force,
+            PushArgument::DisableHooks,
+        ]
     }
 
     pub fn key(&self) -> char {
         match self {
             PushArgument::ForceWithLease => 'f',
             PushArgument::Force => 'F',
+            PushArgument::DisableHooks => 'h',
         }
     }
 
@@ -137,6 +143,7 @@ impl PushArgument {
         match self {
             PushArgument::ForceWithLease => "Force with lease",
             PushArgument::Force => "Force",
+            PushArgument::DisableHooks => "Disable hooks",
         }
     }
 
@@ -144,6 +151,7 @@ impl PushArgument {
         match self {
             PushArgument::ForceWithLease => "--force-with-lease",
             PushArgument::Force => "--force",
+            PushArgument::DisableHooks => "--no-verify",
         }
     }
 }
