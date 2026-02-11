@@ -118,6 +118,7 @@ pub enum PushArgument {
     DryRun,
     SetUpstream,
     IncludeAllTags,
+    IncludeRelatedAnnotatedTags,
 }
 
 impl PushArgument {
@@ -130,6 +131,7 @@ impl PushArgument {
             PushArgument::DryRun,
             PushArgument::SetUpstream,
             PushArgument::IncludeAllTags,
+            PushArgument::IncludeRelatedAnnotatedTags,
         ]
     }
 
@@ -141,6 +143,7 @@ impl PushArgument {
             PushArgument::DryRun => 'n',
             PushArgument::SetUpstream => 'u',
             PushArgument::IncludeAllTags => 'T',
+            PushArgument::IncludeRelatedAnnotatedTags => 't',
         }
     }
 
@@ -156,6 +159,7 @@ impl PushArgument {
             PushArgument::DryRun => "Dry run",
             PushArgument::SetUpstream => "Set upstream",
             PushArgument::IncludeAllTags => "Include all tags",
+            PushArgument::IncludeRelatedAnnotatedTags => "Include related annotated tags",
         }
     }
 
@@ -167,6 +171,7 @@ impl PushArgument {
             PushArgument::DryRun => "--dry-run",
             PushArgument::SetUpstream => "--set-upstream",
             PushArgument::IncludeAllTags => "--tags",
+            PushArgument::IncludeRelatedAnnotatedTags => "--follow-tags",
         }
     }
 }
