@@ -20,6 +20,7 @@ pub enum CommitArgument {
     StageAll,
     AllowEmpty,
     Verbose,
+    DisableHooks,
 }
 
 impl CommitArgument {
@@ -28,6 +29,7 @@ impl CommitArgument {
             CommitArgument::StageAll,
             CommitArgument::AllowEmpty,
             CommitArgument::Verbose,
+            CommitArgument::DisableHooks,
         ]
     }
 
@@ -36,6 +38,7 @@ impl CommitArgument {
             CommitArgument::StageAll => 'a',
             CommitArgument::AllowEmpty => 'e',
             CommitArgument::Verbose => 'v',
+            CommitArgument::DisableHooks => 'n',
         }
     }
 
@@ -48,6 +51,7 @@ impl CommitArgument {
             CommitArgument::StageAll => "Stage all modified and deleted files",
             CommitArgument::AllowEmpty => "Allow empty commit",
             CommitArgument::Verbose => "Show diff of changes to be commited",
+            CommitArgument::DisableHooks => "Disable hooks",
         }
     }
 
@@ -56,6 +60,7 @@ impl CommitArgument {
             CommitArgument::StageAll => "--all",
             CommitArgument::AllowEmpty => "--allow-empty",
             CommitArgument::Verbose => "--verbose",
+            CommitArgument::DisableHooks => "--no-verify",
         }
     }
 }
