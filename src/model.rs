@@ -129,9 +129,15 @@ pub enum LineContent {
     HeadRef(GitRef),
     PushRef(GitRef),
     Tag(TagInfo),
-    SectionHeader { title: String, count: Option<usize> },
+    SectionHeader {
+        title: String,
+        count: Option<usize>,
+    },
     /// Section header for "Unpulled from [remote]" with separate remote name for coloring
-    UnpulledSectionHeader { remote_name: String, count: usize },
+    UnpulledSectionHeader {
+        remote_name: String,
+        count: usize,
+    },
     UntrackedFile(String),
     UnstagedFile(FileChange),
     StagedFile(FileChange),

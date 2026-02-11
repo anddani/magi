@@ -24,10 +24,7 @@ pub fn get_lines(
             remote_name.to_string(),
             Style::default().fg(theme.remote_branch),
         ),
-        Span::styled(
-            format!(" ({})", count),
-            Style::default().fg(theme.text),
-        ),
+        Span::styled(format!(" ({})", count), Style::default().fg(theme.text)),
     ]);
 
     vec![header_line]

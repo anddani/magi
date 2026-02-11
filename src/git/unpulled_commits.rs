@@ -145,7 +145,12 @@ mod tests {
     use std::fs;
 
     /// Creates a commit on the given reference (e.g., "refs/remotes/origin/main")
-    fn create_commit_on_ref(repo: &Repository, ref_name: &str, message: &str, parent_oid: git2::Oid) {
+    fn create_commit_on_ref(
+        repo: &Repository,
+        ref_name: &str,
+        message: &str,
+        parent_oid: git2::Oid,
+    ) {
         let sig = Signature::now("Test", "test@test.com").unwrap();
         let parent = repo.find_commit(parent_oid).unwrap();
 
@@ -153,7 +158,9 @@ mod tests {
         fs::write(&path, message).unwrap();
 
         let mut index = repo.index().unwrap();
-        index.add_path(std::path::Path::new("remote_dummy.txt")).unwrap();
+        index
+            .add_path(std::path::Path::new("remote_dummy.txt"))
+            .unwrap();
         index.write().unwrap();
         let tree_id = index.write_tree().unwrap();
         let new_tree = repo.find_tree(tree_id).unwrap();
@@ -174,11 +181,17 @@ mod tests {
     /// Helper to set up upstream tracking: creates remote, remote-tracking branch, and configures upstream
     fn setup_upstream(repo: &Repository, head_oid: git2::Oid) {
         // Create the remote (required for set_upstream to work)
-        repo.remote("origin", "https://example.com/repo.git").unwrap();
+        repo.remote("origin", "https://example.com/repo.git")
+            .unwrap();
 
         // Create a remote-tracking branch
-        repo.reference("refs/remotes/origin/main", head_oid, false, "create remote branch")
-            .unwrap();
+        repo.reference(
+            "refs/remotes/origin/main",
+            head_oid,
+            false,
+            "create remote branch",
+        )
+        .unwrap();
 
         // Configure upstream tracking for main -> origin/main
         let mut branch = repo.find_branch("main", BranchType::Local).unwrap();
@@ -188,7 +201,13 @@ mod tests {
     #[test]
     fn test_get_lines_with_upstream_no_unpulled() {
         let test_repo = TestRepo::new();
-        let head_oid = test_repo.repo.head().unwrap().peel_to_commit().unwrap().id();
+        let head_oid = test_repo
+            .repo
+            .head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id();
 
         setup_upstream(&test_repo.repo, head_oid);
 
@@ -201,12 +220,23 @@ mod tests {
     #[test]
     fn test_get_lines_with_unpulled_commits() {
         let test_repo = TestRepo::new();
-        let head_oid = test_repo.repo.head().unwrap().peel_to_commit().unwrap().id();
+        let head_oid = test_repo
+            .repo
+            .head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id();
 
         setup_upstream(&test_repo.repo, head_oid);
 
         // Add commits to the remote branch (simulating unpulled commits)
-        create_commit_on_ref(&test_repo.repo, "refs/remotes/origin/main", "Remote commit 1", head_oid);
+        create_commit_on_ref(
+            &test_repo.repo,
+            "refs/remotes/origin/main",
+            "Remote commit 1",
+            head_oid,
+        );
         let remote_oid = test_repo
             .repo
             .find_reference("refs/remotes/origin/main")
@@ -214,7 +244,12 @@ mod tests {
             .peel_to_commit()
             .unwrap()
             .id();
-        create_commit_on_ref(&test_repo.repo, "refs/remotes/origin/main", "Remote commit 2", remote_oid);
+        create_commit_on_ref(
+            &test_repo.repo,
+            "refs/remotes/origin/main",
+            "Remote commit 2",
+            remote_oid,
+        );
 
         let lines = get_lines(&test_repo.repo).unwrap();
 
@@ -248,12 +283,23 @@ mod tests {
     #[test]
     fn test_unpulled_commits_have_correct_section() {
         let test_repo = TestRepo::new();
-        let head_oid = test_repo.repo.head().unwrap().peel_to_commit().unwrap().id();
+        let head_oid = test_repo
+            .repo
+            .head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id();
 
         setup_upstream(&test_repo.repo, head_oid);
 
         // Add one unpulled commit
-        create_commit_on_ref(&test_repo.repo, "refs/remotes/origin/main", "Unpulled commit", head_oid);
+        create_commit_on_ref(
+            &test_repo.repo,
+            "refs/remotes/origin/main",
+            "Unpulled commit",
+            head_oid,
+        );
 
         let lines = get_lines(&test_repo.repo).unwrap();
 
