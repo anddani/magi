@@ -6,6 +6,7 @@ use crate::{errors::MagiResult, model::LineContent};
 
 pub mod checkout;
 pub mod commit;
+mod commit_utils;
 pub mod credential;
 mod diff_utils;
 pub mod info;
@@ -15,6 +16,7 @@ pub mod recent_commits;
 pub mod stage;
 pub mod staged_changes;
 pub mod test_repo;
+pub mod unpulled_commits;
 pub mod unstaged_changes;
 pub mod untracked_files;
 
@@ -54,6 +56,7 @@ impl GitInfo {
         let untracked_files = untracked_files::get_lines(&self.repository)?;
         let unstaged_changes = unstaged_changes::get_lines(&self.repository)?;
         let staged_changes = staged_changes::get_lines(&self.repository)?;
+        let unpulled_commits = unpulled_commits::get_lines(&self.repository)?;
         let recent_commits = recent_commits::get_lines(&self.repository)?;
 
         let all_sections = [
@@ -62,6 +65,7 @@ impl GitInfo {
             unstaged_changes,
             staged_changes,
             recent_commits,
+            unpulled_commits,
         ];
         let result = all_sections
             .into_iter()

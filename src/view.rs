@@ -24,6 +24,7 @@ mod push_ref;
 mod render;
 mod section_header;
 mod staged_file;
+mod unpulled_section_header;
 mod unstaged_file;
 mod untracked_file;
 
@@ -119,6 +120,9 @@ pub fn view(model: &Model, frame: &mut Frame) {
             crate::model::LineContent::Tag(tag_info) => latest_tag::get_lines(tag_info, theme),
             crate::model::LineContent::SectionHeader { title, count } => {
                 section_header::get_lines(title, *count, is_section_collapsed, theme)
+            }
+            crate::model::LineContent::UnpulledSectionHeader { remote_name, count } => {
+                unpulled_section_header::get_lines(remote_name, *count, is_section_collapsed, theme)
             }
             crate::model::LineContent::UntrackedFile(file_path) => {
                 untracked_file::get_lines(file_path, theme)
