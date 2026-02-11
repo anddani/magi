@@ -116,6 +116,7 @@ pub enum PushArgument {
     Force,
     DisableHooks,
     DryRun,
+    SetUpstream,
 }
 
 impl PushArgument {
@@ -126,6 +127,7 @@ impl PushArgument {
             PushArgument::Force,
             PushArgument::DisableHooks,
             PushArgument::DryRun,
+            PushArgument::SetUpstream,
         ]
     }
 
@@ -135,6 +137,7 @@ impl PushArgument {
             PushArgument::Force => 'F',
             PushArgument::DisableHooks => 'h',
             PushArgument::DryRun => 'n',
+            PushArgument::SetUpstream => 'u',
         }
     }
 
@@ -148,6 +151,7 @@ impl PushArgument {
             PushArgument::Force => "Force",
             PushArgument::DisableHooks => "Disable hooks",
             PushArgument::DryRun => "Dry run",
+            PushArgument::SetUpstream => "Set upstream",
         }
     }
 
@@ -157,6 +161,7 @@ impl PushArgument {
             PushArgument::Force => "--force",
             PushArgument::DisableHooks => "--no-verify",
             PushArgument::DryRun => "--dry-run",
+            PushArgument::SetUpstream => "--set-upstream",
         }
     }
 }
