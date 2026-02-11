@@ -6,6 +6,7 @@ use crate::{errors::MagiResult, model::LineContent};
 
 pub mod checkout;
 pub mod commit;
+mod commit_utils;
 pub mod credential;
 mod diff_utils;
 pub mod info;
