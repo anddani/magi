@@ -44,6 +44,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::DeleteBranch), SelectResult::Selected(branch)) => {
             Some(Message::DeleteBranch(branch))
         }
+        (Some(SelectContext::PushAllTags), SelectResult::Selected(remote)) => {
+            Some(Message::PushAllTags(remote))
+        }
         _ => None,
     }
 }

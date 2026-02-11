@@ -53,6 +53,8 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::PushUpstream
         | Message::ShowPushUpstreamSelect
         | Message::PushToRemote(_)
+        | Message::ShowPushAllTagsSelect
+        | Message::PushAllTags(_)
         | Message::EnterArgMode
         | Message::ToggleArgument(_)
         | Message::ExitArgMode

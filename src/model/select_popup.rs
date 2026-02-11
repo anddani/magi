@@ -20,6 +20,8 @@ pub enum SelectContext {
     FetchUpstream,
     /// Selecting a branch to delete
     DeleteBranch,
+    /// Selecting a remote to push all tags to
+    PushAllTags,
 }
 
 /// State for the select popup (fuzzy finder style)

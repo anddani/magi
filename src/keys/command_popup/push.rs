@@ -26,6 +26,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PushPopupState) -> Option<Mes
                 Some(Message::ShowPushUpstreamSelect)
             }
         }
+        KeyCode::Char('t') => Some(Message::ShowPushAllTagsSelect),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }
