@@ -7,7 +7,7 @@ use crate::config::Theme;
 
 pub fn argument_line<'a>(
     theme: &Theme,
-    key: &'a str,
+    key: char,
     description: &'a str,
     flag: &'a str,
     arg_mode: bool,
@@ -28,7 +28,7 @@ pub fn argument_line<'a>(
     };
     Line::from(vec![
         Span::styled("-", dash_style),
-        Span::styled(key, key_style),
+        Span::styled(key.to_string(), key_style),
         Span::styled(format!(" {description} ("), desc_style),
         Span::styled(flag, flag_style),
         Span::styled(")", desc_style),

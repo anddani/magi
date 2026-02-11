@@ -11,10 +11,9 @@ use crate::{
 pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Message> {
     if arg_mode {
         return match key.code {
-            KeyCode::Char('p') => Some(Message::ToggleArgument(Fetch(FetchArgument::Prune))),
-            KeyCode::Char('t') => Some(Message::ToggleArgument(Fetch(FetchArgument::Tags))),
-            KeyCode::Char('F') => Some(Message::ToggleArgument(Fetch(FetchArgument::Force))),
-            // Any other key exits argument mode
+            KeyCode::Char(c) => FetchArgument::from_key(c)
+                .map(|arg| Message::ToggleArgument(Fetch(arg)))
+                .or(Some(Message::ExitArgMode)),
             _ => Some(Message::ExitArgMode),
         };
     }

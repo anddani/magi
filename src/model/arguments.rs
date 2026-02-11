@@ -18,27 +18,36 @@ pub enum Argument {
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum CommitArgument {
     StageAll,
+    AllowEmpty,
 }
+
 impl CommitArgument {
     pub fn all() -> Vec<CommitArgument> {
-        vec![CommitArgument::StageAll]
+        vec![CommitArgument::StageAll, CommitArgument::AllowEmpty]
     }
 
-    pub fn key(&self) -> &'static str {
+    pub fn key(&self) -> char {
         match self {
-            CommitArgument::StageAll => "a",
+            CommitArgument::StageAll => 'a',
+            CommitArgument::AllowEmpty => 'e',
         }
+    }
+
+    pub fn from_key(key: char) -> Option<CommitArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
     }
 
     pub fn description(&self) -> &'static str {
         match self {
             CommitArgument::StageAll => "Stage all modified and deleted files",
+            CommitArgument::AllowEmpty => "Allow empty commit",
         }
     }
 
     pub fn flag(&self) -> &'static str {
         match self {
             CommitArgument::StageAll => "--all",
+            CommitArgument::AllowEmpty => "--allow-empty",
         }
     }
 }
@@ -59,12 +68,16 @@ impl FetchArgument {
         ]
     }
 
-    pub fn key(&self) -> &'static str {
+    pub fn key(&self) -> char {
         match self {
-            FetchArgument::Prune => "p",
-            FetchArgument::Tags => "t",
-            FetchArgument::Force => "F",
+            FetchArgument::Prune => 'p',
+            FetchArgument::Tags => 't',
+            FetchArgument::Force => 'F',
         }
+    }
+
+    pub fn from_key(key: char) -> Option<FetchArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
     }
 
     pub fn description(&self) -> &'static str {
@@ -96,11 +109,15 @@ impl PushArgument {
         vec![PushArgument::ForceWithLease, PushArgument::Force]
     }
 
-    pub fn key(&self) -> &'static str {
+    pub fn key(&self) -> char {
         match self {
-            PushArgument::ForceWithLease => "f",
-            PushArgument::Force => "F",
+            PushArgument::ForceWithLease => 'f',
+            PushArgument::Force => 'F',
         }
+    }
+
+    pub fn from_key(key: char) -> Option<PushArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
     }
 
     pub fn description(&self) -> &'static str {
@@ -121,4 +138,32 @@ impl PushArgument {
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum PullArgument {
     Force,
+}
+
+impl PullArgument {
+    pub fn all() -> Vec<PullArgument> {
+        vec![PullArgument::Force]
+    }
+
+    pub fn key(&self) -> char {
+        match self {
+            PullArgument::Force => 'F',
+        }
+    }
+
+    pub fn from_key(key: char) -> Option<PullArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            PullArgument::Force => "Force",
+        }
+    }
+
+    pub fn flag(&self) -> &'static str {
+        match self {
+            PullArgument::Force => "--force",
+        }
+    }
 }

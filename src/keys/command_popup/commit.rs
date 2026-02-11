@@ -8,8 +8,9 @@ use crate::{
 pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
     if arg_mode {
         return match key.code {
-            KeyCode::Char('a') => Some(Message::ToggleArgument(Commit(CommitArgument::StageAll))),
-            // Any other key exits argument mode
+            KeyCode::Char(c) => CommitArgument::from_key(c)
+                .map(|arg| Message::ToggleArgument(Commit(arg)))
+                .or(Some(Message::ExitArgMode)),
             _ => Some(Message::ExitArgMode),
         };
     }
