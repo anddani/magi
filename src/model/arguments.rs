@@ -19,17 +19,23 @@ pub enum Argument {
 pub enum CommitArgument {
     StageAll,
     AllowEmpty,
+    Verbose,
 }
 
 impl CommitArgument {
     pub fn all() -> Vec<CommitArgument> {
-        vec![CommitArgument::StageAll, CommitArgument::AllowEmpty]
+        vec![
+            CommitArgument::StageAll,
+            CommitArgument::AllowEmpty,
+            CommitArgument::Verbose,
+        ]
     }
 
     pub fn key(&self) -> char {
         match self {
             CommitArgument::StageAll => 'a',
             CommitArgument::AllowEmpty => 'e',
+            CommitArgument::Verbose => 'v',
         }
     }
 
@@ -41,6 +47,7 @@ impl CommitArgument {
         match self {
             CommitArgument::StageAll => "Stage all modified and deleted files",
             CommitArgument::AllowEmpty => "Allow empty commit",
+            CommitArgument::Verbose => "Show diff of changes to be commited",
         }
     }
 
@@ -48,6 +55,7 @@ impl CommitArgument {
         match self {
             CommitArgument::StageAll => "--all",
             CommitArgument::AllowEmpty => "--allow-empty",
+            CommitArgument::Verbose => "--verbose",
         }
     }
 }
