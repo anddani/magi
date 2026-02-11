@@ -1,8 +1,8 @@
 use crate::{
     model::{
+        Model,
         arguments::Arguments::FetchArguments,
         popup::{PopupContent, PopupContentCommand},
-        Model,
     },
     msg::Message,
 };
@@ -16,9 +16,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             state.upstream.clone()
         } else {
             return None;
-        };
-
-    let upstream = upstream?;
+        }?;
 
     // Parse upstream into remote and branch (e.g., "origin/main" -> ("origin", "main"))
     let (remote, branch) = if let Some((r, b)) = upstream.split_once('/') {

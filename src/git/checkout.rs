@@ -79,10 +79,10 @@ pub fn get_last_checked_out_branch(repo: &Repository) -> Option<String> {
     let reflog = repo.reflog("HEAD").ok()?;
     for entry in reflog.iter() {
         let msg = entry.message()?;
-        if let Some(rest) = msg.strip_prefix("checkout: moving from ") {
-            if let Some((from, _to)) = rest.split_once(" to ") {
-                return Some(from.to_string());
-            }
+        if let Some(rest) = msg.strip_prefix("checkout: moving from ")
+            && let Some((from, _to)) = rest.split_once(" to ")
+        {
+            return Some(from.to_string());
         }
     }
     None

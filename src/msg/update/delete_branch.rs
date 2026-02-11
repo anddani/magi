@@ -1,7 +1,7 @@
 use crate::{
     model::{
-        popup::{ConfirmAction, ConfirmPopupState, PopupContent},
         Model,
+        popup::{ConfirmAction, ConfirmPopupState, PopupContent},
     },
     msg::Message,
 };

@@ -1,15 +1,15 @@
 use ratatui::{
+    Frame,
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line as TextLine, Span},
     widgets::{Block, Borders, Clear, Paragraph},
-    Frame,
 };
 
 use crate::{
     model::{
-        popup::{PopupContent, PopupContentCommand},
         Model, Toast, ToastStyle,
+        popup::{PopupContent, PopupContentCommand},
     },
     view::render::popup_content::CommandPopupContent,
 };
@@ -86,7 +86,7 @@ pub fn render_popup(
         }
         PopupContent::Command(command) => {
             let content = match command {
-                PopupContentCommand::Commit => commit_popup::content(theme),
+                PopupContentCommand::Commit => commit_popup::content(theme, model),
                 PopupContentCommand::Push(state) => push_popup::content(theme, model, state),
                 PopupContentCommand::Fetch(state) => fetch_popup::content(theme, model, state),
                 PopupContentCommand::Branch => branch_popup::content(theme),

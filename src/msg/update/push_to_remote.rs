@@ -1,5 +1,5 @@
 use crate::{
-    model::{arguments::Arguments::PushArguments, Model},
+    model::{Model, arguments::Arguments::PushArguments},
     msg::Message,
 };
 

@@ -1,11 +1,11 @@
 //! Credential popup rendering for password/passphrase/etc. input.
 
 use ratatui::{
+    Frame,
     layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
-    Frame,
 };
 
 use crate::config::Theme;

@@ -13,7 +13,7 @@ use ratatui::DefaultTerminal;
 use crate::{
     config::Config,
     errors::MagiResult,
-    git::{pty_command::PtyCommandResult, GitInfo},
+    git::{GitInfo, pty_command::PtyCommandResult},
     model::{CredentialPopupState, Model, PopupContent, RunningState, Toast, ToastStyle, UiModel},
     msg::Message,
     view::view,
@@ -70,24 +70,23 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
 
     while model.running_state != RunningState::Done {
         // Check if toast has expired and clear it
-        if let Some(ref toast) = model.toast {
-            if Instant::now() >= toast.expires_at {
-                model.toast = None;
-            }
+        if let Some(ref toast) = model.toast
+            && Instant::now() >= toast.expires_at
+        {
+            model.toast = None;
         }
 
         // Check for PTY state updates (credential requests and command completion)
         if model.pty_state.is_some() {
             // Check for credential request (only if we're not already showing a credential popup)
-            if !matches!(model.popup, Some(PopupContent::Credential(_))) {
-                if let Some(cred_type) =
+            if !matches!(model.popup, Some(PopupContent::Credential(_)))
+                && let Some(cred_type) =
                     model.pty_state.as_ref().unwrap().check_credential_request()
-                {
-                    model.popup = Some(PopupContent::Credential(CredentialPopupState {
-                        credential_type: cred_type,
-                        input_text: String::new(),
-                    }));
-                }
+            {
+                model.popup = Some(PopupContent::Credential(CredentialPopupState {
+                    credential_type: cred_type,
+                    input_text: String::new(),
+                }));
             }
 
             // Check for command completion
@@ -150,12 +149,11 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
 /// If a key event occurred during this time, return what [`Message`]
 /// it should trigger.
 fn handle_event(model: &Model) -> MagiResult<Option<Message>> {
-    if event::poll(Duration::from_millis(EVENT_POLL_TIMEOUT_MILLIS))? {
-        if let Event::Key(key) = event::read()? {
-            if key.kind == event::KeyEventKind::Press {
-                return Ok(handle_key(key, model));
-            }
-        }
+    if event::poll(Duration::from_millis(EVENT_POLL_TIMEOUT_MILLIS))?
+        && let Event::Key(key) = event::read()?
+        && key.kind == event::KeyEventKind::Press
+    {
+        return Ok(handle_key(key, model));
     }
     Ok(None)
 }

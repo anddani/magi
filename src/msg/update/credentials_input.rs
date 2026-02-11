@@ -1,7 +1,7 @@
 //! Handler for credential popup input event.
 
 use crate::git::credential::CredentialResponse;
-use crate::model::{popup::CredentialPopupState, Model, PopupContent};
+use crate::model::{Model, PopupContent, popup::CredentialPopupState};
 use crate::msg::{CredentialsMessage, Message};
 
 /// Handles a character being typed in the credential popup.

@@ -10,10 +10,10 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 use std::time::Duration;
 
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 
 use super::credential::{
-    check_for_credential_request, CredentialResponse, CredentialStrategy, CredentialType,
+    CredentialResponse, CredentialStrategy, CredentialType, check_for_credential_request,
 };
 
 /// Result of a PTY command execution.

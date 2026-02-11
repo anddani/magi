@@ -1,8 +1,8 @@
 use crossterm::event::{self, KeyCode, KeyModifiers};
 
 use crate::{
-    model::popup::{ConfirmAction, PopupContent},
     model::Model,
+    model::popup::{ConfirmAction, PopupContent},
     msg::Message,
 };
 
@@ -121,8 +121,8 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
 mod tests {
     use super::*;
     use crate::config::Theme;
-    use crate::git::test_repo::TestRepo;
     use crate::git::GitInfo;
+    use crate::git::test_repo::TestRepo;
     use crate::model::arguments::Argument::{Fetch, Push};
     use crate::model::arguments::{FetchArgument, PushArgument};
     use crate::model::popup::PopupContentCommand;

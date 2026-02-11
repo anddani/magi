@@ -69,13 +69,13 @@ pub fn collect_file_changes(diff: &Diff) -> MagiResult<FileChangesWithDiffs> {
             _ => None,
         };
 
-        if let Some(lt) = line_type {
-            if let Some((_, diff_lines)) = result[file_idx].1.last_mut() {
-                diff_lines.push(DiffLine {
-                    content,
-                    line_type: lt,
-                });
-            }
+        if let Some(lt) = line_type
+            && let Some((_, diff_lines)) = result[file_idx].1.last_mut()
+        {
+            diff_lines.push(DiffLine {
+                content,
+                line_type: lt,
+            });
         }
 
         true

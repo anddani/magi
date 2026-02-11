@@ -4,9 +4,9 @@ use crate::{
         push::{get_current_branch, get_remotes},
     },
     model::{
+        Model,
         popup::{PopupContent, PopupContentCommand, SelectPopupState},
         select_popup::SelectContext,
-        Model,
     },
     msg::Message,
 };

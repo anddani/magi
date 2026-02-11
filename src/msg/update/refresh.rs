@@ -22,12 +22,11 @@ pub fn update(model: &mut Model) -> Option<Message> {
         // Restore collapsed state for files based on their paths
         // This preserves collapsed state when files move between staged/unstaged
         for line in &model.ui_model.lines {
-            if let Some(section) = &line.section {
-                if let Some(path) = section.file_path() {
-                    if collapsed_file_paths.contains(path) {
-                        model.ui_model.collapsed_sections.insert(section.clone());
-                    }
-                }
+            if let Some(section) = &line.section
+                && let Some(path) = section.file_path()
+                && collapsed_file_paths.contains(path)
+            {
+                model.ui_model.collapsed_sections.insert(section.clone());
             }
         }
 

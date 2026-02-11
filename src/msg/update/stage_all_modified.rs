@@ -1,5 +1,5 @@
 use crate::{
-    model::{popup::PopupContent, LineContent, Model},
+    model::{LineContent, Model, popup::PopupContent},
     msg::Message,
 };
 

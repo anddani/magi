@@ -54,6 +54,14 @@ Here are a few features that the aforementioned applications lack:
 - [ ] Commands
     - [ ] Apply
     - [ ] Branch
+        - [x] Checkout branch/revision
+        - [ ] Checkout local branch
+        - [ ] Checkout new branch
+        - [ ] Checkout spin-off branch
+        - [ ] Checkout new worktree
+        - [ ] Create new branch
+        - [ ] Create new spin-out branch
+        - [ ] Create new worktree
     - [ ] Bisect
     - [ ] Commit
         - [x] Commit

@@ -1,6 +1,6 @@
 use crate::{
     git::{credential::CredentialStrategy, pty_command::spawn_git_with_pty},
-    model::{popup::PopupContent, Model, PtyState},
+    model::{Model, PtyState, popup::PopupContent},
     msg::Message,
 };
 

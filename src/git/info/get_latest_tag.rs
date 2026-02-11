@@ -7,10 +7,10 @@ pub fn get_latest_tag(repository: &git2::Repository) -> Result<Option<TagInfo>, 
 
     let mut tags = Vec::new();
     repository.tag_foreach(|id, _| {
-        if let Ok(tag) = repository.find_tag(id) {
-            if let Ok(tag_commit) = tag.peel() {
-                tags.push((tag.name().unwrap_or("").to_string(), tag_commit));
-            }
+        if let Ok(tag) = repository.find_tag(id)
+            && let Ok(tag_commit) = tag.peel()
+        {
+            tags.push((tag.name().unwrap_or("").to_string(), tag_commit));
         }
         true
     })?;
