@@ -117,6 +117,7 @@ pub enum PushArgument {
     DisableHooks,
     DryRun,
     SetUpstream,
+    IncludeAllTags,
 }
 
 impl PushArgument {
@@ -128,6 +129,7 @@ impl PushArgument {
             PushArgument::DisableHooks,
             PushArgument::DryRun,
             PushArgument::SetUpstream,
+            PushArgument::IncludeAllTags,
         ]
     }
 
@@ -138,6 +140,7 @@ impl PushArgument {
             PushArgument::DisableHooks => 'h',
             PushArgument::DryRun => 'n',
             PushArgument::SetUpstream => 'u',
+            PushArgument::IncludeAllTags => 'T',
         }
     }
 
@@ -152,6 +155,7 @@ impl PushArgument {
             PushArgument::DisableHooks => "Disable hooks",
             PushArgument::DryRun => "Dry run",
             PushArgument::SetUpstream => "Set upstream",
+            PushArgument::IncludeAllTags => "Include all tags",
         }
     }
 
@@ -162,6 +166,7 @@ impl PushArgument {
             PushArgument::DisableHooks => "--no-verify",
             PushArgument::DryRun => "--dry-run",
             PushArgument::SetUpstream => "--set-upstream",
+            PushArgument::IncludeAllTags => "--tags",
         }
     }
 }
