@@ -1,5 +1,6 @@
 use crate::{
-    model::{Model, arguments::Arguments::PullArguments},
+    git::push::set_upstream_branch,
+    model::{Model, arguments::Arguments::PullArguments, popup::PopupContent},
     msg::Message,
 };
 
@@ -18,6 +19,14 @@ fn parse_remote_branch(upstream: &str) -> (String, String) {
 
 pub fn update(model: &mut Model, upstream: String) -> Option<Message> {
     let (remote, branch) = parse_remote_branch(&upstream);
+
+    // Set the upstream branch configuration first
+    if let Err(e) = set_upstream_branch(&model.git_info.repository, &upstream) {
+        model.popup = Some(PopupContent::Error {
+            message: format!("Failed to set upstream: {}", e),
+        });
+        return None;
+    }
 
     let mut args = vec!["pull".to_string(), "-v".to_string(), remote];
 
