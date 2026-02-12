@@ -18,6 +18,8 @@ mod fetch_all_remotes;
 mod fetch_from_remote;
 mod fetch_upstream;
 mod half_page_down;
+mod pull_from_remote;
+mod pull_upstream;
 mod half_page_up;
 mod move_down;
 mod move_to_bottom;
@@ -46,6 +48,8 @@ mod show_delete_branch_popup;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
 mod show_help;
+mod show_pull_popup;
+mod show_pull_upstream_select;
 mod show_push_all_tags_select;
 mod show_push_popup;
 mod show_push_tag_select;
@@ -107,6 +111,10 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PushAllTags(remote) => push_all_tags::update(model, remote),
         Message::ShowPushTagSelect => show_push_tag_select::update(model),
         Message::PushTag(tag) => push_tag::update(model, tag),
+        Message::ShowPullPopup => show_pull_popup::update(model),
+        Message::PullUpstream => pull_upstream::update(model),
+        Message::ShowPullUpstreamSelect => show_pull_upstream_select::update(model),
+        Message::PullFromRemote(upstream) => pull_from_remote::update(model, upstream),
         Message::EnterArgMode => enter_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),

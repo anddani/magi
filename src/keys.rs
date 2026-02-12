@@ -13,6 +13,7 @@ fn command_popup_keys(c: char) -> Option<Message> {
     match c {
         'p' | 'P' => Some(Message::ShowPushPopup),
         'f' => Some(Message::ShowFetchPopup),
+        'F' => Some(Message::ShowPullPopup),
         'c' => Some(Message::ShowCommitPopup),
         'b' => Some(Message::ShowBranchPopup),
         _ => None,
@@ -757,6 +758,115 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ToggleArgument(Fetch(FetchArgument::Force)))
+        );
+    }
+
+    // Pull popup tests
+
+    #[test]
+    fn test_shift_f_shows_pull_popup() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('F'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowPullPopup));
+    }
+
+    #[test]
+    fn test_u_in_pull_popup_with_upstream_pulls() {
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState {
+                upstream: Some("origin/main".to_string()),
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::PullUpstream));
+    }
+
+    #[test]
+    fn test_u_in_pull_popup_without_upstream_shows_select() {
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowPullUpstreamSelect));
+    }
+
+    #[test]
+    fn test_esc_dismisses_pull_popup() {
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_minus_in_pull_popup_enters_arg_mode() {
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::EnterArgMode));
+    }
+
+    #[test]
+    fn test_r_in_pull_arg_mode_toggles_rebase() {
+        use crate::model::arguments::Argument::Pull;
+        use crate::model::arguments::PullArgument;
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('r'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Pull(PullArgument::Rebase)))
+        );
+    }
+
+    #[test]
+    fn test_f_in_pull_arg_mode_toggles_ff_only() {
+        use crate::model::arguments::Argument::Pull;
+        use crate::model::arguments::PullArgument;
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Pull(PullArgument::FfOnly)))
         );
     }
 }
