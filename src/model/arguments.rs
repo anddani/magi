@@ -185,7 +185,11 @@ pub enum PullArgument {
 
 impl PullArgument {
     pub fn all() -> Vec<PullArgument> {
-        vec![PullArgument::FfOnly, PullArgument::Rebase]
+        vec![
+            PullArgument::FfOnly,
+            PullArgument::Rebase,
+            PullArgument::Autostash,
+        ]
     }
 
     pub fn key(&self) -> char {

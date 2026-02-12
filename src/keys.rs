@@ -887,7 +887,7 @@ mod tests {
     }
 
     #[test]
-    fn test_a_in_pull_arg_mode_toggles_rebase() {
+    fn test_a_in_pull_arg_mode_toggles_autostash() {
         use crate::model::arguments::Argument::Pull;
         use crate::model::arguments::PullArgument;
         use crate::model::popup::PullPopupState;
