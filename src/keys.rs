@@ -841,7 +841,7 @@ mod tests {
         )));
 
         // 'r' is not a valid pull argument key, so it should exit arg mode
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('r'));
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('w'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitArgMode));
     }
@@ -863,6 +863,26 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ToggleArgument(Pull(PullArgument::FfOnly)))
+        );
+    }
+
+    #[test]
+    fn test_r_in_pull_arg_mode_toggles_rebase() {
+        use crate::model::arguments::Argument::Pull;
+        use crate::model::arguments::PullArgument;
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('r'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Pull(PullArgument::Rebase)))
         );
     }
 }
