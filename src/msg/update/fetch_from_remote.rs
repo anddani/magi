@@ -1,20 +1,10 @@
 use crate::{
+    git::push::parse_remote_branch,
     model::{Model, arguments::Arguments::FetchArguments},
     msg::Message,
 };
 
 use super::pty_helper::execute_pty_command;
-
-/// Parse remote/branch into components.
-/// e.g., "origin/main" -> ("origin", "main")
-fn parse_remote_branch(upstream: &str) -> (String, String) {
-    if let Some((remote, branch)) = upstream.split_once('/') {
-        (remote.to_string(), branch.to_string())
-    } else {
-        // If no slash, assume it's just the remote name
-        (upstream.to_string(), String::new())
-    }
-}
 
 pub fn update(model: &mut Model, upstream: String) -> Option<Message> {
     let (remote, branch) = parse_remote_branch(&upstream);

@@ -64,6 +64,17 @@ pub fn set_upstream_branch(repo: &Repository, upstream: &str) -> MagiResult<()> 
     Ok(())
 }
 
+/// Parses a remote/branch string into its components.
+/// e.g., "origin/main" -> ("origin", "main")
+/// If no slash is present, assumes it's just the remote name.
+pub fn parse_remote_branch(upstream: &str) -> (String, String) {
+    if let Some((remote, branch)) = upstream.split_once('/') {
+        (remote.to_string(), branch.to_string())
+    } else {
+        (upstream.to_string(), String::new())
+    }
+}
+
 /// Gets the upstream branch name for the current branch.
 /// Returns None if no upstream is configured.
 pub fn get_upstream_branch<P: AsRef<Path>>(repo_path: P) -> MagiResult<Option<String>> {
