@@ -47,6 +47,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::PushAllTags), SelectResult::Selected(remote)) => {
             Some(Message::PushAllTags(remote))
         }
+        (Some(SelectContext::PushTag), SelectResult::Selected(tag)) => Some(Message::PushTag(tag)),
         _ => None,
     }
 }

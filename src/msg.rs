@@ -85,6 +85,10 @@ pub enum Message {
     ShowPushAllTagsSelect,
     /// Push all tags to a specific remote
     PushAllTags(String),
+    /// Show select popup to choose a tag to push
+    ShowPushTagSelect,
+    /// Push a single tag to origin
+    PushTag(String),
 
     EnterArgMode,
     ToggleArgument(Argument),

@@ -61,7 +61,16 @@ pub fn content<'a>(
         Span::styled(" Push all tags", cmd_desc_style),
     ];
 
-    let commands: Vec<Line> = vec![Line::from(upstream_description), Line::from(push_tags)];
+    let push_single_tag = vec![
+        Span::styled("T", cmd_key_style),
+        Span::styled(" Push a tag", cmd_desc_style),
+    ];
+
+    let commands: Vec<Line> = vec![
+        Line::from(upstream_description),
+        Line::from(push_tags),
+        Line::from(push_single_tag),
+    ];
 
     let selected_args: HashSet<PushArgument> =
         if let Some(PushArguments(ref args)) = model.arguments {
