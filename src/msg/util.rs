@@ -55,6 +55,8 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::PushToRemote(_)
         | Message::ShowPushAllTagsSelect
         | Message::PushAllTags(_)
+        | Message::ShowPushTagSelect
+        | Message::PushTag(_)
         | Message::EnterArgMode
         | Message::ToggleArgument(_)
         | Message::ExitArgMode

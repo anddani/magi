@@ -22,6 +22,8 @@ pub enum SelectContext {
     DeleteBranch,
     /// Selecting a remote to push all tags to
     PushAllTags,
+    /// Selecting a tag to push
+    PushTag,
 }
 
 /// State for the select popup (fuzzy finder style)
