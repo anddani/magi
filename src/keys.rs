@@ -885,4 +885,24 @@ mod tests {
             Some(Message::ToggleArgument(Pull(PullArgument::Rebase)))
         );
     }
+
+    #[test]
+    fn test_a_in_pull_arg_mode_toggles_rebase() {
+        use crate::model::arguments::Argument::Pull;
+        use crate::model::arguments::PullArgument;
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Pull(PullArgument::Autostash)))
+        );
+    }
 }

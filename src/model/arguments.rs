@@ -180,6 +180,7 @@ impl PushArgument {
 pub enum PullArgument {
     FfOnly,
     Rebase,
+    Autostash,
 }
 
 impl PullArgument {
@@ -191,6 +192,7 @@ impl PullArgument {
         match self {
             PullArgument::FfOnly => 'f',
             PullArgument::Rebase => 'r',
+            PullArgument::Autostash => 'a',
         }
     }
 
@@ -202,6 +204,7 @@ impl PullArgument {
         match self {
             PullArgument::FfOnly => "Fast-forward only",
             PullArgument::Rebase => "Rebase local commits",
+            PullArgument::Autostash => "Autostash",
         }
     }
 
@@ -209,6 +212,7 @@ impl PullArgument {
         match self {
             PullArgument::FfOnly => "--ff-only",
             PullArgument::Rebase => "--rebase",
+            PullArgument::Autostash => "--autostash",
         }
     }
 }
