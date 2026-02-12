@@ -179,16 +179,18 @@ impl PushArgument {
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum PullArgument {
     FfOnly,
+    Rebase,
 }
 
 impl PullArgument {
     pub fn all() -> Vec<PullArgument> {
-        vec![PullArgument::FfOnly]
+        vec![PullArgument::FfOnly, PullArgument::Rebase]
     }
 
     pub fn key(&self) -> char {
         match self {
             PullArgument::FfOnly => 'f',
+            PullArgument::Rebase => 'r',
         }
     }
 
@@ -199,12 +201,14 @@ impl PullArgument {
     pub fn description(&self) -> &'static str {
         match self {
             PullArgument::FfOnly => "Fast-forward only",
+            PullArgument::Rebase => "Rebase local commits",
         }
     }
 
     pub fn flag(&self) -> &'static str {
         match self {
             PullArgument::FfOnly => "--ff-only",
+            PullArgument::Rebase => "--rebase",
         }
     }
 }
