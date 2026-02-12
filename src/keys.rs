@@ -905,4 +905,24 @@ mod tests {
             Some(Message::ToggleArgument(Pull(PullArgument::Autostash)))
         );
     }
+
+    #[test]
+    fn test_f_in_pull_arg_mode_toggles_force() {
+        use crate::model::arguments::Argument::Pull;
+        use crate::model::arguments::PullArgument;
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState { upstream: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('F'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Pull(PullArgument::Force)))
+        );
+    }
 }

@@ -181,6 +181,7 @@ pub enum PullArgument {
     FfOnly,
     Rebase,
     Autostash,
+    Force,
 }
 
 impl PullArgument {
@@ -189,6 +190,7 @@ impl PullArgument {
             PullArgument::FfOnly,
             PullArgument::Rebase,
             PullArgument::Autostash,
+            PullArgument::Force,
         ]
     }
 
@@ -197,6 +199,7 @@ impl PullArgument {
             PullArgument::FfOnly => 'f',
             PullArgument::Rebase => 'r',
             PullArgument::Autostash => 'a',
+            PullArgument::Force => 'F',
         }
     }
 
@@ -209,6 +212,7 @@ impl PullArgument {
             PullArgument::FfOnly => "Fast-forward only",
             PullArgument::Rebase => "Rebase local commits",
             PullArgument::Autostash => "Autostash",
+            PullArgument::Force => "Force",
         }
     }
 
@@ -217,6 +221,7 @@ impl PullArgument {
             PullArgument::FfOnly => "--ff-only",
             PullArgument::Rebase => "--rebase",
             PullArgument::Autostash => "--autostash",
+            PullArgument::Force => "--force",
         }
     }
 }
