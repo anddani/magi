@@ -55,6 +55,8 @@ pub enum Message {
     ShowPushPopup,
     /// Show fetch popup with options
     ShowFetchPopup,
+    /// Show pull popup with options
+    ShowPullPopup,
     /// Show branch popup with options
     ShowBranchPopup,
     /// Show the checkout branch select popup
@@ -89,6 +91,13 @@ pub enum Message {
     ShowPushTagSelect,
     /// Push a single tag to origin
     PushTag(String),
+
+    /// Pull from upstream
+    PullUpstream,
+    /// Show select popup to choose upstream for pull
+    ShowPullUpstreamSelect,
+    /// Pull from a specific remote/branch (setting it as upstream)
+    PullFromRemote(String),
 
     EnterArgMode,
     ToggleArgument(Argument),

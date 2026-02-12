@@ -37,6 +37,7 @@ pub enum PopupContentCommand {
     Commit,
     Push(PushPopupState),
     Fetch(FetchPopupState),
+    Pull(PullPopupState),
     Branch,
     Select(SelectPopupState),
 }
@@ -60,6 +61,13 @@ pub struct PushPopupState {
 /// State for the Fetch popup
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchPopupState {
+    /// The current upstream branch name, if set
+    pub upstream: Option<String>,
+}
+
+/// State for the Pull popup
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PullPopupState {
     /// The current upstream branch name, if set
     pub upstream: Option<String>,
 }

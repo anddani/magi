@@ -84,7 +84,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Fetch all tags
         - [x] Force
     - [ ] Pull
-        - [ ] Fast forward only
+        - [x] Fast forward only
         - [ ] Rebase local commits
         - [ ] Autostash
         - [ ] Force

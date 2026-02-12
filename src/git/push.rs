@@ -51,6 +51,30 @@ pub fn get_current_branch<P: AsRef<Path>>(repo_path: P) -> MagiResult<Option<Str
     }
 }
 
+/// Sets the upstream branch for the current branch.
+/// The upstream should be in the format "remote/branch" (e.g., "origin/main").
+pub fn set_upstream_branch(repo: &Repository, upstream: &str) -> MagiResult<()> {
+    let head = repo.head()?;
+    let branch_name = head
+        .shorthand()
+        .ok_or_else(|| git2::Error::from_str("Could not get branch name"))?;
+
+    let mut branch = repo.find_branch(branch_name, git2::BranchType::Local)?;
+    branch.set_upstream(Some(upstream))?;
+    Ok(())
+}
+
+/// Parses a remote/branch string into its components.
+/// e.g., "origin/main" -> ("origin", "main")
+/// If no slash is present, assumes it's just the remote name.
+pub fn parse_remote_branch(upstream: &str) -> (String, String) {
+    if let Some((remote, branch)) = upstream.split_once('/') {
+        (remote.to_string(), branch.to_string())
+    } else {
+        (upstream.to_string(), String::new())
+    }
+}
+
 /// Gets the upstream branch name for the current branch.
 /// Returns None if no upstream is configured.
 pub fn get_upstream_branch<P: AsRef<Path>>(repo_path: P) -> MagiResult<Option<String>> {
