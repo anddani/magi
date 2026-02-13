@@ -88,7 +88,16 @@ pub fn content<'a>(
         Span::styled(" all remotes", cmd_desc_style),
     ]);
 
-    let mut commands: Vec<Line> = vec![Line::from(upstream_description), all_remotes_line];
+    let elsewhere_line = Line::from(vec![
+        Span::styled("e", cmd_key_style),
+        Span::styled(" elsewhere", cmd_desc_style),
+    ]);
+
+    let mut commands: Vec<Line> = vec![
+        Line::from(upstream_description),
+        all_remotes_line,
+        elsewhere_line,
+    ];
 
     let mut content: Vec<Line> = vec![];
     content.push(column_title("Arguments", theme));

@@ -27,6 +27,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
             }
         }
         KeyCode::Char('a') => Some(Message::FetchAllRemotes),
+        KeyCode::Char('e') => Some(Message::ShowFetchElsewhereSelect),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

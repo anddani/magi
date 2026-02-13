@@ -41,6 +41,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::FetchUpstream), SelectResult::Selected(upstream)) => {
             Some(Message::FetchFromRemote(upstream))
         }
+        (Some(SelectContext::FetchElsewhere), SelectResult::Selected(remote)) => {
+            Some(Message::FetchFromRemote(remote))
+        }
         (Some(SelectContext::PullUpstream), SelectResult::Selected(upstream)) => {
             Some(Message::PullFromRemote(upstream))
         }

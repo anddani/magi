@@ -18,6 +18,8 @@ pub enum SelectContext {
     PushUpstream,
     /// Selecting an upstream to fetch from
     FetchUpstream,
+    /// Selecting a remote to fetch from (elsewhere)
+    FetchElsewhere,
     /// Selecting an upstream to pull from
     PullUpstream,
     /// Selecting a branch to delete
