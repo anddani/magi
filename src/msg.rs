@@ -75,6 +75,8 @@ pub enum Message {
     FetchUpstream,
     /// Show select popup to choose upstream for fetch
     ShowFetchUpstreamSelect,
+    /// Show select popup to choose a remote to fetch from
+    ShowFetchElsewhereSelect,
     /// Fetch from a specific remote/branch
     FetchFromRemote(String),
     /// Push to upstream (or create it if specified)

@@ -45,6 +45,7 @@ mod show_branch_popup;
 mod show_checkout_branch_popup;
 mod show_commit_popup;
 mod show_delete_branch_popup;
+mod show_fetch_elsewhere_select;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
 mod show_help;
@@ -103,6 +104,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::FetchAllRemotes => fetch_all_remotes::update(model),
         Message::FetchUpstream => fetch_upstream::update(model),
         Message::ShowFetchUpstreamSelect => show_fetch_upstream_select::update(model),
+        Message::ShowFetchElsewhereSelect => show_fetch_elsewhere_select::update(model),
         Message::FetchFromRemote(upstream) => fetch_from_remote::update(model, upstream),
         Message::PushUpstream => push_upstream::update(model),
         Message::ShowPushUpstreamSelect => show_push_upstream_select::update(model),
