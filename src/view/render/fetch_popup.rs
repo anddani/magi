@@ -13,7 +13,7 @@ use crate::{
         arguments::{Arguments::FetchArguments, FetchArgument},
         popup::FetchPopupState,
     },
-    view::render::util::argument_line,
+    view::render::util::{argument_line, column_title},
 };
 
 pub fn content<'a>(
@@ -38,6 +38,27 @@ pub fn content<'a>(
     } else {
         desc_style
     };
+
+    let selected_args: HashSet<FetchArgument> =
+        if let Some(FetchArguments(ref args)) = model.arguments {
+            args.clone()
+        } else {
+            HashSet::new()
+        };
+
+    let mut arguments: Vec<Line> = FetchArgument::all()
+        .iter()
+        .map(|arg| {
+            argument_line(
+                theme,
+                arg.key(),
+                arg.description(),
+                arg.flag(),
+                model.arg_mode,
+                selected_args.contains(arg),
+            )
+        })
+        .collect();
 
     let upstream_description = match &state.upstream {
         Some(upstream) => {
@@ -67,28 +88,16 @@ pub fn content<'a>(
         Span::styled(" all remotes", cmd_desc_style),
     ]);
 
-    let commands: Vec<Line> = vec![Line::from(upstream_description), all_remotes_line];
+    let mut commands: Vec<Line> = vec![Line::from(upstream_description), all_remotes_line];
 
-    let selected_args: HashSet<FetchArgument> =
-        if let Some(FetchArguments(ref args)) = model.arguments {
-            args.clone()
-        } else {
-            HashSet::new()
-        };
+    let mut content: Vec<Line> = vec![];
+    content.push(column_title("Arguments", theme));
+    content.append(&mut arguments);
 
-    let arguments: Vec<Line> = FetchArgument::all()
-        .iter()
-        .map(|arg| {
-            argument_line(
-                theme,
-                arg.key(),
-                arg.description(),
-                arg.flag(),
-                model.arg_mode,
-                selected_args.contains(arg),
-            )
-        })
-        .collect();
+    content.push(Line::from(""));
 
-    CommandPopupContent::two_columns("Fetch", "Fetch from", commands, "Arguments", arguments)
+    content.push(column_title("Fetch from", theme));
+    content.append(&mut commands);
+
+    CommandPopupContent::single_column("Fetch", content)
 }
