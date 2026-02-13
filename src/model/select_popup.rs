@@ -14,6 +14,8 @@ pub enum SelectResult {
 pub enum SelectContext {
     /// Selecting a branch to checkout
     CheckoutBranch,
+    /// Selecting a starting point for creating a new branch
+    CheckoutNewBranchBase,
     /// Selecting an upstream to push to
     PushUpstream,
     /// Selecting an upstream to fetch from

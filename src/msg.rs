@@ -63,6 +63,15 @@ pub enum Message {
     ShowCheckoutBranchPopup,
     /// Show the delete branch select popup
     ShowDeleteBranchPopup,
+    /// Show the checkout new branch popup (select starting point)
+    ShowCheckoutNewBranchPopup,
+    /// Show the input popup for new branch name (starting_point)
+    ShowCheckoutNewBranchInput(String),
+    /// Create and checkout a new branch (starting_point, new_branch_name)
+    CheckoutNewBranch {
+        starting_point: String,
+        branch_name: String,
+    },
     /// Checkout the selected branch
     CheckoutBranch(String),
     /// Show confirmation popup before deleting the selected branch
@@ -108,6 +117,9 @@ pub enum Message {
     /// Select popup messages
     Select(SelectMessage),
 
+    /// Input popup messages
+    Input(InputMessage),
+
     /// Credentials popup
     Credentials(CredentialsMessage),
 }
@@ -126,6 +138,17 @@ pub enum SelectMessage {
     /// Move selection down in select popup
     MoveDown,
     /// Confirm selection in select popup
+    Confirm,
+}
+
+/// Messages for text input popups (e.g., branch name input)
+#[derive(PartialEq, Eq, Debug)]
+pub enum InputMessage {
+    /// Input a character into the text field
+    InputChar(char),
+    /// Delete last character from text field
+    InputBackspace,
+    /// Confirm the input
     Confirm,
 }
 

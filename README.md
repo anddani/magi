@@ -1,5 +1,4 @@
-# 🧙 Magi
-
+# 🧙 Magi {—*}
 A terminal-based Git client.
 
 ![Status: In development](https://img.shields.io/badge/Status-In%20Development-yellow)

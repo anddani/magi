@@ -19,6 +19,7 @@ mod commit_popup;
 mod credential_popup;
 mod fetch_popup;
 mod help_popup;
+mod input_popup;
 mod popup_content;
 mod pull_popup;
 mod push_popup;
@@ -106,6 +107,9 @@ pub fn render_popup(
         }
         PopupContent::Confirm(state) => {
             render_confirm_popup(&state.message, frame, area, theme);
+        }
+        PopupContent::Input(state) => {
+            input_popup::render(state, frame, area, theme);
         }
         PopupContent::Help => render_command_popup(frame, area, theme, &help_popup::content(theme)),
     }

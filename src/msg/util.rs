@@ -72,6 +72,10 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::PendingG
         | Message::ShowDeleteBranchPopup
         | Message::DeleteBranch(_)
-        | Message::ConfirmDeleteBranch(_) => false,
+        | Message::ConfirmDeleteBranch(_)
+        | Message::ShowCheckoutNewBranchPopup
+        | Message::ShowCheckoutNewBranchInput(_)
+        | Message::CheckoutNewBranch { .. }
+        | Message::Input(_) => false,
     }
 }

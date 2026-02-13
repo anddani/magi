@@ -8,6 +8,7 @@ use crate::{
 
 mod command_popup;
 mod credentials_popup;
+mod input_popup;
 
 fn command_popup_keys(c: char) -> Option<Message> {
     match c {
@@ -50,6 +51,10 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
 
     if let Some(PopupContent::Credential(_)) = &model.popup {
         return credentials_popup::handle_credentials_popup_key(key);
+    }
+
+    if let Some(PopupContent::Input(_)) = &model.popup {
+        return input_popup::handle_input_popup_key(key);
     }
 
     if let Some(PopupContent::Command(command)) = &model.popup {
@@ -622,6 +627,81 @@ mod tests {
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ShowCheckoutBranchPopup));
+    }
+
+    #[test]
+    fn test_c_in_branch_popup_shows_checkout_new_branch_popup() {
+        let model = create_branch_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('c'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowCheckoutNewBranchPopup));
+    }
+
+    // Input popup tests
+
+    fn create_input_popup_model() -> Model {
+        use crate::model::popup::{InputContext, InputPopupState};
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Input(InputPopupState::new(
+            "New branch name".to_string(),
+            InputContext::CheckoutNewBranch {
+                starting_point: "main".to_string(),
+            },
+        )));
+        model
+    }
+
+    #[test]
+    fn test_input_popup_esc_dismisses() {
+        let model = create_input_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_input_popup_ctrl_g_dismisses() {
+        let model = create_input_popup_model();
+
+        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('g'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_input_popup_char_input() {
+        use crate::msg::InputMessage;
+
+        let model = create_input_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Input(InputMessage::InputChar('a'))));
+    }
+
+    #[test]
+    fn test_input_popup_backspace() {
+        use crate::msg::InputMessage;
+
+        let model = create_input_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Backspace);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Input(InputMessage::InputBackspace)));
+    }
+
+    #[test]
+    fn test_input_popup_enter_confirms() {
+        use crate::msg::InputMessage;
+
+        let model = create_input_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Input(InputMessage::Confirm)));
     }
 
     // Fetch popup tests
