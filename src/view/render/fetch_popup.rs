@@ -83,20 +83,20 @@ pub fn content<'a>(
         }
     };
 
-    let all_remotes_line = Line::from(vec![
-        Span::styled("a", cmd_key_style),
-        Span::styled(" all remotes", cmd_desc_style),
-    ]);
-
     let elsewhere_line = Line::from(vec![
         Span::styled("e", cmd_key_style),
         Span::styled(" elsewhere", cmd_desc_style),
     ]);
 
+    let all_remotes_line = Line::from(vec![
+        Span::styled("a", cmd_key_style),
+        Span::styled(" all remotes", cmd_desc_style),
+    ]);
+
     let mut commands: Vec<Line> = vec![
         Line::from(upstream_description),
-        all_remotes_line,
         elsewhere_line,
+        all_remotes_line,
     ];
 
     let mut content: Vec<Line> = vec![];
