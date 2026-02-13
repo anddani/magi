@@ -61,6 +61,8 @@ pub enum Message {
     ShowBranchPopup,
     /// Show the checkout branch select popup
     ShowCheckoutBranchPopup,
+    /// Show the checkout local branch select popup (only local branches)
+    ShowCheckoutLocalBranchPopup,
     /// Show the delete branch select popup
     ShowDeleteBranchPopup,
     /// Show the checkout new branch popup (select starting point)

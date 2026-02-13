@@ -45,6 +45,7 @@ mod select_move_down;
 mod select_move_up;
 mod show_branch_popup;
 mod show_checkout_branch_popup;
+mod show_checkout_local_branch_popup;
 mod show_checkout_new_branch_input;
 mod show_checkout_new_branch_popup;
 mod show_commit_popup;
@@ -101,6 +102,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowFetchPopup => show_fetch_popup::update(model),
         Message::ShowBranchPopup => show_branch_popup::update(model),
         Message::ShowCheckoutBranchPopup => show_checkout_branch_popup::update(model),
+        Message::ShowCheckoutLocalBranchPopup => show_checkout_local_branch_popup::update(model),
         Message::ShowDeleteBranchPopup => show_delete_branch_popup::update(model),
         Message::ShowCheckoutNewBranchPopup => show_checkout_new_branch_popup::update(model),
         Message::ShowCheckoutNewBranchInput(starting_point) => {

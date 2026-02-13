@@ -40,6 +40,21 @@ pub fn get_branches(repo: &Repository) -> Vec<String> {
     branches
 }
 
+/// Gets only local branches for the select popup.
+pub fn get_local_branches(repo: &Repository) -> Vec<String> {
+    let mut branches = Vec::new();
+
+    if let Ok(local_branches) = repo.branches(Some(git2::BranchType::Local)) {
+        for branch_result in local_branches.flatten() {
+            if let Ok(Some(name)) = branch_result.0.name() {
+                branches.push(name.to_string());
+            }
+        }
+    }
+
+    branches
+}
+
 /// Gets remote branches for the push/fetch upstream select popup.
 /// Returns only remote branches (e.g., "origin/main", "origin/feature").
 /// Optionally prepends a suggested upstream if it doesn't already exist in the list.
@@ -276,6 +291,28 @@ mod tests {
 
         let branches = get_branches(&test_repo.repo);
         assert!(branches.iter().any(|b| b == "test-branch"));
+    }
+
+    #[test]
+    fn test_get_local_branches_returns_only_local() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Create a new local branch
+        Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .args(["branch", "local-branch"])
+            .output()
+            .expect("Failed to create branch");
+
+        let branches = get_local_branches(&test_repo.repo);
+
+        // Should contain the local branch
+        assert!(branches.iter().any(|b| b == "local-branch"));
+
+        // Should not contain any remote branches (no slashes in names)
+        assert!(branches.iter().all(|b| !b.contains('/')));
     }
 
     #[test]
