@@ -5,6 +5,14 @@ use ratatui::{
 
 use crate::config::Theme;
 
+pub fn column_title<'a>(title: &'a str, theme: &Theme) -> Line<'a> {
+    let column_title_style = Style::default()
+        .fg(theme.section_header)
+        .add_modifier(Modifier::BOLD);
+
+    Line::from(Span::styled(title, column_title_style))
+}
+
 pub fn argument_line<'a>(
     theme: &Theme,
     key: char,
