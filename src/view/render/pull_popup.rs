@@ -13,7 +13,7 @@ use crate::{
         arguments::{Arguments::PullArguments, PullArgument},
         popup::PullPopupState,
     },
-    view::render::util::argument_line,
+    view::render::util::{argument_line, column_title},
 };
 
 pub fn content<'a>(
@@ -62,8 +62,6 @@ pub fn content<'a>(
         }
     };
 
-    let commands: Vec<Line> = vec![Line::from(upstream_description)];
-
     let selected_args: HashSet<PullArgument> =
         if let Some(PullArguments(ref args)) = model.arguments {
             args.clone()
@@ -71,7 +69,7 @@ pub fn content<'a>(
             HashSet::new()
         };
 
-    let arguments: Vec<Line> = PullArgument::all()
+    let mut arguments: Vec<Line> = PullArgument::all()
         .iter()
         .map(|arg| {
             argument_line(
@@ -85,5 +83,32 @@ pub fn content<'a>(
         })
         .collect();
 
-    CommandPopupContent::two_columns("Pull", "Pull from", commands, "Arguments", arguments)
+    let mut commands: Vec<Line> = vec![Line::from(upstream_description)];
+
+    let mut content: Vec<Line> = vec![];
+    content.push(column_title("Arguments", theme));
+    content.append(&mut arguments);
+
+    content.push(Line::from(""));
+
+    let pull_into_title = match model.git_info.current_branch() {
+        Some(branch) => {
+            let column_title_style = Style::default()
+                .fg(theme.section_header)
+                .add_modifier(Modifier::BOLD);
+            let branch_style = Style::default()
+                .fg(theme.local_branch)
+                .add_modifier(Modifier::BOLD);
+            Line::from(vec![
+                Span::styled("Pull into ", column_title_style),
+                Span::styled(branch, branch_style),
+                Span::styled(" from", column_title_style),
+            ])
+        }
+        None => column_title("Pull into", theme),
+    };
+    content.push(pull_into_title);
+    content.append(&mut commands);
+
+    CommandPopupContent::single_column("Pull", content)
 }
