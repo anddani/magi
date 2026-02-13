@@ -6,7 +6,7 @@ use crate::git::{CommitInfo, CommitRefType, GitInfo, GitRef, TagInfo};
 use crate::model::arguments::Arguments;
 use crate::msg::Message;
 
-pub use popup::{CredentialPopupState, PopupContent};
+pub use popup::{CredentialPopupState, InputContext, InputPopupState, PopupContent};
 pub use pty_state::PtyState;
 use select_popup::{SelectContext, SelectResult};
 

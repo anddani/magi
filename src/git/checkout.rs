@@ -114,6 +114,36 @@ pub fn checkout<P: AsRef<Path>>(repo_path: P, branch_name: &str) -> MagiResult<C
     }
 }
 
+/// Create and checkout a new branch at the specified starting point.
+/// Uses `git checkout -b <branch_name> <starting_point>`.
+pub fn checkout_new_branch<P: AsRef<Path>>(
+    repo_path: P,
+    branch_name: &str,
+    starting_point: &str,
+) -> MagiResult<CheckoutResult> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo_path.as_ref())
+        .arg("checkout")
+        .arg("-b")
+        .arg(branch_name)
+        .arg(starting_point)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+
+    if output.status.success() {
+        Ok(CheckoutResult::Success)
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        Ok(CheckoutResult::Error(if stderr.is_empty() {
+            "Failed to create branch".to_string()
+        } else {
+            stderr
+        }))
+    }
+}
+
 /// Result of a delete branch operation
 pub enum DeleteBranchResult {
     Success,
@@ -300,5 +330,69 @@ mod tests {
         assert!(
             matches!(result, CheckoutResult::Success) || matches!(result, CheckoutResult::Error(_))
         );
+    }
+
+    #[test]
+    fn test_checkout_new_branch_creates_branch() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Create a new branch from the current HEAD
+        let result = checkout_new_branch(repo_path, "new-feature", "HEAD").unwrap();
+        assert!(matches!(result, CheckoutResult::Success));
+
+        // Verify the branch was created and checked out
+        let branches = get_branches(&test_repo.repo);
+        assert!(branches.iter().any(|b| b == "new-feature"));
+    }
+
+    #[test]
+    fn test_checkout_new_branch_from_branch() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Create a branch to use as starting point
+        Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .args(["branch", "base-branch"])
+            .output()
+            .expect("Failed to create base branch");
+
+        // Create a new branch from the base branch
+        let result = checkout_new_branch(repo_path, "derived-branch", "base-branch").unwrap();
+        assert!(matches!(result, CheckoutResult::Success));
+
+        // Verify the branch was created
+        let branches = get_branches(&test_repo.repo);
+        assert!(branches.iter().any(|b| b == "derived-branch"));
+    }
+
+    #[test]
+    fn test_checkout_new_branch_duplicate_name_fails() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Create a branch first
+        Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .args(["branch", "existing-branch"])
+            .output()
+            .expect("Failed to create branch");
+
+        // Try to create another branch with the same name
+        let result = checkout_new_branch(repo_path, "existing-branch", "HEAD").unwrap();
+        assert!(matches!(result, CheckoutResult::Error(_)));
+    }
+
+    #[test]
+    fn test_checkout_new_branch_invalid_starting_point_fails() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Try to create a branch from a non-existent starting point
+        let result = checkout_new_branch(repo_path, "new-branch", "nonexistent-ref").unwrap();
+        assert!(matches!(result, CheckoutResult::Error(_)));
     }
 }

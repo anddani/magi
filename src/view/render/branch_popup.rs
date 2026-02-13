@@ -18,6 +18,10 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled(" Checkout branch/revision", desc_style),
         ]),
         Line::from(vec![
+            Span::styled("c", key_style),
+            Span::styled(" Checkout new branch", desc_style),
+        ]),
+        Line::from(vec![
             Span::styled("x", key_style),
             Span::styled(" Delete branch", desc_style),
         ]),

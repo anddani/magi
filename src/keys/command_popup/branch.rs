@@ -6,6 +6,7 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
         KeyCode::Char('b') => Some(Message::ShowCheckoutBranchPopup),
+        KeyCode::Char('c') => Some(Message::ShowCheckoutNewBranchPopup),
         KeyCode::Char('x') => Some(Message::ShowDeleteBranchPopup),
         _ => None,
     }

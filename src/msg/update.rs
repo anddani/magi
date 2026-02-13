@@ -1,10 +1,11 @@
 use crate::{
     model::Model,
-    msg::{Message, SelectMessage},
+    msg::{InputMessage, Message, SelectMessage},
 };
 
 mod amend;
 mod checkout_branch;
+mod checkout_new_branch;
 mod commit;
 mod confirm_delete_branch;
 mod credentials_input;
@@ -19,6 +20,7 @@ mod fetch_from_remote;
 mod fetch_upstream;
 mod half_page_down;
 mod half_page_up;
+mod input_input;
 mod move_down;
 mod move_to_bottom;
 mod move_to_top;
@@ -43,6 +45,8 @@ mod select_move_down;
 mod select_move_up;
 mod show_branch_popup;
 mod show_checkout_branch_popup;
+mod show_checkout_new_branch_input;
+mod show_checkout_new_branch_popup;
 mod show_commit_popup;
 mod show_delete_branch_popup;
 mod show_fetch_elsewhere_select;
@@ -98,6 +102,14 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowBranchPopup => show_branch_popup::update(model),
         Message::ShowCheckoutBranchPopup => show_checkout_branch_popup::update(model),
         Message::ShowDeleteBranchPopup => show_delete_branch_popup::update(model),
+        Message::ShowCheckoutNewBranchPopup => show_checkout_new_branch_popup::update(model),
+        Message::ShowCheckoutNewBranchInput(starting_point) => {
+            show_checkout_new_branch_input::update(model, starting_point)
+        }
+        Message::CheckoutNewBranch {
+            starting_point,
+            branch_name,
+        } => checkout_new_branch::update(model, starting_point, branch_name),
         Message::CheckoutBranch(branch) => checkout_branch::update(model, branch),
         Message::DeleteBranch(branch) => delete_branch::update(model, branch),
         Message::ConfirmDeleteBranch(branch) => confirm_delete_branch::update(model, branch),
@@ -129,6 +141,11 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             SelectMessage::MoveUp => select_move_up::update(model),
             SelectMessage::MoveDown => select_move_down::update(model),
             SelectMessage::Confirm => select_confirm::update(model),
+        },
+        Message::Input(input_msg) => match input_msg {
+            InputMessage::InputChar(c) => input_input::input_char(model, c),
+            InputMessage::InputBackspace => input_input::input_backspace(model),
+            InputMessage::Confirm => input_input::confirm(model),
         },
         Message::Credentials(credentials_msg) => credentials_input::update(model, credentials_msg),
     }
