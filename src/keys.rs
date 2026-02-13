@@ -638,6 +638,15 @@ mod tests {
         assert_eq!(result, Some(Message::ShowCheckoutNewBranchPopup));
     }
 
+    #[test]
+    fn test_l_in_branch_popup_shows_checkout_local_branch_popup() {
+        let model = create_branch_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('l'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowCheckoutLocalBranchPopup));
+    }
+
     // Input popup tests
 
     fn create_input_popup_model() -> Model {
