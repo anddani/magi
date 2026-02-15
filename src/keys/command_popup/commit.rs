@@ -18,6 +18,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('q') => Some(Message::DismissPopup),
         KeyCode::Char('c') => Some(Message::Commit),
         KeyCode::Char('a') => Some(Message::Amend),
+        KeyCode::Char('w') => Some(Message::Reword),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

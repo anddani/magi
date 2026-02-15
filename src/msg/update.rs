@@ -36,6 +36,7 @@ mod push_to_remote;
 mod push_upstream;
 mod quit;
 mod refresh;
+mod reword;
 mod scroll_line_down;
 mod scroll_line_up;
 mod select_confirm;
@@ -91,6 +92,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PendingG => pending_g::update(model),
         Message::Commit => commit::update(model),
         Message::Amend => amend::update(model),
+        Message::Reword => reword::update(model),
         Message::DismissPopup => dismiss_popup::update(model),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::UnstageAll => unstage_all::update(model),

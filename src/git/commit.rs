@@ -88,3 +88,36 @@ pub fn run_amend_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<
         })
     }
 }
+
+/// Runs `git commit --amend --only` to reword the last commit message
+/// without including any staged changes.
+/// Opens the user's configured editor with the previous commit message.
+pub fn run_reword_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(repo_path.as_ref())
+        .args(["commit", "--amend", "--only"])
+        .status()?;
+
+    if status.success() {
+        let log_output = Command::new("git")
+            .arg("-C")
+            .arg(repo_path.as_ref())
+            .args(["log", "-1", "--format=%s"])
+            .output()?;
+
+        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
+            .trim()
+            .to_string();
+
+        Ok(CommitResult {
+            success: true,
+            message: format!("Reworded: {}", commit_msg),
+        })
+    } else {
+        Ok(CommitResult {
+            success: false,
+            message: "Reword aborted".to_string(),
+        })
+    }
+}
