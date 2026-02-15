@@ -77,6 +77,9 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ShowCheckoutNewBranchPopup
         | Message::ShowCheckoutNewBranchInput(_)
         | Message::CheckoutNewBranch { .. }
-        | Message::Input(_) => false,
+        | Message::Input(_)
+        | Message::OpenPrDefaultBranch
+        | Message::ShowOpenPrTargetSelect
+        | Message::OpenPrTargetBranch(_) => false,
     }
 }

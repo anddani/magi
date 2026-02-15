@@ -30,6 +30,8 @@ pub enum SelectContext {
     PushAllTags,
     /// Selecting a tag to push
     PushTag,
+    /// Selecting a target branch for opening a PR
+    OpenPrTarget,
 }
 
 /// State for the select popup (fuzzy finder style)
