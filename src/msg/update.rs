@@ -22,8 +22,8 @@ mod half_page_down;
 mod half_page_up;
 mod input_input;
 mod move_down;
-mod open_pr_default_branch;
-mod open_pr_target_branch;
+mod open_pr;
+mod show_open_pr_select;
 mod move_to_bottom;
 mod move_to_top;
 mod move_up;
@@ -136,9 +136,12 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PullUpstream => pull_upstream::update(model),
         Message::ShowPullUpstreamSelect => show_pull_upstream_select::update(model),
         Message::PullFromRemote(upstream) => pull_from_remote::update(model, upstream),
-        Message::OpenPrDefaultBranch => open_pr_default_branch::update(model),
-        Message::ShowOpenPrTargetSelect => show_open_pr_target_select::update(model),
-        Message::OpenPrTargetBranch(target) => open_pr_target_branch::update(model, target),
+        Message::ShowOpenPrSelect => show_open_pr_select::update(model, false),
+        Message::ShowOpenPrWithTargetSelect => show_open_pr_select::update(model, true),
+        Message::ShowOpenPrTargetSelect(branch) => {
+            show_open_pr_target_select::update(model, branch)
+        }
+        Message::OpenPr { branch, target } => open_pr::update(model, branch, target),
         Message::EnterArgMode => enter_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),

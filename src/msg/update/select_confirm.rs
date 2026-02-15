@@ -57,8 +57,21 @@ pub fn update(model: &mut Model) -> Option<Message> {
             Some(Message::PushAllTags(remote))
         }
         (Some(SelectContext::PushTag), SelectResult::Selected(tag)) => Some(Message::PushTag(tag)),
-        (Some(SelectContext::OpenPrTarget), SelectResult::Selected(branch)) => {
-            Some(Message::OpenPrTargetBranch(branch))
+        (Some(SelectContext::OpenPrBranch), SelectResult::Selected(branch)) => {
+            Some(Message::OpenPr {
+                branch,
+                target: None,
+            })
+        }
+        (Some(SelectContext::OpenPrBranchWithTarget), SelectResult::Selected(branch)) => {
+            Some(Message::ShowOpenPrTargetSelect(branch))
+        }
+        (Some(SelectContext::OpenPrTarget), SelectResult::Selected(target)) => {
+            let branch = model.open_pr_branch.take().unwrap_or_default();
+            Some(Message::OpenPr {
+                branch,
+                target: Some(target),
+            })
         }
         _ => None,
     }

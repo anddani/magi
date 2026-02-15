@@ -114,12 +114,17 @@ pub enum Message {
     /// Pull from a specific remote/branch (setting it as upstream)
     PullFromRemote(String),
 
-    /// Open PR creation page in browser for current branch into default branch
-    OpenPrDefaultBranch,
-    /// Show select popup to pick target branch for PR
-    ShowOpenPrTargetSelect,
-    /// Open PR creation page in browser for current branch into selected target branch
-    OpenPrTargetBranch(String),
+    /// Show select popup to pick source branch for PR (opens to default target)
+    ShowOpenPrSelect,
+    /// Show select popup to pick source branch for PR, then pick target
+    ShowOpenPrWithTargetSelect,
+    /// Show select popup to pick target branch for PR (source already chosen)
+    ShowOpenPrTargetSelect(String),
+    /// Open PR creation page in browser
+    OpenPr {
+        branch: String,
+        target: Option<String>,
+    },
 
     EnterArgMode,
     ToggleArgument(Argument),

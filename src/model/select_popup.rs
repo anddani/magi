@@ -30,7 +30,11 @@ pub enum SelectContext {
     PushAllTags,
     /// Selecting a tag to push
     PushTag,
-    /// Selecting a target branch for opening a PR
+    /// Selecting a source branch for opening a PR (to default target)
+    OpenPrBranch,
+    /// Selecting a source branch for opening a PR (will then select target)
+    OpenPrBranchWithTarget,
+    /// Selecting a target branch for an open PR
     OpenPrTarget,
 }
 

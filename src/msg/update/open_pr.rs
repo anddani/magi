@@ -1,15 +1,12 @@
 use crate::{
     git::open_pr::{
-        build_pr_url, detect_service, get_remote_url, has_upstream, open_in_browser,
-        parse_remote_url,
+        build_pr_url, detect_service, get_remote_url, open_in_browser, parse_remote_url,
     },
     model::{Model, popup::PopupContent},
     msg::Message,
 };
 
-pub fn update(model: &mut Model) -> Option<Message> {
-    model.popup = None;
-
+pub fn update(model: &mut Model, branch: String, target: Option<String>) -> Option<Message> {
     let repo_path = match model.git_info.repository.workdir() {
         Some(path) => path.to_path_buf(),
         None => {
@@ -19,26 +16,6 @@ pub fn update(model: &mut Model) -> Option<Message> {
             return None;
         }
     };
-
-    let current_branch = match model.git_info.current_branch() {
-        Some(branch) => branch,
-        None => {
-            model.popup = Some(PopupContent::Error {
-                message: "Could not determine current branch (detached HEAD?)".to_string(),
-            });
-            return None;
-        }
-    };
-
-    if !has_upstream(&repo_path, &current_branch) {
-        model.popup = Some(PopupContent::Error {
-            message: format!(
-                "Branch '{}' has no upstream. Push it first.",
-                current_branch
-            ),
-        });
-        return None;
-    }
 
     let remote_url = match get_remote_url(&repo_path) {
         Ok(url) => url,
@@ -66,7 +43,14 @@ pub fn update(model: &mut Model) -> Option<Message> {
         }
     };
 
-    let url = build_pr_url(&service, &host, &owner, &repo, &current_branch, None);
+    let url = build_pr_url(
+        &service,
+        &host,
+        &owner,
+        &repo,
+        &branch,
+        target.as_deref(),
+    );
 
     if let Err(e) = open_in_browser(&url) {
         model.popup = Some(PopupContent::Error { message: e });
