@@ -43,14 +43,7 @@ pub fn update(model: &mut Model, branch: String, target: Option<String>) -> Opti
         }
     };
 
-    let url = build_pr_url(
-        &service,
-        &host,
-        &owner,
-        &repo,
-        &branch,
-        target.as_deref(),
-    );
+    let url = build_pr_url(&service, &host, &owner, &repo, &branch, target.as_deref());
 
     if let Err(e) = open_in_browser(&url) {
         model.popup = Some(PopupContent::Error { message: e });

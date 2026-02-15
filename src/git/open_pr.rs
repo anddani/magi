@@ -53,8 +53,7 @@ pub fn parse_remote_url(url: &str) -> Result<(String, String, String), String> {
 
     // HTTPS: https://host/owner/repo.git or https://host/owner/repo
     // Also handle Azure DevOps: https://dev.azure.com/org/project/_git/repo
-    let https_re =
-        Regex::new(r"^https?://([^/]+)/(.+)/([^/]+?)(?:\.git)?$").unwrap();
+    let https_re = Regex::new(r"^https?://([^/]+)/(.+)/([^/]+?)(?:\.git)?$").unwrap();
     if let Some(caps) = https_re.captures(url) {
         let host = caps[1].to_string();
         let path = caps[2].to_string();
@@ -212,8 +211,10 @@ pub fn open_in_browser(url: &str) -> Result<(), String> {
         .output();
 
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-    let result: Result<std::process::Output, std::io::Error> =
-        Err(std::io::Error::new(std::io::ErrorKind::Unsupported, "Unsupported platform"));
+    let result: Result<std::process::Output, std::io::Error> = Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "Unsupported platform",
+    ));
 
     match result {
         Ok(output) if output.status.success() => Ok(()),
@@ -243,8 +244,7 @@ mod tests {
 
     #[test]
     fn test_parse_ssh_url() {
-        let (host, owner, repo) =
-            parse_remote_url("git@github.com:user/my-repo.git").unwrap();
+        let (host, owner, repo) = parse_remote_url("git@github.com:user/my-repo.git").unwrap();
         assert_eq!(host, "github.com");
         assert_eq!(owner, "user");
         assert_eq!(repo, "my-repo");
@@ -252,8 +252,7 @@ mod tests {
 
     #[test]
     fn test_parse_ssh_url_without_git_suffix() {
-        let (host, owner, repo) =
-            parse_remote_url("git@github.com:user/my-repo").unwrap();
+        let (host, owner, repo) = parse_remote_url("git@github.com:user/my-repo").unwrap();
         assert_eq!(host, "github.com");
         assert_eq!(owner, "user");
         assert_eq!(repo, "my-repo");
@@ -261,8 +260,7 @@ mod tests {
 
     #[test]
     fn test_parse_https_url() {
-        let (host, owner, repo) =
-            parse_remote_url("https://github.com/user/my-repo.git").unwrap();
+        let (host, owner, repo) = parse_remote_url("https://github.com/user/my-repo.git").unwrap();
         assert_eq!(host, "github.com");
         assert_eq!(owner, "user");
         assert_eq!(repo, "my-repo");
@@ -270,8 +268,7 @@ mod tests {
 
     #[test]
     fn test_parse_https_url_without_git_suffix() {
-        let (host, owner, repo) =
-            parse_remote_url("https://github.com/user/my-repo").unwrap();
+        let (host, owner, repo) = parse_remote_url("https://github.com/user/my-repo").unwrap();
         assert_eq!(host, "github.com");
         assert_eq!(owner, "user");
         assert_eq!(repo, "my-repo");
@@ -377,10 +374,7 @@ mod tests {
             "feature",
             Some("main"),
         );
-        assert_eq!(
-            url,
-            "https://github.com/user/repo/compare/main...feature"
-        );
+        assert_eq!(url, "https://github.com/user/repo/compare/main...feature");
     }
 
     #[test]
@@ -457,10 +451,7 @@ mod tests {
             "feature",
             Some("main"),
         );
-        assert_eq!(
-            url,
-            "https://codeberg.org/user/repo/compare/main...feature"
-        );
+        assert_eq!(url, "https://codeberg.org/user/repo/compare/main...feature");
     }
 
     #[test]
@@ -473,9 +464,6 @@ mod tests {
             "feature",
             None,
         );
-        assert_eq!(
-            url,
-            "https://codeberg.org/user/repo/compare/feature"
-        );
+        assert_eq!(url, "https://codeberg.org/user/repo/compare/feature");
     }
 }
