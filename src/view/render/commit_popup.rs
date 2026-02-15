@@ -27,6 +27,10 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             Span::styled("a", key_style),
             Span::styled(" Amend", desc_style),
         ]),
+        Line::from(vec![
+            Span::styled("w", key_style),
+            Span::styled(" Reword", desc_style),
+        ]),
     ];
 
     let selected_args: HashSet<CommitArgument> =

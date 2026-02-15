@@ -65,7 +65,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Commit
         - [x] Commit
         - [x] Amend
-        - [ ] Reword
+        - [x] Reword
         - [ ] Extend
         - [ ] Fixup
         - [ ] Squash

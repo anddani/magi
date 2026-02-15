@@ -34,6 +34,8 @@ pub enum Message {
     Commit,
     /// Amend the last commit
     Amend,
+    /// Reword the last commit message (amend without staged changes)
+    Reword,
 
     /// Dismiss the current popup
     DismissPopup,
