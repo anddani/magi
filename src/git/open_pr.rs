@@ -3,6 +3,8 @@ use std::process::{Command, Stdio};
 
 use regex::Regex;
 
+use super::git_cmd;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HostingService {
     GitHub,
@@ -15,10 +17,7 @@ pub enum HostingService {
 
 /// Runs `git ls-remote --get-url origin` to get the remote URL.
 pub fn get_remote_url<P: AsRef<Path>>(repo_path: P) -> Result<String, String> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .args(["ls-remote", "--get-url", "origin"])
+    let output = git_cmd(&repo_path, &["ls-remote", "--get-url", "origin"])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
@@ -225,10 +224,8 @@ pub fn open_in_browser(url: &str) -> Result<(), String> {
 
 /// Checks if the given branch has an upstream (remote tracking branch) configured.
 pub fn has_upstream<P: AsRef<Path>>(repo_path: P, branch: &str) -> bool {
-    Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .args(["config", "--get", &format!("branch.{}.remote", branch)])
+    let key = format!("branch.{}.remote", branch);
+    git_cmd(&repo_path, &["config", "--get", &key])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .output()

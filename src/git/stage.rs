@@ -1,6 +1,7 @@
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
+use super::git_cmd;
 use crate::errors::MagiResult;
 
 /// Stages the specified files.
@@ -9,11 +10,7 @@ pub fn stage_files<P: AsRef<Path>>(repo_path: P, files: &[&str]) -> MagiResult<(
     if files.is_empty() {
         return Ok(());
     }
-    let _output = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .arg("add")
-        .arg("--")
+    let _output = git_cmd(&repo_path, &["add", "--"])
         .args(files)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -27,12 +24,7 @@ pub fn unstage_files<P: AsRef<Path>>(repo_path: P, files: &[&str]) -> MagiResult
     if files.is_empty() {
         return Ok(());
     }
-    let _output = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .arg("reset")
-        .arg("HEAD")
-        .arg("--")
+    let _output = git_cmd(&repo_path, &["reset", "HEAD", "--"])
         .args(files)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

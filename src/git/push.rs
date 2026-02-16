@@ -1,8 +1,9 @@
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 use git2::Repository;
 
+use super::git_cmd;
 use crate::errors::MagiResult;
 
 /// Gets the list of local tags.
@@ -30,10 +31,7 @@ pub fn get_remotes(repo: &Repository) -> Vec<String> {
 
 /// Gets the current branch name.
 pub fn get_current_branch<P: AsRef<Path>>(repo_path: P) -> MagiResult<Option<String>> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+    let output = git_cmd(&repo_path, &["rev-parse", "--abbrev-ref", "HEAD"])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()?;
@@ -78,13 +76,13 @@ pub fn parse_remote_branch(upstream: &str) -> (String, String) {
 /// Gets the upstream branch name for the current branch.
 /// Returns None if no upstream is configured.
 pub fn get_upstream_branch<P: AsRef<Path>>(repo_path: P) -> MagiResult<Option<String>> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .args(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()?;
+    let output = git_cmd(
+        &repo_path,
+        &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+    )
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .output()?;
 
     if output.status.success() {
         let upstream = String::from_utf8_lossy(&output.stdout).trim().to_string();
