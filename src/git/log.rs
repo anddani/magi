@@ -1,5 +1,3 @@
-use std::process::Command;
-
 use git2::Repository;
 
 use crate::{
@@ -24,17 +22,19 @@ pub fn get_log_entries(repository: &Repository) -> MagiResult<Vec<LogEntry>> {
         SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
     );
 
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(workdir)
-        .arg("log")
-        .arg(format!("--format={}", format))
-        .arg("--graph")
-        .arg("--decorate=short")
-        .arg(format!("-n{}", MAX_LOG_ENTRIES))
-        .arg("HEAD")
-        .arg("--")
-        .output()?;
+    let output = super::git_cmd(
+        workdir,
+        &[
+            "log",
+            &format!("--format={}", format),
+            "--graph",
+            "--decorate=short",
+            &format!("-n{}", MAX_LOG_ENTRIES),
+            "HEAD",
+            "--",
+        ],
+    )
+    .output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
