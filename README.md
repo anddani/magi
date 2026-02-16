@@ -54,8 +54,8 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Apply
     - [ ] Branch
         - [x] Checkout branch/revision
-        - [ ] Checkout local branch
-        - [ ] Checkout new branch
+        - [x] Checkout local branch
+        - [x] Checkout new branch
         - [ ] Checkout spin-off branch
         - [ ] Checkout new worktree
         - [ ] Create new branch
@@ -84,12 +84,13 @@ Here are a few features that the aforementioned applications lack:
         - [x] Force
     - [ ] Pull
         - [x] Fast forward only
-        - [ ] Rebase local commits
-        - [ ] Autostash
-        - [ ] Force
+        - [x] Rebase local commits
+        - [x] Autostash
+        - [x] Force
     - [ ] Help
     - [ ] Jump to section
     - [ ] Log
+        - [x] Local
     - [ ] Log (change)
     - [ ] Merge
     - [ ] Remote
