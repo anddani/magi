@@ -61,11 +61,11 @@ pub fn parse_remote_url(url: &str) -> Result<(String, String, String), String> {
 
         // Azure DevOps has a different path structure: org/project/_git/repo
         // The regex captures org/project/_git as the "owner" part
-        if host.contains("dev.azure.com") {
-            if let Some(git_idx) = path.find("/_git") {
-                let owner = path[..git_idx].to_string();
-                return Ok((host, owner, repo));
-            }
+        if host.contains("dev.azure.com")
+            && let Some(git_idx) = path.find("/_git")
+        {
+            let owner = path[..git_idx].to_string();
+            return Ok((host, owner, repo));
         }
 
         return Ok((host, path, repo));
@@ -130,11 +130,8 @@ pub fn build_pr_url(
         HostingService::GitLab => {
             // https://gitlab.com/owner/repo/-/merge_requests/new?merge_request[source_branch]=feature
             let mut url = format!(
-                "https://{}/{}/-/merge_requests/new?merge_request[source_branch]={}",
-                host,
-                // owner might contain subgroups, and repo is separate
-                format!("{}/{}", owner, repo),
-                from_encoded
+                "https://{}/{}/{}/-/merge_requests/new?merge_request[source_branch]={}",
+                host, owner, repo, from_encoded
             );
             if let Some(target) = to {
                 let to_encoded = urlencoding::encode(target);
