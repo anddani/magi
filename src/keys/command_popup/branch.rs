@@ -9,6 +9,8 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
         KeyCode::Char('l') => Some(Message::ShowCheckoutLocalBranchPopup),
         KeyCode::Char('c') => Some(Message::ShowCheckoutNewBranchPopup),
         KeyCode::Char('x') => Some(Message::ShowDeleteBranchPopup),
+        KeyCode::Char('o') => Some(Message::ShowOpenPrSelect),
+        KeyCode::Char('O') => Some(Message::ShowOpenPrWithTargetSelect),
         _ => None,
     }
 }

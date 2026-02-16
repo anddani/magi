@@ -162,6 +162,7 @@ mod tests {
             arg_mode: false,
             pending_g: false,
             arguments: None,
+            open_pr_branch: None,
         }
     }
 

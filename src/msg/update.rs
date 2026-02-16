@@ -25,6 +25,7 @@ mod move_down;
 mod move_to_bottom;
 mod move_to_top;
 mod move_up;
+mod open_pr;
 mod pending_g;
 mod pty_helper;
 mod pull_from_remote;
@@ -55,6 +56,8 @@ mod show_fetch_elsewhere_select;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
 mod show_help;
+mod show_open_pr_select;
+mod show_open_pr_target_select;
 mod show_pull_popup;
 mod show_pull_upstream_select;
 mod show_push_all_tags_select;
@@ -133,6 +136,12 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PullUpstream => pull_upstream::update(model),
         Message::ShowPullUpstreamSelect => show_pull_upstream_select::update(model),
         Message::PullFromRemote(upstream) => pull_from_remote::update(model, upstream),
+        Message::ShowOpenPrSelect => show_open_pr_select::update(model, false),
+        Message::ShowOpenPrWithTargetSelect => show_open_pr_select::update(model, true),
+        Message::ShowOpenPrTargetSelect(branch) => {
+            show_open_pr_target_select::update(model, branch)
+        }
+        Message::OpenPr { branch, target } => open_pr::update(model, branch, target),
         Message::EnterArgMode => enter_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),

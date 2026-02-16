@@ -38,6 +38,7 @@ fn create_test_model() -> Model {
         arg_mode: false,
         pending_g: false,
         arguments: None,
+        open_pr_branch: None,
     }
 }
 
@@ -65,6 +66,7 @@ fn test_refresh_message() {
         arg_mode: false,
         pending_g: false,
         arguments: None,
+        open_pr_branch: None,
     };
 
     // Clear the lines to simulate outdated state
@@ -948,6 +950,7 @@ fn test_collapsed_state_preserved_when_staging_all() {
         arg_mode: false,
         pending_g: false,
         arguments: None,
+        open_pr_branch: None,
     };
 
     // Stage all modified files
@@ -1035,6 +1038,7 @@ fn test_collapsed_state_preserved_when_unstaging_all() {
         arg_mode: false,
         pending_g: false,
         arguments: None,
+        open_pr_branch: None,
     };
 
     // Unstage all files
@@ -1104,6 +1108,7 @@ fn test_expanded_state_preserved_when_staging() {
         arg_mode: false,
         pending_g: false,
         arguments: None,
+        open_pr_branch: None,
     };
 
     // Stage all modified files

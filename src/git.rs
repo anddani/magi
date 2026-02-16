@@ -10,6 +10,7 @@ mod commit_utils;
 pub mod credential;
 mod diff_utils;
 pub mod info;
+pub mod open_pr;
 pub mod pty_command;
 pub mod push;
 pub mod recent_commits;

@@ -29,6 +29,14 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled("x", key_style),
             Span::styled(" Delete branch", desc_style),
         ]),
+        Line::from(vec![
+            Span::styled("o", key_style),
+            Span::styled(" Open PR to default branch", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("O", key_style),
+            Span::styled(" Open PR to...", desc_style),
+        ]),
     ];
 
     let arguments: Vec<Line> = vec![];
