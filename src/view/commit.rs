@@ -19,26 +19,18 @@ pub fn get_lines(commit: &CommitInfo, theme: &Theme) -> Vec<TextLine<'static>> {
         Style::default().fg(theme.commit_hash),
     ));
 
-    // All refs (branches) in order: HEAD/@, current branch, other local, remote
+    // All refs (branches, tags) in order: HEAD/@, current branch, other local, remote, tags
     for commit_ref in &commit.refs {
         spans.push(Span::raw(" "));
         let color = match commit_ref.ref_type {
             CommitRefType::Head => theme.detached_head,
             CommitRefType::LocalBranch => theme.local_branch,
             CommitRefType::RemoteBranch => theme.remote_branch,
+            CommitRefType::Tag => theme.tag_label,
         };
         spans.push(Span::styled(
             commit_ref.name.clone(),
             Style::default().fg(color),
-        ));
-    }
-
-    // Tag (if present)
-    if let Some(ref tag) = commit.tag {
-        spans.push(Span::raw(" "));
-        spans.push(Span::styled(
-            tag.clone(),
-            Style::default().fg(theme.tag_label),
         ));
     }
 
@@ -70,7 +62,6 @@ mod tests {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
             refs: vec![],
-            tag: None,
             message: "Initial commit".to_string(),
         };
         let theme = test_theme();
@@ -90,7 +81,6 @@ mod tests {
                 name: "main".to_string(),
                 ref_type: CommitRefType::LocalBranch,
             }],
-            tag: None,
             message: "Initial commit".to_string(),
         };
         let theme = test_theme();
@@ -113,8 +103,11 @@ mod tests {
                     name: "origin/main".to_string(),
                     ref_type: CommitRefType::RemoteBranch,
                 },
+                CommitRef {
+                    name: "v1.0.0".to_string(),
+                    ref_type: CommitRefType::Tag,
+                },
             ],
-            tag: Some("v1.0.0".to_string()),
             message: "Release commit".to_string(),
         };
         let theme = test_theme();
@@ -136,7 +129,6 @@ mod tests {
                 name: "@".to_string(),
                 ref_type: CommitRefType::Head,
             }],
-            tag: None,
             message: "Detached commit".to_string(),
         };
         let theme = test_theme();
@@ -154,7 +146,6 @@ mod tests {
                 name: "@".to_string(),
                 ref_type: CommitRefType::Head,
             }],
-            tag: None,
             message: "Detached commit".to_string(),
         };
         let theme = test_theme();
@@ -172,7 +163,6 @@ mod tests {
                 name: "main".to_string(),
                 ref_type: CommitRefType::LocalBranch,
             }],
-            tag: None,
             message: "Commit".to_string(),
         };
         let theme = test_theme();
@@ -190,7 +180,6 @@ mod tests {
                 name: "origin/main".to_string(),
                 ref_type: CommitRefType::RemoteBranch,
             }],
-            tag: None,
             message: "Commit".to_string(),
         };
         let theme = test_theme();
@@ -209,7 +198,6 @@ mod tests {
         let commit = CommitInfo {
             hash: "abc1234".to_string(),
             refs: vec![],
-            tag: None,
             message: "Commit".to_string(),
         };
         let theme = test_theme();
@@ -241,7 +229,6 @@ mod tests {
                     ref_type: CommitRefType::RemoteBranch,
                 },
             ],
-            tag: None,
             message: "Commit".to_string(),
         };
         let theme = test_theme();

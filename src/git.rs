@@ -18,6 +18,7 @@ mod commit_utils;
 pub mod credential;
 mod diff_utils;
 pub mod info;
+pub mod log;
 pub mod open_pr;
 pub mod pty_command;
 pub mod push;
@@ -114,23 +115,21 @@ pub struct TagInfo {
 pub struct CommitInfo {
     /// Short commit hash (7 characters)
     pub hash: String,
-    /// References pointing to this commit, in display order
+    /// References pointing to this commit (branches, tags, HEAD), in display order
     pub refs: Vec<CommitRef>,
-    /// Tag name if this commit has a tag
-    pub tag: Option<String>,
     /// Commit message (first line)
     pub message: String,
 }
 
-/// A reference (branch) pointing to a commit
-#[derive(Debug, Clone, PartialEq)]
+/// A reference (branch, tag, or HEAD) pointing to a commit
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommitRef {
     pub name: String,
     pub ref_type: CommitRefType,
 }
 
 /// Type of reference pointing to a commit
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CommitRefType {
     /// "@" indicator for detached HEAD
     Head,
@@ -138,6 +137,8 @@ pub enum CommitRefType {
     LocalBranch,
     /// Remote branch (e.g., "origin/main")
     RemoteBranch,
+    /// Tag (e.g., "v1.0.0")
+    Tag,
 }
 
 /// Enum representing different types of Git references

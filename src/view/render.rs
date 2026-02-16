@@ -20,6 +20,7 @@ mod credential_popup;
 mod fetch_popup;
 mod help_popup;
 mod input_popup;
+mod log_popup;
 mod popup_content;
 mod pull_popup;
 mod push_popup;
@@ -93,6 +94,7 @@ pub fn render_popup(
                 PopupContentCommand::Fetch(state) => fetch_popup::content(theme, model, state),
                 PopupContentCommand::Pull(state) => pull_popup::content(theme, model, state),
                 PopupContentCommand::Branch => branch_popup::content(theme),
+                PopupContentCommand::Log => log_popup::content(theme),
 
                 // Select popup uses custom rendering, not the column layout
                 PopupContentCommand::Select(state) => {

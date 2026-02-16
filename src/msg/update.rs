@@ -14,6 +14,7 @@ mod dismiss_popup;
 mod enter_arg_mode;
 mod enter_visual_mode;
 mod exit_arg_mode;
+mod exit_log_view;
 mod exit_visual_mode;
 mod fetch_all_remotes;
 mod fetch_from_remote;
@@ -56,6 +57,8 @@ mod show_fetch_elsewhere_select;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
 mod show_help;
+mod show_log_current;
+mod show_log_popup;
 mod show_open_pr_select;
 mod show_open_pr_target_select;
 mod show_pull_popup;
@@ -161,5 +164,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             InputMessage::Confirm => input_input::confirm(model),
         },
         Message::Credentials(credentials_msg) => credentials_input::update(model, credentials_msg),
+        Message::ShowLogPopup => show_log_popup::update(model),
+        Message::ShowLogCurrent => show_log_current::update(model),
+        Message::ExitLogView => exit_log_view::update(model),
     }
 }

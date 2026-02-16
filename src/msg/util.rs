@@ -81,6 +81,9 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ShowOpenPrSelect
         | Message::ShowOpenPrWithTargetSelect
         | Message::ShowOpenPrTargetSelect(_)
-        | Message::OpenPr { .. } => false,
+        | Message::OpenPr { .. }
+        | Message::ShowLogPopup
+        | Message::ShowLogCurrent
+        | Message::ExitLogView => false,
     }
 }

@@ -2,6 +2,7 @@ use crossterm::event::{self, KeyCode, KeyModifiers};
 
 use crate::{
     model::Model,
+    model::ViewMode,
     model::popup::{ConfirmAction, PopupContent},
     msg::Message,
 };
@@ -17,6 +18,7 @@ fn command_popup_keys(c: char) -> Option<Message> {
         'F' => Some(Message::ShowPullPopup),
         'c' => Some(Message::ShowCommitPopup),
         'b' => Some(Message::ShowBranchPopup),
+        'l' => Some(Message::ShowLogPopup),
         _ => None,
     }
 }
@@ -102,7 +104,11 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     match (key.modifiers, key.code) {
         (KeyModifiers::CONTROL, KeyCode::Char('r')) => Some(Message::Refresh),
         (_, KeyCode::Char('?')) => Some(Message::ShowHelp),
-        (_, KeyCode::Char('q')) => Some(Message::Quit),
+        // 'q' exits log view when in log mode, otherwise quits the app
+        (_, KeyCode::Char('q')) => match model.view_mode {
+            ViewMode::Log => Some(Message::ExitLogView),
+            ViewMode::Status => Some(Message::Quit),
+        },
         (_, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
         (_, KeyCode::Char('S')) => Some(Message::StageAllModified),
         (_, KeyCode::Char('U')) => Some(Message::UnstageAll),
@@ -146,6 +152,8 @@ mod tests {
     }
 
     fn create_test_model() -> Model {
+        use crate::model::ViewMode;
+
         let test_repo = TestRepo::new();
         let repo_path = test_repo.repo.workdir().unwrap();
         let git_info = GitInfo::new_from_path(repo_path).unwrap();
@@ -163,6 +171,7 @@ mod tests {
             pending_g: false,
             arguments: None,
             open_pr_branch: None,
+            view_mode: ViewMode::Status,
         }
     }
 
@@ -1014,5 +1023,114 @@ mod tests {
             result,
             Some(Message::ToggleArgument(Pull(PullArgument::Force)))
         );
+    }
+
+    // Log popup tests
+
+    #[test]
+    fn test_l_shows_log_popup() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('l'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowLogPopup));
+    }
+
+    fn create_log_popup_model() -> Model {
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+        model
+    }
+
+    #[test]
+    fn test_l_in_log_popup_shows_log_view() {
+        let model = create_log_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('l'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowLogCurrent));
+    }
+
+    #[test]
+    fn test_esc_dismisses_log_popup() {
+        let model = create_log_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_q_dismisses_log_popup() {
+        let model = create_log_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    // Log view mode tests - navigation uses same messages as status view
+
+    fn create_log_mode_model() -> Model {
+        use crate::model::ViewMode;
+
+        let mut model = create_test_model();
+        model.view_mode = ViewMode::Log;
+        model
+    }
+
+    #[test]
+    fn test_q_in_log_mode_exits_log_view() {
+        let model = create_log_mode_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitLogView));
+    }
+
+    #[test]
+    fn test_q_in_status_mode_quits() {
+        let model = create_test_model(); // Default is Status mode
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Quit));
+    }
+
+    #[test]
+    fn test_j_in_log_mode_moves_down() {
+        // Navigation uses same messages in both modes
+        let model = create_log_mode_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('j'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::MoveDown));
+    }
+
+    #[test]
+    fn test_k_in_log_mode_moves_up() {
+        let model = create_log_mode_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('k'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::MoveUp));
+    }
+
+    #[test]
+    fn test_ctrl_d_in_log_mode_half_page_down() {
+        let model = create_log_mode_model();
+
+        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('d'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::HalfPageDown));
+    }
+
+    #[test]
+    fn test_ctrl_u_in_log_mode_half_page_up() {
+        let model = create_log_mode_model();
+
+        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('u'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::HalfPageUp));
     }
 }
