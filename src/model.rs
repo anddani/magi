@@ -41,6 +41,8 @@ pub struct Model {
     pub pending_g: bool,
     /// Flags to add to the next command
     pub arguments: Option<Arguments>,
+    /// Source branch for the Open PR flow (set after first select, consumed by target select)
+    pub open_pr_branch: Option<String>,
 }
 
 #[derive(Debug, Clone)]
