@@ -59,6 +59,14 @@ fn parse_log_output(output: &str) -> Vec<LogEntry> {
     entries
 }
 
+fn none_if_empty(s: &str) -> Option<String> {
+    if s.is_empty() {
+        None
+    } else {
+        Some(s.to_string())
+    }
+}
+
 /// Parse a single line from git log --graph output
 fn parse_log_line(line: &str) -> LogEntry {
     // The line format is: <graph><hash><sep><refs><sep><author><sep><date><sep><message>
@@ -80,28 +88,11 @@ fn parse_log_line(line: &str) -> LogEntry {
     let parts: Vec<&str> = rest.split(SEPARATOR).collect();
 
     if parts.len() >= 5 {
-        let hash = if parts[0].is_empty() {
-            None
-        } else {
-            Some(parts[0].to_string())
-        };
+        let hash = none_if_empty(parts[0]);
         let refs = parse_refs(parts[1]);
-        let author = if parts[2].is_empty() {
-            None
-        } else {
-            Some(parts[2].to_string())
-        };
-        let time = if parts[3].is_empty() {
-            None
-        } else {
-            Some(parts[3].to_string())
-        };
-        let message = if parts[4].is_empty() {
-            None
-        } else {
-            Some(parts[4].to_string())
-        };
-
+        let author = none_if_empty(parts[2]);
+        let time = none_if_empty(parts[3]);
+        let message = none_if_empty(parts[4]);
         LogEntry::new(graph, hash, refs, author, time, message)
     } else if !parts[0].is_empty() {
         // Has some content but not in expected format
