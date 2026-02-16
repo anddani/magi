@@ -3,7 +3,7 @@ use ratatui::{
     text::{Line, Span},
 };
 
-use crate::{config::Theme, model::LogEntry};
+use crate::{config::Theme, git::CommitRefType, model::LogEntry};
 
 /// Get the display lines for a log entry
 pub fn get_lines(entry: &LogEntry, theme: &Theme) -> Vec<Line<'static>> {
@@ -29,10 +29,24 @@ pub fn get_lines(entry: &LogEntry, theme: &Theme) -> Vec<Line<'static>> {
     }
 
     // Refs (branches, tags)
-    if let Some(ref refs) = entry.refs {
-        let ref_spans = parse_refs(refs, theme);
-        spans.extend(ref_spans);
-        spans.push(Span::raw(" "));
+    if !entry.refs.is_empty() {
+        spans.push(Span::raw("("));
+        for (i, commit_ref) in entry.refs.iter().enumerate() {
+            if i > 0 {
+                spans.push(Span::raw(" "));
+            }
+            let color = match commit_ref.ref_type {
+                CommitRefType::Head => theme.detached_head,
+                CommitRefType::LocalBranch => theme.local_branch,
+                CommitRefType::RemoteBranch => theme.remote_branch,
+                CommitRefType::Tag => theme.tag_label,
+            };
+            spans.push(Span::styled(
+                commit_ref.name.clone(),
+                Style::default().fg(color),
+            ));
+        }
+        spans.push(Span::raw(") "));
     }
 
     // Message
@@ -51,69 +65,4 @@ pub fn get_lines(entry: &LogEntry, theme: &Theme) -> Vec<Line<'static>> {
     }
 
     vec![Line::from(spans)]
-}
-
-/// Parse refs string and return colored spans
-fn parse_refs(refs: &str, theme: &Theme) -> Vec<Span<'static>> {
-    let mut spans = Vec::new();
-
-    // refs can contain multiple references separated by ", "
-    // e.g., "HEAD -> main, origin/main, tag: v1.0"
-    let parts: Vec<&str> = refs.split(", ").collect();
-
-    for (i, part) in parts.iter().enumerate() {
-        if i > 0 {
-            spans.push(Span::raw(", "));
-        }
-
-        let part = part.trim();
-
-        if part.starts_with("HEAD -> ") {
-            // HEAD pointing to a branch
-            spans.push(Span::styled(
-                "HEAD -> ".to_string(),
-                Style::default().fg(theme.commit_hash),
-            ));
-            let branch_name = part.strip_prefix("HEAD -> ").unwrap_or(part);
-            spans.push(Span::styled(
-                branch_name.to_string(),
-                Style::default()
-                    .fg(theme.local_branch)
-                    .add_modifier(Modifier::BOLD),
-            ));
-        } else if part == "HEAD" {
-            spans.push(Span::styled(
-                "HEAD".to_string(),
-                Style::default().fg(theme.commit_hash),
-            ));
-        } else if part.starts_with("tag: ") {
-            // Tag
-            spans.push(Span::styled(
-                part.to_string(),
-                Style::default().fg(theme.tag_label),
-            ));
-        } else if part.contains('/') {
-            // Remote branch
-            spans.push(Span::styled(
-                part.to_string(),
-                Style::default().fg(theme.remote_branch),
-            ));
-        } else {
-            // Local branch
-            spans.push(Span::styled(
-                part.to_string(),
-                Style::default()
-                    .fg(theme.local_branch)
-                    .add_modifier(Modifier::BOLD),
-            ));
-        }
-    }
-
-    if !spans.is_empty() {
-        // Wrap refs in parentheses
-        spans.insert(0, Span::raw("("));
-        spans.push(Span::raw(")"));
-    }
-
-    spans
 }

@@ -119,12 +119,17 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
             }
         }
 
-        let tag = tag_map.get(oid).cloned();
+        // Add tags
+        if let Some(tag_name) = tag_map.get(oid) {
+            refs.push(CommitRef {
+                name: tag_name.clone(),
+                ref_type: CommitRefType::Tag,
+            });
+        }
 
         let commit_info = CommitInfo {
             hash,
             refs,
-            tag,
             message,
         };
 

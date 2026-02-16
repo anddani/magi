@@ -2,7 +2,11 @@ use std::process::Command;
 
 use git2::Repository;
 
-use crate::{errors::MagiResult, model::LogEntry};
+use crate::{
+    errors::MagiResult,
+    git::{CommitRef, CommitRefType},
+    model::LogEntry,
+};
 
 const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
@@ -81,11 +85,7 @@ fn parse_log_line(line: &str) -> LogEntry {
         } else {
             Some(parts[0].to_string())
         };
-        let refs = if parts[1].is_empty() {
-            None
-        } else {
-            Some(parts[1].to_string())
-        };
+        let refs = parse_refs(parts[1]);
         let author = if parts[2].is_empty() {
             None
         } else {
@@ -109,7 +109,7 @@ fn parse_log_line(line: &str) -> LogEntry {
         LogEntry::new(
             graph,
             Some(parts[0].to_string()),
-            None,
+            Vec::new(),
             None,
             None,
             parts.get(1).map(|s| s.to_string()),
@@ -117,6 +117,62 @@ fn parse_log_line(line: &str) -> LogEntry {
     } else {
         LogEntry::graph_only(graph)
     }
+}
+
+/// Parse a refs string (e.g., "HEAD -> main, origin/main, tag: v1.0") into CommitRefs
+fn parse_refs(refs_str: &str) -> Vec<CommitRef> {
+    if refs_str.is_empty() {
+        return Vec::new();
+    }
+
+    let mut refs = Vec::new();
+
+    // refs can contain multiple references separated by ", "
+    // e.g., "HEAD -> main, origin/main, tag: v1.0"
+    for part in refs_str.split(", ") {
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+
+        if part.starts_with("HEAD -> ") {
+            // HEAD pointing to a branch - add both HEAD and the branch
+            refs.push(CommitRef {
+                name: "HEAD".to_string(),
+                ref_type: CommitRefType::Head,
+            });
+            let branch_name = part.strip_prefix("HEAD -> ").unwrap_or(part);
+            refs.push(CommitRef {
+                name: branch_name.to_string(),
+                ref_type: CommitRefType::LocalBranch,
+            });
+        } else if part == "HEAD" {
+            refs.push(CommitRef {
+                name: "HEAD".to_string(),
+                ref_type: CommitRefType::Head,
+            });
+        } else if part.starts_with("tag: ") {
+            let tag_name = part.strip_prefix("tag: ").unwrap_or(part);
+            refs.push(CommitRef {
+                name: tag_name.to_string(),
+                ref_type: CommitRefType::Tag,
+            });
+        } else if part.contains('/') {
+            // Remote branch
+            refs.push(CommitRef {
+                name: part.to_string(),
+                ref_type: CommitRefType::RemoteBranch,
+            });
+        } else {
+            // Local branch
+            refs.push(CommitRef {
+                name: part.to_string(),
+                ref_type: CommitRefType::LocalBranch,
+            });
+        }
+    }
+
+    refs
 }
 
 /// Find where the graph prefix ends in a log line
@@ -169,7 +225,9 @@ mod tests {
 
         assert_eq!(entry.graph, "* ");
         assert_eq!(entry.hash, Some("abc1234".to_string()));
-        assert_eq!(entry.refs, Some("main".to_string()));
+        assert_eq!(entry.refs.len(), 1);
+        assert_eq!(entry.refs[0].name, "main");
+        assert_eq!(entry.refs[0].ref_type, CommitRefType::LocalBranch);
         assert_eq!(entry.author, Some("John Doe".to_string()));
         assert_eq!(entry.time, Some("2 hours ago".to_string()));
         assert_eq!(entry.message, Some("Fix bug".to_string()));
@@ -193,7 +251,33 @@ mod tests {
         let entry = parse_log_line(&line);
 
         assert_eq!(entry.hash, Some("def5678".to_string()));
-        assert!(entry.refs.is_none());
+        assert!(entry.refs.is_empty());
         assert_eq!(entry.author, Some("Jane Smith".to_string()));
+    }
+
+    #[test]
+    fn test_parse_refs_head_with_branch() {
+        let refs = parse_refs("HEAD -> main, origin/main");
+        assert_eq!(refs.len(), 3);
+        assert_eq!(refs[0].name, "HEAD");
+        assert_eq!(refs[0].ref_type, CommitRefType::Head);
+        assert_eq!(refs[1].name, "main");
+        assert_eq!(refs[1].ref_type, CommitRefType::LocalBranch);
+        assert_eq!(refs[2].name, "origin/main");
+        assert_eq!(refs[2].ref_type, CommitRefType::RemoteBranch);
+    }
+
+    #[test]
+    fn test_parse_refs_with_tag() {
+        let refs = parse_refs("tag: v1.0.0");
+        assert_eq!(refs.len(), 1);
+        assert_eq!(refs[0].name, "v1.0.0");
+        assert_eq!(refs[0].ref_type, CommitRefType::Tag);
+    }
+
+    #[test]
+    fn test_parse_refs_empty() {
+        let refs = parse_refs("");
+        assert!(refs.is_empty());
     }
 }

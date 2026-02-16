@@ -1,3 +1,5 @@
+use crate::git::CommitRef;
+
 /// A single entry in the git log view
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogEntry {
@@ -5,8 +7,8 @@ pub struct LogEntry {
     pub graph: String,
     /// The commit hash (abbreviated)
     pub hash: Option<String>,
-    /// The ref names (branches, tags)
-    pub refs: Option<String>,
+    /// References pointing to this commit (branches, tags, HEAD)
+    pub refs: Vec<CommitRef>,
     /// The author name
     pub author: Option<String>,
     /// The relative time (e.g., "2 days ago")
@@ -20,7 +22,7 @@ impl LogEntry {
     pub fn new(
         graph: String,
         hash: Option<String>,
-        refs: Option<String>,
+        refs: Vec<CommitRef>,
         author: Option<String>,
         time: Option<String>,
         message: Option<String>,
@@ -40,7 +42,7 @@ impl LogEntry {
         Self {
             graph,
             hash: None,
-            refs: None,
+            refs: Vec::new(),
             author: None,
             time: None,
             message: None,

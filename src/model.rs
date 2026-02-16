@@ -198,7 +198,7 @@ pub fn suggestions_from_line(line: &Line) -> Vec<BranchSuggestion> {
                     CommitRefType::RemoteBranch => {
                         suggestions.push(BranchSuggestion::RemoteBranch(r.name.clone()));
                     }
-                    CommitRefType::Head => {}
+                    CommitRefType::Head | CommitRefType::Tag => {}
                 }
             }
             suggestions.push(BranchSuggestion::Revision(commit_info.hash.clone()));
