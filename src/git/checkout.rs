@@ -1,8 +1,9 @@
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 use git2::Repository;
 
+use super::git_cmd;
 use crate::errors::MagiResult;
 
 /// Result of a checkout operation
@@ -108,11 +109,7 @@ pub fn get_last_checked_out_branch(repo: &Repository) -> Option<String> {
 /// For remote branches (e.g., origin/feature), it creates a local tracking branch.
 pub fn checkout<P: AsRef<Path>>(repo_path: P, branch_name: &str) -> MagiResult<CheckoutResult> {
     // Use git command for checkout as it handles both local and remote branches well
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .arg("checkout")
-        .arg(branch_name)
+    let output = git_cmd(&repo_path, &["checkout", branch_name])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()?;
@@ -136,13 +133,7 @@ pub fn checkout_new_branch<P: AsRef<Path>>(
     branch_name: &str,
     starting_point: &str,
 ) -> MagiResult<CheckoutResult> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .arg("checkout")
-        .arg("-b")
-        .arg(branch_name)
-        .arg(starting_point)
+    let output = git_cmd(&repo_path, &["checkout", "-b", branch_name, starting_point])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()?;
@@ -177,13 +168,7 @@ pub fn delete_branch<P: AsRef<Path>>(
     // Check if this is a remote branch (contains '/')
     if let Some((remote, branch)) = branch_name.split_once('/') {
         // Remote branch: git push --delete <remote> <branch>
-        let output = Command::new("git")
-            .arg("-C")
-            .arg(repo_path)
-            .arg("push")
-            .arg("--delete")
-            .arg(remote)
-            .arg(branch)
+        let output = git_cmd(repo_path, &["push", "--delete", remote, branch])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()?;
@@ -200,12 +185,7 @@ pub fn delete_branch<P: AsRef<Path>>(
         }
     } else {
         // Local branch: check if we're on it and detach HEAD if so
-        let head_output = Command::new("git")
-            .arg("-C")
-            .arg(repo_path)
-            .arg("symbolic-ref")
-            .arg("--short")
-            .arg("HEAD")
+        let head_output = git_cmd(repo_path, &["symbolic-ref", "--short", "HEAD"])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()?;
@@ -216,11 +196,7 @@ pub fn delete_branch<P: AsRef<Path>>(
                 .to_string();
             if current_branch == branch_name {
                 // Detach HEAD before deleting the current branch
-                let detach = Command::new("git")
-                    .arg("-C")
-                    .arg(repo_path)
-                    .arg("checkout")
-                    .arg("--detach")
+                let detach = git_cmd(repo_path, &["checkout", "--detach"])
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped())
                     .output()?;
@@ -236,12 +212,7 @@ pub fn delete_branch<P: AsRef<Path>>(
         }
 
         // Delete local branch with -D (force)
-        let output = Command::new("git")
-            .arg("-C")
-            .arg(repo_path)
-            .arg("branch")
-            .arg("-D")
-            .arg(branch_name)
+        let output = git_cmd(repo_path, &["branch", "-D", branch_name])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()?;

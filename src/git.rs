@@ -1,8 +1,16 @@
 use std::path::Path;
+use std::process::Command;
 
 use git2::{DiffOptions, Error as Git2Error, Repository};
 
 use crate::{errors::MagiResult, model::LineContent};
+
+/// Creates a `Command` for git with `-C <repo_path>` and the given args pre-configured.
+pub fn git_cmd<P: AsRef<Path>>(repo_path: P, args: &[&str]) -> Command {
+    let mut cmd = Command::new("git");
+    cmd.arg("-C").arg(repo_path.as_ref().as_os_str()).args(args);
+    cmd
+}
 
 pub mod checkout;
 pub mod commit;

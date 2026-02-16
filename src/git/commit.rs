@@ -1,6 +1,6 @@
 use std::path::Path;
-use std::process::Command;
 
+use super::git_cmd;
 use crate::errors::MagiResult;
 
 /// Result of a commit operation
@@ -24,20 +24,11 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(
     // - Commit-msg hooks run
     // - Post-commit hooks run
     // - User's configured editor opens correctly
-    let status = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .arg("commit")
-        .args(flags)
-        .status()?;
+    let status = git_cmd(&repo_path, &["commit"]).args(flags).status()?;
 
     if status.success() {
         // Get the commit message from the last commit
-        let log_output = Command::new("git")
-            .arg("-C")
-            .arg(repo_path.as_ref())
-            .args(["log", "-1", "--format=%s"])
-            .output()?;
+        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
 
         let commit_msg = String::from_utf8_lossy(&log_output.stdout)
             .trim()
@@ -60,18 +51,10 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(
 /// Runs `git commit --amend` to amend the last commit.
 /// Opens the user's configured editor with the previous commit message.
 pub fn run_amend_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
-    let status = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .args(["commit", "--amend"])
-        .status()?;
+    let status = git_cmd(&repo_path, &["commit", "--amend"]).status()?;
 
     if status.success() {
-        let log_output = Command::new("git")
-            .arg("-C")
-            .arg(repo_path.as_ref())
-            .args(["log", "-1", "--format=%s"])
-            .output()?;
+        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
 
         let commit_msg = String::from_utf8_lossy(&log_output.stdout)
             .trim()
@@ -93,18 +76,10 @@ pub fn run_amend_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<
 /// without including any staged changes.
 /// Opens the user's configured editor with the previous commit message.
 pub fn run_reword_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
-    let status = Command::new("git")
-        .arg("-C")
-        .arg(repo_path.as_ref())
-        .args(["commit", "--amend", "--only"])
-        .status()?;
+    let status = git_cmd(&repo_path, &["commit", "--amend", "--only"]).status()?;
 
     if status.success() {
-        let log_output = Command::new("git")
-            .arg("-C")
-            .arg(repo_path.as_ref())
-            .args(["log", "-1", "--format=%s"])
-            .output()?;
+        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
 
         let commit_msg = String::from_utf8_lossy(&log_output.stdout)
             .trim()
