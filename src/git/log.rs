@@ -120,46 +120,51 @@ fn parse_refs(refs_str: &str) -> Vec<CommitRef> {
 
     // refs can contain multiple references separated by ", "
     // e.g., "HEAD -> main, origin/main, tag: v1.0"
-    for part in refs_str.split(", ") {
-        let part = part.trim();
-        if part.is_empty() {
-            continue;
-        }
-
-        if part.starts_with("HEAD -> ") {
-            // HEAD pointing to a branch - add both HEAD and the branch
-            refs.push(CommitRef {
-                name: "HEAD".to_string(),
-                ref_type: CommitRefType::Head,
-            });
-            let branch_name = part.strip_prefix("HEAD -> ").unwrap_or(part);
-            refs.push(CommitRef {
-                name: branch_name.to_string(),
-                ref_type: CommitRefType::LocalBranch,
-            });
-        } else if part == "HEAD" {
-            refs.push(CommitRef {
-                name: "HEAD".to_string(),
-                ref_type: CommitRefType::Head,
-            });
-        } else if part.starts_with("tag: ") {
-            let tag_name = part.strip_prefix("tag: ").unwrap_or(part);
-            refs.push(CommitRef {
-                name: tag_name.to_string(),
-                ref_type: CommitRefType::Tag,
-            });
-        } else if part.contains('/') {
-            // Remote branch
-            refs.push(CommitRef {
-                name: part.to_string(),
-                ref_type: CommitRefType::RemoteBranch,
-            });
-        } else {
-            // Local branch
-            refs.push(CommitRef {
-                name: part.to_string(),
-                ref_type: CommitRefType::LocalBranch,
-            });
+    for part in refs_str
+        .split(", ")
+        .map(|part| part.trim())
+        .filter(|part| !part.is_empty())
+    {
+        match part {
+            "HEAD" => {
+                refs.push(CommitRef {
+                    name: "HEAD".to_string(),
+                    ref_type: CommitRefType::Head,
+                });
+            }
+            p if p.starts_with("HEAD -> ") => {
+                // HEAD pointing to a branch - add both HEAD and the branch
+                let branch_name = part.strip_prefix("HEAD -> ").unwrap_or(part);
+                refs.push(CommitRef {
+                    name: "HEAD".to_string(),
+                    ref_type: CommitRefType::Head,
+                });
+                refs.push(CommitRef {
+                    name: branch_name.to_string(),
+                    ref_type: CommitRefType::LocalBranch,
+                });
+            }
+            p if p.starts_with("tag: ") => {
+                let tag_name = part.strip_prefix("tag: ").unwrap_or(part);
+                refs.push(CommitRef {
+                    name: tag_name.to_string(),
+                    ref_type: CommitRefType::Tag,
+                });
+            }
+            p if p.contains('/') => {
+                // Remote branch
+                refs.push(CommitRef {
+                    name: part.to_string(),
+                    ref_type: CommitRefType::RemoteBranch,
+                });
+            }
+            _ => {
+                // Local branch
+                refs.push(CommitRef {
+                    name: part.to_string(),
+                    ref_type: CommitRefType::LocalBranch,
+                });
+            }
         }
     }
 
