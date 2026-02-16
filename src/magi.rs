@@ -14,7 +14,10 @@ use crate::{
     config::Config,
     errors::MagiResult,
     git::{GitInfo, pty_command::PtyCommandResult},
-    model::{CredentialPopupState, Model, PopupContent, RunningState, Toast, ToastStyle, UiModel},
+    model::{
+        CredentialPopupState, Model, PopupContent, RunningState, Toast, ToastStyle, UiModel,
+        ViewMode,
+    },
     msg::Message,
     view::view,
 };
@@ -67,6 +70,7 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
         pending_g: false,
         arguments: None,
         open_pr_branch: None,
+        view_mode: ViewMode::Status,
     };
 
     while model.running_state != RunningState::Done {

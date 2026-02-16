@@ -87,6 +87,7 @@ pub enum PopupContentCommand {
     Fetch(FetchPopupState),
     Pull(PullPopupState),
     Branch,
+    Log,
     Select(SelectPopupState),
 }
 

@@ -6,7 +6,7 @@ use ratatui::{
 };
 
 use crate::{
-    model::{InputMode, Model},
+    model::{InputMode, Model, ViewMode},
     view::{
         render::{render_popup, render_toast},
         util::{apply_selection_style, visible_scroll_offset},
@@ -20,6 +20,7 @@ mod diff_hunk;
 mod diff_line;
 mod head_ref;
 mod latest_tag;
+mod log_line;
 mod push_ref;
 mod render;
 mod section_header;
@@ -66,9 +67,9 @@ mod untracked_file;
 ///
 pub fn view(model: &Model, frame: &mut Frame) {
     let area = frame.area();
+    let theme = &model.theme;
 
     let mut text = Vec::new();
-    let theme = &model.theme;
     let cursor_pos = model.ui_model.cursor_position;
 
     // Content width is area width minus 2 for borders
@@ -138,6 +139,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
                 diff_line::get_lines(diff_line, theme)
             }
             crate::model::LineContent::Commit(commit_info) => commit::get_lines(commit_info, theme),
+            crate::model::LineContent::LogLine(log_entry) => log_line::get_lines(log_entry, theme),
         };
 
         let is_cursor_line = index == cursor_pos;
@@ -179,11 +181,17 @@ pub fn view(model: &Model, frame: &mut Frame) {
         Style::default().bg(mode_bg).fg(mode_fg),
     );
 
+    // Set title based on view mode
+    let title = match model.view_mode {
+        ViewMode::Status => "Magi",
+        ViewMode::Log => "Log",
+    };
+
     let paragraph = Paragraph::new(text)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Magi")
+                .title(title)
                 .title_top(TextLine::from(directory).right_aligned())
                 .title_bottom(TextLine::from(mode_pill)),
         )

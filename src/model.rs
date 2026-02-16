@@ -6,11 +6,13 @@ use crate::git::{CommitInfo, CommitRefType, GitInfo, GitRef, TagInfo};
 use crate::model::arguments::Arguments;
 use crate::msg::Message;
 
+pub use log_view::LogEntry;
 pub use popup::{CredentialPopupState, InputContext, InputPopupState, PopupContent};
 pub use pty_state::PtyState;
 use select_popup::{SelectContext, SelectResult};
 
 pub mod arguments;
+pub mod log_view;
 pub mod popup;
 pub mod pty_state;
 pub mod select_popup;
@@ -43,6 +45,8 @@ pub struct Model {
     pub arguments: Option<Arguments>,
     /// Source branch for the Open PR flow (set after first select, consumed by target select)
     pub open_pr_branch: Option<String>,
+    /// Current view mode (status view, log view, etc.)
+    pub view_mode: ViewMode,
 }
 
 #[derive(Debug, Clone)]
@@ -67,6 +71,16 @@ pub enum InputMode {
     Normal,
     Visual,
     Search,
+}
+
+/// The current view mode of the application
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ViewMode {
+    /// Default status view showing staged/unstaged changes, commits, etc.
+    #[default]
+    Status,
+    /// Log view showing git commit history with graph
+    Log,
 }
 
 impl InputMode {
@@ -146,6 +160,8 @@ pub enum LineContent {
     DiffHunk(DiffHunk),
     DiffLine(DiffLine),
     Commit(CommitInfo),
+    /// A line in the git log view (with graph)
+    LogLine(LogEntry),
 }
 
 /// A suggestion derived from the line under the cursor.

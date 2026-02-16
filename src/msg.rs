@@ -138,6 +138,13 @@ pub enum Message {
 
     /// Credentials popup
     Credentials(CredentialsMessage),
+
+    /// Show the log command popup
+    ShowLogPopup,
+    /// Show the log view for the current branch
+    ShowLogCurrent,
+    /// Exit log view and return to status view
+    ExitLogView,
 }
 
 /// Messages for the select popup

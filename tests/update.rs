@@ -8,7 +8,7 @@ use magi::model::arguments::{Argument, Arguments, PushArgument};
 use magi::model::popup::{PopupContent, PopupContentCommand};
 use magi::model::{
     DiffHunk, DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model,
-    RunningState, SectionType, UiModel,
+    RunningState, SectionType, UiModel, ViewMode,
 };
 use magi::msg::Message;
 use magi::msg::update::update;
@@ -39,6 +39,7 @@ fn create_test_model() -> Model {
         pending_g: false,
         arguments: None,
         open_pr_branch: None,
+        view_mode: ViewMode::Status,
     }
 }
 
@@ -67,6 +68,7 @@ fn test_refresh_message() {
         pending_g: false,
         arguments: None,
         open_pr_branch: None,
+        view_mode: ViewMode::Status,
     };
 
     // Clear the lines to simulate outdated state
@@ -951,6 +953,7 @@ fn test_collapsed_state_preserved_when_staging_all() {
         pending_g: false,
         arguments: None,
         open_pr_branch: None,
+        view_mode: ViewMode::Status,
     };
 
     // Stage all modified files
@@ -1039,6 +1042,7 @@ fn test_collapsed_state_preserved_when_unstaging_all() {
         pending_g: false,
         arguments: None,
         open_pr_branch: None,
+        view_mode: ViewMode::Status,
     };
 
     // Unstage all files
@@ -1109,6 +1113,7 @@ fn test_expanded_state_preserved_when_staging() {
         pending_g: false,
         arguments: None,
         open_pr_branch: None,
+        view_mode: ViewMode::Status,
     };
 
     // Stage all modified files
