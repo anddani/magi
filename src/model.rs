@@ -190,25 +190,30 @@ impl BranchSuggestion {
 /// Returns all branch/revision suggestions from a line, ordered by
 /// priority: local branches first, then remote branches, then the revision hash.
 pub fn suggestions_from_line(line: &Line) -> Vec<BranchSuggestion> {
-    match &line.content {
+    let (refs, hash) = match &line.content {
         LineContent::Commit(commit_info) => {
-            let mut suggestions = Vec::new();
-            for r in &commit_info.refs {
-                match r.ref_type {
-                    CommitRefType::LocalBranch => {
-                        suggestions.push(BranchSuggestion::LocalBranch(r.name.clone()));
-                    }
-                    CommitRefType::RemoteBranch => {
-                        suggestions.push(BranchSuggestion::RemoteBranch(r.name.clone()));
-                    }
-                    CommitRefType::Head | CommitRefType::Tag => {}
-                }
-            }
-            suggestions.push(BranchSuggestion::Revision(commit_info.hash.clone()));
-            suggestions
+            (commit_info.refs.clone(), Some(commit_info.hash.clone()))
         }
-        _ => Vec::new(),
+        LineContent::LogLine(entry) => (entry.refs.clone(), entry.hash.clone()),
+        _ => (vec![], None),
+    };
+    let mut suggestions = Vec::new();
+    for r in refs {
+        match r.ref_type {
+            CommitRefType::LocalBranch => {
+                suggestions.push(BranchSuggestion::LocalBranch(r.name.clone()));
+            }
+            CommitRefType::RemoteBranch => {
+                suggestions.push(BranchSuggestion::RemoteBranch(r.name.clone()));
+            }
+            CommitRefType::Head | CommitRefType::Tag => {}
+        }
     }
+    if let Some(hash) = hash {
+        suggestions.push(BranchSuggestion::Revision(hash));
+    }
+
+    suggestions
 }
 
 /// Represents a file change (modified, deleted, renamed, etc.)
