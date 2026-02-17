@@ -32,12 +32,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    let Some(repo_path) = model.git_info.repository.workdir() else {
-        model.popup = Some(PopupContent::Error {
-            message: "Repository working directory not found".into(),
-        });
-        return None;
-    };
+    let repo_path = &model.workdir;
 
     let flags = if let Some(CommitArguments(arguments)) = model.arguments.take() {
         arguments

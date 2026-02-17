@@ -7,17 +7,7 @@ use crate::{
 };
 
 pub fn update(model: &mut Model, branch: String, target: Option<String>) -> Option<Message> {
-    let repo_path = match model.git_info.repository.workdir() {
-        Some(path) => path.to_path_buf(),
-        None => {
-            model.popup = Some(PopupContent::Error {
-                message: "Could not determine repository path".to_string(),
-            });
-            return None;
-        }
-    };
-
-    let remote_url = match get_remote_url(&repo_path) {
+    let remote_url = match get_remote_url(&model.workdir) {
         Ok(url) => url,
         Err(e) => {
             model.popup = Some(PopupContent::Error { message: e });

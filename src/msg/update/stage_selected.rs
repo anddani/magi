@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    let repo_path = model.git_info.repository.workdir()?.to_path_buf();
+    let repo_path = model.workdir.clone();
 
     let result = if model.ui_model.is_visual_mode() {
         handle_visual_mode(model, &repo_path)

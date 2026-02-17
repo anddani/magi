@@ -5,14 +5,7 @@ use crate::{
 };
 
 pub fn update(model: &mut Model, branch_name: String) -> Option<Message> {
-    let Some(repo_path) = model.git_info.repository.workdir() else {
-        model.popup = Some(PopupContent::Error {
-            message: "Cannot checkout: repository workdir not found".to_string(),
-        });
-        return None;
-    };
-
-    match checkout(repo_path, &branch_name) {
+    match checkout(&model.workdir, &branch_name) {
         Ok(CheckoutResult::Success) => {
             // Refresh to show the new branch state
             Some(Message::Refresh)

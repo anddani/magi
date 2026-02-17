@@ -162,12 +162,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
         collapsed_sections,
     ) as u16;
 
-    let directory = model
-        .git_info
-        .repository
-        .workdir()
-        .and_then(|p| p.to_str())
-        .unwrap_or(".");
+    let directory = model.workdir.to_str().unwrap_or(".");
 
     // Create mode pill for status bar
     let mode = model.ui_model.current_mode();

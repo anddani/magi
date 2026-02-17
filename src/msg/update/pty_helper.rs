@@ -30,12 +30,7 @@ pub fn execute_pty_command(
         return None;
     }
 
-    let Some(repo_path) = model.git_info.repository.workdir() else {
-        model.popup = Some(PopupContent::Error {
-            message: "Repository working directory not found".into(),
-        });
-        return None;
-    };
+    let repo_path = &model.workdir;
 
     // Spawn command in background thread with PTY
     let (result_rx, ui_channels) =

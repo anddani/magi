@@ -12,15 +12,8 @@ use crate::{
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    let Some(repo_path) = model.git_info.repository.workdir() else {
-        model.popup = Some(PopupContent::Error {
-            message: "Repository working directory not found".to_string(),
-        });
-        return None;
-    };
-
     // Get the current branch name for suggested upstream
-    let local_branch = get_current_branch(repo_path)
+    let local_branch = get_current_branch(&model.workdir)
         .ok()
         .flatten()
         .unwrap_or_default();
