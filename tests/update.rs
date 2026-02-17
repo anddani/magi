@@ -20,10 +20,12 @@ fn create_test_model() -> Model {
     let test_repo = TestRepo::new();
     let repo_path = test_repo.repo.workdir().unwrap();
     let git_info = GitInfo::new_from_path(repo_path).unwrap();
+    let workdir = repo_path.to_path_buf();
     // Get lines while TestRepo is still alive (temp directory exists)
     let lines = git_info.get_lines().unwrap();
     Model {
         git_info,
+        workdir,
         running_state: RunningState::Running,
         ui_model: UiModel {
             lines,
@@ -51,8 +53,10 @@ fn test_refresh_message() {
     let git_info = GitInfo::new_from_path(repo_path).unwrap();
     let lines = git_info.get_lines().unwrap();
 
+    let workdir = repo_path.to_path_buf();
     let mut model = Model {
         git_info,
+        workdir,
         running_state: RunningState::Running,
         ui_model: UiModel {
             lines,
@@ -934,8 +938,10 @@ fn test_collapsed_state_preserved_when_staging_all() {
         "Should have found and collapsed the unstaged file"
     );
 
+    let workdir = repo_path.to_path_buf();
     let mut model = Model {
         git_info,
+        workdir,
         running_state: RunningState::Running,
         ui_model: UiModel {
             lines,
@@ -1023,8 +1029,10 @@ fn test_collapsed_state_preserved_when_unstaging_all() {
         "Should have found and collapsed the staged file"
     );
 
+    let workdir = repo_path.to_path_buf();
     let mut model = Model {
         git_info,
+        workdir,
         running_state: RunningState::Running,
         ui_model: UiModel {
             lines,
@@ -1094,8 +1102,10 @@ fn test_expanded_state_preserved_when_staging() {
     // Don't collapse the file - leave it expanded
     let collapsed_sections = HashSet::new();
 
+    let workdir = repo_path.to_path_buf();
     let mut model = Model {
         git_info,
+        workdir,
         running_state: RunningState::Running,
         ui_model: UiModel {
             lines,
@@ -1436,10 +1446,12 @@ fn test_push_toggle_force_with_lease_disables() {
 fn create_model_from_test_repo(test_repo: &TestRepo) -> Model {
     let repo_path = test_repo.repo.workdir().unwrap();
     let git_info = GitInfo::new_from_path(repo_path).unwrap();
+    let workdir = repo_path.to_path_buf();
     let lines = git_info.get_lines().unwrap();
 
     Model {
         git_info,
+        workdir,
         running_state: RunningState::Running,
         ui_model: UiModel {
             lines,

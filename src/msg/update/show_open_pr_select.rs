@@ -19,16 +19,6 @@ const TOAST_DURATION: Duration = Duration::from_secs(5);
 pub fn update(model: &mut Model, with_target: bool) -> Option<Message> {
     model.popup = None;
 
-    let repo_path = match model.git_info.repository.workdir() {
-        Some(path) => path.to_path_buf(),
-        None => {
-            model.popup = Some(PopupContent::Error {
-                message: "Could not determine repository path".to_string(),
-            });
-            return None;
-        }
-    };
-
     let current_branch = match model.git_info.current_branch() {
         Some(branch) => branch,
         None => {
@@ -44,7 +34,7 @@ pub fn update(model: &mut Model, with_target: bool) -> Option<Message> {
     // Get only local branches that have an upstream set
     let mut branches: Vec<String> = get_local_branches(&model.git_info.repository)
         .into_iter()
-        .filter(|b| has_upstream(&repo_path, b))
+        .filter(|b| has_upstream(&model.workdir, b))
         .collect();
 
     if branches.is_empty() {

@@ -5,14 +5,7 @@ use crate::{
 };
 
 pub fn update(model: &mut Model, branch_name: String) -> Option<Message> {
-    let Some(repo_path) = model.git_info.repository.workdir() else {
-        model.popup = Some(PopupContent::Error {
-            message: "Cannot delete branch: repository workdir not found".to_string(),
-        });
-        return None;
-    };
-
-    match delete_branch(repo_path, &branch_name) {
+    match delete_branch(&model.workdir, &branch_name) {
         Ok(DeleteBranchResult::Success) => {
             model.popup = None;
             Some(Message::Refresh)

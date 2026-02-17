@@ -1,9 +1,11 @@
 use crate::{
+    errors::MagiError,
     keys::handle_key,
     msg::{update::update, util::is_external_command},
 };
 use std::{
     collections::HashSet,
+    path::PathBuf,
     time::{Duration, Instant},
 };
 
@@ -24,21 +26,32 @@ use crate::{
 
 const EVENT_POLL_TIMEOUT_MILLIS: u64 = 250;
 
-pub fn run() -> MagiResult<()> {
+pub fn run(workdir: Option<PathBuf>) -> MagiResult<()> {
     let terminal = ratatui::init();
-    let result = run_loop(terminal);
+    let result = run_loop(terminal, workdir);
     ratatui::restore();
     result
 }
 
 /// Main run loop which polls events (messages), transforms the model,
 /// and renders the UI.
-fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
+fn run_loop(mut terminal: DefaultTerminal, path: Option<PathBuf>) -> MagiResult<()> {
     // Load config and resolve theme
     let config = Config::load();
     let theme = config.resolve_theme();
 
-    let git_info = GitInfo::new()?;
+    let git_info = match path {
+        Some(ref p) => GitInfo::new_from_path(p)?,
+        None => GitInfo::new()?,
+    };
+
+    // Extract workdir early - fail for bare repositories
+    let workdir = git_info
+        .repository
+        .workdir()
+        .ok_or_else(|| MagiError::Generic("Cannot run in a bare repository".into()))?
+        .to_path_buf();
+
     let lines = git_info.get_lines()?;
     let collapsed_sections = lines
         .iter()
@@ -58,6 +71,7 @@ fn run_loop(mut terminal: DefaultTerminal) -> MagiResult<()> {
 
     let mut model = Model {
         git_info,
+        workdir,
         running_state: RunningState::Running,
         ui_model: initial_ui_model,
         theme,

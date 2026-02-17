@@ -10,17 +10,10 @@ pub fn update(
     branch_name: String,
     checkout: bool,
 ) -> Option<Message> {
-    let Some(repo_path) = model.git_info.repository.workdir() else {
-        model.popup = Some(PopupContent::Error {
-            message: "Cannot create branch: repository workdir not found".to_string(),
-        });
-        return None;
-    };
-
     let result = if checkout {
-        checkout_new_branch(repo_path, &branch_name, &starting_point)
+        checkout_new_branch(&model.workdir, &branch_name, &starting_point)
     } else {
-        create_branch(repo_path, &branch_name, &starting_point)
+        create_branch(&model.workdir, &branch_name, &starting_point)
     };
 
     match result {

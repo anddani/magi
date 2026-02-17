@@ -4,7 +4,7 @@ use crate::{
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    let repo_path = model.git_info.repository.workdir()?;
+    let repo_path = &model.workdir;
     let files: Vec<&str> = model
         .ui_model
         .lines

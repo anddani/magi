@@ -164,8 +164,10 @@ mod tests {
         let test_repo = TestRepo::new();
         let repo_path = test_repo.repo.workdir().unwrap();
         let git_info = GitInfo::new_from_path(repo_path).unwrap();
+        let workdir = repo_path.to_path_buf();
         Model {
             git_info,
+            workdir,
             running_state: RunningState::Running,
             ui_model: UiModel::default(),
             theme: Theme::default(),

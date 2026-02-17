@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::path::PathBuf;
 use std::time::Instant;
 
 use crate::config::Theme;
@@ -25,6 +26,8 @@ pub struct Model {
     pub ui_model: UiModel,
     /// git2 Git repository Handle
     pub git_info: GitInfo,
+    /// Repository working directory (validated at startup)
+    pub workdir: PathBuf,
     /// Magi color scheme constants
     pub theme: Theme,
     /// Modal popup that requires user action to dismiss
