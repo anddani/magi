@@ -645,7 +645,10 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('c'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowCheckoutNewBranchPopup));
+        assert_eq!(
+            result,
+            Some(Message::ShowCreateNewBranchPopup { checkout: true })
+        );
     }
 
     #[test]
@@ -665,8 +668,9 @@ mod tests {
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Input(InputPopupState::new(
             "New branch name".to_string(),
-            InputContext::CheckoutNewBranch {
+            InputContext::CreateNewBranch {
                 starting_point: "main".to_string(),
+                checkout: true,
             },
         )));
         model

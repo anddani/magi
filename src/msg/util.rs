@@ -74,9 +74,9 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ShowDeleteBranchPopup
         | Message::DeleteBranch(_)
         | Message::ConfirmDeleteBranch(_)
-        | Message::ShowCheckoutNewBranchPopup
-        | Message::ShowCheckoutNewBranchInput(_)
-        | Message::CheckoutNewBranch { .. }
+        | Message::ShowCreateNewBranchPopup { .. }
+        | Message::ShowCreateNewBranchInput { .. }
+        | Message::CreateNewBranch { .. }
         | Message::Input(_)
         | Message::ShowOpenPrSelect
         | Message::ShowOpenPrWithTargetSelect

@@ -150,6 +150,30 @@ pub fn checkout_new_branch<P: AsRef<Path>>(
     }
 }
 
+/// Create a new branch at the specified starting point without checking it out.
+/// Uses `git branch <branch_name> <starting_point>`.
+pub fn create_branch<P: AsRef<Path>>(
+    repo_path: P,
+    branch_name: &str,
+    starting_point: &str,
+) -> MagiResult<CheckoutResult> {
+    let output = git_cmd(&repo_path, &["branch", branch_name, starting_point])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+
+    if output.status.success() {
+        Ok(CheckoutResult::Success)
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        Ok(CheckoutResult::Error(if stderr.is_empty() {
+            "Failed to create branch".to_string()
+        } else {
+            stderr
+        }))
+    }
+}
+
 /// Result of a delete branch operation
 pub enum DeleteBranchResult {
     Success,
