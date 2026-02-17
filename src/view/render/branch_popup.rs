@@ -4,7 +4,7 @@ use ratatui::{
 };
 
 use super::popup_content::CommandPopupContent;
-use crate::config::Theme;
+use crate::{config::Theme, view::render::util::column_title};
 
 pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     let key_style = Style::default()
@@ -12,34 +12,35 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
 
-    let commands: Vec<Line> = vec![
+    let content: Vec<Line> = vec![
+        column_title("Checkout", theme),
         Line::from(vec![
             Span::styled("b", key_style),
-            Span::styled(" Checkout branch/revision", desc_style),
+            Span::styled(" branch/revision", desc_style),
         ]),
         Line::from(vec![
             Span::styled("l", key_style),
-            Span::styled(" Checkout local branch", desc_style),
+            Span::styled(" local branch", desc_style),
         ]),
         Line::from(vec![
             Span::styled("c", key_style),
-            Span::styled(" Checkout new branch", desc_style),
+            Span::styled(" new branch", desc_style),
         ]),
         Line::from(vec![
             Span::styled("x", key_style),
-            Span::styled(" Delete branch", desc_style),
+            Span::styled(" branch", desc_style),
         ]),
+        Line::from(""),
+        column_title("Create", theme),
         Line::from(vec![
             Span::styled("o", key_style),
-            Span::styled(" Open PR to default branch", desc_style),
+            Span::styled(" new PR to default branch", desc_style),
         ]),
         Line::from(vec![
             Span::styled("O", key_style),
-            Span::styled(" Open PR to...", desc_style),
+            Span::styled(" new PR to...", desc_style),
         ]),
     ];
 
-    let arguments: Vec<Line> = vec![];
-
-    CommandPopupContent::two_columns("Branch", "Commands", commands, "Arguments", arguments)
+    CommandPopupContent::single_column("Branch", content)
 }
