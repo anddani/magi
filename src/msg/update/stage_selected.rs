@@ -94,14 +94,16 @@ fn handle_visual_mode(
     let lines = &model.ui_model.lines;
     let end = end.min(lines.len().saturating_sub(1));
 
-    // Collect meaningful lines in selection (skip empty lines)
+    // Collect meaningful lines in selection (skip empty and hidden/collapsed lines)
     let selected: Vec<(usize, &crate::model::Line)> = (start..=end)
         .filter_map(|i| {
             let line = &lines[i];
-            match &line.content {
-                LineContent::EmptyLine => None,
-                _ => Some((i, line)),
+            if matches!(line.content, LineContent::EmptyLine)
+                || line.is_hidden(&model.ui_model.collapsed_sections)
+            {
+                return None;
             }
+            Some((i, line))
         })
         .collect();
 
