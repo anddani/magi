@@ -1464,16 +1464,20 @@ fn create_model_from_test_repo(test_repo: &TestRepo) -> Model {
 
 /// Find the line index for an UnstagedFile with the given path.
 fn find_unstaged_file_line(model: &Model, path: &str) -> Option<usize> {
-    model.ui_model.lines.iter().position(|l| {
-        matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == path)
-    })
+    model
+        .ui_model
+        .lines
+        .iter()
+        .position(|l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == path))
 }
 
 /// Find the line index for an UntrackedFile with the given path.
 fn find_untracked_file_line(model: &Model, path: &str) -> Option<usize> {
-    model.ui_model.lines.iter().position(|l| {
-        matches!(&l.content, LineContent::UntrackedFile(p) if p == path)
-    })
+    model
+        .ui_model
+        .lines
+        .iter()
+        .position(|l| matches!(&l.content, LineContent::UntrackedFile(p) if p == path))
 }
 
 #[test]
@@ -1550,12 +1554,14 @@ fn test_visual_stage_two_collapsed_unstaged_files() {
     update(&mut model, Message::Refresh);
 
     // Both files should now be staged (appear as StagedFile, not UnstagedFile)
-    let has_unstaged_a = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_a.txt")
-    });
-    let has_unstaged_b = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_b.txt")
-    });
+    let has_unstaged_a =
+        model.ui_model.lines.iter().any(
+            |l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_a.txt"),
+        );
+    let has_unstaged_b =
+        model.ui_model.lines.iter().any(
+            |l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_b.txt"),
+        );
 
     assert!(
         !has_unstaged_a,
@@ -1567,12 +1573,16 @@ fn test_visual_stage_two_collapsed_unstaged_files() {
     );
 
     // Verify they are in staged changes
-    let has_staged_a = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "file_a.txt")
-    });
-    let has_staged_b = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "file_b.txt")
-    });
+    let has_staged_a = model
+        .ui_model
+        .lines
+        .iter()
+        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "file_a.txt"));
+    let has_staged_b = model
+        .ui_model
+        .lines
+        .iter()
+        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "file_b.txt"));
 
     assert!(has_staged_a, "file_a.txt should be in staged changes");
     assert!(has_staged_b, "file_b.txt should be in staged changes");
@@ -1649,12 +1659,16 @@ fn test_visual_stage_single_unstaged_file() {
     update(&mut model, Message::Refresh);
 
     // File should be staged
-    let has_unstaged = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "test.txt")
-    });
-    let has_staged = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "test.txt")
-    });
+    let has_unstaged = model
+        .ui_model
+        .lines
+        .iter()
+        .any(|l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "test.txt"));
+    let has_staged = model
+        .ui_model
+        .lines
+        .iter()
+        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "test.txt"));
 
     assert!(!has_unstaged, "test.txt should not be in unstaged changes");
     assert!(has_staged, "test.txt should be in staged changes");
@@ -1694,11 +1708,7 @@ fn test_visual_stage_three_unstaged_files_only_stages_selected() {
     fs::write(repo_path.join("file_a.txt"), "original a").unwrap();
     fs::write(repo_path.join("file_b.txt"), "original b").unwrap();
     fs::write(repo_path.join("file_c.txt"), "original c").unwrap();
-    stage_files(
-        repo_path,
-        &["file_a.txt", "file_b.txt", "file_c.txt"],
-    )
-    .unwrap();
+    stage_files(repo_path, &["file_a.txt", "file_b.txt", "file_c.txt"]).unwrap();
 
     let repo = &test_repo.repo;
     let mut index = repo.index().unwrap();
@@ -1754,25 +1764,22 @@ fn test_visual_stage_three_unstaged_files_only_stages_selected() {
     update(&mut model, Message::Refresh);
 
     // file_a and file_b should be staged
-    let has_unstaged_a = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_a.txt")
-    });
-    let has_unstaged_b = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_b.txt")
-    });
-    assert!(
-        !has_unstaged_a,
-        "file_a.txt should be staged"
-    );
-    assert!(
-        !has_unstaged_b,
-        "file_b.txt should be staged"
-    );
+    let has_unstaged_a =
+        model.ui_model.lines.iter().any(
+            |l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_a.txt"),
+        );
+    let has_unstaged_b =
+        model.ui_model.lines.iter().any(
+            |l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_b.txt"),
+        );
+    assert!(!has_unstaged_a, "file_a.txt should be staged");
+    assert!(!has_unstaged_b, "file_b.txt should be staged");
 
     // file_c should still be unstaged
-    let has_unstaged_c = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_c.txt")
-    });
+    let has_unstaged_c =
+        model.ui_model.lines.iter().any(
+            |l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "file_c.txt"),
+        );
     assert!(
         has_unstaged_c,
         "file_c.txt should still be in unstaged changes"
