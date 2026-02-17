@@ -359,7 +359,7 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::Amend));
+        assert_eq!(result, Some(Message::Amend(vec![])));
     }
 
     #[test]

@@ -34,9 +34,7 @@ pub enum Message {
     /// Open commit in user's default EDITOR
     Commit,
     /// Amend the last commit
-    Amend,
-    /// Reword the last commit message (amend without staged changes)
-    Reword,
+    Amend(Vec<String>),
 
     /// Dismiss the current popup
     DismissPopup,

@@ -50,8 +50,13 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(
 
 /// Runs `git commit --amend` to amend the last commit.
 /// Opens the user's configured editor with the previous commit message.
-pub fn run_amend_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
-    let status = git_cmd(&repo_path, &["commit", "--amend"]).status()?;
+pub fn run_amend_commit_with_editor<P: AsRef<Path>>(
+    repo_path: P,
+    flags: Vec<String>,
+) -> MagiResult<CommitResult> {
+    let status = git_cmd(&repo_path, &["commit", "--amend"])
+        .args(flags)
+        .status()?;
 
     if status.success() {
         let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
@@ -68,31 +73,6 @@ pub fn run_amend_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<
         Ok(CommitResult {
             success: false,
             message: "Amend aborted".to_string(),
-        })
-    }
-}
-
-/// Runs `git commit --amend --only` to reword the last commit message
-/// without including any staged changes.
-/// Opens the user's configured editor with the previous commit message.
-pub fn run_reword_commit_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
-    let status = git_cmd(&repo_path, &["commit", "--amend", "--only"]).status()?;
-
-    if status.success() {
-        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
-
-        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
-            .trim()
-            .to_string();
-
-        Ok(CommitResult {
-            success: true,
-            message: format!("Reworded: {}", commit_msg),
-        })
-    } else {
-        Ok(CommitResult {
-            success: false,
-            message: "Reword aborted".to_string(),
         })
     }
 }
