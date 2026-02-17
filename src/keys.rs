@@ -116,6 +116,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
             ViewMode::Status => Some(Message::Quit),
         },
         (_, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
+        (_, KeyCode::Char('s')) => Some(Message::StageSelected),
         (_, KeyCode::Char('S')) => Some(Message::StageAllModified),
         (_, KeyCode::Char('U')) => Some(Message::UnstageAll),
 

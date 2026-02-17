@@ -35,6 +35,7 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ScrollLineUp
         | Message::ToggleSection
         | Message::StageAllModified
+        | Message::StageSelected
         | Message::UnstageAll
         | Message::DismissPopup
         | Message::EnterVisualMode

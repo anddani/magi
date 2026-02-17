@@ -229,6 +229,8 @@ pub enum FileStatus {
 #[derive(Debug, Clone)]
 pub struct DiffHunk {
     pub header: String,
+    /// The index of this hunk within its parent file (0-based)
+    pub hunk_index: usize,
 }
 
 /// Represents a single line in a diff

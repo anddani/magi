@@ -490,6 +490,7 @@ fn create_two_file_lines() -> Vec<Line> {
     lines.push(Line {
         content: LineContent::DiffHunk(DiffHunk {
             header: "@@ -1,20 +1,25 @@".to_string(),
+            hunk_index: 0,
         }),
         section: Some(SectionType::UnstagedHunk {
             path: "file1.rs".to_string(),
@@ -526,6 +527,7 @@ fn create_two_file_lines() -> Vec<Line> {
     lines.push(Line {
         content: LineContent::DiffHunk(DiffHunk {
             header: "@@ -1,10 +1,15 @@".to_string(),
+            hunk_index: 0,
         }),
         section: Some(SectionType::UnstagedHunk {
             path: "file2.rs".to_string(),

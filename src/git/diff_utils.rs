@@ -54,7 +54,10 @@ pub fn collect_file_changes(diff: &Diff) -> MagiResult<FileChangesWithDiffs> {
             let hunk_exists = result[file_idx].1.iter().any(|(h, _)| h.header == header);
 
             if !hunk_exists {
-                result[file_idx].1.push((DiffHunk { header }, Vec::new()));
+                let hunk_index = result[file_idx].1.len();
+                result[file_idx]
+                    .1
+                    .push((DiffHunk { header, hunk_index }, Vec::new()));
             }
         }
 

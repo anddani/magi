@@ -300,6 +300,7 @@ mod tests {
             Line {
                 content: LineContent::DiffHunk(DiffHunk {
                     header: "@@ -1,5 +1,6 @@".to_string(),
+                    hunk_index: 0,
                 }),
                 section: Some(SectionType::UnstagedHunk {
                     path: "foo.rs".to_string(),
@@ -553,6 +554,7 @@ mod tests {
     fn test_diff_hunk_highlights_only_its_section() {
         let hunk_content = LineContent::DiffHunk(DiffHunk {
             header: "@@ -1,5 +1,6 @@".to_string(),
+            hunk_index: 0,
         });
         let cursor_section = SectionType::UnstagedHunk {
             path: "src/main.rs".to_string(),
