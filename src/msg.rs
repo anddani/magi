@@ -64,6 +64,15 @@ pub enum Message {
     ShowCheckoutLocalBranchPopup,
     /// Show the delete branch select popup
     ShowDeleteBranchPopup,
+    /// Show the rename branch select popup (select branch to rename)
+    ShowRenameBranchPopup,
+    /// Show the input popup for the new branch name (renaming old_name)
+    ShowRenameBranchInput(String),
+    /// Rename a branch
+    RenameBranch {
+        old_name: String,
+        new_name: String,
+    },
     /// Show the create new branch popup (select starting point)
     ShowCreateNewBranchPopup {
         checkout: bool,
