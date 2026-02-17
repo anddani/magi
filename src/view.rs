@@ -112,6 +112,8 @@ pub fn view(model: &Model, frame: &mut Frame) {
             false
         };
 
+        let is_detached_head = model.git_info.repository.head_detached().is_ok_and(|b| b);
+
         let mut line_texts: Vec<TextLine> = match &line.content {
             crate::model::LineContent::EmptyLine => vec![TextLine::from("")],
             crate::model::LineContent::HeadRef(git_ref) => {
@@ -139,7 +141,9 @@ pub fn view(model: &Model, frame: &mut Frame) {
                 diff_line::get_lines(diff_line, theme)
             }
             crate::model::LineContent::Commit(commit_info) => commit::get_lines(commit_info, theme),
-            crate::model::LineContent::LogLine(log_entry) => log_line::get_lines(log_entry, theme),
+            crate::model::LineContent::LogLine(log_entry) => {
+                log_line::get_lines(log_entry, theme, is_detached_head)
+            }
         };
 
         let is_cursor_line = index == cursor_pos;

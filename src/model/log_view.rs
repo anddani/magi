@@ -11,7 +11,7 @@ pub struct LogEntry {
     pub refs: Vec<CommitRef>,
     /// The author name
     pub author: Option<String>,
-    /// The relative time (e.g., "2 days ago")
+    /// The relative time (e.g., "2 days")
     pub time: Option<String>,
     /// The commit message subject
     pub message: Option<String>,
