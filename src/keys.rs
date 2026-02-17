@@ -3,7 +3,7 @@ use crossterm::event::{self, KeyCode, KeyModifiers};
 use crate::{
     model::Model,
     model::ViewMode,
-    model::popup::{ConfirmAction, PopupContent},
+    model::popup::{ConfirmAction, PopupContent, PopupContentCommand},
     msg::Message,
 };
 
@@ -16,9 +16,15 @@ fn command_popup_keys(c: char) -> Option<Message> {
         'p' | 'P' => Some(Message::ShowPushPopup),
         'f' => Some(Message::ShowFetchPopup),
         'F' => Some(Message::ShowPullPopup),
-        'c' => Some(Message::ShowCommitPopup),
-        'b' => Some(Message::ShowBranchPopup),
-        'l' => Some(Message::ShowLogPopup),
+        'c' => Some(Message::ShowPopup(PopupContent::Command(
+            PopupContentCommand::Commit,
+        ))),
+        'b' => Some(Message::ShowPopup(PopupContent::Command(
+            PopupContentCommand::Branch,
+        ))),
+        'l' => Some(Message::ShowPopup(PopupContent::Command(
+            PopupContentCommand::Log,
+        ))),
         _ => None,
     }
 }
@@ -103,7 +109,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
 
     match (key.modifiers, key.code) {
         (KeyModifiers::CONTROL, KeyCode::Char('r')) => Some(Message::Refresh),
-        (_, KeyCode::Char('?')) => Some(Message::ShowHelp),
+        (_, KeyCode::Char('?')) => Some(Message::ShowPopup(PopupContent::Help)),
         // 'q' exits log view when in log mode, otherwise quits the app
         (_, KeyCode::Char('q')) => match model.view_mode {
             ViewMode::Log => Some(Message::ExitLogView),
@@ -263,7 +269,7 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('?'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowHelp));
+        assert_eq!(result, Some(Message::ShowPopup(PopupContent::Help)));
     }
 
     #[test]
@@ -305,7 +311,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('c'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowCommitPopup));
+        assert_eq!(
+            result,
+            Some(Message::ShowPopup(PopupContent::Command(
+                PopupContentCommand::Commit
+            )))
+        );
     }
 
     #[test]
@@ -603,7 +614,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowBranchPopup));
+        assert_eq!(
+            result,
+            Some(Message::ShowPopup(PopupContent::Command(
+                PopupContentCommand::Branch
+            )))
+        );
     }
 
     fn create_branch_popup_model() -> Model {
@@ -1037,7 +1053,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('l'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowLogPopup));
+        assert_eq!(
+            result,
+            Some(Message::ShowPopup(PopupContent::Command(
+                PopupContentCommand::Log
+            )))
+        );
     }
 
     fn create_log_popup_model() -> Model {

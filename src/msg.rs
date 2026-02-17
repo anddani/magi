@@ -1,4 +1,5 @@
 use crate::model::arguments::Argument;
+use crate::model::popup::PopupContent;
 
 pub mod update;
 pub mod util;
@@ -49,18 +50,14 @@ pub enum Message {
     /// Exit visual selection mode (clears the anchor)
     ExitVisualMode,
 
-    /// Show help popup with keybindings
-    ShowHelp,
-    /// Show commit popup with options
-    ShowCommitPopup,
+    /// Show a popup with the given content (help, commit, branch, log)
+    ShowPopup(PopupContent),
     /// Show push popup with options
     ShowPushPopup,
     /// Show fetch popup with options
     ShowFetchPopup,
     /// Show pull popup with options
     ShowPullPopup,
-    /// Show branch popup with options
-    ShowBranchPopup,
     /// Show the checkout branch select popup
     ShowCheckoutBranchPopup,
     /// Show the checkout local branch select popup (only local branches)
@@ -145,8 +142,6 @@ pub enum Message {
     /// Credentials popup
     Credentials(CredentialsMessage),
 
-    /// Show the log command popup
-    ShowLogPopup,
     /// Show the log view for the current branch
     ShowLogCurrent,
     /// Exit log view and return to status view

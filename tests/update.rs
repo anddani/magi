@@ -1300,7 +1300,7 @@ fn test_show_help_sets_popup() {
     assert!(model.popup.is_none());
 
     // Show help
-    update(&mut model, Message::ShowHelp);
+    update(&mut model, Message::ShowPopup(PopupContent::Help));
 
     // Popup should now be Help
     assert_eq!(model.popup, Some(PopupContent::Help));
@@ -1311,7 +1311,7 @@ fn test_dismiss_popup_clears_help() {
     let mut model = create_test_model_with_lines(10);
 
     // Show help first
-    update(&mut model, Message::ShowHelp);
+    update(&mut model, Message::ShowPopup(PopupContent::Help));
     assert_eq!(model.popup, Some(PopupContent::Help));
 
     // Dismiss the popup
@@ -1326,7 +1326,7 @@ fn test_show_help_returns_none() {
     let mut model = create_test_model_with_lines(10);
 
     // ShowHelp should not trigger a follow-up message
-    let follow_up = update(&mut model, Message::ShowHelp);
+    let follow_up = update(&mut model, Message::ShowPopup(PopupContent::Help));
     assert_eq!(follow_up, None);
 }
 
