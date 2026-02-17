@@ -58,7 +58,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Checkout new branch
         - [ ] Checkout spin-off branch
         - [ ] Checkout new worktree
-        - [ ] Create new branch
+        - [x] Create new branch
         - [ ] Create new spin-out branch
         - [ ] Create new worktree
     - [ ] Bisect
@@ -66,7 +66,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Commit
         - [x] Amend
         - [x] Reword
-        - [ ] Extend
+        - [x] Extend
         - [ ] Fixup
         - [ ] Squash
         - [ ] Alter
@@ -91,6 +91,15 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Jump to section
     - [ ] Log
         - [x] Local
+        - [ ] Other
+        - [ ] Related
+        - [ ] Local branches
+        - [ ] All branches
+        - [x] All references
+        - [ ] Current reflog
+        - [ ] Other reflog
+        - [ ] HEAD reflog
+        - [ ] Shortlog
     - [ ] Log (change)
     - [ ] Merge
     - [ ] Remote
@@ -99,11 +108,11 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Push
         - [x] Force with lease
         - [x] Force
-        - [ ] Disable hooks
-        - [ ] Dry run
+        - [x] Disable hooks
+        - [x] Dry run
         - [x] Set upstream
-        - [ ] Include all tags
-        - [ ] Include related annotated tags
+        - [x] Include all tags
+        - [x] Include related annotated tags
     - [ ] Rebase
     - [ ] Tag
     - [ ] Note
@@ -118,7 +127,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Apply
     - [ ] Reverse
     - [ ] Discard
-    - [ ] Stage
+    - [x] Stage
     - [ ] Unstage
     - [x] Stage all
     - [x] Unstage all
