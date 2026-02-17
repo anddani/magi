@@ -1,5 +1,5 @@
 use crate::{
-    git::stage::{stage_files, stage_hunk, stage_lines},
+    git::stage::{unstage_files, unstage_hunk, unstage_lines},
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -18,24 +18,24 @@ pub fn update(model: &mut Model) -> Option<Message> {
             start,
             end,
             &model.ui_model.collapsed_sections,
-            SelectionContext::Stageable,
+            SelectionContext::Unstageable,
         )
     } else {
         get_normal_mode_selection(
             &model.ui_model.lines,
             model.ui_model.cursor_position,
-            SelectionContext::Stageable,
+            SelectionContext::Unstageable,
         )
     };
 
-    // Exit visual mode after staging
+    // Exit visual mode after unstaging
     model.ui_model.visual_mode_anchor = None;
 
     let result = apply_selection(&repo_path, selection);
 
     if let Err(e) = result {
         model.popup = Some(PopupContent::Error {
-            message: format!("Error staging: {}", e),
+            message: format!("Error unstaging: {}", e),
         });
     }
 
@@ -48,12 +48,12 @@ fn apply_selection(
 ) -> Result<(), crate::errors::MagiError> {
     match selection {
         Selection::None => Ok(()),
-        Selection::Files(files) => stage_files(repo_path, &files),
-        Selection::Hunk { path, hunk_index } => stage_hunk(repo_path, path, hunk_index),
+        Selection::Files(files) => unstage_files(repo_path, &files),
+        Selection::Hunk { path, hunk_index } => unstage_hunk(repo_path, path, hunk_index),
         Selection::Hunks { path, hunk_indices } => {
             // Apply hunks in reverse order (highest index first) to avoid index shifts
             for idx in hunk_indices {
-                stage_hunk(repo_path, path, idx)?;
+                unstage_hunk(repo_path, path, idx)?;
             }
             Ok(())
         }
@@ -61,6 +61,6 @@ fn apply_selection(
             path,
             hunk_index,
             line_indices,
-        } => stage_lines(repo_path, path, hunk_index, &line_indices),
+        } => unstage_lines(repo_path, path, hunk_index, &line_indices),
     }
 }

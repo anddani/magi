@@ -46,6 +46,7 @@ mod select_input_backspace;
 mod select_input_char;
 mod select_move_down;
 mod select_move_up;
+mod selection;
 mod show_checkout_branch_popup;
 mod show_checkout_local_branch_popup;
 mod show_checkout_new_branch_input;
@@ -71,6 +72,7 @@ mod stage_selected;
 mod toggle_argument;
 mod toggle_section;
 mod unstage_all;
+mod unstage_selected;
 
 /// Processes a [`Message`], modifying the passed model.
 ///
@@ -100,6 +102,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::DismissPopup => dismiss_popup::update(model),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::StageSelected => stage_selected::update(model),
+        Message::UnstageSelected => unstage_selected::update(model),
         Message::UnstageAll => unstage_all::update(model),
         Message::EnterVisualMode => enter_visual_mode::update(model),
         Message::ExitVisualMode => exit_visual_mode::update(model),
