@@ -162,7 +162,7 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
         match part {
             "HEAD" => {
                 refs.push(CommitRef {
-                    name: "HEAD".to_string(),
+                    name: "@".to_string(),
                     ref_type: CommitRefType::Head,
                 });
             }
@@ -170,7 +170,7 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
                 // HEAD pointing to a branch - add both HEAD and the branch
                 let branch_name = part.strip_prefix("HEAD -> ").unwrap_or(part);
                 refs.push(CommitRef {
-                    name: "HEAD".to_string(),
+                    name: "@".to_string(),
                     ref_type: CommitRefType::Head,
                 });
                 refs.push(CommitRef {

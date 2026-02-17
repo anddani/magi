@@ -6,7 +6,7 @@ use ratatui::{
 use crate::{config::Theme, git::CommitRefType, model::LogEntry};
 
 /// Get the display lines for a log entry
-pub fn get_lines(entry: &LogEntry, theme: &Theme) -> Vec<Line<'static>> {
+pub fn get_lines(entry: &LogEntry, theme: &Theme, is_detached_head: bool) -> Vec<Line<'static>> {
     let mut spans: Vec<Span> = Vec::new();
 
     // Graph portion - colored
@@ -30,10 +30,9 @@ pub fn get_lines(entry: &LogEntry, theme: &Theme) -> Vec<Line<'static>> {
 
     // Refs (branches, tags)
     if !entry.refs.is_empty() {
-        spans.push(Span::raw("("));
-        for (i, commit_ref) in entry.refs.iter().enumerate() {
-            if i > 0 {
-                spans.push(Span::raw(" "));
+        for commit_ref in entry.refs.iter() {
+            if commit_ref.ref_type == CommitRefType::Head && !is_detached_head {
+                continue;
             }
             let color = match commit_ref.ref_type {
                 CommitRefType::Head => theme.detached_head,
@@ -45,8 +44,8 @@ pub fn get_lines(entry: &LogEntry, theme: &Theme) -> Vec<Line<'static>> {
                 commit_ref.name.clone(),
                 Style::default().fg(color),
             ));
+            spans.push(Span::raw(" "));
         }
-        spans.push(Span::raw(") "));
     }
 
     // Message
