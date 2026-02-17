@@ -99,7 +99,11 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
             }
         }
 
-        lines.push(create_commit_line(&commit, refs, SectionType::RecentCommits));
+        lines.push(create_commit_line(
+            &commit,
+            refs,
+            SectionType::RecentCommits,
+        ));
     }
 
     Ok(lines)
