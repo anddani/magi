@@ -46,6 +46,7 @@ mod select_input_backspace;
 mod select_input_char;
 mod select_move_down;
 mod select_move_up;
+mod selection;
 mod show_checkout_branch_popup;
 mod show_checkout_local_branch_popup;
 mod show_checkout_new_branch_input;
