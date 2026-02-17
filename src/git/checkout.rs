@@ -233,8 +233,20 @@ pub fn delete_branch<P: AsRef<Path>>(
 ) -> MagiResult<DeleteBranchResult> {
     let repo_path = repo_path.as_ref();
 
-    // Check if this is a remote branch (contains '/')
-    if let Some((remote, branch)) = branch_name.split_once('/') {
+    // Get list of remote names to distinguish remote branches from local branches with slashes
+    // (e.g., "feature/my-feature" is local, "origin/main" is remote)
+    let remotes: Vec<String> = Repository::open(repo_path)
+        .ok()
+        .and_then(|repo| repo.remotes().ok())
+        .map(|r| r.iter().filter_map(|s| s.map(String::from)).collect())
+        .unwrap_or_default();
+
+    // Check if this is a remote branch (prefix matches a known remote)
+    let is_remote_branch = branch_name
+        .split_once('/')
+        .is_some_and(|(prefix, _)| remotes.iter().any(|r| r == prefix));
+
+    if let (true, Some((remote, branch))) = (is_remote_branch, branch_name.split_once('/')) {
         // Remote branch: git push --delete <remote> <branch>
         let output = git_cmd(repo_path, &["push", "--delete", remote, branch])
             .stdout(Stdio::piped())
@@ -501,5 +513,56 @@ mod tests {
         // Try to create a branch from a non-existent starting point
         let result = checkout_new_branch(repo_path, "new-branch", "nonexistent-ref").unwrap();
         assert!(matches!(result, CheckoutResult::Error(_)));
+    }
+
+    #[test]
+    fn test_delete_local_branch_with_slash_in_name() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Create a local branch with '/' in the name (common pattern like feature/xyz)
+        Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .args(["branch", "feature/my-feature"])
+            .output()
+            .expect("Failed to create branch");
+
+        // Verify the branch was created
+        let branches = get_branches(&test_repo.repo);
+        assert!(branches.iter().any(|b| b == "feature/my-feature"));
+
+        // Delete the branch - this should treat it as a local branch, not remote
+        let result = delete_branch(repo_path, "feature/my-feature").unwrap();
+        assert!(
+            matches!(result, DeleteBranchResult::Success),
+            "Expected success but got error when deleting local branch with '/' in name"
+        );
+
+        // Verify the branch was deleted
+        let branches = get_branches(&test_repo.repo);
+        assert!(!branches.iter().any(|b| b == "feature/my-feature"));
+    }
+
+    #[test]
+    fn test_delete_local_branch_without_slash() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Create a simple local branch
+        Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .args(["branch", "simple-branch"])
+            .output()
+            .expect("Failed to create branch");
+
+        // Delete the branch
+        let result = delete_branch(repo_path, "simple-branch").unwrap();
+        assert!(matches!(result, DeleteBranchResult::Success));
+
+        // Verify the branch was deleted
+        let branches = get_branches(&test_repo.repo);
+        assert!(!branches.iter().any(|b| b == "simple-branch"));
     }
 }
