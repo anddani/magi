@@ -112,7 +112,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (_, KeyCode::Char('?')) => Some(Message::ShowPopup(PopupContent::Help)),
         // 'q' exits log view when in log mode, otherwise quits the app
         (_, KeyCode::Char('q')) => match model.view_mode {
-            ViewMode::Log => Some(Message::ExitLogView),
+            ViewMode::Log(_) => Some(Message::ExitLogView),
             ViewMode::Status => Some(Message::Quit),
         },
         (_, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
@@ -1081,11 +1081,24 @@ mod tests {
 
     #[test]
     fn test_l_in_log_popup_shows_log_view() {
+        use crate::msg::LogType;
+
         let model = create_log_popup_model();
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('l'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowLogCurrent));
+        assert_eq!(result, Some(Message::ShowLog(LogType::Current)));
+    }
+
+    #[test]
+    fn test_a_in_log_popup_shows_all_refs_log_view() {
+        use crate::msg::LogType;
+
+        let model = create_log_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowLog(LogType::AllReferences)));
     }
 
     #[test]
@@ -1110,9 +1123,10 @@ mod tests {
 
     fn create_log_mode_model() -> Model {
         use crate::model::ViewMode;
+        use crate::msg::LogType;
 
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log;
+        model.view_mode = ViewMode::Log(LogType::Current);
         model
     }
 

@@ -54,7 +54,7 @@ mod show_delete_branch_popup;
 mod show_fetch_elsewhere_select;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
-mod show_log_current;
+mod show_log;
 mod show_open_pr_select;
 mod show_open_pr_target_select;
 mod show_pull_popup;
@@ -175,7 +175,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             InputMessage::Confirm => input_input::confirm(model),
         },
         Message::Credentials(credentials_msg) => credentials_input::update(model, credentials_msg),
-        Message::ShowLogCurrent => show_log_current::update(model),
+        Message::ShowLog(log_type) => show_log::update(model, log_type),
         Message::ExitLogView => exit_log_view::update(model),
     }
 }

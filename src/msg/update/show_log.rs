@@ -1,11 +1,11 @@
 use crate::{
     git::log::get_log_entries,
     model::{Line, LineContent, Model, PopupContent, ViewMode},
-    msg::Message,
+    msg::{LogType, Message},
 };
 
-pub fn update(model: &mut Model) -> Option<Message> {
-    match get_log_entries(&model.git_info.repository) {
+pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
+    match get_log_entries(&model.git_info.repository, log_type) {
         Ok(entries) => {
             // Convert log entries to lines
             let lines: Vec<Line> = entries
@@ -22,7 +22,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             model.ui_model.scroll_offset = 0;
 
             // Switch to log view mode
-            model.view_mode = ViewMode::Log;
+            model.view_mode = ViewMode::Log(log_type);
 
             // Dismiss the log popup
             model.popup = None;
