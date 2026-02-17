@@ -112,14 +112,18 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowCheckoutBranchPopup => show_checkout_branch_popup::update(model),
         Message::ShowCheckoutLocalBranchPopup => show_checkout_local_branch_popup::update(model),
         Message::ShowDeleteBranchPopup => show_delete_branch_popup::update(model),
-        Message::ShowCheckoutNewBranchPopup => show_checkout_new_branch_popup::update(model),
-        Message::ShowCheckoutNewBranchInput(starting_point) => {
-            show_checkout_new_branch_input::update(model, starting_point)
+        Message::ShowCreateNewBranchPopup { checkout } => {
+            show_checkout_new_branch_popup::update(model, checkout)
         }
-        Message::CheckoutNewBranch {
+        Message::ShowCreateNewBranchInput {
+            starting_point,
+            checkout,
+        } => show_checkout_new_branch_input::update(model, starting_point, checkout),
+        Message::CreateNewBranch {
             starting_point,
             branch_name,
-        } => checkout_new_branch::update(model, starting_point, branch_name),
+            checkout,
+        } => checkout_new_branch::update(model, starting_point, branch_name, checkout),
         Message::CheckoutBranch(branch) => checkout_branch::update(model, branch),
         Message::DeleteBranch(branch) => delete_branch::update(model, branch),
         Message::ConfirmDeleteBranch(branch) => confirm_delete_branch::update(model, branch),

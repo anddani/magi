@@ -52,9 +52,11 @@ pub struct PullPopupState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InputContext {
     /// Creating a new branch from a starting point
-    CheckoutNewBranch {
+    CreateNewBranch {
         /// The starting point (branch, tag, or commit hash)
         starting_point: String,
+        /// Whether to checkout the branch after creation
+        checkout: bool,
     },
 }
 

@@ -9,7 +9,7 @@ use crate::{
     msg::Message,
 };
 
-pub fn update(model: &mut Model) -> Option<Message> {
+pub fn update(model: &mut Model, checkout: bool) -> Option<Message> {
     // Get all references: local branches first, then remote branches, then tags
     let branches = get_branches(&model.git_info.repository);
     let tags = get_local_tags(&model.git_info.repository);
@@ -71,7 +71,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
     }
 
     // Set the context so select_confirm knows what to do with the result
-    model.select_context = Some(SelectContext::CheckoutNewBranchBase);
+    model.select_context = Some(SelectContext::CreateNewBranchBase { checkout });
 
     // Show the select popup
     let state = SelectPopupState::new("Create branch starting at".to_string(), options);

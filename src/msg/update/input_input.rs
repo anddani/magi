@@ -36,9 +36,13 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
     }
 
     match state.context {
-        InputContext::CheckoutNewBranch { starting_point } => Some(Message::CheckoutNewBranch {
+        InputContext::CreateNewBranch {
+            starting_point,
+            checkout,
+        } => Some(Message::CreateNewBranch {
             starting_point,
             branch_name,
+            checkout,
         }),
     }
 }

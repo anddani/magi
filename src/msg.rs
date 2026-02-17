@@ -67,14 +67,20 @@ pub enum Message {
     ShowCheckoutLocalBranchPopup,
     /// Show the delete branch select popup
     ShowDeleteBranchPopup,
-    /// Show the checkout new branch popup (select starting point)
-    ShowCheckoutNewBranchPopup,
-    /// Show the input popup for new branch name (starting_point)
-    ShowCheckoutNewBranchInput(String),
-    /// Create and checkout a new branch (starting_point, new_branch_name)
-    CheckoutNewBranch {
+    /// Show the create new branch popup (select starting point)
+    ShowCreateNewBranchPopup {
+        checkout: bool,
+    },
+    /// Show the input popup for new branch name
+    ShowCreateNewBranchInput {
+        starting_point: String,
+        checkout: bool,
+    },
+    /// Create a new branch (optionally checkout)
+    CreateNewBranch {
         starting_point: String,
         branch_name: String,
+        checkout: bool,
     },
     /// Checkout the selected branch
     CheckoutBranch(String),
