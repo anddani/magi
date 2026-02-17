@@ -228,23 +228,17 @@ pub enum DeleteBranchResult {
 /// For remote branches (e.g., `origin/feature`), deletes with `git push --delete`.
 /// If the user is currently on the branch being deleted, detaches HEAD first.
 pub fn delete_branch<P: AsRef<Path>>(
+    repo: &Repository,
     repo_path: P,
     branch_name: &str,
 ) -> MagiResult<DeleteBranchResult> {
     let repo_path = repo_path.as_ref();
 
-    // Get list of remote names to distinguish remote branches from local branches with slashes
-    // (e.g., "feature/my-feature" is local, "origin/main" is remote)
-    let remotes: Vec<String> = Repository::open(repo_path)
-        .ok()
-        .and_then(|repo| repo.remotes().ok())
-        .map(|r| r.iter().filter_map(|s| s.map(String::from)).collect())
-        .unwrap_or_default();
-
-    // Check if this is a remote branch (prefix matches a known remote)
-    let is_remote_branch = branch_name
-        .split_once('/')
-        .is_some_and(|(prefix, _)| remotes.iter().any(|r| r == prefix));
+    // Check if this is a remote branch by looking it up in the branch list
+    // This correctly handles local branches with '/' in their names (e.g., "feature/my-feature")
+    let is_remote_branch = get_all_branches(repo)
+        .iter()
+        .any(|b| matches!(b, BranchEntry::Remote(name) if name == branch_name));
 
     if let (true, Some((remote, branch))) = (is_remote_branch, branch_name.split_once('/')) {
         // Remote branch: git push --delete <remote> <branch>
@@ -533,7 +527,7 @@ mod tests {
         assert!(branches.iter().any(|b| b == "feature/my-feature"));
 
         // Delete the branch - this should treat it as a local branch, not remote
-        let result = delete_branch(repo_path, "feature/my-feature").unwrap();
+        let result = delete_branch(&test_repo.repo, repo_path, "feature/my-feature").unwrap();
         assert!(
             matches!(result, DeleteBranchResult::Success),
             "Expected success but got error when deleting local branch with '/' in name"
@@ -558,7 +552,7 @@ mod tests {
             .expect("Failed to create branch");
 
         // Delete the branch
-        let result = delete_branch(repo_path, "simple-branch").unwrap();
+        let result = delete_branch(&test_repo.repo, repo_path, "simple-branch").unwrap();
         assert!(matches!(result, DeleteBranchResult::Success));
 
         // Verify the branch was deleted
