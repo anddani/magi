@@ -128,7 +128,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Reverse
     - [ ] Discard
     - [x] Stage
-    - [ ] Unstage
+    - [x] Unstage
     - [x] Stage all
     - [x] Unstage all
 

@@ -69,9 +69,9 @@ mod show_select_popup;
 mod stage_all_modified;
 mod stage_selected;
 mod toggle_argument;
-mod unstage_selected;
 mod toggle_section;
 mod unstage_all;
+mod unstage_selected;
 
 /// Processes a [`Message`], modifying the passed model.
 ///

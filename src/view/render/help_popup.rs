@@ -36,12 +36,20 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
         // General section
         Line::from(Span::styled("Applying changes", section_style)),
         Line::from(vec![
+            Span::styled("  s       ", key_style),
+            Span::styled("Stage", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  u       ", key_style),
+            Span::styled("Unstage", desc_style),
+        ]),
+        Line::from(vec![
             Span::styled("  S       ", key_style),
-            Span::styled("Stage all modified files", desc_style),
+            Span::styled("Stage all", desc_style),
         ]),
         Line::from(vec![
             Span::styled("  U       ", key_style),
-            Span::styled("Unstage all files", desc_style),
+            Span::styled("Unstage all", desc_style),
         ]),
     ];
 

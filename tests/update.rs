@@ -1865,8 +1865,8 @@ fn test_visual_unstage_two_staged_files() {
     // Both files should now be in staged changes
     let pos_a = find_staged_file_line(&model, "second.txt")
         .expect("second.txt should be in staged changes");
-    let pos_b = find_staged_file_line(&model, "test.txt")
-        .expect("test.txt should be in staged changes");
+    let pos_b =
+        find_staged_file_line(&model, "test.txt").expect("test.txt should be in staged changes");
 
     // Ensure pos_a < pos_b for proper visual selection
     let (pos_start, pos_end) = if pos_a < pos_b {
@@ -1914,10 +1914,11 @@ fn test_visual_unstage_two_staged_files() {
     );
 
     // Verify test.txt is in unstaged changes (Modified files become unstaged)
-    let has_unstaged_test =
-        model.ui_model.lines.iter().any(
-            |l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "test.txt"),
-        );
+    let has_unstaged_test = model
+        .ui_model
+        .lines
+        .iter()
+        .any(|l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "test.txt"));
 
     // second.txt may become either UnstagedFile or UntrackedFile depending on its
     // status (New files become Untracked when unstaged)
@@ -1944,8 +1945,8 @@ fn test_visual_unstage_single_staged_file() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let pos = find_staged_file_line(&model, "test.txt")
-        .expect("test.txt should be in staged changes");
+    let pos =
+        find_staged_file_line(&model, "test.txt").expect("test.txt should be in staged changes");
 
     // Enter visual mode on the file (single-line selection)
     model.ui_model.cursor_position = pos;
@@ -1982,8 +1983,8 @@ fn test_visual_unstage_exits_visual_mode() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let pos = find_staged_file_line(&model, "test.txt")
-        .expect("test.txt should be in staged changes");
+    let pos =
+        find_staged_file_line(&model, "test.txt").expect("test.txt should be in staged changes");
 
     model.ui_model.cursor_position = pos;
     update(&mut model, Message::EnterVisualMode);
@@ -2083,8 +2084,5 @@ fn test_visual_unstage_three_staged_files_only_unstages_selected() {
         .lines
         .iter()
         .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "file_c.txt"));
-    assert!(
-        has_staged_c,
-        "file_c.txt should still be in staged changes"
-    );
+    assert!(has_staged_c, "file_c.txt should still be in staged changes");
 }
