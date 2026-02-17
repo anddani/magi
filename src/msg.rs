@@ -51,6 +51,8 @@ pub enum Message {
     StageAllModified,
     /// Stage the item under the cursor (or visual selection)
     StageSelected,
+    /// Unstage the item under the cursor (or visual selection)
+    UnstageSelected,
     /// Unstage all staged files
     UnstageAll,
 

@@ -122,6 +122,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
 
         // Navigation
         (KeyModifiers::CONTROL, KeyCode::Char('u')) => Some(Message::HalfPageUp),
+        (KeyModifiers::NONE, KeyCode::Char('u')) => Some(Message::UnstageSelected),
         (KeyModifiers::CONTROL, KeyCode::Char('d')) => Some(Message::HalfPageDown),
         (KeyModifiers::CONTROL, KeyCode::Char('e')) => Some(Message::ScrollLineDown),
         (KeyModifiers::CONTROL, KeyCode::Char('y')) => Some(Message::ScrollLineUp),
