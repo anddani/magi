@@ -39,11 +39,9 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::DismissPopup
         | Message::EnterVisualMode
         | Message::ExitVisualMode
-        | Message::ShowHelp
-        | Message::ShowCommitPopup
+        | Message::ShowPopup(_)
         | Message::ShowPushPopup
         | Message::ShowFetchPopup
-        | Message::ShowBranchPopup
         | Message::ShowCheckoutBranchPopup
         | Message::ShowCheckoutLocalBranchPopup
         | Message::CheckoutBranch(_)
@@ -82,7 +80,6 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ShowOpenPrWithTargetSelect
         | Message::ShowOpenPrTargetSelect(_)
         | Message::OpenPr { .. }
-        | Message::ShowLogPopup
         | Message::ShowLogCurrent
         | Message::ExitLogView => false,
     }

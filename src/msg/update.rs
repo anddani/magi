@@ -46,19 +46,15 @@ mod select_input_backspace;
 mod select_input_char;
 mod select_move_down;
 mod select_move_up;
-mod show_branch_popup;
 mod show_checkout_branch_popup;
 mod show_checkout_local_branch_popup;
 mod show_checkout_new_branch_input;
 mod show_checkout_new_branch_popup;
-mod show_commit_popup;
 mod show_delete_branch_popup;
 mod show_fetch_elsewhere_select;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
-mod show_help;
 mod show_log_current;
-mod show_log_popup;
 mod show_open_pr_select;
 mod show_open_pr_target_select;
 mod show_pull_popup;
@@ -104,11 +100,12 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::UnstageAll => unstage_all::update(model),
         Message::EnterVisualMode => enter_visual_mode::update(model),
         Message::ExitVisualMode => exit_visual_mode::update(model),
-        Message::ShowHelp => show_help::update(model),
-        Message::ShowCommitPopup => show_commit_popup::update(model),
+        Message::ShowPopup(content) => {
+            model.popup = Some(content);
+            None
+        }
         Message::ShowPushPopup => show_push_popup::update(model),
         Message::ShowFetchPopup => show_fetch_popup::update(model),
-        Message::ShowBranchPopup => show_branch_popup::update(model),
         Message::ShowCheckoutBranchPopup => show_checkout_branch_popup::update(model),
         Message::ShowCheckoutLocalBranchPopup => show_checkout_local_branch_popup::update(model),
         Message::ShowDeleteBranchPopup => show_delete_branch_popup::update(model),
@@ -168,7 +165,6 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             InputMessage::Confirm => input_input::confirm(model),
         },
         Message::Credentials(credentials_msg) => credentials_input::update(model, credentials_msg),
-        Message::ShowLogPopup => show_log_popup::update(model),
         Message::ShowLogCurrent => show_log_current::update(model),
         Message::ExitLogView => exit_log_view::update(model),
     }
