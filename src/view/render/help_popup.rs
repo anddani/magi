@@ -29,6 +29,14 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled("Fetch", desc_style),
         ]),
         Line::from(vec![
+            Span::styled("  F       ", key_style),
+            Span::styled("Pull", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  l       ", key_style),
+            Span::styled("Log", desc_style),
+        ]),
+        Line::from(vec![
             Span::styled("  P       ", key_style),
             Span::styled("Push", desc_style),
         ]),
@@ -40,12 +48,12 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled("Stage", desc_style),
         ]),
         Line::from(vec![
-            Span::styled("  u       ", key_style),
-            Span::styled("Unstage", desc_style),
-        ]),
-        Line::from(vec![
             Span::styled("  S       ", key_style),
             Span::styled("Stage all", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  u       ", key_style),
+            Span::styled("Unstage", desc_style),
         ]),
         Line::from(vec![
             Span::styled("  U       ", key_style),
