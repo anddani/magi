@@ -12,16 +12,32 @@ pub enum CheckoutResult {
     Error(String),
 }
 
-/// Gets all branches (local and remote) for the select popup.
+/// A branch entry with its type (local or remote).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BranchEntry {
+    Local(String),
+    Remote(String),
+}
+
+impl BranchEntry {
+    /// Returns the branch name.
+    pub fn name(&self) -> &str {
+        match self {
+            BranchEntry::Local(name) | BranchEntry::Remote(name) => name,
+        }
+    }
+}
+
+/// Gets all branches (local and remote) with their types.
 /// Returns local branches first, then remote branches (excluding origin/HEAD).
-pub fn get_branches(repo: &Repository) -> Vec<String> {
+pub fn get_all_branches(repo: &Repository) -> Vec<BranchEntry> {
     let mut branches = Vec::new();
 
     // Get local branches
     if let Ok(local_branches) = repo.branches(Some(git2::BranchType::Local)) {
         for branch_result in local_branches.flatten() {
             if let Ok(Some(name)) = branch_result.0.name() {
-                branches.push(name.to_string());
+                branches.push(BranchEntry::Local(name.to_string()));
             }
         }
     }
@@ -32,7 +48,7 @@ pub fn get_branches(repo: &Repository) -> Vec<String> {
             if let Ok(Some(name)) = branch_result.0.name() {
                 // Skip origin/HEAD type references
                 if !name.ends_with("/HEAD") {
-                    branches.push(name.to_string());
+                    branches.push(BranchEntry::Remote(name.to_string()));
                 }
             }
         }
@@ -41,19 +57,24 @@ pub fn get_branches(repo: &Repository) -> Vec<String> {
     branches
 }
 
+/// Gets all branches (local and remote) for the select popup.
+/// Returns local branches first, then remote branches (excluding origin/HEAD).
+pub fn get_branches(repo: &Repository) -> Vec<String> {
+    get_all_branches(repo)
+        .into_iter()
+        .map(|b| b.name().to_string())
+        .collect()
+}
+
 /// Gets only local branches for the select popup.
 pub fn get_local_branches(repo: &Repository) -> Vec<String> {
-    let mut branches = Vec::new();
-
-    if let Ok(local_branches) = repo.branches(Some(git2::BranchType::Local)) {
-        for branch_result in local_branches.flatten() {
-            if let Ok(Some(name)) = branch_result.0.name() {
-                branches.push(name.to_string());
-            }
-        }
-    }
-
-    branches
+    get_all_branches(repo)
+        .into_iter()
+        .filter_map(|b| match b {
+            BranchEntry::Local(name) => Some(name),
+            BranchEntry::Remote(_) => None,
+        })
+        .collect()
 }
 
 /// Gets remote branches for the push/fetch upstream select popup.
@@ -70,18 +91,12 @@ pub fn get_remote_branches_for_upstream(
         branches.push(suggested.to_string());
     }
 
-    // Get remote branches (excluding HEAD references)
-    if let Ok(remote_branches) = repo.branches(Some(git2::BranchType::Remote)) {
-        for branch_result in remote_branches.flatten() {
-            if let Ok(Some(name)) = branch_result.0.name() {
-                // Skip origin/HEAD type references
-                if !name.ends_with("/HEAD") {
-                    // Don't add duplicates of the suggested upstream
-                    if suggested_upstream != Some(name) {
-                        branches.push(name.to_string());
-                    }
-                }
-            }
+    // Get remote branches, excluding the suggested one to avoid duplicates
+    for entry in get_all_branches(repo) {
+        if let BranchEntry::Remote(name) = entry
+            && suggested_upstream != Some(name.as_str())
+        {
+            branches.push(name);
         }
     }
 
