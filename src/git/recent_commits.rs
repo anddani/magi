@@ -5,8 +5,11 @@ use crate::{
     model::{Line, LineContent, SectionType},
 };
 
-use super::commit_utils::{build_local_branch_map, build_remote_branch_map, build_tag_map};
-use super::{CommitInfo, CommitRef, CommitRefType};
+use super::commit_utils::{
+    build_local_branch_map, build_refs_for_commit, build_remote_branch_map, build_tag_map,
+    create_commit_line,
+};
+use super::{CommitRef, CommitRefType};
 
 const MAX_COMMITS: usize = 10;
 
@@ -66,69 +69,41 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
             Err(_) => continue,
         };
 
-        let hash = format!("{:.7}", oid);
-        let message = commit.summary().unwrap_or("").to_string();
-
-        // Build the refs list in order: HEAD indicator, current branch, other local, remote
-        let mut refs = Vec::new();
+        // Build refs, but for HEAD commit we need special handling
+        let mut refs = build_refs_for_commit(oid, &local_branch_map, &remote_branch_map, &tag_map);
 
         if index == 0 {
-            // This is HEAD
+            // For HEAD commit, we need to prepend HEAD indicator or current branch
             if is_detached {
-                refs.push(CommitRef {
-                    name: "@".to_string(),
-                    ref_type: CommitRefType::Head,
-                });
+                refs.insert(
+                    0,
+                    CommitRef {
+                        name: "@".to_string(),
+                        ref_type: CommitRefType::Head,
+                    },
+                );
             } else if let Some(ref branch) = current_branch {
-                refs.push(CommitRef {
-                    name: branch.clone(),
-                    ref_type: CommitRefType::LocalBranch,
-                });
-            }
-        }
-
-        // Add other local branches (excluding current branch if this is HEAD)
-        if let Some(local_branches) = local_branch_map.get(oid) {
-            for branch in local_branches {
-                // Skip current branch on HEAD commit (already added)
-                if index == 0 && Some(branch.as_str()) == current_branch.as_deref() {
-                    continue;
+                // Move current branch to front if it exists, otherwise add it
+                if let Some(pos) = refs.iter().position(|r| r.name == *branch) {
+                    let current = refs.remove(pos);
+                    refs.insert(0, current);
+                } else {
+                    refs.insert(
+                        0,
+                        CommitRef {
+                            name: branch.clone(),
+                            ref_type: CommitRefType::LocalBranch,
+                        },
+                    );
                 }
-                refs.push(CommitRef {
-                    name: branch.clone(),
-                    ref_type: CommitRefType::LocalBranch,
-                });
             }
         }
 
-        // Add remote branches
-        if let Some(remote_branches) = remote_branch_map.get(oid) {
-            for branch in remote_branches {
-                refs.push(CommitRef {
-                    name: branch.clone(),
-                    ref_type: CommitRefType::RemoteBranch,
-                });
-            }
-        }
-
-        // Add tags
-        if let Some(tag_name) = tag_map.get(oid) {
-            refs.push(CommitRef {
-                name: tag_name.clone(),
-                ref_type: CommitRefType::Tag,
-            });
-        }
-
-        let commit_info = CommitInfo {
-            hash,
+        lines.push(create_commit_line(
+            &commit,
             refs,
-            message,
-        };
-
-        lines.push(Line {
-            content: LineContent::Commit(commit_info),
-            section: Some(SectionType::RecentCommits),
-        });
+            SectionType::RecentCommits,
+        ));
     }
 
     Ok(lines)
