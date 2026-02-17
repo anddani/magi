@@ -93,7 +93,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Local
         - [ ] Other
         - [ ] Related
-        - [ ] Local branches
+        - [x] Local branches
         - [ ] All branches
         - [x] All references
         - [ ] Current reflog

@@ -12,10 +12,20 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
 
-    let commands: Vec<Line> = vec![Line::from(vec![
-        Span::styled("l", key_style),
-        Span::styled(" current", desc_style),
-    ])];
+    let commands: Vec<Line> = vec![
+        Line::from(vec![
+            Span::styled("l", key_style),
+            Span::styled(" current", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("L", key_style),
+            Span::styled(" local branches", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("a", key_style),
+            Span::styled(" all references", desc_style),
+        ]),
+    ];
 
     CommandPopupContent::single_column("Log", commands)
 }

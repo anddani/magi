@@ -11,6 +11,8 @@ pub enum LogType {
     Current,
     /// Show log for all references (--all)
     AllReferences,
+    /// Show log for local branches and HEAD
+    LocalBranches,
 }
 
 #[derive(PartialEq, Eq, Debug)]
