@@ -17,8 +17,9 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
         KeyCode::Char('c') => Some(Message::Commit),
-        KeyCode::Char('a') => Some(Message::Amend),
-        KeyCode::Char('w') => Some(Message::Reword),
+        KeyCode::Char('e') => Some(Message::Amend(vec!["--no-edit".to_string()])),
+        KeyCode::Char('a') => Some(Message::Amend(vec![])),
+        KeyCode::Char('w') => Some(Message::Amend(vec!["--only".to_string()])),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

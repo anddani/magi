@@ -39,7 +39,6 @@ mod push_upstream;
 mod quit;
 mod refresh;
 mod rename_branch;
-mod reword;
 mod scroll_line_down;
 mod scroll_line_up;
 mod select_confirm;
@@ -97,8 +96,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::MoveToBottom => move_to_bottom::update(model),
         Message::PendingG => pending_g::update(model),
         Message::Commit => commit::update(model),
-        Message::Amend => amend::update(model),
-        Message::Reword => reword::update(model),
+        Message::Amend(extra_args) => amend::update(model, extra_args),
         Message::DismissPopup => dismiss_popup::update(model),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::StageSelected => stage_selected::update(model),

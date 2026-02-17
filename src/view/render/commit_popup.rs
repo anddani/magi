@@ -8,8 +8,11 @@ use ratatui::{
 use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
-    model::{Model, arguments::Arguments::CommitArguments, arguments::CommitArgument},
-    view::render::util::argument_line,
+    model::{
+        Model,
+        arguments::{Arguments::CommitArguments, CommitArgument},
+    },
+    view::render::util::{argument_line, column_title},
 };
 
 pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
@@ -18,20 +21,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
 
-    let commands: Vec<Line> = vec![
-        Line::from(vec![
-            Span::styled("c", key_style),
-            Span::styled(" Commit", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("a", key_style),
-            Span::styled(" Amend", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("w", key_style),
-            Span::styled(" Reword", desc_style),
-        ]),
-    ];
+    let mut content: Vec<Line> = vec![];
 
     let selected_args: HashSet<CommitArgument> =
         if let Some(CommitArguments(ref args)) = model.arguments {
@@ -40,7 +30,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             HashSet::new()
         };
 
-    let arguments: Vec<Line> = CommitArgument::all()
+    let mut arguments: Vec<Line> = CommitArgument::all()
         .iter()
         .map(|arg| {
             argument_line(
@@ -53,6 +43,34 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             )
         })
         .collect();
+    content.push(column_title("Arguments", theme));
+    content.append(&mut arguments);
 
-    CommandPopupContent::two_columns("Commit", "Commands", commands, "Arguments", arguments)
+    content.push(Line::from(""));
+
+    content.push(column_title("Create", theme));
+    content.push(Line::from(vec![
+        Span::styled("c", key_style),
+        Span::styled(" Commit", desc_style),
+    ]));
+
+    content.push(Line::from(""));
+
+    content.push(column_title("Edit HEAD", theme));
+    content.append(&mut vec![
+        Line::from(vec![
+            Span::styled("e", key_style),
+            Span::styled(" Extend", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("a", key_style),
+            Span::styled(" Amend", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("w", key_style),
+            Span::styled(" Reword", desc_style),
+        ]),
+    ]);
+
+    CommandPopupContent::single_column("Commit", content)
 }
