@@ -152,10 +152,38 @@ fn handle_visual_mode(
         }
     }
 
-    // Check if all are diff hunks in the same file
-    let all_hunks = selected
+    // Check if all are diff lines in the same hunk
+    let all_diff_lines = selected
         .iter()
-        .all(|(_, l)| matches!(l.content, LineContent::DiffHunk(_)));
+        .all(|(_, l)| matches!(l.content, LineContent::DiffLine(_)));
+    if all_diff_lines {
+        let sections: Vec<&SectionType> = selected
+            .iter()
+            .filter_map(|(_, l)| l.section.as_ref())
+            .collect();
+
+        if let Some(SectionType::UnstagedHunk { path, hunk_index }) = sections.first() {
+            let all_same_hunk = sections.iter().all(|s| {
+                matches!(s, SectionType::UnstagedHunk { path: p, hunk_index: h } if p == path && h == hunk_index)
+            });
+
+            if all_same_hunk {
+                // Calculate which lines within the hunk are selected
+                let line_indices = compute_hunk_line_indices(lines, start, end, path, *hunk_index);
+                if !line_indices.is_empty() {
+                    return stage_lines(repo_path, path, *hunk_index, &line_indices);
+                }
+            }
+        }
+    }
+
+    // Check if all are diff hunks (or diff lines within hunks) in the same file
+    let all_hunks = selected.iter().all(|(_, l)| {
+        matches!(
+            l.content,
+            LineContent::DiffHunk(_) | LineContent::DiffLine(_)
+        )
+    });
     if all_hunks {
         // Collect unique (path, hunk_index) pairs
         let hunk_info: Vec<(&str, usize)> = selected
@@ -183,31 +211,6 @@ fn handle_visual_mode(
                     stage_hunk(repo_path, first_path, idx)?;
                 }
                 return Ok(());
-            }
-        }
-    }
-
-    // Check if all are diff lines in the same hunk
-    let all_diff_lines = selected
-        .iter()
-        .all(|(_, l)| matches!(l.content, LineContent::DiffLine(_)));
-    if all_diff_lines {
-        let sections: Vec<&SectionType> = selected
-            .iter()
-            .filter_map(|(_, l)| l.section.as_ref())
-            .collect();
-
-        if let Some(SectionType::UnstagedHunk { path, hunk_index }) = sections.first() {
-            let all_same_hunk = sections.iter().all(|s| {
-                matches!(s, SectionType::UnstagedHunk { path: p, hunk_index: h } if p == path && h == hunk_index)
-            });
-
-            if all_same_hunk {
-                // Calculate which lines within the hunk are selected
-                let line_indices = compute_hunk_line_indices(lines, start, end, path, *hunk_index);
-                if !line_indices.is_empty() {
-                    return stage_lines(repo_path, path, *hunk_index, &line_indices);
-                }
             }
         }
     }
