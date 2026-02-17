@@ -42,6 +42,8 @@ pub enum Message {
     DismissPopup,
     /// Stage all modified files (does not include untracked files)
     StageAllModified,
+    /// Stage the item under the cursor (or visual selection)
+    StageSelected,
     /// Unstage all staged files
     UnstageAll,
 

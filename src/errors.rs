@@ -6,6 +6,7 @@ use std::io;
 pub enum MagiError {
     IoError(io::Error),
     GitError(Git2Error),
+    Generic(String),
 }
 
 impl From<io::Error> for MagiError {
@@ -25,6 +26,7 @@ impl fmt::Display for MagiError {
         match self {
             MagiError::IoError(e) => write!(f, "I/O error: {}", e),
             MagiError::GitError(e) => write!(f, "Git error: {}", e),
+            MagiError::Generic(msg) => write!(f, "{}", msg),
         }
     }
 }
