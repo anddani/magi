@@ -58,7 +58,7 @@ pub fn get_lines(entry: &LogEntry, theme: &Theme, is_detached_head: bool) -> Vec
         && let Some(ref time) = entry.time
     {
         spans.push(Span::styled(
-            format!(" - {} ({})", author, time),
+            format!(" - {} {}", author, time),
             Style::default().fg(Color::DarkGray),
         ));
     }

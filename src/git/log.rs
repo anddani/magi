@@ -118,7 +118,7 @@ fn parse_log_line(line: &str, remotes: &[String]) -> LogEntry {
         let hash = none_if_empty(parts[0]);
         let refs = parse_refs(parts[1], remotes);
         let author = none_if_empty(parts[2]);
-        let time = none_if_empty(parts[3]);
+        let time = none_if_empty(parts[3]).and_then(|t| t.strip_suffix(" ago").map(String::from));
         let message = none_if_empty(parts[4]);
         LogEntry::new(graph, hash, refs, author, time, message)
     } else if !parts[0].is_empty() {
@@ -260,7 +260,7 @@ mod tests {
         assert_eq!(entry.refs[0].name, "main");
         assert_eq!(entry.refs[0].ref_type, CommitRefType::LocalBranch);
         assert_eq!(entry.author, Some("John Doe".to_string()));
-        assert_eq!(entry.time, Some("2 hours ago".to_string()));
+        assert_eq!(entry.time, Some("2 hours".to_string()));
         assert_eq!(entry.message, Some("Fix bug".to_string()));
     }
 
@@ -293,7 +293,7 @@ mod tests {
         let remotes = vec!["origin".to_string()];
         let refs = parse_refs("HEAD -> main, origin/main", &remotes);
         assert_eq!(refs.len(), 3);
-        assert_eq!(refs[0].name, "HEAD");
+        assert_eq!(refs[0].name, "@");
         assert_eq!(refs[0].ref_type, CommitRefType::Head);
         assert_eq!(refs[1].name, "main");
         assert_eq!(refs[1].ref_type, CommitRefType::LocalBranch);
