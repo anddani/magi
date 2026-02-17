@@ -83,7 +83,7 @@ pub enum ViewMode {
     #[default]
     Status,
     /// Log view showing git commit history with graph
-    Log,
+    Log(crate::msg::LogType),
 }
 
 impl InputMode {

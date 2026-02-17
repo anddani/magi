@@ -4,6 +4,15 @@ use crate::model::popup::PopupContent;
 pub mod update;
 pub mod util;
 
+/// Type of log view to display
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum LogType {
+    /// Show log for current branch (HEAD)
+    Current,
+    /// Show log for all references (--all)
+    AllReferences,
+}
+
 #[derive(PartialEq, Eq, Debug)]
 pub enum Message {
     /// Quit application
@@ -151,8 +160,8 @@ pub enum Message {
     /// Credentials popup
     Credentials(CredentialsMessage),
 
-    /// Show the log view for the current branch
-    ShowLogCurrent,
+    /// Show the log view
+    ShowLog(LogType),
     /// Exit log view and return to status view
     ExitLogView,
 }

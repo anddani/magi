@@ -4,13 +4,14 @@ use crate::{
     errors::MagiResult,
     git::{CommitRef, CommitRefType},
     model::LogEntry,
+    msg::LogType,
 };
 
 const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
-/// Fetches git log entries with graph for the current branch
-pub fn get_log_entries(repository: &Repository) -> MagiResult<Vec<LogEntry>> {
+/// Fetches git log entries with graph
+pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
         .ok_or_else(|| git2::Error::from_str("No working directory"))?;
@@ -22,19 +23,24 @@ pub fn get_log_entries(repository: &Repository) -> MagiResult<Vec<LogEntry>> {
         SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
     );
 
-    let output = super::git_cmd(
-        workdir,
-        &[
-            "log",
-            &format!("--format={}", format),
-            "--graph",
-            "--decorate=short",
-            &format!("-n{}", MAX_LOG_ENTRIES),
-            "HEAD",
-            "--",
-        ],
-    )
-    .output()?;
+    let mut args = vec![
+        "log".to_string(),
+        format!("--format={}", format),
+        "--graph".to_string(),
+        "--decorate=short".to_string(),
+        format!("-n{}", MAX_LOG_ENTRIES),
+    ];
+
+    match log_type {
+        LogType::Current => args.push("HEAD".to_string()),
+        LogType::AllReferences => args.push("--all".to_string()),
+    }
+
+    args.push("--".to_string());
+
+    let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+
+    let output = super::git_cmd(workdir, &args_refs).output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
