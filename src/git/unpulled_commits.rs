@@ -5,8 +5,10 @@ use crate::{
     model::{Line, LineContent, SectionType},
 };
 
-use super::commit_utils::{build_local_branch_map, build_remote_branch_map, build_tag_map};
-use super::{CommitInfo, CommitRef, CommitRefType};
+use super::commit_utils::{
+    build_local_branch_map, build_refs_for_commit, build_remote_branch_map, build_tag_map,
+    create_commit_line,
+};
 
 const MAX_COMMITS: usize = 10;
 
@@ -94,49 +96,8 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
             Err(_) => continue,
         };
 
-        let hash = format!("{:.7}", oid);
-        let message = commit.summary().unwrap_or("").to_string();
-
-        let mut refs = Vec::new();
-
-        // Add local branches
-        if let Some(local_branches) = local_branch_map.get(oid) {
-            for branch in local_branches {
-                refs.push(CommitRef {
-                    name: branch.clone(),
-                    ref_type: CommitRefType::LocalBranch,
-                });
-            }
-        }
-
-        // Add remote branches
-        if let Some(remote_branches) = remote_branch_map.get(oid) {
-            for branch in remote_branches {
-                refs.push(CommitRef {
-                    name: branch.clone(),
-                    ref_type: CommitRefType::RemoteBranch,
-                });
-            }
-        }
-
-        // Add tags
-        if let Some(tag_name) = tag_map.get(oid) {
-            refs.push(CommitRef {
-                name: tag_name.clone(),
-                ref_type: CommitRefType::Tag,
-            });
-        }
-
-        let commit_info = CommitInfo {
-            hash,
-            refs,
-            message,
-        };
-
-        lines.push(Line {
-            content: LineContent::Commit(commit_info),
-            section: Some(SectionType::Unpulled),
-        });
+        let refs = build_refs_for_commit(oid, &local_branch_map, &remote_branch_map, &tag_map);
+        lines.push(create_commit_line(&commit, refs, SectionType::Unpulled));
     }
 
     Ok(lines)
