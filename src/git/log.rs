@@ -22,6 +22,8 @@ pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult
         .map(|r| r.iter().filter_map(|s| s.map(String::from)).collect())
         .unwrap_or_default();
 
+    let head_detached = repository.head_detached()?;
+
     // Build the git log command similar to Magit
     // Format: hash<sep>refs<sep>author<sep>date<sep>message
     let format = format!(
@@ -40,6 +42,12 @@ pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult
     match log_type {
         LogType::Current => args.push("HEAD".to_string()),
         LogType::AllReferences => args.push("--all".to_string()),
+        LogType::LocalBranches => {
+            if head_detached {
+                args.push("HEAD".to_string());
+            }
+            args.push("--branches".to_string());
+        }
     }
 
     args.push("--".to_string());
