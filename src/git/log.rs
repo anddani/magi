@@ -48,6 +48,13 @@ pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult
             }
             args.push("--branches".to_string());
         }
+        LogType::AllBranches => {
+            if head_detached {
+                args.push("HEAD".to_string());
+            }
+            args.push("--branches".to_string());
+            args.push("--remotes".to_string());
+        }
     }
 
     args.push("--".to_string());

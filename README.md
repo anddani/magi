@@ -94,7 +94,7 @@ Here are a few features that the aforementioned applications lack:
         - [ ] Other
         - [ ] Related
         - [x] Local branches
-        - [ ] All branches
+        - [x] All branches
         - [x] All references
         - [ ] Current reflog
         - [ ] Other reflog

@@ -22,6 +22,10 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled(" local branches", desc_style),
         ]),
         Line::from(vec![
+            Span::styled("b", key_style),
+            Span::styled(" all branches", desc_style),
+        ]),
+        Line::from(vec![
             Span::styled("a", key_style),
             Span::styled(" all references", desc_style),
         ]),
