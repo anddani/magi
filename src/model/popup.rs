@@ -58,6 +58,11 @@ pub enum InputContext {
         /// Whether to checkout the branch after creation
         checkout: bool,
     },
+    /// Renaming an existing branch
+    RenameBranch {
+        /// The current name of the branch being renamed
+        old_name: String,
+    },
 }
 
 /// State for text input popups (e.g., new branch name)

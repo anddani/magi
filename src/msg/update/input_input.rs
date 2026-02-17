@@ -44,5 +44,9 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             branch_name,
             checkout,
         }),
+        InputContext::RenameBranch { old_name } => Some(Message::RenameBranch {
+            old_name,
+            new_name: branch_name,
+        }),
     }
 }

@@ -70,6 +70,9 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::MoveToBottom
         | Message::PendingG
         | Message::ShowDeleteBranchPopup
+        | Message::ShowRenameBranchPopup
+        | Message::ShowRenameBranchInput(_)
+        | Message::RenameBranch { .. }
         | Message::DeleteBranch(_)
         | Message::ConfirmDeleteBranch(_)
         | Message::ShowCreateNewBranchPopup { .. }

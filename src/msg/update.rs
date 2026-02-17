@@ -51,6 +51,9 @@ mod show_checkout_local_branch_popup;
 mod show_checkout_new_branch_input;
 mod show_checkout_new_branch_popup;
 mod show_delete_branch_popup;
+mod show_rename_branch_input;
+mod show_rename_branch_popup;
+mod rename_branch;
 mod show_fetch_elsewhere_select;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
@@ -109,6 +112,13 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowCheckoutBranchPopup => show_checkout_branch_popup::update(model),
         Message::ShowCheckoutLocalBranchPopup => show_checkout_local_branch_popup::update(model),
         Message::ShowDeleteBranchPopup => show_delete_branch_popup::update(model),
+        Message::ShowRenameBranchPopup => show_rename_branch_popup::update(model),
+        Message::ShowRenameBranchInput(old_name) => {
+            show_rename_branch_input::update(model, old_name)
+        }
+        Message::RenameBranch { old_name, new_name } => {
+            rename_branch::update(model, old_name, new_name)
+        }
         Message::ShowCreateNewBranchPopup { checkout } => {
             show_checkout_new_branch_popup::update(model, checkout)
         }

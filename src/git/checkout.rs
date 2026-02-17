@@ -174,6 +174,35 @@ pub fn create_branch<P: AsRef<Path>>(
     }
 }
 
+/// Result of a rename branch operation
+pub enum RenameBranchResult {
+    Success,
+    Error(String),
+}
+
+/// Rename a local branch using `git branch -m <old_name> <new_name>`.
+pub fn rename_branch<P: AsRef<Path>>(
+    repo_path: P,
+    old_name: &str,
+    new_name: &str,
+) -> MagiResult<RenameBranchResult> {
+    let output = git_cmd(&repo_path, &["branch", "-m", old_name, new_name])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+
+    if output.status.success() {
+        Ok(RenameBranchResult::Success)
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        Ok(RenameBranchResult::Error(if stderr.is_empty() {
+            "Failed to rename branch".to_string()
+        } else {
+            stderr
+        }))
+    }
+}
+
 /// Result of a delete branch operation
 pub enum DeleteBranchResult {
     Success,
@@ -416,6 +445,37 @@ mod tests {
         // Try to create another branch with the same name
         let result = checkout_new_branch(repo_path, "existing-branch", "HEAD").unwrap();
         assert!(matches!(result, CheckoutResult::Error(_)));
+    }
+
+    #[test]
+    fn test_rename_branch_succeeds() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        // Create a branch to rename
+        Command::new("git")
+            .arg("-C")
+            .arg(repo_path)
+            .args(["branch", "old-name"])
+            .output()
+            .expect("Failed to create branch");
+
+        let result = rename_branch(repo_path, "old-name", "new-name").unwrap();
+        assert!(matches!(result, RenameBranchResult::Success));
+
+        // Verify the old branch is gone and new one exists
+        let branches = get_branches(&test_repo.repo);
+        assert!(!branches.iter().any(|b| b == "old-name"));
+        assert!(branches.iter().any(|b| b == "new-name"));
+    }
+
+    #[test]
+    fn test_rename_nonexistent_branch_fails() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        let result = rename_branch(repo_path, "nonexistent-branch", "new-name").unwrap();
+        assert!(matches!(result, RenameBranchResult::Error(_)));
     }
 
     #[test]

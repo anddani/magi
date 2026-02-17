@@ -26,10 +26,6 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled("c", key_style),
             Span::styled(" new branch", desc_style),
         ]),
-        Line::from(vec![
-            Span::styled("x", key_style),
-            Span::styled(" branch", desc_style),
-        ]),
         Line::from(""),
         column_title("Create", theme),
         Line::from(vec![
@@ -43,6 +39,16 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
         Line::from(vec![
             Span::styled("O", key_style),
             Span::styled(" new PR to...", desc_style),
+        ]),
+        Line::from(""),
+        column_title("Do", theme),
+        Line::from(vec![
+            Span::styled("m", key_style),
+            Span::styled(" rename", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("x", key_style),
+            Span::styled(" delete", desc_style),
         ]),
     ];
 

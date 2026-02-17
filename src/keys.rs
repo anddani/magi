@@ -629,6 +629,15 @@ mod tests {
     }
 
     #[test]
+    fn test_m_in_branch_popup_shows_rename_select() {
+        let model = create_branch_popup_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('m'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowRenameBranchPopup));
+    }
+
+    #[test]
     fn test_esc_dismisses_branch_popup() {
         let model = create_branch_popup_model();
 

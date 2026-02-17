@@ -26,6 +26,8 @@ pub enum SelectContext {
     PullUpstream,
     /// Selecting a branch to delete
     DeleteBranch,
+    /// Selecting a branch to rename
+    RenameBranch,
     /// Selecting a remote to push all tags to
     PushAllTags,
     /// Selecting a tag to push
