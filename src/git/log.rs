@@ -16,6 +16,12 @@ pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult
         .workdir()
         .ok_or_else(|| git2::Error::from_str("No working directory"))?;
 
+    // Get list of remote names to distinguish remote branches from local branches with slashes
+    let remotes: Vec<String> = repository
+        .remotes()
+        .map(|r| r.iter().filter_map(|s| s.map(String::from)).collect())
+        .unwrap_or_default();
+
     // Build the git log command similar to Magit
     // Format: hash<sep>refs<sep>author<sep>date<sep>message
     let format = format!(
@@ -48,17 +54,17 @@ pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let entries = parse_log_output(&stdout);
+    let entries = parse_log_output(&stdout, &remotes);
 
     Ok(entries)
 }
 
 /// Parse the output of git log --graph into LogEntry structs
-fn parse_log_output(output: &str) -> Vec<LogEntry> {
+fn parse_log_output(output: &str, remotes: &[String]) -> Vec<LogEntry> {
     let mut entries = Vec::new();
 
     for line in output.lines() {
-        let entry = parse_log_line(line);
+        let entry = parse_log_line(line, remotes);
         entries.push(entry);
     }
 
@@ -74,7 +80,7 @@ fn none_if_empty(s: &str) -> Option<String> {
 }
 
 /// Parse a single line from git log --graph output
-fn parse_log_line(line: &str) -> LogEntry {
+fn parse_log_line(line: &str, remotes: &[String]) -> LogEntry {
     // The line format is: <graph><hash><sep><refs><sep><author><sep><date><sep><message>
     // The graph part is everything before the first non-graph character that looks like a hash
 
@@ -95,7 +101,7 @@ fn parse_log_line(line: &str) -> LogEntry {
 
     if parts.len() >= 5 {
         let hash = none_if_empty(parts[0]);
-        let refs = parse_refs(parts[1]);
+        let refs = parse_refs(parts[1], remotes);
         let author = none_if_empty(parts[2]);
         let time = none_if_empty(parts[3]);
         let message = none_if_empty(parts[4]);
@@ -116,8 +122,15 @@ fn parse_log_line(line: &str) -> LogEntry {
     }
 }
 
+/// Check if a ref name is a remote branch by checking if it starts with a known remote name
+fn is_remote_branch(name: &str, remotes: &[String]) -> bool {
+    remotes
+        .iter()
+        .any(|remote| name.starts_with(&format!("{}/", remote)))
+}
+
 /// Parse a refs string (e.g., "HEAD -> main, origin/main, tag: v1.0") into CommitRefs
-fn parse_refs(refs_str: &str) -> Vec<CommitRef> {
+fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
     if refs_str.is_empty() {
         return Vec::new();
     }
@@ -157,15 +170,15 @@ fn parse_refs(refs_str: &str) -> Vec<CommitRef> {
                     ref_type: CommitRefType::Tag,
                 });
             }
-            p if p.contains('/') => {
-                // Remote branch
+            p if is_remote_branch(p, remotes) => {
+                // Remote branch (starts with a known remote name)
                 refs.push(CommitRef {
                     name: part.to_string(),
                     ref_type: CommitRefType::RemoteBranch,
                 });
             }
             _ => {
-                // Local branch
+                // Local branch (including branches with slashes like feature/xyz)
                 refs.push(CommitRef {
                     name: part.to_string(),
                     ref_type: CommitRefType::LocalBranch,
@@ -219,11 +232,12 @@ mod tests {
 
     #[test]
     fn test_parse_log_line_commit() {
+        let remotes = vec!["origin".to_string()];
         let line = format!(
             "* abc1234{}main{}John Doe{}2 hours ago{}Fix bug",
             SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
         );
-        let entry = parse_log_line(&line);
+        let entry = parse_log_line(&line, &remotes);
 
         assert_eq!(entry.graph, "* ");
         assert_eq!(entry.hash, Some("abc1234".to_string()));
@@ -237,7 +251,8 @@ mod tests {
 
     #[test]
     fn test_parse_log_line_graph_only() {
-        let entry = parse_log_line("| |");
+        let remotes = vec!["origin".to_string()];
+        let entry = parse_log_line("| |", &remotes);
 
         assert_eq!(entry.graph, "| |");
         assert!(entry.hash.is_none());
@@ -246,11 +261,12 @@ mod tests {
 
     #[test]
     fn test_parse_log_line_no_refs() {
+        let remotes = vec!["origin".to_string()];
         let line = format!(
             "* def5678{}{}Jane Smith{}1 day ago{}Initial commit",
             SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
         );
-        let entry = parse_log_line(&line);
+        let entry = parse_log_line(&line, &remotes);
 
         assert_eq!(entry.hash, Some("def5678".to_string()));
         assert!(entry.refs.is_empty());
@@ -259,7 +275,8 @@ mod tests {
 
     #[test]
     fn test_parse_refs_head_with_branch() {
-        let refs = parse_refs("HEAD -> main, origin/main");
+        let remotes = vec!["origin".to_string()];
+        let refs = parse_refs("HEAD -> main, origin/main", &remotes);
         assert_eq!(refs.len(), 3);
         assert_eq!(refs[0].name, "HEAD");
         assert_eq!(refs[0].ref_type, CommitRefType::Head);
@@ -271,7 +288,8 @@ mod tests {
 
     #[test]
     fn test_parse_refs_with_tag() {
-        let refs = parse_refs("tag: v1.0.0");
+        let remotes = vec!["origin".to_string()];
+        let refs = parse_refs("tag: v1.0.0", &remotes);
         assert_eq!(refs.len(), 1);
         assert_eq!(refs[0].name, "v1.0.0");
         assert_eq!(refs[0].ref_type, CommitRefType::Tag);
@@ -279,7 +297,32 @@ mod tests {
 
     #[test]
     fn test_parse_refs_empty() {
-        let refs = parse_refs("");
+        let remotes = vec!["origin".to_string()];
+        let refs = parse_refs("", &remotes);
         assert!(refs.is_empty());
+    }
+
+    #[test]
+    fn test_parse_refs_local_branch_with_slash() {
+        let remotes = vec!["origin".to_string()];
+        // A local branch like "feature/test" should NOT be treated as remote
+        let refs = parse_refs("feature/test", &remotes);
+        assert_eq!(refs.len(), 1);
+        assert_eq!(refs[0].name, "feature/test");
+        assert_eq!(refs[0].ref_type, CommitRefType::LocalBranch);
+    }
+
+    #[test]
+    fn test_parse_refs_distinguishes_local_and_remote_with_slash() {
+        let remotes = vec!["origin".to_string(), "upstream".to_string()];
+        // origin/main is remote, test/branch is local
+        let refs = parse_refs("origin/main, test/branch, upstream/feature", &remotes);
+        assert_eq!(refs.len(), 3);
+        assert_eq!(refs[0].name, "origin/main");
+        assert_eq!(refs[0].ref_type, CommitRefType::RemoteBranch);
+        assert_eq!(refs[1].name, "test/branch");
+        assert_eq!(refs[1].ref_type, CommitRefType::LocalBranch);
+        assert_eq!(refs[2].name, "upstream/feature");
+        assert_eq!(refs[2].ref_type, CommitRefType::RemoteBranch);
     }
 }
