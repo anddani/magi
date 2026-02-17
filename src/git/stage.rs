@@ -42,7 +42,7 @@ pub fn stage_hunk<P: AsRef<Path>>(repo_path: P, file: &str, hunk_index: usize) -
 /// Stages specific lines within a hunk. Lines not in the selection are converted:
 /// - `+` lines not selected are removed from the patch
 /// - `-` lines not selected become context lines (prefix changed to ` `)
-/// `selected_line_indices` are 0-based indices within the hunk's diff lines (not counting the hunk header).
+///   `selected_line_indices` are 0-based indices within the hunk's diff lines (not counting the hunk header).
 pub fn stage_lines<P: AsRef<Path>>(
     repo_path: P,
     file: &str,
@@ -72,13 +72,13 @@ pub fn stage_lines<P: AsRef<Path>>(
                 new_count += 1;
             }
             // Unselected additions are simply omitted
-        } else if line.starts_with('-') {
+        } else if let Some(stripped) = line.strip_prefix('-') {
             if is_selected {
                 modified_lines.push(line.to_string());
                 old_count += 1;
             } else {
                 // Convert unselected deletion to context line
-                let context = format!(" {}", &line[1..]);
+                let context = format!(" {}", stripped);
                 modified_lines.push(context);
                 old_count += 1;
                 new_count += 1;
