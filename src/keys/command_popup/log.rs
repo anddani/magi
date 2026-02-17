@@ -8,6 +8,7 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
         KeyCode::Char('q') => Some(Message::DismissPopup),
         KeyCode::Char('l') => Some(Message::ShowLog(LogType::Current)),
         KeyCode::Char('L') => Some(Message::ShowLog(LogType::LocalBranches)),
+        KeyCode::Char('b') => Some(Message::ShowLog(LogType::AllBranches)),
         KeyCode::Char('a') => Some(Message::ShowLog(LogType::AllReferences)),
         _ => None,
     }

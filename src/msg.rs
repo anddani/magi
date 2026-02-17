@@ -13,6 +13,8 @@ pub enum LogType {
     AllReferences,
     /// Show log for local branches and HEAD
     LocalBranches,
+    /// Show log for local and remote branches and HEAD
+    AllBranches,
 }
 
 #[derive(PartialEq, Eq, Debug)]
