@@ -59,6 +59,10 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled("  U       ", key_style),
             Span::styled("Unstage all", desc_style),
         ]),
+        Line::from(vec![
+            Span::styled("  x       ", key_style),
+            Span::styled("Discard", desc_style),
+        ]),
     ];
 
     let general: Vec<Line> = vec![

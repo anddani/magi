@@ -111,7 +111,7 @@ pub fn stage_lines<P: AsRef<Path>>(
 }
 
 /// Gets the diff output for a specific file.
-fn get_file_diff<P: AsRef<Path>>(repo_path: P, file: &str) -> MagiResult<String> {
+pub fn get_file_diff<P: AsRef<Path>>(repo_path: P, file: &str) -> MagiResult<String> {
     let output = git_cmd(&repo_path, &["diff", "--", file])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -121,7 +121,10 @@ fn get_file_diff<P: AsRef<Path>>(repo_path: P, file: &str) -> MagiResult<String>
 
 /// Extracts the diff file header and lines of a specific hunk from diff output.
 /// Returns (file_header, hunk_lines) where hunk_lines includes the @@ header.
-fn extract_hunk_from_diff(diff_output: &str, hunk_index: usize) -> MagiResult<(String, Vec<&str>)> {
+pub fn extract_hunk_from_diff(
+    diff_output: &str,
+    hunk_index: usize,
+) -> MagiResult<(String, Vec<&str>)> {
     let lines: Vec<&str> = diff_output.lines().collect();
 
     // Find the file header (everything before the first @@ line)
@@ -330,7 +333,7 @@ fn apply_patch_cached_reverse<P: AsRef<Path>>(repo_path: P, patch: &str) -> Magi
 }
 
 /// Parses a hunk header like "@@ -7,6 +7,8 @@" to extract (old_start, new_start).
-fn parse_hunk_header_starts(header: &str) -> MagiResult<(usize, usize)> {
+pub fn parse_hunk_header_starts(header: &str) -> MagiResult<(usize, usize)> {
     // Format: @@ -old_start[,old_count] +new_start[,new_count] @@
     let parts: Vec<&str> = header.split_whitespace().collect();
     if parts.len() < 4 {

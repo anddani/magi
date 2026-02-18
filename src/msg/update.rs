@@ -8,8 +8,10 @@ mod checkout_branch;
 mod checkout_new_branch;
 mod commit;
 mod confirm_delete_branch;
+mod confirm_discard;
 mod credentials_input;
 mod delete_branch;
+mod discard_selected;
 mod dismiss_popup;
 mod enter_arg_mode;
 mod enter_visual_mode;
@@ -104,6 +106,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::StageSelected => stage_selected::update(model),
         Message::UnstageSelected => unstage_selected::update(model),
         Message::UnstageAll => unstage_all::update(model),
+        Message::DiscardSelected => discard_selected::update(model),
+        Message::ConfirmDiscard(target) => confirm_discard::update(model, target),
         Message::EnterVisualMode => enter_visual_mode::update(model),
         Message::ExitVisualMode => exit_visual_mode::update(model),
         Message::ShowPopup(content) => {
