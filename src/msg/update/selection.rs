@@ -151,7 +151,7 @@ fn get_unstageable_normal_selection<'a>(lines: &'a [Line], line: &'a Line) -> Se
 }
 
 fn get_discardable_normal_selection<'a>(lines: &'a [Line], line: &'a Line) -> Selection<'a> {
-    // Discardable is like stageable but excludes untracked files
+    // Discardable includes both unstaged and staged changes, but NOT untracked files
     match (&line.content, &line.section) {
         // Section header for unstaged changes → all unstaged files
         (LineContent::SectionHeader { .. }, Some(SectionType::UnstagedChanges)) => {
@@ -168,8 +168,25 @@ fn get_discardable_normal_selection<'a>(lines: &'a [Line], line: &'a Line) -> Se
                 Selection::Files(files)
             }
         }
+        // Section header for staged changes → all staged files
+        (LineContent::SectionHeader { .. }, Some(SectionType::StagedChanges)) => {
+            let files: Vec<&str> = lines
+                .iter()
+                .filter_map(|l| match &l.content {
+                    LineContent::StagedFile(fc) => Some(fc.path.as_str()),
+                    _ => None,
+                })
+                .collect();
+            if files.is_empty() {
+                Selection::None
+            } else {
+                Selection::Files(files)
+            }
+        }
         // Unstaged file → that file
         (LineContent::UnstagedFile(fc), _) => Selection::Files(vec![fc.path.as_str()]),
+        // Staged file → that file
+        (LineContent::StagedFile(fc), _) => Selection::Files(vec![fc.path.as_str()]),
         // Diff hunk in unstaged section → that hunk
         (LineContent::DiffHunk(_), Some(SectionType::UnstagedHunk { path, hunk_index })) => {
             Selection::Hunk {
@@ -179,6 +196,20 @@ fn get_discardable_normal_selection<'a>(lines: &'a [Line], line: &'a Line) -> Se
         }
         // Diff line in unstaged section → the whole hunk
         (LineContent::DiffLine(_), Some(SectionType::UnstagedHunk { path, hunk_index })) => {
+            Selection::Hunk {
+                path,
+                hunk_index: *hunk_index,
+            }
+        }
+        // Diff hunk in staged section → that hunk
+        (LineContent::DiffHunk(_), Some(SectionType::StagedHunk { path, hunk_index })) => {
+            Selection::Hunk {
+                path,
+                hunk_index: *hunk_index,
+            }
+        }
+        // Diff line in staged section → the whole hunk
+        (LineContent::DiffLine(_), Some(SectionType::StagedHunk { path, hunk_index })) => {
             Selection::Hunk {
                 path,
                 hunk_index: *hunk_index,
@@ -368,7 +399,7 @@ fn get_discardable_visual_selection<'a>(
     sel_start: usize,
     sel_end: usize,
 ) -> Selection<'a> {
-    // Discardable is like stageable but excludes untracked files
+    // Discardable includes both unstaged and staged, but NOT untracked files
     // Check if all are unstaged files (NOT untracked)
     let all_unstaged_files = selected.iter().all(|(_, l)| {
         matches!(
@@ -389,33 +420,71 @@ fn get_discardable_visual_selection<'a>(
         }
     }
 
-    // Check if all are diff lines in the same unstaged hunk
+    // Check if all are staged files
+    let all_staged_files = selected.iter().all(|(_, l)| {
+        matches!(
+            l.content,
+            LineContent::StagedFile(_) | LineContent::SectionHeader { .. }
+        )
+    });
+    if all_staged_files {
+        let files: Vec<&str> = selected
+            .iter()
+            .filter_map(|(_, l)| match &l.content {
+                LineContent::StagedFile(fc) => Some(fc.path.as_str()),
+                _ => None,
+            })
+            .collect();
+        if !files.is_empty() {
+            return Selection::Files(files);
+        }
+    }
+
+    // Check if all are diff lines in the same hunk (unstaged or staged)
     let all_diff_lines = selected
         .iter()
         .all(|(_, l)| matches!(l.content, LineContent::DiffLine(_)));
-    if all_diff_lines
-        && let Some(selection) =
+    if all_diff_lines {
+        // Try unstaged first
+        if let Some(selection) =
             try_get_lines_in_same_hunk(lines, selected, sel_start, sel_end, |s| {
                 matches!(s, SectionType::UnstagedHunk { .. })
             })
-    {
-        return selection;
+        {
+            return selection;
+        }
+        // Try staged
+        if let Some(selection) =
+            try_get_lines_in_same_hunk(lines, selected, sel_start, sel_end, |s| {
+                matches!(s, SectionType::StagedHunk { .. })
+            })
+        {
+            return selection;
+        }
     }
 
-    // Check if all are diff hunks (or diff lines within hunks) in the same unstaged file
+    // Check if all are diff hunks (or diff lines within hunks) in the same file
     let all_hunks = selected.iter().all(|(_, l)| {
         matches!(
             l.content,
             LineContent::DiffHunk(_) | LineContent::DiffLine(_)
         )
     });
-    if all_hunks
-        && let Some(selection) = try_get_hunks_in_same_file(selected, |s| match s {
+    if all_hunks {
+        // Try unstaged first
+        if let Some(selection) = try_get_hunks_in_same_file(selected, |s| match s {
             SectionType::UnstagedHunk { path, hunk_index } => Some((path.as_str(), *hunk_index)),
             _ => None,
-        })
-    {
-        return selection;
+        }) {
+            return selection;
+        }
+        // Try staged
+        if let Some(selection) = try_get_hunks_in_same_file(selected, |s| match s {
+            SectionType::StagedHunk { path, hunk_index } => Some((path.as_str(), *hunk_index)),
+            _ => None,
+        }) {
+            return selection;
+        }
     }
 
     Selection::None
@@ -704,5 +773,100 @@ mod tests {
 
         // Should return None since untracked files can't be discarded
         assert!(matches!(selection, Selection::None));
+    }
+
+    // Tests for staged discardable content
+
+    fn create_staged_file_line(path: &str) -> Line {
+        Line {
+            content: LineContent::StagedFile(FileChange {
+                path: path.to_string(),
+                status: FileStatus::Modified,
+            }),
+            section: Some(SectionType::StagedChanges),
+        }
+    }
+
+    fn create_staged_hunk_line(path: &str, hunk_index: usize) -> Line {
+        Line {
+            content: LineContent::DiffHunk(DiffHunk {
+                header: "@@ -1,3 +1,4 @@".to_string(),
+                hunk_index,
+            }),
+            section: Some(SectionType::StagedHunk {
+                path: path.to_string(),
+                hunk_index,
+            }),
+        }
+    }
+
+    #[test]
+    fn test_discardable_selection_returns_staged_file() {
+        let lines = vec![create_staged_file_line("staged.txt")];
+
+        let selection = get_normal_mode_selection(&lines, 0, SelectionContext::Discardable);
+
+        match selection {
+            Selection::Files(files) => {
+                assert_eq!(files.len(), 1);
+                assert_eq!(files[0], "staged.txt");
+            }
+            _ => panic!("Expected Selection::Files"),
+        }
+    }
+
+    #[test]
+    fn test_discardable_selection_returns_staged_hunk() {
+        let lines = vec![create_staged_hunk_line("staged.txt", 0)];
+
+        let selection = get_normal_mode_selection(&lines, 0, SelectionContext::Discardable);
+
+        match selection {
+            Selection::Hunk { path, hunk_index } => {
+                assert_eq!(path, "staged.txt");
+                assert_eq!(hunk_index, 0);
+            }
+            _ => panic!("Expected Selection::Hunk"),
+        }
+    }
+
+    #[test]
+    fn test_discardable_section_header_returns_all_staged_files() {
+        let lines = vec![
+            create_section_header(SectionType::StagedChanges, "Staged changes"),
+            create_staged_file_line("file1.txt"),
+            create_staged_file_line("file2.txt"),
+        ];
+
+        let selection = get_normal_mode_selection(&lines, 0, SelectionContext::Discardable);
+
+        match selection {
+            Selection::Files(files) => {
+                assert_eq!(files.len(), 2);
+                assert!(files.contains(&"file1.txt"));
+                assert!(files.contains(&"file2.txt"));
+            }
+            _ => panic!("Expected Selection::Files"),
+        }
+    }
+
+    #[test]
+    fn test_discardable_visual_mode_multiple_staged_files() {
+        let lines = vec![
+            create_staged_file_line("file1.txt"),
+            create_staged_file_line("file2.txt"),
+        ];
+
+        let selection =
+            get_visual_mode_selection(&lines, 0, 1, &HashSet::new(), SelectionContext::Discardable);
+
+        match selection {
+            Selection::Files(files) => {
+                assert_eq!(files.len(), 2);
+                assert!(files.contains(&"file1.txt"));
+                assert!(files.contains(&"file2.txt"));
+            }
+            _ => panic!("Expected Selection::Files"),
+        }
     }
 }

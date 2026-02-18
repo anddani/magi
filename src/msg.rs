@@ -17,23 +17,41 @@ pub enum LogType {
     AllBranches,
 }
 
+/// Source of changes to discard
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiscardSource {
+    /// Discard unstaged changes (working tree)
+    Unstaged,
+    /// Discard staged changes (index) - for new files, this deletes them
+    Staged,
+}
+
 /// Target for discard operations
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DiscardTarget {
     /// Discard entire files
-    Files(Vec<String>),
+    Files {
+        paths: Vec<String>,
+        source: DiscardSource,
+    },
     /// Discard a single hunk
-    Hunk { path: String, hunk_index: usize },
+    Hunk {
+        path: String,
+        hunk_index: usize,
+        source: DiscardSource,
+    },
     /// Discard multiple hunks in the same file
     Hunks {
         path: String,
         hunk_indices: Vec<usize>,
+        source: DiscardSource,
     },
     /// Discard specific lines within a hunk
     Lines {
         path: String,
         hunk_index: usize,
         line_indices: Vec<usize>,
+        source: DiscardSource,
     },
 }
 

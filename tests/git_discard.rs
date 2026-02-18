@@ -1,5 +1,7 @@
 use git2::Signature;
-use magi::git::discard::{discard_files, discard_hunk, discard_lines};
+use magi::git::discard::{
+    discard_files, discard_hunk, discard_lines, discard_staged_files, discard_staged_hunk,
+};
 use magi::git::test_repo::TestRepo;
 use std::fs;
 
@@ -219,5 +221,137 @@ fn test_discard_lines() {
     assert!(
         content.contains("MODIFIED 3"),
         "MODIFIED 3 should remain since we only discarded indices 0 and 1"
+    );
+}
+
+// ============================================================================
+// Tests for staged discard operations
+// ============================================================================
+
+#[test]
+fn test_discard_staged_modified_file() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+
+    // Modify and stage a file
+    let file_path = repo_path.join("test.txt");
+    fs::write(&file_path, "staged modification").unwrap();
+    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+
+    // Verify file is staged
+    let statuses = test_repo.repo.statuses(None).unwrap();
+    assert!(
+        statuses.iter().any(|s| s.status().is_index_modified()),
+        "File should be staged before discard"
+    );
+
+    // Discard staged changes
+    discard_staged_files(repo_path, &["test.txt"]).unwrap();
+
+    // Verify file is no longer staged (unstaged)
+    let statuses = test_repo.repo.statuses(None).unwrap();
+    assert!(
+        !statuses.iter().any(|s| s.status().is_index_modified()),
+        "File should not be staged after discard"
+    );
+
+    // The working tree still has the modification
+    let content = fs::read_to_string(&file_path).unwrap();
+    assert_eq!(
+        content, "staged modification",
+        "Working tree should still have the modification"
+    );
+}
+
+#[test]
+fn test_discard_staged_new_file_deletes_it() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+
+    // Create and stage a new file
+    let file_path = repo_path.join("new_file.txt");
+    fs::write(&file_path, "new file content").unwrap();
+    magi::git::stage::stage_files(repo_path, &["new_file.txt"]).unwrap();
+
+    // Verify file is staged as new
+    let statuses = test_repo.repo.statuses(None).unwrap();
+    assert!(
+        statuses.iter().any(|s| s.status().is_index_new()),
+        "File should be staged as new before discard"
+    );
+    assert!(file_path.exists(), "File should exist before discard");
+
+    // Discard staged new file - should delete it
+    discard_staged_files(repo_path, &["new_file.txt"]).unwrap();
+
+    // Verify file is no longer staged and deleted
+    let statuses = test_repo.repo.statuses(None).unwrap();
+    assert!(
+        !statuses.iter().any(|s| s.path() == Some("new_file.txt")),
+        "File should not appear in status after discard"
+    );
+    assert!(!file_path.exists(), "File should be deleted after discard");
+}
+
+#[test]
+fn test_discard_staged_hunk() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+
+    // Create a file with multiple lines
+    let file_path = repo_path.join("test.txt");
+    let original_content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
+    fs::write(&file_path, original_content).unwrap();
+    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+    commit_changes(&test_repo.repo, "Initial content");
+
+    // Modify and stage
+    let modified_content = "line 1\nSTAGED CHANGE\nline 3\nline 4\nline 5\n";
+    fs::write(&file_path, modified_content).unwrap();
+    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+
+    // Verify file is staged
+    let statuses = test_repo.repo.statuses(None).unwrap();
+    assert!(
+        statuses.iter().any(|s| s.status().is_index_modified()),
+        "File should be staged before discard_staged_hunk"
+    );
+
+    // Discard the staged hunk
+    discard_staged_hunk(repo_path, "test.txt", 0).unwrap();
+
+    // Verify file is no longer staged
+    let statuses = test_repo.repo.statuses(None).unwrap();
+    assert!(
+        !statuses.iter().any(|s| s.status().is_index_modified()),
+        "File should not be staged after discard_staged_hunk"
+    );
+
+    // Working tree still has the modification
+    let content = fs::read_to_string(&file_path).unwrap();
+    assert_eq!(
+        content, modified_content,
+        "Working tree should still have the modification"
+    );
+}
+
+#[test]
+fn test_discard_staged_files_empty_list_is_noop() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+
+    // Modify and stage a file
+    let file_path = repo_path.join("test.txt");
+    fs::write(&file_path, "staged content").unwrap();
+    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+
+    // Discard with empty list
+    discard_staged_files(repo_path, &[]).unwrap();
+
+    // File should remain staged
+    let statuses = test_repo.repo.statuses(None).unwrap();
+    assert!(
+        statuses.iter().any(|s| s.status().is_index_modified()),
+        "File should remain staged when discarding empty list"
     );
 }

@@ -1204,10 +1204,13 @@ mod tests {
     #[test]
     fn test_y_in_discard_confirm_popup_triggers_confirm_discard() {
         use crate::model::popup::{ConfirmAction, ConfirmPopupState};
-        use crate::msg::DiscardTarget;
+        use crate::msg::{DiscardSource, DiscardTarget};
 
         let mut model = create_test_model();
-        let target = DiscardTarget::Files(vec!["test.txt".to_string()]);
+        let target = DiscardTarget::Files {
+            paths: vec!["test.txt".to_string()],
+            source: DiscardSource::Unstaged,
+        };
         model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
             message: "Discard changes in test.txt?".to_string(),
             on_confirm: ConfirmAction::DiscardChanges(target.clone()),
@@ -1221,10 +1224,13 @@ mod tests {
     #[test]
     fn test_n_in_discard_confirm_popup_dismisses() {
         use crate::model::popup::{ConfirmAction, ConfirmPopupState};
-        use crate::msg::DiscardTarget;
+        use crate::msg::{DiscardSource, DiscardTarget};
 
         let mut model = create_test_model();
-        let target = DiscardTarget::Files(vec!["test.txt".to_string()]);
+        let target = DiscardTarget::Files {
+            paths: vec!["test.txt".to_string()],
+            source: DiscardSource::Unstaged,
+        };
         model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
             message: "Discard changes in test.txt?".to_string(),
             on_confirm: ConfirmAction::DiscardChanges(target),
@@ -1238,10 +1244,13 @@ mod tests {
     #[test]
     fn test_esc_in_discard_confirm_popup_dismisses() {
         use crate::model::popup::{ConfirmAction, ConfirmPopupState};
-        use crate::msg::DiscardTarget;
+        use crate::msg::{DiscardSource, DiscardTarget};
 
         let mut model = create_test_model();
-        let target = DiscardTarget::Files(vec!["test.txt".to_string()]);
+        let target = DiscardTarget::Files {
+            paths: vec!["test.txt".to_string()],
+            source: DiscardSource::Unstaged,
+        };
         model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
             message: "Discard changes in test.txt?".to_string(),
             on_confirm: ConfirmAction::DiscardChanges(target),

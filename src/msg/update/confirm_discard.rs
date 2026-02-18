@@ -1,7 +1,10 @@
 use crate::{
-    git::discard::{discard_files, discard_hunk, discard_lines},
+    git::discard::{
+        discard_files, discard_hunk, discard_lines, discard_staged_files, discard_staged_hunk,
+        discard_staged_lines,
+    },
     model::{Model, popup::PopupContent},
-    msg::{DiscardTarget, Message},
+    msg::{DiscardSource, DiscardTarget, Message},
 };
 
 pub fn update(model: &mut Model, target: DiscardTarget) -> Option<Message> {
@@ -26,15 +29,32 @@ fn apply_discard(
     target: DiscardTarget,
 ) -> Result<(), crate::errors::MagiError> {
     match target {
-        DiscardTarget::Files(files) => {
-            let file_refs: Vec<&str> = files.iter().map(String::as_str).collect();
-            discard_files(repo_path, &file_refs)
+        DiscardTarget::Files { paths, source } => {
+            let file_refs: Vec<&str> = paths.iter().map(String::as_str).collect();
+            match source {
+                DiscardSource::Unstaged => discard_files(repo_path, &file_refs),
+                DiscardSource::Staged => discard_staged_files(repo_path, &file_refs),
+            }
         }
-        DiscardTarget::Hunk { path, hunk_index } => discard_hunk(repo_path, &path, hunk_index),
-        DiscardTarget::Hunks { path, hunk_indices } => {
+        DiscardTarget::Hunk {
+            path,
+            hunk_index,
+            source,
+        } => match source {
+            DiscardSource::Unstaged => discard_hunk(repo_path, &path, hunk_index),
+            DiscardSource::Staged => discard_staged_hunk(repo_path, &path, hunk_index),
+        },
+        DiscardTarget::Hunks {
+            path,
+            hunk_indices,
+            source,
+        } => {
             // Apply hunks in reverse order (highest index first) to avoid index shifts
             for idx in hunk_indices {
-                discard_hunk(repo_path, &path, idx)?;
+                match source {
+                    DiscardSource::Unstaged => discard_hunk(repo_path, &path, idx)?,
+                    DiscardSource::Staged => discard_staged_hunk(repo_path, &path, idx)?,
+                }
             }
             Ok(())
         }
@@ -42,6 +62,12 @@ fn apply_discard(
             path,
             hunk_index,
             line_indices,
-        } => discard_lines(repo_path, &path, hunk_index, &line_indices),
+            source,
+        } => match source {
+            DiscardSource::Unstaged => discard_lines(repo_path, &path, hunk_index, &line_indices),
+            DiscardSource::Staged => {
+                discard_staged_lines(repo_path, &path, hunk_index, &line_indices)
+            }
+        },
     }
 }
