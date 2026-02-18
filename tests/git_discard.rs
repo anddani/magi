@@ -1,30 +1,25 @@
-use git2::Signature;
 use magi::git::discard::{
     discard_files, discard_hunk, discard_lines, discard_staged_files, discard_staged_hunk,
 };
 use magi::git::test_repo::TestRepo;
 use std::fs;
+use std::process::Command;
 
-/// Helper function to commit staged changes in a test repository
-fn commit_changes(repo: &git2::Repository, message: &str) {
-    let signature = Signature::now("Test User", "test@example.com").unwrap();
-    let mut index = repo.index().unwrap();
-    let tree_id = index.write_tree().unwrap();
-    let tree = repo.find_tree(tree_id).unwrap();
-
-    let parent_commit = repo.head().ok().and_then(|head| head.peel_to_commit().ok());
-
-    let parents: Vec<&git2::Commit> = parent_commit.iter().collect();
-
-    repo.commit(
-        Some("HEAD"),
-        &signature,
-        &signature,
-        message,
-        &tree,
-        &parents,
-    )
-    .unwrap();
+/// Helper function to commit staged changes in a test repository using CLI git
+fn commit_changes(repo_path: &std::path::Path, message: &str) {
+    let output = Command::new("git")
+        .args(["-C", repo_path.to_str().unwrap(), "commit", "-m", message])
+        .env("GIT_AUTHOR_NAME", "Test User")
+        .env("GIT_AUTHOR_EMAIL", "test@example.com")
+        .env("GIT_COMMITTER_NAME", "Test User")
+        .env("GIT_COMMITTER_EMAIL", "test@example.com")
+        .output()
+        .expect("Failed to run git commit");
+    assert!(
+        output.status.success(),
+        "git commit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 }
 
 #[test]
@@ -68,7 +63,7 @@ fn test_discard_multiple_files() {
     let file2_path = repo_path.join("test2.txt");
     fs::write(&file2_path, "initial content 2").unwrap();
     magi::git::stage::stage_files(repo_path, &["test2.txt"]).unwrap();
-    commit_changes(&test_repo.repo, "Add test2.txt");
+    commit_changes(repo_path, "Add test2.txt");
 
     // Modify both files
     let file1_path = repo_path.join("test.txt");
@@ -104,7 +99,7 @@ fn test_discard_hunk() {
     let original_content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
     fs::write(&file_path, original_content).unwrap();
     magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(&test_repo.repo, "Initial content");
+    commit_changes(repo_path, "Initial content");
 
     // Modify the file to create a hunk
     let modified_content = "line 1\nMODIFIED\nline 3\nline 4\nline 5\n";
@@ -161,7 +156,7 @@ fn test_discard_specific_file_leaves_other_unchanged() {
     let file2_path = repo_path.join("test2.txt");
     fs::write(&file2_path, "initial content 2").unwrap();
     magi::git::stage::stage_files(repo_path, &["test2.txt"]).unwrap();
-    commit_changes(&test_repo.repo, "Add test2.txt");
+    commit_changes(repo_path, "Add test2.txt");
 
     // Modify both files
     let file1_path = repo_path.join("test.txt");
@@ -199,7 +194,7 @@ fn test_discard_lines() {
     let original_content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
     fs::write(&file_path, original_content).unwrap();
     magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(&test_repo.repo, "Initial content");
+    commit_changes(repo_path, "Initial content");
 
     // Modify multiple lines
     let modified_content = "line 1\nMODIFIED 2\nMODIFIED 3\nline 4\nline 5\n";
@@ -235,6 +230,7 @@ fn test_discard_staged_modified_file() {
 
     // Modify and stage a file
     let file_path = repo_path.join("test.txt");
+    let original_content = fs::read_to_string(&file_path).unwrap();
     fs::write(&file_path, "staged modification").unwrap();
     magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
 
@@ -245,21 +241,54 @@ fn test_discard_staged_modified_file() {
         "File should be staged before discard"
     );
 
-    // Discard staged changes
+    // Discard staged changes - removes from BOTH index and working tree
     discard_staged_files(repo_path, &["test.txt"]).unwrap();
 
-    // Verify file is no longer staged (unstaged)
+    // Verify file is no longer staged
     let statuses = test_repo.repo.statuses(None).unwrap();
     assert!(
         !statuses.iter().any(|s| s.status().is_index_modified()),
         "File should not be staged after discard"
     );
 
-    // The working tree still has the modification
+    // Working tree should be reverted to original content
     let content = fs::read_to_string(&file_path).unwrap();
     assert_eq!(
-        content, "staged modification",
-        "Working tree should still have the modification"
+        content, original_content,
+        "Working tree should be reverted to original content"
+    );
+}
+
+#[test]
+fn test_discard_staged_preserves_unstaged_changes() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+
+    // Create a file with multiple lines and commit
+    let file_path = repo_path.join("test.txt");
+    let original_content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
+    fs::write(&file_path, original_content).unwrap();
+    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+    commit_changes(repo_path, "Initial content");
+
+    // Stage a change to line 2
+    let staged_content = "line 1\nSTAGED CHANGE\nline 3\nline 4\nline 5\n";
+    fs::write(&file_path, staged_content).unwrap();
+    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+
+    // Then make an additional unstaged change to line 4
+    let working_content = "line 1\nSTAGED CHANGE\nline 3\nUNSTAGED CHANGE\nline 5\n";
+    fs::write(&file_path, working_content).unwrap();
+
+    // Discard staged changes
+    discard_staged_files(repo_path, &["test.txt"]).unwrap();
+
+    // Staged change (line 2) should be reverted, unstaged change (line 4) preserved
+    let content = fs::read_to_string(&file_path).unwrap();
+    let expected = "line 1\nline 2\nline 3\nUNSTAGED CHANGE\nline 5\n";
+    assert_eq!(
+        content, expected,
+        "Staged change should be discarded, unstaged preserved"
     );
 }
 
@@ -303,7 +332,7 @@ fn test_discard_staged_hunk() {
     let original_content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
     fs::write(&file_path, original_content).unwrap();
     magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(&test_repo.repo, "Initial content");
+    commit_changes(repo_path, "Initial content");
 
     // Modify and stage
     let modified_content = "line 1\nSTAGED CHANGE\nline 3\nline 4\nline 5\n";
@@ -317,7 +346,7 @@ fn test_discard_staged_hunk() {
         "File should be staged before discard_staged_hunk"
     );
 
-    // Discard the staged hunk
+    // Discard the staged hunk - removes from both index and working tree
     discard_staged_hunk(repo_path, "test.txt", 0).unwrap();
 
     // Verify file is no longer staged
@@ -327,11 +356,11 @@ fn test_discard_staged_hunk() {
         "File should not be staged after discard_staged_hunk"
     );
 
-    // Working tree still has the modification
+    // Working tree should be reverted to original content
     let content = fs::read_to_string(&file_path).unwrap();
     assert_eq!(
-        content, modified_content,
-        "Working tree should still have the modification"
+        content, original_content,
+        "Working tree should be reverted to original content"
     );
 }
 

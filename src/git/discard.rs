@@ -290,9 +290,19 @@ fn extract_staged_hunk_patch<P: AsRef<Path>>(
     Ok(patch)
 }
 
-/// Applies a patch in reverse to the index (cached) only.
-fn apply_patch_reverse_cached<P: AsRef<Path>>(repo_path: P, patch: &str) -> MagiResult<()> {
-    let mut child = git_cmd(&repo_path, &["apply", "--reverse", "--cached"])
+/// Applies a patch in reverse to BOTH the index and working tree.
+/// First tries `--index` (which requires working tree to match index for affected paths).
+/// When there are additional unstaged changes, falls back to:
+/// 1. Saving the unstaged diff (with zero context to avoid context mismatch)
+/// 2. Resetting affected files to HEAD (both index and working tree)
+/// 3. Re-applying only the unstaged changes
+fn apply_patch_reverse_index_and_worktree<P: AsRef<Path>>(
+    repo_path: P,
+    patch: &str,
+) -> MagiResult<()> {
+    // Try --index first (applies to both index and working tree atomically,
+    // but requires working tree to match index for affected paths)
+    let mut child = git_cmd(&repo_path, &["apply", "--reverse", "--index"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -303,12 +313,77 @@ fn apply_patch_reverse_cached<P: AsRef<Path>>(repo_path: P, patch: &str) -> Magi
     }
 
     let output = child.wait_with_output()?;
+    if output.status.success() {
+        return Ok(());
+    }
+
+    // Fallback: working tree has additional unstaged changes.
+    // Extract affected file paths from the patch, save their unstaged diffs,
+    // reset to HEAD, then re-apply only the unstaged changes.
+    let files = extract_files_from_patch(patch);
+
+    // Save unstaged diffs (with zero context to avoid mismatch after reset)
+    let mut unstaged_patches: Vec<String> = Vec::new();
+    for file in &files {
+        let output = git_cmd(&repo_path, &["diff", "-U0", "--", file])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()?;
+        let diff = String::from_utf8_lossy(&output.stdout).to_string();
+        if !diff.trim().is_empty() {
+            unstaged_patches.push(diff);
+        }
+    }
+
+    // Reset affected files to HEAD (both index and working tree)
+    let mut checkout_args = vec!["checkout", "HEAD", "--"];
+    for file in &files {
+        checkout_args.push(file);
+    }
+    let output = git_cmd(&repo_path, &checkout_args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(MagiError::Generic(format!(
-            "git apply --reverse --cached failed: {}",
+            "git checkout HEAD failed: {}",
             stderr
         )));
     }
+
+    // Re-apply only the unstaged changes
+    for unstaged_patch in &unstaged_patches {
+        let mut child = git_cmd(&repo_path, &["apply", "--unidiff-zero"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(unstaged_patch.as_bytes())?;
+        }
+
+        let output = child.wait_with_output()?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(MagiError::Generic(format!(
+                "git apply unstaged changes failed: {}",
+                stderr
+            )));
+        }
+    }
+
     Ok(())
+}
+
+/// Extracts file paths from a unified diff patch.
+fn extract_files_from_patch(patch: &str) -> Vec<String> {
+    let mut files = Vec::new();
+    for line in patch.lines() {
+        if let Some(path) = line.strip_prefix("+++ b/") {
+            files.push(path.to_string());
+        }
+    }
+    files
 }
