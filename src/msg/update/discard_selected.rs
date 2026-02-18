@@ -83,22 +83,35 @@ fn determine_source(section: Option<&SectionType>) -> Option<DiscardSource> {
         Some(SectionType::StagedChanges)
         | Some(SectionType::StagedFile { .. })
         | Some(SectionType::StagedHunk { .. }) => Some(DiscardSource::Staged),
+        Some(SectionType::UntrackedFiles) => Some(DiscardSource::Untracked),
         _ => None,
     }
 }
 
 fn format_discard_message(target: &DiscardTarget) -> String {
-    let staged_prefix = match target {
+    let source = match target {
         DiscardTarget::Files { source, .. }
         | DiscardTarget::Hunk { source, .. }
         | DiscardTarget::Hunks { source, .. }
-        | DiscardTarget::Lines { source, .. } => {
-            if *source == DiscardSource::Staged {
-                "staged "
-            } else {
-                ""
+        | DiscardTarget::Lines { source, .. } => *source,
+    };
+
+    if source == DiscardSource::Untracked {
+        return match target {
+            DiscardTarget::Files { paths, .. } if paths.len() == 1 => {
+                format!("Trash untracked file {}?", paths[0])
             }
-        }
+            DiscardTarget::Files { paths, .. } => {
+                format!("Trash {} untracked files?", paths.len())
+            }
+            _ => unreachable!("Untracked files have no diffs"),
+        };
+    }
+
+    let staged_prefix = if source == DiscardSource::Staged {
+        "staged "
+    } else {
+        ""
     };
 
     match target {

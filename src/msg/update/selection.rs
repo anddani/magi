@@ -14,7 +14,7 @@ pub enum SelectionContext {
     Stageable,
     /// Looking for content that can be unstaged (staged changes)
     Unstageable,
-    /// Looking for content that can be discarded (unstaged changes only, NOT untracked files)
+    /// Looking for content that can be discarded (untracked, unstaged, or staged changes)
     Discardable,
 }
 
@@ -151,8 +151,24 @@ fn get_unstageable_normal_selection<'a>(lines: &'a [Line], line: &'a Line) -> Se
 }
 
 fn get_discardable_normal_selection<'a>(lines: &'a [Line], line: &'a Line) -> Selection<'a> {
-    // Discardable includes both unstaged and staged changes, but NOT untracked files
     match (&line.content, &line.section) {
+        // Section header for untracked files → all untracked files
+        (LineContent::SectionHeader { .. }, Some(SectionType::UntrackedFiles)) => {
+            let files: Vec<&str> = lines
+                .iter()
+                .filter_map(|l| match &l.content {
+                    LineContent::UntrackedFile(path) => Some(path.as_str()),
+                    _ => None,
+                })
+                .collect();
+            if files.is_empty() {
+                Selection::None
+            } else {
+                Selection::Files(files)
+            }
+        }
+        // Untracked file → that file
+        (LineContent::UntrackedFile(path), _) => Selection::Files(vec![path.as_str()]),
         // Section header for unstaged changes → all unstaged files
         (LineContent::SectionHeader { .. }, Some(SectionType::UnstagedChanges)) => {
             let files: Vec<&str> = lines
@@ -215,7 +231,6 @@ fn get_discardable_normal_selection<'a>(lines: &'a [Line], line: &'a Line) -> Se
                 hunk_index: *hunk_index,
             }
         }
-        // Untracked files are NOT discardable
         _ => Selection::None,
     }
 }
@@ -399,8 +414,27 @@ fn get_discardable_visual_selection<'a>(
     sel_start: usize,
     sel_end: usize,
 ) -> Selection<'a> {
-    // Discardable includes both unstaged and staged, but NOT untracked files
-    // Check if all are unstaged files (NOT untracked)
+    // Check if all are untracked files
+    let all_untracked = selected.iter().all(|(_, l)| {
+        matches!(
+            l.content,
+            LineContent::UntrackedFile(_) | LineContent::SectionHeader { .. }
+        )
+    });
+    if all_untracked {
+        let files: Vec<&str> = selected
+            .iter()
+            .filter_map(|(_, l)| match &l.content {
+                LineContent::UntrackedFile(path) => Some(path.as_str()),
+                _ => None,
+            })
+            .collect();
+        if !files.is_empty() {
+            return Selection::Files(files);
+        }
+    }
+
+    // Check if all are unstaged files
     let all_unstaged_files = selected.iter().all(|(_, l)| {
         matches!(
             l.content,
@@ -670,12 +704,18 @@ mod tests {
     // Tests for Discardable context
 
     #[test]
-    fn test_discardable_selection_ignores_untracked_files() {
+    fn test_discardable_selection_returns_untracked_file() {
         let lines = vec![create_untracked_line("new_file.txt")];
 
         let selection = get_normal_mode_selection(&lines, 0, SelectionContext::Discardable);
 
-        assert!(matches!(selection, Selection::None));
+        match selection {
+            Selection::Files(files) => {
+                assert_eq!(files.len(), 1);
+                assert_eq!(files[0], "new_file.txt");
+            }
+            _ => panic!("Expected Selection::Files"),
+        }
     }
 
     #[test]
@@ -729,16 +769,23 @@ mod tests {
     }
 
     #[test]
-    fn test_discardable_untracked_section_header_returns_none() {
+    fn test_discardable_untracked_section_header_returns_all_files() {
         let lines = vec![
             create_section_header(SectionType::UntrackedFiles, "Untracked files"),
-            create_untracked_line("new_file.txt"),
+            create_untracked_line("new_file1.txt"),
+            create_untracked_line("new_file2.txt"),
         ];
 
         let selection = get_normal_mode_selection(&lines, 0, SelectionContext::Discardable);
 
-        // Discardable context should return None for untracked files section
-        assert!(matches!(selection, Selection::None));
+        match selection {
+            Selection::Files(files) => {
+                assert_eq!(files.len(), 2);
+                assert!(files.contains(&"new_file1.txt"));
+                assert!(files.contains(&"new_file2.txt"));
+            }
+            _ => panic!("Expected Selection::Files"),
+        }
     }
 
     #[test]
@@ -762,7 +809,7 @@ mod tests {
     }
 
     #[test]
-    fn test_discardable_visual_mode_ignores_untracked_files() {
+    fn test_discardable_visual_mode_returns_untracked_files() {
         let lines = vec![
             create_untracked_line("new_file1.txt"),
             create_untracked_line("new_file2.txt"),
@@ -771,8 +818,14 @@ mod tests {
         let selection =
             get_visual_mode_selection(&lines, 0, 1, &HashSet::new(), SelectionContext::Discardable);
 
-        // Should return None since untracked files can't be discarded
-        assert!(matches!(selection, Selection::None));
+        match selection {
+            Selection::Files(files) => {
+                assert_eq!(files.len(), 2);
+                assert!(files.contains(&"new_file1.txt"));
+                assert!(files.contains(&"new_file2.txt"));
+            }
+            _ => panic!("Expected Selection::Files"),
+        }
     }
 
     // Tests for staged discardable content

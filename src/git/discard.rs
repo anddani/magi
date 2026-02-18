@@ -6,6 +6,28 @@ use super::git_cmd;
 use super::stage::{extract_hunk_from_diff, get_file_diff, parse_hunk_header_starts};
 use crate::errors::{MagiError, MagiResult};
 
+/// Discards untracked files by running `git clean -f -- <files>`.
+/// If `files` is empty, this is a no-op.
+pub fn discard_untracked_files<P: AsRef<Path>>(repo_path: P, files: &[&str]) -> MagiResult<()> {
+    if files.is_empty() {
+        return Ok(());
+    }
+    let output = git_cmd(&repo_path, &["clean", "-f", "--"])
+        .args(files)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(MagiError::Generic(format!(
+            "git clean -f failed: {}",
+            stderr
+        )));
+    }
+    Ok(())
+}
+
 /// Discards changes in the specified files by checking them out from HEAD.
 /// If `files` is empty, this is a no-op.
 pub fn discard_files<P: AsRef<Path>>(repo_path: P, files: &[&str]) -> MagiResult<()> {

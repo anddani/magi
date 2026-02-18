@@ -24,6 +24,8 @@ pub enum DiscardSource {
     Unstaged,
     /// Discard staged changes (index) - for new files, this deletes them
     Staged,
+    /// Discard untracked files (deletes them from disk)
+    Untracked,
 }
 
 /// Target for discard operations

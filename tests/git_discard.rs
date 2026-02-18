@@ -1,5 +1,6 @@
 use magi::git::discard::{
     discard_files, discard_hunk, discard_lines, discard_staged_files, discard_staged_hunk,
+    discard_untracked_files,
 };
 use magi::git::test_repo::TestRepo;
 use std::fs;
@@ -382,5 +383,57 @@ fn test_discard_staged_files_empty_list_is_noop() {
     assert!(
         statuses.iter().any(|s| s.status().is_index_modified()),
         "File should remain staged when discarding empty list"
+    );
+}
+
+// ============================================================================
+// Tests for untracked file discard operations
+// ============================================================================
+
+#[test]
+fn test_discard_untracked_file() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+
+    // Create an untracked file
+    let file_path = repo_path.join("untracked.txt");
+    fs::write(&file_path, "untracked content").unwrap();
+
+    // Verify file exists and is untracked
+    assert!(file_path.exists(), "File should exist before discard");
+    let statuses = test_repo.repo.statuses(None).unwrap();
+    assert!(
+        statuses.iter().any(|s| s.status().is_wt_new()),
+        "File should be untracked before discard"
+    );
+
+    // Discard untracked file
+    discard_untracked_files(repo_path, &["untracked.txt"]).unwrap();
+
+    // Verify file is deleted
+    assert!(!file_path.exists(), "File should be deleted after discard");
+    let statuses = test_repo.repo.statuses(None).unwrap();
+    assert!(
+        !statuses.iter().any(|s| s.path() == Some("untracked.txt")),
+        "File should not appear in status after discard"
+    );
+}
+
+#[test]
+fn test_discard_untracked_files_empty_list_is_noop() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+
+    // Create an untracked file
+    let file_path = repo_path.join("untracked.txt");
+    fs::write(&file_path, "untracked content").unwrap();
+
+    // Discard with empty list
+    discard_untracked_files(repo_path, &[]).unwrap();
+
+    // File should still exist
+    assert!(
+        file_path.exists(),
+        "File should remain when discarding empty list"
     );
 }

@@ -1,7 +1,7 @@
 use crate::{
     git::discard::{
         discard_files, discard_hunk, discard_lines, discard_staged_files, discard_staged_hunk,
-        discard_staged_lines,
+        discard_staged_lines, discard_untracked_files,
     },
     model::{Model, popup::PopupContent},
     msg::{DiscardSource, DiscardTarget, Message},
@@ -34,6 +34,7 @@ fn apply_discard(
             match source {
                 DiscardSource::Unstaged => discard_files(repo_path, &file_refs),
                 DiscardSource::Staged => discard_staged_files(repo_path, &file_refs),
+                DiscardSource::Untracked => discard_untracked_files(repo_path, &file_refs),
             }
         }
         DiscardTarget::Hunk {
@@ -43,6 +44,7 @@ fn apply_discard(
         } => match source {
             DiscardSource::Unstaged => discard_hunk(repo_path, &path, hunk_index),
             DiscardSource::Staged => discard_staged_hunk(repo_path, &path, hunk_index),
+            DiscardSource::Untracked => unreachable!("Untracked files have no diffs"),
         },
         DiscardTarget::Hunks {
             path,
@@ -54,6 +56,7 @@ fn apply_discard(
                 match source {
                     DiscardSource::Unstaged => discard_hunk(repo_path, &path, idx)?,
                     DiscardSource::Staged => discard_staged_hunk(repo_path, &path, idx)?,
+                    DiscardSource::Untracked => unreachable!("Untracked files have no diffs"),
                 }
             }
             Ok(())
@@ -68,6 +71,7 @@ fn apply_discard(
             DiscardSource::Staged => {
                 discard_staged_lines(repo_path, &path, hunk_index, &line_indices)
             }
+            DiscardSource::Untracked => unreachable!("Untracked files have no diffs"),
         },
     }
 }
