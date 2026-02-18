@@ -1,5 +1,5 @@
 use ratatui::{
-    style::Style,
+    style::{Style, Stylize},
     text::{Line as TextLine, Span},
 };
 
@@ -7,7 +7,12 @@ use crate::config::Theme;
 use crate::git::{CommitInfo, CommitRefType};
 
 /// Generate the view lines for a commit
-pub fn get_lines(commit: &CommitInfo, theme: &Theme) -> Vec<TextLine<'static>> {
+/// If current_branch is provided, that branch will be highlighted with a background color
+pub fn get_lines(
+    commit: &CommitInfo,
+    theme: &Theme,
+    current_branch: Option<&str>,
+) -> Vec<TextLine<'static>> {
     let mut spans = Vec::new();
 
     // Indentation
@@ -19,7 +24,7 @@ pub fn get_lines(commit: &CommitInfo, theme: &Theme) -> Vec<TextLine<'static>> {
         Style::default().fg(theme.commit_hash),
     ));
 
-    // All refs (branches, tags) in order: HEAD/@, current branch, other local, remote, tags
+    // All refs (branches, tags) in order: current branch, HEAD/@, other local, remote, tags
     for commit_ref in &commit.refs {
         spans.push(Span::raw(" "));
         let color = match commit_ref.ref_type {
@@ -28,10 +33,13 @@ pub fn get_lines(commit: &CommitInfo, theme: &Theme) -> Vec<TextLine<'static>> {
             CommitRefType::RemoteBranch => theme.remote_branch,
             CommitRefType::Tag => theme.tag_label,
         };
-        spans.push(Span::styled(
-            commit_ref.name.clone(),
-            Style::default().fg(color),
-        ));
+        // Invert colors for checked out branch (color as background, dark text)
+        let style = if current_branch == Some(commit_ref.name.as_str()) {
+            Style::default().fg(color).underlined().bold()
+        } else {
+            Style::default().fg(color)
+        };
+        spans.push(Span::styled(commit_ref.name.clone(), style));
     }
 
     // Commit message - use text color
@@ -65,7 +73,7 @@ mod tests {
             message: "Initial commit".to_string(),
         };
         let theme = test_theme();
-        let lines = get_lines(&commit, &theme);
+        let lines = get_lines(&commit, &theme, None);
 
         assert_eq!(lines.len(), 1);
         let content = get_span_content(&lines[0]);
@@ -84,7 +92,7 @@ mod tests {
             message: "Initial commit".to_string(),
         };
         let theme = test_theme();
-        let lines = get_lines(&commit, &theme);
+        let lines = get_lines(&commit, &theme, None);
 
         let content = get_span_content(&lines[0]);
         assert!(content.iter().any(|s| s == "main"));
@@ -111,7 +119,7 @@ mod tests {
             message: "Release commit".to_string(),
         };
         let theme = test_theme();
-        let lines = get_lines(&commit, &theme);
+        let lines = get_lines(&commit, &theme, None);
 
         let content = get_span_content(&lines[0]);
         assert!(content.iter().any(|s| s == "abc1234"));
@@ -132,7 +140,7 @@ mod tests {
             message: "Detached commit".to_string(),
         };
         let theme = test_theme();
-        let lines = get_lines(&commit, &theme);
+        let lines = get_lines(&commit, &theme, None);
 
         let content = get_span_content(&lines[0]);
         assert!(content.iter().any(|s| s == "@"));
@@ -149,7 +157,7 @@ mod tests {
             message: "Detached commit".to_string(),
         };
         let theme = test_theme();
-        let lines = get_lines(&commit, &theme);
+        let lines = get_lines(&commit, &theme, None);
 
         let at_span = lines[0].spans.iter().find(|s| s.content == "@").unwrap();
         assert_eq!(at_span.style.fg, Some(theme.detached_head));
@@ -166,7 +174,7 @@ mod tests {
             message: "Commit".to_string(),
         };
         let theme = test_theme();
-        let lines = get_lines(&commit, &theme);
+        let lines = get_lines(&commit, &theme, None);
 
         let branch_span = lines[0].spans.iter().find(|s| s.content == "main").unwrap();
         assert_eq!(branch_span.style.fg, Some(theme.local_branch));
@@ -183,7 +191,7 @@ mod tests {
             message: "Commit".to_string(),
         };
         let theme = test_theme();
-        let lines = get_lines(&commit, &theme);
+        let lines = get_lines(&commit, &theme, None);
 
         let branch_span = lines[0]
             .spans
@@ -201,7 +209,7 @@ mod tests {
             message: "Commit".to_string(),
         };
         let theme = test_theme();
-        let lines = get_lines(&commit, &theme);
+        let lines = get_lines(&commit, &theme, None);
 
         let hash_span = lines[0]
             .spans
@@ -232,7 +240,7 @@ mod tests {
             message: "Commit".to_string(),
         };
         let theme = test_theme();
-        let lines = get_lines(&commit, &theme);
+        let lines = get_lines(&commit, &theme, None);
 
         let content = get_span_content(&lines[0]);
         assert!(content.iter().any(|s| s == "main"));

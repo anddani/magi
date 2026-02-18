@@ -1,12 +1,18 @@
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
 };
 
 use crate::{config::Theme, git::CommitRefType, model::LogEntry};
 
 /// Get the display lines for a log entry
-pub fn get_lines(entry: &LogEntry, theme: &Theme, is_detached_head: bool) -> Vec<Line<'static>> {
+/// If current_branch is provided, that branch will be highlighted with inverted colors
+pub fn get_lines(
+    entry: &LogEntry,
+    theme: &Theme,
+    is_detached_head: bool,
+    current_branch: Option<&str>,
+) -> Vec<Line<'static>> {
     let mut spans: Vec<Span> = Vec::new();
 
     // Graph portion - colored
@@ -40,10 +46,13 @@ pub fn get_lines(entry: &LogEntry, theme: &Theme, is_detached_head: bool) -> Vec
                 CommitRefType::RemoteBranch => theme.remote_branch,
                 CommitRefType::Tag => theme.tag_label,
             };
-            spans.push(Span::styled(
-                commit_ref.name.clone(),
-                Style::default().fg(color),
-            ));
+            // Invert colors for checked out branch (color as background, dark text)
+            let style = if current_branch == Some(commit_ref.name.as_str()) {
+                Style::default().fg(color).underlined().bold()
+            } else {
+                Style::default().fg(color)
+            };
+            spans.push(Span::styled(commit_ref.name.clone(), style));
             spans.push(Span::raw(" "));
         }
     }
