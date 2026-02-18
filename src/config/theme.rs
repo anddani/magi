@@ -18,7 +18,6 @@ pub struct Theme {
     pub remote_branch: Color,
     pub local_branch: Color,
     pub detached_head: Color,
-    pub checked_out_branch_bg: Color,
 
     // File colors
     pub untracked_file: Color,
@@ -64,7 +63,6 @@ impl Theme {
             remote_branch: Color::Green,
             local_branch: Color::Blue,
             detached_head: Color::Red,
-            checked_out_branch_bg: Color::Rgb(40, 50, 70),
             untracked_file: Color::Red,
             unstaged_status: Color::Magenta,
             staged_status: Color::Green,
@@ -96,7 +94,6 @@ impl Theme {
             remote_branch: Color::Rgb(166, 209, 137),         // Green
             local_branch: Color::Rgb(140, 170, 238),          // Blue
             detached_head: Color::Rgb(231, 130, 132),         // Red
-            checked_out_branch_bg: Color::Rgb(65, 69, 89),    // Surface0
             untracked_file: Color::Rgb(231, 130, 132),        // Red
             unstaged_status: Color::Rgb(244, 184, 228),       // Pink
             staged_status: Color::Rgb(166, 209, 137),         // Green
@@ -128,7 +125,6 @@ impl Theme {
             remote_branch: Color::Rgb(166, 227, 161),         // Green
             local_branch: Color::Rgb(137, 180, 250),          // Blue
             detached_head: Color::Rgb(243, 139, 168),         // Red
-            checked_out_branch_bg: Color::Rgb(49, 50, 68),    // Surface0
             untracked_file: Color::Rgb(243, 139, 168),        // Red
             unstaged_status: Color::Rgb(245, 194, 231),       // Pink
             staged_status: Color::Rgb(166, 227, 161),         // Green

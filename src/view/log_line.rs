@@ -1,5 +1,5 @@
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
 };
 
@@ -48,7 +48,7 @@ pub fn get_lines(
             };
             // Invert colors for checked out branch (color as background, dark text)
             let style = if current_branch == Some(commit_ref.name.as_str()) {
-                Style::default().bg(color).fg(theme.checked_out_branch_bg)
+                Style::default().fg(color).underlined().bold()
             } else {
                 Style::default().fg(color)
             };

@@ -1,5 +1,5 @@
 use ratatui::{
-    style::Style,
+    style::{Style, Stylize},
     text::{Line as TextLine, Span},
 };
 
@@ -35,7 +35,7 @@ pub fn get_lines(
         };
         // Invert colors for checked out branch (color as background, dark text)
         let style = if current_branch == Some(commit_ref.name.as_str()) {
-            Style::default().bg(color).fg(theme.checked_out_branch_bg)
+            Style::default().fg(color).underlined().bold()
         } else {
             Style::default().fg(color)
         };
@@ -246,39 +246,5 @@ mod tests {
         assert!(content.iter().any(|s| s == "main"));
         assert!(content.iter().any(|s| s == "feature"));
         assert!(content.iter().any(|s| s == "origin/main"));
-    }
-
-    #[test]
-    fn test_checked_out_branch_has_inverted_colors() {
-        let commit = CommitInfo {
-            hash: "abc1234".to_string(),
-            refs: vec![
-                CommitRef {
-                    name: "main".to_string(),
-                    ref_type: CommitRefType::LocalBranch,
-                },
-                CommitRef {
-                    name: "feature".to_string(),
-                    ref_type: CommitRefType::LocalBranch,
-                },
-            ],
-            message: "Commit".to_string(),
-        };
-        let theme = test_theme();
-        let lines = get_lines(&commit, &theme, Some("main"));
-
-        // Checked out branch has inverted colors (branch color as bg, dark text)
-        let main_span = lines[0].spans.iter().find(|s| s.content == "main").unwrap();
-        assert_eq!(main_span.style.bg, Some(theme.local_branch));
-        assert_eq!(main_span.style.fg, Some(theme.checked_out_branch_bg));
-
-        // Other branches have normal styling
-        let feature_span = lines[0]
-            .spans
-            .iter()
-            .find(|s| s.content == "feature")
-            .unwrap();
-        assert_eq!(feature_span.style.bg, None);
-        assert_eq!(feature_span.style.fg, Some(theme.local_branch));
     }
 }
