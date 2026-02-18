@@ -7,6 +7,8 @@ use crate::{
     msg::LogType,
 };
 
+use super::commit_utils::sort_refs;
+
 const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
@@ -151,6 +153,7 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
     }
 
     let mut refs = Vec::new();
+    let mut current_branch: Option<String> = None;
 
     // refs can contain multiple references separated by ", "
     // e.g., "HEAD -> main, origin/main, tag: v1.0"
@@ -167,12 +170,9 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
                 });
             }
             p if p.starts_with("HEAD -> ") => {
-                // HEAD pointing to a branch - add both HEAD and the branch
+                // HEAD pointing to a branch - this is the current branch
                 let branch_name = part.strip_prefix("HEAD -> ").unwrap_or(part);
-                refs.push(CommitRef {
-                    name: "@".to_string(),
-                    ref_type: CommitRefType::Head,
-                });
+                current_branch = Some(branch_name.to_string());
                 refs.push(CommitRef {
                     name: branch_name.to_string(),
                     ref_type: CommitRefType::LocalBranch,
@@ -202,7 +202,7 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
         }
     }
 
-    refs
+    sort_refs(refs, current_branch.as_deref())
 }
 
 /// Find where the graph prefix ends in a log line
@@ -291,14 +291,14 @@ mod tests {
     #[test]
     fn test_parse_refs_head_with_branch() {
         let remotes = vec!["origin".to_string()];
+        // "HEAD -> main" means main is the current branch, which comes first
+        // No "@" is added for non-detached HEAD
         let refs = parse_refs("HEAD -> main, origin/main", &remotes);
-        assert_eq!(refs.len(), 3);
-        assert_eq!(refs[0].name, "@");
-        assert_eq!(refs[0].ref_type, CommitRefType::Head);
-        assert_eq!(refs[1].name, "main");
-        assert_eq!(refs[1].ref_type, CommitRefType::LocalBranch);
-        assert_eq!(refs[2].name, "origin/main");
-        assert_eq!(refs[2].ref_type, CommitRefType::RemoteBranch);
+        assert_eq!(refs.len(), 2);
+        assert_eq!(refs[0].name, "main");
+        assert_eq!(refs[0].ref_type, CommitRefType::LocalBranch);
+        assert_eq!(refs[1].name, "origin/main");
+        assert_eq!(refs[1].ref_type, CommitRefType::RemoteBranch);
     }
 
     #[test]
@@ -331,12 +331,13 @@ mod tests {
     fn test_parse_refs_distinguishes_local_and_remote_with_slash() {
         let remotes = vec!["origin".to_string(), "upstream".to_string()];
         // origin/main is remote, test/branch is local
+        // Local branches come first (sorted), then remote branches (sorted)
         let refs = parse_refs("origin/main, test/branch, upstream/feature", &remotes);
         assert_eq!(refs.len(), 3);
-        assert_eq!(refs[0].name, "origin/main");
-        assert_eq!(refs[0].ref_type, CommitRefType::RemoteBranch);
-        assert_eq!(refs[1].name, "test/branch");
-        assert_eq!(refs[1].ref_type, CommitRefType::LocalBranch);
+        assert_eq!(refs[0].name, "test/branch");
+        assert_eq!(refs[0].ref_type, CommitRefType::LocalBranch);
+        assert_eq!(refs[1].name, "origin/main");
+        assert_eq!(refs[1].ref_type, CommitRefType::RemoteBranch);
         assert_eq!(refs[2].name, "upstream/feature");
         assert_eq!(refs[2].ref_type, CommitRefType::RemoteBranch);
     }

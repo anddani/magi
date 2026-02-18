@@ -7,7 +7,7 @@ use crate::{
 
 use super::commit_utils::{
     build_local_branch_map, build_refs_for_commit, build_remote_branch_map, build_tag_map,
-    create_commit_line,
+    create_commit_line, sort_refs,
 };
 use super::{CommitRef, CommitRefType};
 
@@ -69,35 +69,19 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
             Err(_) => continue,
         };
 
-        // Build refs, but for HEAD commit we need special handling
+        // Build refs for this commit
         let mut refs = build_refs_for_commit(oid, &local_branch_map, &remote_branch_map, &tag_map);
 
-        if index == 0 {
-            // For HEAD commit, we need to prepend HEAD indicator or current branch
-            if is_detached {
-                refs.insert(
-                    0,
-                    CommitRef {
-                        name: "@".to_string(),
-                        ref_type: CommitRefType::Head,
-                    },
-                );
-            } else if let Some(ref branch) = current_branch {
-                // Move current branch to front if it exists, otherwise add it
-                if let Some(pos) = refs.iter().position(|r| r.name == *branch) {
-                    let current = refs.remove(pos);
-                    refs.insert(0, current);
-                } else {
-                    refs.insert(
-                        0,
-                        CommitRef {
-                            name: branch.clone(),
-                            ref_type: CommitRefType::LocalBranch,
-                        },
-                    );
-                }
-            }
+        // For HEAD commit, add HEAD indicator if detached
+        if index == 0 && is_detached {
+            refs.push(CommitRef {
+                name: "@".to_string(),
+                ref_type: CommitRefType::Head,
+            });
         }
+
+        // Sort refs with current branch first (if applicable)
+        let refs = sort_refs(refs, current_branch.as_deref());
 
         lines.push(create_commit_line(
             &commit,
