@@ -140,10 +140,17 @@ pub fn view(model: &Model, frame: &mut Frame) {
             crate::model::LineContent::DiffLine(diff_line) => {
                 diff_line::get_lines(diff_line, theme)
             }
-            crate::model::LineContent::Commit(commit_info) => commit::get_lines(commit_info, theme),
-            crate::model::LineContent::LogLine(log_entry) => {
-                log_line::get_lines(log_entry, theme, is_detached_head)
-            }
+            crate::model::LineContent::Commit(commit_info) => commit::get_lines(
+                commit_info,
+                theme,
+                model.git_info.current_branch().as_deref(),
+            ),
+            crate::model::LineContent::LogLine(log_entry) => log_line::get_lines(
+                log_entry,
+                theme,
+                is_detached_head,
+                model.git_info.current_branch().as_deref(),
+            ),
         };
 
         let is_cursor_line = index == cursor_pos;
