@@ -86,7 +86,7 @@ impl TestRepo {
     pub fn create_file(&self, file_name: &str) {
         let repo_path = self.repo_path();
         fs::write(
-            repo_path.join(&file_name),
+            repo_path.join(file_name),
             format!("original {}", file_name),
         )
         .unwrap();
@@ -97,7 +97,7 @@ impl TestRepo {
     }
 
     pub fn write_file_content(&self, file_name: &str, file_content: &str) {
-        fs::write(self.repo_path().join(&file_name), file_content).unwrap();
+        fs::write(self.repo_path().join(file_name), file_content).unwrap();
     }
 
     pub fn commit(&self, commit_msg: &str) {

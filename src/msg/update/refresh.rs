@@ -47,12 +47,10 @@ fn refresh_status(model: &mut Model) {
         for line in &model.ui_model.lines {
             if let Some(section) = &line.section
                 && let Some(path) = section.file_path()
+                && (collapsed_file_paths.contains(path)
+                    || !existing_file_paths.contains(path) && section.default_collapsed())
             {
-                if collapsed_file_paths.contains(path) {
-                    model.ui_model.collapsed_sections.insert(section.clone());
-                } else if !existing_file_paths.contains(path) && section.default_collapsed() {
-                    model.ui_model.collapsed_sections.insert(section.clone());
-                }
+                model.ui_model.collapsed_sections.insert(section.clone());
             }
         }
 
