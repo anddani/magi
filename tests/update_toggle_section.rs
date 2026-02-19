@@ -10,7 +10,10 @@ use magi::{
     msg::{Message, update::update},
 };
 
-use crate::utils::{create_section_lines, create_test_model, create_test_model_with_lines};
+use crate::utils::{
+    create_model_from_test_repo, create_section_lines, create_test_model,
+    create_test_model_with_lines,
+};
 
 mod utils;
 
@@ -78,6 +81,43 @@ fn create_both_files_collapsed_lines() -> Vec<Line> {
     }
 
     lines // Total: 23 lines (indices 0-22)
+}
+
+#[test]
+fn test_unstaged_changes_should_default_collapsed() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+    let file_name = String::from("test.txt");
+
+    fs::write(repo_path.join(&file_name), "original a").unwrap();
+    stage_files(repo_path, &[&file_name]).unwrap();
+
+    let repo = &test_repo.repo;
+    let mut index = repo.index().unwrap();
+    let tree_id = index.write_tree().unwrap();
+    let sig = git2::Signature::now("Test", "test@test.com").unwrap();
+    let parent = repo.head().unwrap().peel_to_commit().unwrap();
+    repo.commit(
+        Some("HEAD"),
+        &sig,
+        &sig,
+        "Add files",
+        &repo.find_tree(tree_id).unwrap(),
+        &[&parent],
+    )
+    .unwrap();
+
+    fs::write(repo_path.join(&file_name), "modified a").unwrap();
+
+    let model = create_model_from_test_repo(&test_repo);
+
+    let is_default_collapsed = model.ui_model.collapsed_sections.iter().any(|cs| {
+        cs == &SectionType::UnstagedFile {
+            path: file_name.to_string(),
+        }
+    });
+
+    assert!(is_default_collapsed);
 }
 
 #[test]

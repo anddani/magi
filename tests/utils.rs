@@ -1,8 +1,13 @@
 #![allow(unused)]
 
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
 use magi::{
     config::Theme,
-    git::{GitInfo, test_repo::TestRepo},
+    git::{GitInfo, stage::stage_files, test_repo::TestRepo},
     model::{
         DiffHunk, DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model,
         RunningState, SectionType, UiModel, ViewMode,
@@ -129,6 +134,13 @@ pub fn create_model_from_test_repo(test_repo: &TestRepo) -> Model {
     let workdir = repo_path.to_path_buf();
     let lines = git_info.get_lines().unwrap();
 
+    // Initialize collapsed sections with default collapsed items (UnstagedFile, StagedFile)
+    let collapsed_sections = lines
+        .iter()
+        .filter_map(|line| line.section.clone())
+        .filter(|section| section.default_collapsed())
+        .collect();
+
     Model {
         git_info,
         workdir,
@@ -138,6 +150,7 @@ pub fn create_model_from_test_repo(test_repo: &TestRepo) -> Model {
             cursor_position: 0,
             scroll_offset: 0,
             viewport_height: 40,
+            collapsed_sections,
             ..Default::default()
         },
         theme: Theme::default(),
@@ -242,4 +255,34 @@ pub fn create_two_file_lines() -> Vec<Line> {
     }
 
     lines
+}
+
+pub fn create_test_repo_one_file() -> (TestRepo, PathBuf) {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+    let file_name = String::from("test.txt");
+
+    let file_path = repo_path.join(&file_name);
+
+    fs::write(repo_path.join(&file_name), "original a").unwrap();
+    stage_files(repo_path, &[&file_name]).unwrap();
+
+    {
+        let repo = &test_repo.repo;
+        let mut index = repo.index().unwrap();
+        let tree_id = index.write_tree().unwrap();
+        let sig = git2::Signature::now("Test", "test@test.com").unwrap();
+        let parent = repo.head().unwrap().peel_to_commit().unwrap();
+        repo.commit(
+            Some("HEAD"),
+            &sig,
+            &sig,
+            "Add files",
+            &repo.find_tree(tree_id).unwrap(),
+            &[&parent],
+        )
+        .unwrap();
+    }
+
+    (test_repo, file_path)
 }
