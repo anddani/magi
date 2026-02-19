@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use magi::config::Theme;
 use magi::git::GitInfo;
 use magi::git::stage::stage_files;
@@ -13,37 +11,13 @@ use magi::model::{
 use magi::msg::Message;
 use magi::msg::update::update;
 use magi::msg::util::visible_lines_between;
+use std::collections::HashSet;
 use std::fs;
 
-/// Creates a test model with default values. Lines are populated from the git repo.
-fn create_test_model() -> Model {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    let workdir = repo_path.to_path_buf();
-    // Get lines while TestRepo is still alive (temp directory exists)
-    let lines = git_info.get_lines().unwrap();
-    Model {
-        git_info,
-        workdir,
-        running_state: RunningState::Running,
-        ui_model: UiModel {
-            lines,
-            ..Default::default()
-        },
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-        arg_mode: false,
-        pending_g: false,
-        arguments: None,
-        open_pr_branch: None,
-        view_mode: ViewMode::Status,
-    }
-}
+mod utils;
+
+use utils::create_section_lines;
+use utils::create_test_model_with_lines;
 
 #[test]
 fn test_refresh_message() {
@@ -96,278 +70,6 @@ fn test_quit_message() {
 
     // Verify that running state changed to Done
     assert_eq!(model.running_state, RunningState::Done);
-}
-
-fn create_test_lines(count: usize) -> Vec<Line> {
-    (0..count)
-        .map(|_| Line {
-            content: LineContent::EmptyLine,
-            section: None,
-        })
-        .collect()
-}
-
-fn create_test_model_with_lines(count: usize) -> Model {
-    let mut model = create_test_model();
-    model.ui_model = UiModel {
-        lines: create_test_lines(count),
-        cursor_position: 0,
-        scroll_offset: 0,
-        viewport_height: 10,
-        ..Default::default()
-    };
-    model
-}
-
-#[test]
-fn test_move_down() {
-    let mut model = create_test_model_with_lines(5);
-
-    update(&mut model, Message::MoveDown);
-    assert_eq!(model.ui_model.cursor_position, 1);
-
-    update(&mut model, Message::MoveDown);
-    assert_eq!(model.ui_model.cursor_position, 2);
-}
-
-#[test]
-fn test_move_up() {
-    let mut model = create_test_model_with_lines(5);
-    model.ui_model.cursor_position = 2;
-
-    update(&mut model, Message::MoveUp);
-    assert_eq!(model.ui_model.cursor_position, 1);
-
-    update(&mut model, Message::MoveUp);
-    assert_eq!(model.ui_model.cursor_position, 0);
-}
-
-#[test]
-fn test_move_up_at_top() {
-    let mut model = create_test_model_with_lines(5);
-    model.ui_model.cursor_position = 0;
-
-    update(&mut model, Message::MoveUp);
-    assert_eq!(model.ui_model.cursor_position, 0);
-}
-
-#[test]
-fn test_move_down_at_bottom() {
-    let mut model = create_test_model_with_lines(5);
-    model.ui_model.cursor_position = 4;
-
-    update(&mut model, Message::MoveDown);
-    assert_eq!(model.ui_model.cursor_position, 4);
-}
-
-#[test]
-fn test_scroll_down_when_cursor_leaves_viewport() {
-    let mut model = create_test_model_with_lines(10);
-    model.ui_model.cursor_position = 2;
-    model.ui_model.viewport_height = 3;
-
-    // Move to position 3, which is outside viewport (0-2)
-    update(&mut model, Message::MoveDown);
-    assert_eq!(model.ui_model.cursor_position, 3);
-    assert_eq!(model.ui_model.scroll_offset, 1);
-}
-
-#[test]
-fn test_scroll_up_when_cursor_leaves_viewport() {
-    let mut model = create_test_model_with_lines(10);
-    model.ui_model.cursor_position = 5;
-    model.ui_model.scroll_offset = 5;
-    model.ui_model.viewport_height = 3;
-
-    // Move to position 4, which is above scroll_offset
-    update(&mut model, Message::MoveUp);
-    assert_eq!(model.ui_model.cursor_position, 4);
-    assert_eq!(model.ui_model.scroll_offset, 4);
-}
-
-#[test]
-fn test_half_page_down() {
-    let mut model = create_test_model_with_lines(20);
-    model.ui_model.viewport_height = 10;
-
-    update(&mut model, Message::HalfPageDown);
-    assert_eq!(model.ui_model.cursor_position, 5); // half of 10
-}
-
-#[test]
-fn test_half_page_up() {
-    let mut model = create_test_model_with_lines(20);
-    model.ui_model.cursor_position = 10;
-    model.ui_model.scroll_offset = 5;
-    model.ui_model.viewport_height = 10;
-
-    update(&mut model, Message::HalfPageUp);
-    assert_eq!(model.ui_model.cursor_position, 5); // 10 - 5
-}
-
-#[test]
-fn test_half_page_up_at_top() {
-    let mut model = create_test_model_with_lines(20);
-    model.ui_model.viewport_height = 10;
-
-    update(&mut model, Message::HalfPageUp);
-    assert_eq!(model.ui_model.cursor_position, 0); // stays at 0
-    assert_eq!(model.ui_model.scroll_offset, 0);
-}
-
-#[test]
-fn test_half_page_down_at_bottom() {
-    let mut model = create_test_model_with_lines(20);
-    model.ui_model.cursor_position = 19;
-    model.ui_model.scroll_offset = 10;
-    model.ui_model.viewport_height = 10;
-
-    update(&mut model, Message::HalfPageDown);
-    assert_eq!(model.ui_model.cursor_position, 19); // stays at max
-}
-
-#[test]
-fn test_half_page_down_clamps_to_max() {
-    let mut model = create_test_model_with_lines(20);
-    model.ui_model.cursor_position = 17;
-    model.ui_model.scroll_offset = 10;
-    model.ui_model.viewport_height = 10;
-
-    // 17 + 5 = 22, but max is 19
-    update(&mut model, Message::HalfPageDown);
-    assert_eq!(model.ui_model.cursor_position, 19);
-}
-
-#[test]
-fn test_half_page_up_clamps_to_zero() {
-    let mut model = create_test_model_with_lines(20);
-    model.ui_model.cursor_position = 2;
-    model.ui_model.viewport_height = 10;
-
-    // 2 - 5 would be negative, should clamp to 0
-    update(&mut model, Message::HalfPageUp);
-    assert_eq!(model.ui_model.cursor_position, 0);
-}
-
-#[test]
-fn test_half_page_down_scrolls_viewport() {
-    let mut model = create_test_model_with_lines(30);
-    model.ui_model.cursor_position = 8;
-    model.ui_model.viewport_height = 10;
-
-    // Cursor at 8, move down 5 -> 13, which is outside viewport (0-9)
-    update(&mut model, Message::HalfPageDown);
-    assert_eq!(model.ui_model.cursor_position, 13);
-    assert_eq!(model.ui_model.scroll_offset, 4); // 13 - 10 + 1
-}
-
-#[test]
-fn test_half_page_up_scrolls_viewport() {
-    let mut model = create_test_model_with_lines(30);
-    model.ui_model.cursor_position = 12;
-    model.ui_model.scroll_offset = 10;
-    model.ui_model.viewport_height = 10;
-
-    // Cursor at 12, scroll at 10, move up 5 -> 7, which is above scroll_offset
-    update(&mut model, Message::HalfPageUp);
-    assert_eq!(model.ui_model.cursor_position, 7);
-    assert_eq!(model.ui_model.scroll_offset, 7);
-}
-
-#[test]
-fn test_half_page_with_small_viewport() {
-    let mut model = create_test_model_with_lines(10);
-    model.ui_model.cursor_position = 5;
-    model.ui_model.scroll_offset = 3;
-    model.ui_model.viewport_height = 2;
-
-    // Half of 2 is 1
-    update(&mut model, Message::HalfPageDown);
-    assert_eq!(model.ui_model.cursor_position, 6);
-
-    update(&mut model, Message::HalfPageUp);
-    assert_eq!(model.ui_model.cursor_position, 5);
-}
-
-#[test]
-fn test_half_page_with_zero_viewport() {
-    let mut model = create_test_model_with_lines(10);
-    model.ui_model.cursor_position = 5;
-    model.ui_model.viewport_height = 0;
-
-    // Half of 0 is 0, cursor shouldn't move
-    update(&mut model, Message::HalfPageDown);
-    assert_eq!(model.ui_model.cursor_position, 5);
-
-    update(&mut model, Message::HalfPageUp);
-    assert_eq!(model.ui_model.cursor_position, 5);
-}
-
-#[test]
-fn test_half_page_with_empty_lines() {
-    let mut model = create_test_model_with_lines(0);
-    model.ui_model.viewport_height = 10;
-
-    // With no lines, cursor should stay at 0
-    update(&mut model, Message::HalfPageDown);
-    assert_eq!(model.ui_model.cursor_position, 0);
-
-    update(&mut model, Message::HalfPageUp);
-    assert_eq!(model.ui_model.cursor_position, 0);
-}
-
-fn create_section_lines() -> Vec<Line> {
-    vec![
-        // 0: Section header
-        Line {
-            content: LineContent::SectionHeader {
-                title: "Untracked files".to_string(),
-                count: Some(2),
-            },
-            section: Some(SectionType::UntrackedFiles),
-        },
-        // 1: Untracked file
-        Line {
-            content: LineContent::UntrackedFile("a.txt".to_string()),
-            section: Some(SectionType::UntrackedFiles),
-        },
-        // 2: Untracked file
-        Line {
-            content: LineContent::UntrackedFile("b.txt".to_string()),
-            section: Some(SectionType::UntrackedFiles),
-        },
-        // 3: Empty line
-        Line {
-            content: LineContent::EmptyLine,
-            section: None,
-        },
-        // 4: Section header
-        Line {
-            content: LineContent::SectionHeader {
-                title: "Unstaged changes".to_string(),
-                count: Some(1),
-            },
-            section: Some(SectionType::UnstagedChanges),
-        },
-        // 5: File
-        Line {
-            content: LineContent::UnstagedFile(FileChange {
-                path: "foo.rs".to_string(),
-                status: FileStatus::Modified,
-            }),
-            section: Some(SectionType::UnstagedFile {
-                path: "foo.rs".to_string(),
-            }),
-        },
-        // 6: Hunk (would be hidden when file is collapsed)
-        Line {
-            content: LineContent::EmptyLine, // Simplified for testing
-            section: Some(SectionType::UnstagedHunk {
-                path: "foo.rs".to_string(),
-                hunk_index: 0,
-            }),
-        },
-    ]
 }
 
 #[test]
@@ -1347,6 +1049,8 @@ fn test_show_help_returns_none() {
 // ============================================================================
 
 use magi::model::popup::PushPopupState;
+
+use crate::utils::create_test_model;
 
 fn create_push_popup_model() -> Model {
     let mut model = create_test_model();
