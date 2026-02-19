@@ -85,11 +85,7 @@ impl TestRepo {
 
     pub fn create_file(&self, file_name: &str) {
         let repo_path = self.repo_path();
-        fs::write(
-            repo_path.join(file_name),
-            format!("original {}", file_name),
-        )
-        .unwrap();
+        fs::write(repo_path.join(file_name), format!("original {}", file_name)).unwrap();
     }
 
     pub fn stage_files(&self, files: &[&str]) {
