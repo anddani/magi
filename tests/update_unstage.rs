@@ -22,36 +22,20 @@ fn find_staged_file_line(model: &Model, path: &str) -> Option<usize> {
 fn test_visual_unstage_two_staged_files() {
     // Visual select on two staged files and press 'u'.
     // Both files should be unstaged.
+    let file_a = "file_a.txt";
+    let file_b = "file_b.txt";
+
+    // Visual select file_a and file_b but NOT file_c.
+    // Only file_a and file_b should be unstaged.
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Modify the already tracked test.txt and create another tracked file
-    fs::write(repo_path.join("test.txt"), "modified test.txt").unwrap();
-
-    // Create and commit a second file so we have two tracked files
-    fs::write(repo_path.join("second.txt"), "original second").unwrap();
-    stage_files(repo_path, &["second.txt"]).unwrap();
-
-    // Commit the second file
-    let repo = &test_repo.repo;
-    let mut index = repo.index().unwrap();
-    let tree_id = index.write_tree().unwrap();
-    let sig = git2::Signature::now("Test", "test@test.com").unwrap();
-    let parent = repo.head().unwrap().peel_to_commit().unwrap();
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Add second file",
-        &repo.find_tree(tree_id).unwrap(),
-        &[&parent],
-    )
-    .unwrap();
-
-    // Now modify both tracked files and stage them
-    fs::write(repo_path.join("test.txt"), "modified test").unwrap();
-    fs::write(repo_path.join("second.txt"), "modified second").unwrap();
-    stage_files(repo_path, &["test.txt", "second.txt"]).unwrap();
+    test_repo
+        .create_file(file_a)
+        .create_file(file_b)
+        .stage_files(&[file_a, file_b])
+        .commit("Commit 2 files")
+        .write_file_content(file_a, "modified a")
+        .write_file_content(file_b, "modified b")
+        .stage_files(&[file_a, file_b]);
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -70,10 +54,10 @@ fn test_visual_unstage_two_staged_files() {
         });
 
     // Both files should now be in staged changes
-    let pos_a = find_staged_file_line(&model, "second.txt")
-        .expect("second.txt should be in staged changes");
+    let pos_a =
+        find_staged_file_line(&model, file_a).expect("file_a.txt should be in staged changes");
     let pos_b =
-        find_staged_file_line(&model, "test.txt").expect("test.txt should be in staged changes");
+        find_staged_file_line(&model, file_b).expect("file_b.txt should be in staged changes");
 
     // Ensure pos_a < pos_b for proper visual selection
     let (pos_start, pos_end) = if pos_a < pos_b {
@@ -100,60 +84,66 @@ fn test_visual_unstage_two_staged_files() {
     update(&mut model, Message::Refresh);
 
     // Both files should now be unstaged (appear as UnstagedFile, not StagedFile)
-    let has_staged_test = model
+    let has_staged_file_a = model
         .ui_model
         .lines
         .iter()
-        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "test.txt"));
-    let has_staged_second = model
+        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "file_a.txt"));
+    let has_staged_file_b = model
         .ui_model
         .lines
         .iter()
-        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "second.txt"));
+        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "file_b.txt"));
 
     assert!(
-        !has_staged_test,
-        "test.txt should no longer be in staged changes"
+        !has_staged_file_a,
+        "file_a.txt should no longer be in staged changes"
     );
     assert!(
-        !has_staged_second,
-        "second.txt should no longer be in staged changes"
+        !has_staged_file_b,
+        "file_b.txt should no longer be in staged changes"
     );
 
-    // Verify test.txt is in unstaged changes (Modified files become unstaged)
-    let has_unstaged_test = model
+    // Verify file_a.txt is in unstaged changes (Modified files become unstaged)
+    let has_unstaged_file_a = model
         .ui_model
         .lines
         .iter()
-        .any(|l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "test.txt"));
+        .any(|l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == file_a));
 
-    // second.txt may become either UnstagedFile or UntrackedFile depending on its
+    // file_b.txt may become either UnstagedFile or UntrackedFile depending on its
     // status (New files become Untracked when unstaged)
-    let has_second_somewhere = model.ui_model.lines.iter().any(|l| {
-        matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "second.txt")
-            || matches!(&l.content, LineContent::UntrackedFile(p) if p == "second.txt")
+    let has_file_b_somewhere = model.ui_model.lines.iter().any(|l| {
+        matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == file_b)
+            || matches!(&l.content, LineContent::UntrackedFile(p) if p == file_b)
     });
 
-    assert!(has_unstaged_test, "test.txt should be in unstaged changes");
     assert!(
-        has_second_somewhere,
-        "second.txt should be unstaged (either as Unstaged or Untracked)"
+        has_unstaged_file_a,
+        "file_a.txt should be in unstaged changes"
+    );
+    assert!(
+        has_file_b_somewhere,
+        "file_b.txt should be unstaged (either as Unstaged or Untracked)"
     );
 }
 
 #[test]
 fn test_visual_unstage_single_staged_file() {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
+    let file_name = "test.txt";
 
-    // Modify the tracked file and stage it
-    fs::write(repo_path.join("test.txt"), "modified content").unwrap();
-    stage_files(repo_path, &["test.txt"]).unwrap();
+    let test_repo = TestRepo::new();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Add test.txt")
+        .write_file_content(file_name, "modified test.txt")
+        .stage_files(&[file_name]);
 
     let mut model = create_model_from_test_repo(&test_repo);
 
     let pos =
-        find_staged_file_line(&model, "test.txt").expect("test.txt should be in staged changes");
+        find_staged_file_line(&model, file_name).expect("test.txt should be in staged changes");
 
     // Enter visual mode on the file (single-line selection)
     model.ui_model.cursor_position = pos;
@@ -169,12 +159,12 @@ fn test_visual_unstage_single_staged_file() {
         .ui_model
         .lines
         .iter()
-        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "test.txt"));
+        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == file_name));
     let has_unstaged = model
         .ui_model
         .lines
         .iter()
-        .any(|l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "test.txt"));
+        .any(|l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == file_name));
 
     assert!(!has_staged, "test.txt should not be in staged changes");
     assert!(has_unstaged, "test.txt should be in unstaged changes");
@@ -206,37 +196,26 @@ fn test_visual_unstage_exits_visual_mode() {
 
 #[test]
 fn test_visual_unstage_three_staged_files_only_unstages_selected() {
+    let file_a = "file_a.txt";
+    let file_b = "file_b.txt";
+    let file_c = "file_c.txt";
+
     // Visual select file_a and file_b but NOT file_c.
     // Only file_a and file_b should be unstaged.
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create and commit three files
-    fs::write(repo_path.join("file_a.txt"), "original a").unwrap();
-    fs::write(repo_path.join("file_b.txt"), "original b").unwrap();
-    fs::write(repo_path.join("file_c.txt"), "original c").unwrap();
-    stage_files(repo_path, &["file_a.txt", "file_b.txt", "file_c.txt"]).unwrap();
-
-    let repo = &test_repo.repo;
-    let mut index = repo.index().unwrap();
-    let tree_id = index.write_tree().unwrap();
-    let sig = git2::Signature::now("Test", "test@test.com").unwrap();
-    let parent = repo.head().unwrap().peel_to_commit().unwrap();
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Add files",
-        &repo.find_tree(tree_id).unwrap(),
-        &[&parent],
-    )
-    .unwrap();
+    test_repo
+        .create_file(file_a)
+        .create_file(file_b)
+        .create_file(file_c)
+        .stage_files(&[file_a, file_b, file_c])
+        .commit("Commit 3 files");
 
     // Modify all three and stage them
-    fs::write(repo_path.join("file_a.txt"), "modified a").unwrap();
-    fs::write(repo_path.join("file_b.txt"), "modified b").unwrap();
-    fs::write(repo_path.join("file_c.txt"), "modified c").unwrap();
-    stage_files(repo_path, &["file_a.txt", "file_b.txt", "file_c.txt"]).unwrap();
+    test_repo
+        .write_file_content(file_a, "modified a")
+        .write_file_content(file_b, "modified b")
+        .write_file_content(file_c, "modified c")
+        .stage_files(&[file_a, file_b, file_c]);
 
     let mut model = create_model_from_test_repo(&test_repo);
 

@@ -1,20 +1,17 @@
 use magi::git::staged_changes::get_lines;
 use magi::git::test_repo::TestRepo;
 use magi::model::{DiffLineType, FileStatus, LineContent};
-use std::fs;
 
 #[test]
 fn test_get_lines_with_staged_changes() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-
-    // Modify the existing tracked file
-    let file_path = test_repo.repo.workdir().unwrap().join("test.txt");
-    fs::write(&file_path, "modified content\nwith new line").unwrap();
-
-    // Stage the changes
-    let mut index = test_repo.repo.index().unwrap();
-    index.add_path(std::path::Path::new("test.txt")).unwrap();
-    index.write().unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Add test.txt")
+        .write_file_content(file_name, "modified content\nwith new line")
+        .stage_files(&[file_name]);
 
     let lines = get_lines(&test_repo.repo).unwrap();
 
@@ -60,18 +57,9 @@ fn test_get_lines_no_staged_changes() {
 
 #[test]
 fn test_get_lines_with_new_staged_file() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-
-    // Create a new file
-    let file_path = test_repo.repo.workdir().unwrap().join("new_file.txt");
-    fs::write(&file_path, "new file content").unwrap();
-
-    // Stage the new file
-    let mut index = test_repo.repo.index().unwrap();
-    index
-        .add_path(std::path::Path::new("new_file.txt"))
-        .unwrap();
-    index.write().unwrap();
+    test_repo.create_file(file_name).stage_files(&[file_name]);
 
     let lines = get_lines(&test_repo.repo).unwrap();
 
@@ -81,7 +69,7 @@ fn test_get_lines_with_new_staged_file() {
     // Check staged file status
     match &lines[1].content {
         LineContent::StagedFile(fc) => {
-            assert_eq!(fc.path, "new_file.txt");
+            assert_eq!(fc.path, file_name);
             assert_eq!(fc.status, FileStatus::New);
         }
         _ => panic!("Expected StagedFile"),
@@ -90,16 +78,14 @@ fn test_get_lines_with_new_staged_file() {
 
 #[test]
 fn test_diff_lines_have_correct_types() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-
-    // Modify the file
-    let file_path = test_repo.repo.workdir().unwrap().join("test.txt");
-    fs::write(&file_path, "new content").unwrap();
-
-    // Stage the changes
-    let mut index = test_repo.repo.index().unwrap();
-    index.add_path(std::path::Path::new("test.txt")).unwrap();
-    index.write().unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Add test.txt")
+        .write_file_content(file_name, "new content")
+        .stage_files(&[file_name]);
 
     let lines = get_lines(&test_repo.repo).unwrap();
 

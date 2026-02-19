@@ -4,19 +4,20 @@ use std::fs;
 
 #[test]
 fn test_stage_files_stages_modified_tracked_file() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Modify the tracked file
-    let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, "modified content").unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Test")
+        .write_file_content(file_name, "modified content");
 
     // Verify file is modified but not staged
     let statuses = test_repo.repo.statuses(None).unwrap();
     assert!(statuses.iter().any(|s| s.status().is_wt_modified()));
 
     // Stage the modified file
-    stage_files(repo_path, &["test.txt"]).unwrap();
+    stage_files(test_repo.repo_path(), &[file_name]).unwrap();
 
     // Refresh and verify file is now staged
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -28,13 +29,14 @@ fn test_stage_files_stages_modified_tracked_file() {
 
 #[test]
 fn test_unstage_files_unstages_modified_file() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Modify and stage a file
-    let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, "modified content").unwrap();
-    stage_files(repo_path, &["test.txt"]).unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Test")
+        .write_file_content(file_name, "modified content")
+        .stage_files(&[file_name]);
 
     // Verify file is staged
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -44,7 +46,7 @@ fn test_unstage_files_unstages_modified_file() {
     );
 
     // Unstage the file
-    unstage_files(repo_path, &["test.txt"]).unwrap();
+    unstage_files(test_repo.repo_path(), &["test.txt"]).unwrap();
 
     // Verify file is no longer staged (but still modified in working tree)
     let statuses = test_repo.repo.statuses(None).unwrap();

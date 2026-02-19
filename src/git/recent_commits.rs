@@ -97,27 +97,6 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
 mod tests {
     use super::*;
     use crate::git::test_repo::TestRepo;
-    use git2::Signature;
-    use std::fs;
-
-    fn create_commit(repo: &Repository, message: &str) {
-        let sig = Signature::now("Test", "test@test.com").unwrap();
-        let head = repo.head().unwrap();
-        let parent = head.peel_to_commit().unwrap();
-
-        // Create a dummy change
-        let path = repo.workdir().unwrap().join("dummy.txt");
-        fs::write(&path, message).unwrap();
-
-        let mut index = repo.index().unwrap();
-        index.add_path(std::path::Path::new("dummy.txt")).unwrap();
-        index.write().unwrap();
-        let tree_id = index.write_tree().unwrap();
-        let new_tree = repo.find_tree(tree_id).unwrap();
-
-        repo.commit(Some("HEAD"), &sig, &sig, message, &new_tree, &[&parent])
-            .unwrap();
-    }
 
     #[test]
     fn test_get_lines_with_initial_commit() {
@@ -145,8 +124,12 @@ mod tests {
 
     #[test]
     fn test_get_lines_with_multiple_commits() {
+        let file_name = "test.txt";
         let test_repo = TestRepo::new();
-        create_commit(&test_repo.repo, "Second commit");
+        test_repo
+            .create_file(file_name)
+            .stage_files(&[file_name])
+            .commit("Second commit");
 
         let lines = get_lines(&test_repo.repo).unwrap();
 
@@ -170,11 +153,19 @@ mod tests {
 
     #[test]
     fn test_get_lines_max_commits() {
+        let file_name = "test.txt";
         let test_repo = TestRepo::new();
+        test_repo
+            .create_file(file_name)
+            .stage_files(&[file_name])
+            .commit("Second commit");
 
-        // Create more commits (TestRepo already has 1)
+        // Create more commits
         for i in 0..12 {
-            create_commit(&test_repo.repo, &format!("Commit {}", i));
+            let content = &format!("Commit #{}", i);
+            test_repo
+                .write_file_content(file_name, content)
+                .commit(content);
         }
 
         let lines = get_lines(&test_repo.repo).unwrap();
@@ -185,7 +176,13 @@ mod tests {
 
     #[test]
     fn test_commit_has_branch_info() {
+        let file_name = "test.txt";
         let test_repo = TestRepo::new();
+
+        test_repo
+            .create_file(file_name)
+            .stage_files(&[file_name])
+            .commit("Test commit");
 
         let lines = get_lines(&test_repo.repo).unwrap();
 
