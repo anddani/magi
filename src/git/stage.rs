@@ -63,13 +63,29 @@ pub fn stage_lines<P: AsRef<Path>>(
 
     let mut old_count: usize = 0;
     let mut new_count: usize = 0;
+    let mut ui_index: usize = 0;
+    let mut last_line_included = true;
 
-    for (i, line) in content_lines.iter().enumerate() {
-        let is_selected = selected_line_indices.contains(&i);
+    for line in content_lines.iter() {
+        // "\ No newline at end of file" marker: don't count, just
+        // include if the preceding line was included in the patch.
+        if line.starts_with('\\') {
+            if last_line_included {
+                modified_lines.push(line.to_string());
+            }
+            continue;
+        }
+
+        let is_selected = selected_line_indices.contains(&ui_index);
+        ui_index += 1;
+
         if line.starts_with('+') {
             if is_selected {
                 modified_lines.push(line.to_string());
                 new_count += 1;
+                last_line_included = true;
+            } else {
+                last_line_included = false;
             }
             // Unselected additions are simply omitted
         } else if let Some(stripped) = line.strip_prefix('-') {
@@ -83,11 +99,13 @@ pub fn stage_lines<P: AsRef<Path>>(
                 old_count += 1;
                 new_count += 1;
             }
+            last_line_included = true;
         } else {
             // Context line
             modified_lines.push(line.to_string());
             old_count += 1;
             new_count += 1;
+            last_line_included = true;
         }
     }
 
@@ -235,9 +253,22 @@ pub fn unstage_lines<P: AsRef<Path>>(
 
     let mut old_count: usize = 0;
     let mut new_count: usize = 0;
+    let mut ui_index: usize = 0;
+    let mut last_line_included = true;
 
-    for (i, line) in content_lines.iter().enumerate() {
-        let is_selected = selected_line_indices.contains(&i);
+    for line in content_lines.iter() {
+        // "\ No newline at end of file" marker: don't count, just
+        // include if the preceding line was included in the patch.
+        if line.starts_with('\\') {
+            if last_line_included {
+                modified_lines.push(line.to_string());
+            }
+            continue;
+        }
+
+        let is_selected = selected_line_indices.contains(&ui_index);
+        ui_index += 1;
+
         if let Some(stripped) = line.strip_prefix('+') {
             if is_selected {
                 modified_lines.push(line.to_string());
@@ -249,10 +280,14 @@ pub fn unstage_lines<P: AsRef<Path>>(
                 old_count += 1;
                 new_count += 1;
             }
+            last_line_included = true;
         } else if line.starts_with('-') {
             if is_selected {
                 modified_lines.push(line.to_string());
                 old_count += 1;
+                last_line_included = true;
+            } else {
+                last_line_included = false;
             }
             // Unselected deletions are simply omitted
         } else {
@@ -260,6 +295,7 @@ pub fn unstage_lines<P: AsRef<Path>>(
             modified_lines.push(line.to_string());
             old_count += 1;
             new_count += 1;
+            last_line_included = true;
         }
     }
 
