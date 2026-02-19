@@ -295,3 +295,77 @@ fn test_unstage_lines_no_trailing_newline() {
         "File should not be staged after unstaging lines"
     );
 }
+
+#[test]
+fn test_unstage_partial_lines_with_unstaged_hunk_present() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+
+    // Create a file with 20 lines
+    let mut content = String::new();
+    for i in 1..=20 {
+        content.push_str(&format!("line {}\n", i));
+    }
+    let file_path = repo_path.join("test.txt");
+    fs::write(&file_path, &content).unwrap();
+    stage_files(repo_path, &["test.txt"]).unwrap();
+    commit_changes(repo_path, "Initial 20 lines");
+
+    // Modify lines 2 and 19 (two separate hunks)
+    let modified = content
+        .replace("line 2\n", "MODIFIED 2\n")
+        .replace("line 19\n", "MODIFIED 19\n");
+    fs::write(&file_path, &modified).unwrap();
+
+    // Stage hunk 0 (line 2 change), leaving hunk 1 (line 19) unstaged
+    stage_hunk(repo_path, "test.txt", 0).unwrap();
+
+    // Try to unstage ONLY the addition line (ui_index=2), not the deletion (ui_index=1)
+    // The staged diff has:
+    //   ui_index=0: " line 1"     (context)
+    //   ui_index=1: "-line 2"     (deletion)
+    //   ui_index=2: "+MODIFIED 2" (addition)
+    //   ui_index=3: " line 3"     (context)
+    //   ...
+    unstage_lines(repo_path, "test.txt", 0, &[2]).unwrap();
+}
+
+#[test]
+fn test_unstage_lines_second_staged_hunk_with_unstaged_hunk() {
+    let test_repo = TestRepo::new();
+    let repo_path = test_repo.repo.workdir().unwrap();
+
+    // Create a file with 30 lines
+    let mut content = String::new();
+    for i in 1..=30 {
+        content.push_str(&format!("line {}\n", i));
+    }
+    let file_path = repo_path.join("test.txt");
+    fs::write(&file_path, &content).unwrap();
+    stage_files(repo_path, &["test.txt"]).unwrap();
+    commit_changes(repo_path, "Initial 30 lines");
+
+    // Modify lines 2, 15, and 28 (three separate hunks)
+    let modified = content
+        .replace("line 2\n", "MODIFIED 2\n")
+        .replace("line 15\n", "MODIFIED 15\n")
+        .replace("line 28\n", "MODIFIED 28\n");
+    fs::write(&file_path, &modified).unwrap();
+
+    // Stage hunks 0 and 1 (line 2 and line 15 changes), leaving hunk 2 (line 28) unstaged
+    stage_hunk(repo_path, "test.txt", 0).unwrap();
+    stage_hunk(repo_path, "test.txt", 1).unwrap();
+
+    // Now unstage lines from the SECOND staged hunk (hunk_index=1, the line 15 change)
+    // The staged diff now has two hunks; hunk 1 is the line 15 change
+    // Staged diff hunk 1 content:
+    //   ui_index=0: " line 12"    (context)
+    //   ui_index=1: " line 13"    (context)
+    //   ui_index=2: " line 14"    (context)
+    //   ui_index=3: "-line 15"    (deletion)
+    //   ui_index=4: "+MODIFIED 15"(addition)
+    //   ui_index=5: " line 16"    (context)
+    //   ui_index=6: " line 17"    (context)
+    //   ui_index=7: " line 18"    (context)
+    unstage_lines(repo_path, "test.txt", 1, &[3, 4]).unwrap();
+}
