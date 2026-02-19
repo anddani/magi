@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use magi::{
     config::Theme,
     git::{GitInfo, test_repo::TestRepo},
@@ -66,7 +68,6 @@ pub fn create_test_model_with_lines(count: usize) -> Model {
 /// vUnstaged changes (1)
 /// vmodified foo.rs
 ///
-#[allow(unused)]
 pub fn create_section_lines() -> Vec<Line> {
     vec![
         // 0: Section header
@@ -119,4 +120,36 @@ pub fn create_section_lines() -> Vec<Line> {
             }),
         },
     ]
+}
+
+/// Helper to create a model from a TestRepo with pre-populated lines from git.
+pub fn create_model_from_test_repo(test_repo: &TestRepo) -> Model {
+    let repo_path = test_repo.repo.workdir().unwrap();
+    let git_info = GitInfo::new_from_path(repo_path).unwrap();
+    let workdir = repo_path.to_path_buf();
+    let lines = git_info.get_lines().unwrap();
+
+    Model {
+        git_info,
+        workdir,
+        running_state: RunningState::Running,
+        ui_model: UiModel {
+            lines,
+            cursor_position: 0,
+            scroll_offset: 0,
+            viewport_height: 40,
+            ..Default::default()
+        },
+        theme: Theme::default(),
+        popup: None,
+        toast: None,
+        select_result: None,
+        select_context: None,
+        pty_state: None,
+        arg_mode: false,
+        pending_g: false,
+        arguments: None,
+        open_pr_branch: None,
+        view_mode: ViewMode::Status,
+    }
 }

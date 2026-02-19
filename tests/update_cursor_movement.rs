@@ -3,7 +3,7 @@ use magi::msg::update::update;
 
 mod utils;
 
-use utils::create_test_model_with_lines;
+use crate::utils::create_test_model_with_lines;
 
 #[test]
 fn test_move_down() {
