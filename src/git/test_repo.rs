@@ -27,14 +27,17 @@ impl TestRepo {
         local_repo.set_head("refs/heads/main").unwrap();
 
         // Create a test file and commit it
-        let file_path = local_repo_path.join("test.txt");
+        let file_path = local_repo_path.join("initial_file.txt");
         fs::write(&file_path, "test content").unwrap();
 
         let mut index = local_repo.index().unwrap();
-        index.add_path(std::path::Path::new("test.txt")).unwrap();
+        index
+            .add_path(std::path::Path::new("initial_file.txt"))
+            .unwrap();
         index.write().unwrap();
         let tree_id = index.write_tree().unwrap();
 
+        // Create initial commit so that there is an existing branch/ref
         let signature = Signature::now("Test User", "test@example.com").unwrap();
         local_repo
             .commit(
@@ -53,9 +56,10 @@ impl TestRepo {
         }
     }
 
-    pub fn detach_head(&self) {
+    pub fn detach_head(&self) -> &Self {
         let commit = self.repo.head().unwrap().peel_to_commit().unwrap().id();
         self.repo.set_head_detached(commit).unwrap();
+        self
     }
 
     pub fn create_remote_branch(&self, branch_name: &str) {
@@ -83,20 +87,29 @@ impl TestRepo {
         self.repo.set_head(&local_ref_name).unwrap();
     }
 
-    pub fn create_file(&self, file_name: &str) {
+    pub fn create_file(&self, file_name: &str) -> &Self {
         let repo_path = self.repo_path();
         fs::write(repo_path.join(file_name), format!("original {}", file_name)).unwrap();
+        self
     }
 
-    pub fn stage_files(&self, files: &[&str]) {
-        stage_files(self.repo_path(), files).unwrap()
+    pub fn delete_file(&self, file_name: &str) -> &Self {
+        let repo_path = self.repo_path();
+        fs::remove_file(repo_path.join(file_name)).unwrap();
+        self
     }
 
-    pub fn write_file_content(&self, file_name: &str, file_content: &str) {
+    pub fn stage_files(&self, files: &[&str]) -> &Self {
+        stage_files(self.repo_path(), files).unwrap();
+        self
+    }
+
+    pub fn write_file_content(&self, file_name: &str, file_content: &str) -> &Self {
         fs::write(self.repo_path().join(file_name), file_content).unwrap();
+        self
     }
 
-    pub fn commit(&self, commit_msg: &str) {
+    pub fn commit(&self, commit_msg: &str) -> &Self {
         let repo = &self.repo;
         let mut index = repo.index().unwrap();
         index.read(true).unwrap();
@@ -112,9 +125,10 @@ impl TestRepo {
             &[&parent],
         )
         .unwrap();
+        self
     }
 
-    fn repo_path(&self) -> &Path {
+    pub fn repo_path(&self) -> &Path {
         self.repo.workdir().unwrap()
     }
 }

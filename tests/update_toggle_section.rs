@@ -2,7 +2,7 @@ use std::{collections::HashSet, fs};
 
 use magi::{
     config::Theme,
-    git::{GitInfo, stage::stage_files, test_repo::TestRepo},
+    git::{GitInfo, test_repo::TestRepo},
     model::{
         DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model, PopupContent,
         RunningState, SectionType, UiModel, ViewMode,
@@ -87,10 +87,11 @@ fn create_both_files_collapsed_lines() -> Vec<Line> {
 fn test_unstaged_changes_should_default_collapsed_when_creating_model() {
     let test_repo = TestRepo::new();
     let file_name = "test.txt";
-    test_repo.create_file(file_name);
-    test_repo.stage_files(&[file_name]);
-    test_repo.commit("Initial commit");
-    test_repo.write_file_content(file_name, "Updated content");
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Initial commit")
+        .write_file_content(file_name, "Updated content");
 
     let model = create_model_from_test_repo(&test_repo);
 
@@ -105,12 +106,12 @@ fn test_unstaged_changes_should_default_collapsed_when_creating_model() {
 
 #[test]
 fn test_unstaged_changes_should_default_collapsed_when_refreshing() {
-    let test_repo = TestRepo::new();
     let file_name = "test.txt";
-
-    test_repo.create_file(file_name);
-    test_repo.stage_files(&[file_name]);
-    test_repo.commit("Initial commit");
+    let test_repo = TestRepo::new();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -303,17 +304,17 @@ fn test_dismiss_popup_clears_popup() {
 
 #[test]
 fn test_collapsed_state_preserved_when_staging_all() {
-    // Create a test repo with a modified file
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Modify the tracked file to create unstaged changes
-    let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, "modified content").unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Initial commit")
+        .write_file_content(file_name, "modified content");
 
     // Create GitInfo from test repo
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    let lines = git_info.get_lines().unwrap();
+    let mut model = create_model_from_test_repo(&test_repo);
+    let lines = model.git_info.get_lines().unwrap();
 
     // Find the unstaged file section and collapse it
     let mut collapsed_sections = HashSet::new();
@@ -330,36 +331,10 @@ fn test_collapsed_state_preserved_when_staging_all() {
     // Verify we found and collapsed the file
     assert!(
         collapsed_sections.contains(&SectionType::UnstagedFile {
-            path: "test.txt".to_string()
+            path: file_name.to_string()
         }),
         "Should have found and collapsed the unstaged file"
     );
-
-    let workdir = repo_path.to_path_buf();
-    let mut model = Model {
-        git_info,
-        workdir,
-        running_state: RunningState::Running,
-        ui_model: UiModel {
-            lines,
-            cursor_position: 0,
-            scroll_offset: 0,
-            viewport_height: 20,
-            collapsed_sections,
-            ..Default::default()
-        },
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-        arg_mode: false,
-        pending_g: false,
-        arguments: None,
-        open_pr_branch: None,
-        view_mode: ViewMode::Status,
-    };
 
     // Stage all modified files
     let follow_up = update(&mut model, Message::StageAllModified);
@@ -393,28 +368,27 @@ fn test_collapsed_state_preserved_when_staging_all() {
 
 #[test]
 fn test_collapsed_state_preserved_when_unstaging_all() {
-    // Create a test repo
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Modify and stage the file
-    let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, "modified content").unwrap();
-    stage_files(repo_path, &["test.txt"]).unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Initial commit")
+        .write_file_content(file_name, "modified content")
+        .stage_files(&[file_name]);
 
     // Create GitInfo from test repo
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    let lines = git_info.get_lines().unwrap();
+    let mut model = create_model_from_test_repo(&test_repo);
+    let lines = model.git_info.get_lines().unwrap();
 
     // Find the staged file section and collapse it
     let mut collapsed_sections = HashSet::new();
     for line in &lines {
-        if let Some(section) = &line.section {
-            if let SectionType::StagedFile { path } = section {
-                if path == "test.txt" {
-                    collapsed_sections.insert(section.clone());
-                }
-            }
+        if let Some(section) = &line.section
+            && let SectionType::StagedFile { path } = section
+            && path == file_name
+        {
+            collapsed_sections.insert(section.clone());
         }
     }
 
@@ -425,32 +399,6 @@ fn test_collapsed_state_preserved_when_unstaging_all() {
         }),
         "Should have found and collapsed the staged file"
     );
-
-    let workdir = repo_path.to_path_buf();
-    let mut model = Model {
-        git_info,
-        workdir,
-        running_state: RunningState::Running,
-        ui_model: UiModel {
-            lines,
-            cursor_position: 0,
-            scroll_offset: 0,
-            viewport_height: 20,
-            collapsed_sections,
-            ..Default::default()
-        },
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-        arg_mode: false,
-        pending_g: false,
-        arguments: None,
-        open_pr_branch: None,
-        view_mode: ViewMode::Status,
-    };
 
     // Unstage all files
     let follow_up = update(&mut model, Message::UnstageAll);

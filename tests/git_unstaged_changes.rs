@@ -1,15 +1,16 @@
 use magi::git::test_repo::TestRepo;
 use magi::git::unstaged_changes::get_lines;
 use magi::model::{DiffLineType, FileStatus, LineContent};
-use std::fs;
 
 #[test]
 fn test_get_lines_with_unstaged_changes() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-
-    // Modify the existing tracked file
-    let file_path = test_repo.repo.workdir().unwrap().join("test.txt");
-    fs::write(&file_path, "modified content\nwith new line").unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Add test.txt")
+        .write_file_content(file_name, "modified content\nwith new line");
 
     let lines = get_lines(&test_repo.repo).unwrap();
 
@@ -28,7 +29,7 @@ fn test_get_lines_with_unstaged_changes() {
     // Check unstaged file
     match &lines[1].content {
         LineContent::UnstagedFile(fc) => {
-            assert_eq!(fc.path, "test.txt");
+            assert_eq!(fc.path, file_name);
             assert_eq!(fc.status, FileStatus::Modified);
         }
         _ => panic!("Expected UnstagedFile"),
@@ -55,11 +56,13 @@ fn test_get_lines_no_unstaged_changes() {
 
 #[test]
 fn test_get_lines_with_deleted_file() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-
-    // Delete the tracked file
-    let file_path = test_repo.repo.workdir().unwrap().join("test.txt");
-    fs::remove_file(&file_path).unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Add test.txt")
+        .delete_file(file_name);
 
     let lines = get_lines(&test_repo.repo).unwrap();
 
@@ -78,11 +81,13 @@ fn test_get_lines_with_deleted_file() {
 
 #[test]
 fn test_diff_lines_have_correct_types() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-
-    // Modify the file
-    let file_path = test_repo.repo.workdir().unwrap().join("test.txt");
-    fs::write(&file_path, "new content").unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Add test.txt")
+        .write_file_content(file_name, "new content");
 
     let lines = get_lines(&test_repo.repo).unwrap();
 
