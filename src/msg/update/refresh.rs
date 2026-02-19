@@ -22,6 +22,16 @@ fn refresh_status(model: &mut Model) {
         .filter_map(|section| section.file_path().map(String::from))
         .collect();
 
+    // Collect all file paths that exist before the refresh (collapsed or expanded)
+    // so we can distinguish new files from files the user explicitly expanded
+    let existing_file_paths: std::collections::HashSet<String> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|line| line.section.as_ref())
+        .filter_map(|section| section.file_path().map(String::from))
+        .collect();
+
     // Refresh the UI model by regenerating lines from git info
     if let Ok(lines) = model.git_info.get_lines() {
         model.ui_model.lines = lines;
@@ -32,13 +42,17 @@ fn refresh_status(model: &mut Model) {
         }
 
         // Restore collapsed state for files based on their paths
-        // This preserves collapsed state when files move between staged/unstaged
+        // This preserves collapsed state when files move between staged/unstaged.
+        // New files (paths not seen before the refresh) are collapsed by default.
         for line in &model.ui_model.lines {
             if let Some(section) = &line.section
                 && let Some(path) = section.file_path()
-                && collapsed_file_paths.contains(path)
             {
-                model.ui_model.collapsed_sections.insert(section.clone());
+                if collapsed_file_paths.contains(path) {
+                    model.ui_model.collapsed_sections.insert(section.clone());
+                } else if !existing_file_paths.contains(path) && section.default_collapsed() {
+                    model.ui_model.collapsed_sections.insert(section.clone());
+                }
             }
         }
 

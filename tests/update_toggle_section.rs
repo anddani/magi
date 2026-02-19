@@ -84,30 +84,13 @@ fn create_both_files_collapsed_lines() -> Vec<Line> {
 }
 
 #[test]
-fn test_unstaged_changes_should_default_collapsed() {
+fn test_unstaged_changes_should_default_collapsed_when_creating_model() {
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-    let file_name = String::from("test.txt");
-
-    fs::write(repo_path.join(&file_name), "original a").unwrap();
-    stage_files(repo_path, &[&file_name]).unwrap();
-
-    let repo = &test_repo.repo;
-    let mut index = repo.index().unwrap();
-    let tree_id = index.write_tree().unwrap();
-    let sig = git2::Signature::now("Test", "test@test.com").unwrap();
-    let parent = repo.head().unwrap().peel_to_commit().unwrap();
-    repo.commit(
-        Some("HEAD"),
-        &sig,
-        &sig,
-        "Add files",
-        &repo.find_tree(tree_id).unwrap(),
-        &[&parent],
-    )
-    .unwrap();
-
-    fs::write(repo_path.join(&file_name), "modified a").unwrap();
+    let file_name = "test.txt";
+    test_repo.create_file(file_name);
+    test_repo.stage_files(&[file_name]);
+    test_repo.commit("Initial commit");
+    test_repo.write_file_content(file_name, "Updated content");
 
     let model = create_model_from_test_repo(&test_repo);
 
@@ -118,6 +101,31 @@ fn test_unstaged_changes_should_default_collapsed() {
     });
 
     assert!(is_default_collapsed);
+}
+
+#[test]
+fn test_unstaged_changes_should_default_collapsed_when_refreshing() {
+    let test_repo = TestRepo::new();
+    let file_name = "test.txt";
+
+    test_repo.create_file(file_name);
+    test_repo.stage_files(&[file_name]);
+    test_repo.commit("Initial commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let has_no_collapsed_sections = model.ui_model.collapsed_sections.is_empty();
+    assert!(has_no_collapsed_sections);
+
+    // Update file to bring it to unstaged changes
+    test_repo.write_file_content(file_name, "Updated content");
+    update(&mut model, Message::Refresh);
+    let is_section_collapsed = model.ui_model.collapsed_sections.iter().any(|cs| {
+        cs == &SectionType::UnstagedFile {
+            path: file_name.to_string(),
+        }
+    });
+    assert!(is_section_collapsed);
 }
 
 #[test]
