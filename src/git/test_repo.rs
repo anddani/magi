@@ -1,6 +1,8 @@
 use git2::{Repository, Signature};
-use std::fs;
+use std::{fs, path::Path};
 use tempfile::TempDir;
+
+use crate::git::stage::stage_files;
 
 pub struct TestRepo {
     pub repo: Repository,
@@ -79,5 +81,40 @@ impl TestRepo {
 
         // Set HEAD to point to this branch
         self.repo.set_head(&local_ref_name).unwrap();
+    }
+
+    pub fn create_file(&self, file_name: &str) {
+        let repo_path = self.repo_path();
+        fs::write(repo_path.join(file_name), format!("original {}", file_name)).unwrap();
+    }
+
+    pub fn stage_files(&self, files: &[&str]) {
+        stage_files(self.repo_path(), files).unwrap()
+    }
+
+    pub fn write_file_content(&self, file_name: &str, file_content: &str) {
+        fs::write(self.repo_path().join(file_name), file_content).unwrap();
+    }
+
+    pub fn commit(&self, commit_msg: &str) {
+        let repo = &self.repo;
+        let mut index = repo.index().unwrap();
+        index.read(true).unwrap();
+        let tree_id = index.write_tree().unwrap();
+        let sig = git2::Signature::now("Test", "test@test.com").unwrap();
+        let parent = repo.head().unwrap().peel_to_commit().unwrap();
+        repo.commit(
+            Some("HEAD"),
+            &sig,
+            &sig,
+            commit_msg,
+            &repo.find_tree(tree_id).unwrap(),
+            &[&parent],
+        )
+        .unwrap();
+    }
+
+    fn repo_path(&self) -> &Path {
+        self.repo.workdir().unwrap()
     }
 }
