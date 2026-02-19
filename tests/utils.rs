@@ -4,8 +4,8 @@ use magi::{
     config::Theme,
     git::{GitInfo, test_repo::TestRepo},
     model::{
-        FileChange, FileStatus, Line, LineContent, Model, RunningState, SectionType, UiModel,
-        ViewMode,
+        DiffHunk, DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model,
+        RunningState, SectionType, UiModel, ViewMode,
     },
 };
 
@@ -152,4 +152,94 @@ pub fn create_model_from_test_repo(test_repo: &TestRepo) -> Model {
         open_pr_branch: None,
         view_mode: ViewMode::Status,
     }
+}
+
+/// Create lines simulating two files with many diff lines each
+pub fn create_two_file_lines() -> Vec<Line> {
+    let mut lines = Vec::new();
+
+    // 0: Section header
+    lines.push(Line {
+        content: LineContent::SectionHeader {
+            title: "Unstaged changes".to_string(),
+            count: Some(2),
+        },
+        section: Some(SectionType::UnstagedChanges),
+    });
+
+    // 1: First file header
+    lines.push(Line {
+        content: LineContent::UnstagedFile(FileChange {
+            path: "file1.rs".to_string(),
+            status: FileStatus::Modified,
+        }),
+        section: Some(SectionType::UnstagedFile {
+            path: "file1.rs".to_string(),
+        }),
+    });
+
+    // 2: First file hunk header
+    lines.push(Line {
+        content: LineContent::DiffHunk(DiffHunk {
+            header: "@@ -1,20 +1,25 @@".to_string(),
+            hunk_index: 0,
+        }),
+        section: Some(SectionType::UnstagedHunk {
+            path: "file1.rs".to_string(),
+            hunk_index: 0,
+        }),
+    });
+
+    // 3-22: First file diff lines (20 lines)
+    for i in 0..20 {
+        lines.push(Line {
+            content: LineContent::DiffLine(DiffLine {
+                content: format!(" context line {}", i),
+                line_type: DiffLineType::Context,
+            }),
+            section: Some(SectionType::UnstagedHunk {
+                path: "file1.rs".to_string(),
+                hunk_index: 0,
+            }),
+        });
+    }
+
+    // 23: Second file header
+    lines.push(Line {
+        content: LineContent::UnstagedFile(FileChange {
+            path: "file2.rs".to_string(),
+            status: FileStatus::Modified,
+        }),
+        section: Some(SectionType::UnstagedFile {
+            path: "file2.rs".to_string(),
+        }),
+    });
+
+    // 24: Second file hunk header
+    lines.push(Line {
+        content: LineContent::DiffHunk(DiffHunk {
+            header: "@@ -1,10 +1,15 @@".to_string(),
+            hunk_index: 0,
+        }),
+        section: Some(SectionType::UnstagedHunk {
+            path: "file2.rs".to_string(),
+            hunk_index: 0,
+        }),
+    });
+
+    // 25-34: Second file diff lines (10 lines)
+    for i in 0..10 {
+        lines.push(Line {
+            content: LineContent::DiffLine(DiffLine {
+                content: format!(" context line {}", i),
+                line_type: DiffLineType::Context,
+            }),
+            section: Some(SectionType::UnstagedHunk {
+                path: "file2.rs".to_string(),
+                hunk_index: 0,
+            }),
+        });
+    }
+
+    lines
 }

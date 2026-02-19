@@ -1,9 +1,10 @@
+use magi::model::SectionType;
 use magi::msg::Message;
 use magi::msg::update::update;
 
 mod utils;
 
-use crate::utils::create_test_model_with_lines;
+use crate::utils::{create_section_lines, create_test_model_with_lines};
 
 #[test]
 fn test_move_down() {
@@ -199,5 +200,39 @@ fn test_half_page_with_empty_lines() {
     assert_eq!(model.ui_model.cursor_position, 0);
 
     update(&mut model, Message::HalfPageUp);
+    assert_eq!(model.ui_model.cursor_position, 0);
+}
+
+#[test]
+fn test_move_down_skips_hidden_lines() {
+    let mut model = create_test_model_with_lines(0);
+    model.ui_model.lines = create_section_lines();
+    model.ui_model.cursor_position = 0; // On "Untracked files" header
+
+    // Collapse the Untracked files section
+    model
+        .ui_model
+        .collapsed_sections
+        .insert(SectionType::UntrackedFiles);
+
+    // Move down should skip hidden lines (1, 2) and land on empty line (3)
+    update(&mut model, Message::MoveDown);
+    assert_eq!(model.ui_model.cursor_position, 3);
+}
+
+#[test]
+fn test_move_up_skips_hidden_lines() {
+    let mut model = create_test_model_with_lines(0);
+    model.ui_model.lines = create_section_lines();
+    model.ui_model.cursor_position = 3; // On empty line
+
+    // Collapse the Untracked files section
+    model
+        .ui_model
+        .collapsed_sections
+        .insert(SectionType::UntrackedFiles);
+
+    // Move up should skip hidden lines (2, 1) and land on header (0)
+    update(&mut model, Message::MoveUp);
     assert_eq!(model.ui_model.cursor_position, 0);
 }
