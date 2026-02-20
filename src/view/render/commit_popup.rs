@@ -70,6 +70,10 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             Span::styled("w", key_style),
             Span::styled(" Reword", desc_style),
         ]),
+        Line::from(vec![
+            Span::styled("f", key_style),
+            Span::styled(" Fixup", desc_style),
+        ]),
     ]);
 
     CommandPopupContent::single_column("Commit", content)

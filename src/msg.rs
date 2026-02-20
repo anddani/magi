@@ -88,6 +88,10 @@ pub enum Message {
     Commit,
     /// Amend the last commit
     Amend(Vec<String>),
+    /// Show select popup to choose commit for fixup
+    ShowFixupCommitSelect,
+    /// Create a fixup commit for the specified commit hash
+    FixupCommit(String),
 
     /// Dismiss the current popup
     DismissPopup,
