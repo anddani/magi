@@ -1,6 +1,6 @@
 use crate::{
     git::stage::{unstage_files, unstage_hunk, unstage_lines},
-    model::{Model, popup::PopupContent},
+    model::{Model, cursor_context::CursorContext, popup::PopupContent},
     msg::Message,
 };
 
@@ -10,6 +10,12 @@ use super::selection::{
 
 pub fn update(model: &mut Model) -> Option<Message> {
     let repo_path = model.workdir.clone();
+
+    // Capture cursor context before unstaging (to be used by refresh)
+    model.cursor_reposition_context = Some(CursorContext::capture(
+        &model.ui_model.lines,
+        model.ui_model.cursor_position,
+    ));
 
     let selection = if model.ui_model.is_visual_mode() {
         let (start, end) = model.ui_model.visual_selection_range()?;
@@ -37,6 +43,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
         model.popup = Some(PopupContent::Error {
             message: format!("Error unstaging: {}", e),
         });
+        // Clear cursor context on error
+        model.cursor_reposition_context = None;
+        return None;
     }
 
     Some(Message::Refresh)

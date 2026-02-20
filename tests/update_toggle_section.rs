@@ -471,6 +471,7 @@ fn test_expanded_state_preserved_when_staging() {
         arguments: None,
         open_pr_branch: None,
         view_mode: ViewMode::Status,
+        cursor_reposition_context: None,
     };
 
     // Stage all modified files
