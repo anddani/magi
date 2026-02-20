@@ -1,10 +1,10 @@
 use crate::{
-    git::commit::run_fixup_commit,
+    git::commit::{run_fixup_commit, run_squash_commit},
     model::{Model, popup::PopupContent},
-    msg::Message,
+    msg::{FixupType, Message},
 };
 
-pub fn update(model: &mut Model, commit_ref: String) -> Option<Message> {
+pub fn update(model: &mut Model, commit_ref: String, fixup_type: FixupType) -> Option<Message> {
     let repo_path = match model.git_info.repository.workdir() {
         Some(path) => path,
         None => {
@@ -24,7 +24,12 @@ pub fn update(model: &mut Model, commit_ref: String) -> Option<Message> {
         .trim()
         .to_string();
 
-    match run_fixup_commit(repo_path, commit_hash) {
+    let result = match fixup_type {
+        FixupType::Fixup => run_fixup_commit(repo_path, commit_hash),
+        FixupType::Squash => run_squash_commit(repo_path, commit_hash),
+    };
+
+    match result {
         Ok(result) => {
             if result.success {
                 Some(Message::Refresh)
@@ -36,8 +41,12 @@ pub fn update(model: &mut Model, commit_ref: String) -> Option<Message> {
             }
         }
         Err(err) => {
+            let operation = match fixup_type {
+                FixupType::Fixup => "Fixup",
+                FixupType::Squash => "Squash",
+            };
             model.popup = Some(PopupContent::Error {
-                message: format!("Fixup commit failed: {}", err),
+                message: format!("{} commit failed: {}", operation, err),
             });
             None
         }

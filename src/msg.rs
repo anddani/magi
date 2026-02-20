@@ -4,6 +4,15 @@ use crate::model::popup::PopupContent;
 pub mod update;
 pub mod util;
 
+/// Type of fixup-style commit (fixup or squash)
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum FixupType {
+    /// Create a fixup commit (git commit --fixup)
+    Fixup,
+    /// Create a squash commit (git commit --squash)
+    Squash,
+}
+
 /// Type of log view to display
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum LogType {
@@ -88,10 +97,10 @@ pub enum Message {
     Commit,
     /// Amend the last commit
     Amend(Vec<String>),
-    /// Show select popup to choose commit for fixup
-    ShowFixupCommitSelect,
-    /// Create a fixup commit for the specified commit hash
-    FixupCommit(String),
+    /// Show select popup to choose commit for fixup or squash
+    ShowFixupCommitSelect(FixupType),
+    /// Create a fixup or squash commit for the specified commit hash
+    FixupCommit(String, FixupType),
 
     /// Dismiss the current popup
     DismissPopup,

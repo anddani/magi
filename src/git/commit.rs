@@ -135,6 +135,37 @@ pub fn run_fixup_commit<P: AsRef<Path>>(
     }
 }
 
+/// Runs `git commit --squash=<commit_hash> --no-edit` to create a squash commit.
+pub fn run_squash_commit<P: AsRef<Path>>(
+    repo_path: P,
+    commit_hash: String,
+) -> MagiResult<CommitResult> {
+    let output = git_cmd(
+        &repo_path,
+        &["commit", &format!("--squash={}", commit_hash), "--no-edit"],
+    )
+    .output()?;
+
+    if output.status.success() {
+        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
+
+        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
+            .trim()
+            .to_string();
+
+        Ok(CommitResult {
+            success: true,
+            message: format!("Created squash: {}", commit_msg),
+        })
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Ok(CommitResult {
+            success: false,
+            message: format!("Squash commit failed: {}", stderr.trim()),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -217,6 +248,55 @@ mod tests {
 
         // Try to create fixup commit without staging changes
         let result = run_fixup_commit(test_repo.repo_path(), commit_hash.to_string()).unwrap();
+
+        assert!(!result.success);
+    }
+
+    #[test]
+    fn test_run_squash_commit() {
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file1.txt", "content1")
+            .stage_files(&["file1.txt"])
+            .commit("First commit");
+
+        // Get the hash of the first user commit (not the initial one)
+        let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
+        let first_commit_line = &commits[0];
+        let commit_hash = first_commit_line.split(" - ").next().unwrap();
+
+        // Make a change and stage it
+        test_repo
+            .write_file_content("file1.txt", "modified content")
+            .stage_files(&["file1.txt"]);
+
+        // Create squash commit
+        let result = run_squash_commit(test_repo.repo_path(), commit_hash.to_string()).unwrap();
+
+        assert!(result.success);
+        assert!(result.message.contains("squash!"));
+
+        // Verify the commit message
+        let commits_after = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
+        assert_eq!(commits_after.len(), 3); // Initial + First commit + squash commit
+        assert!(commits_after[0].contains("squash! First commit"));
+    }
+
+    #[test]
+    fn test_run_squash_commit_without_staged_changes() {
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file1.txt", "content1")
+            .stage_files(&["file1.txt"])
+            .commit("First commit");
+
+        // Get the hash of the first user commit
+        let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
+        let first_commit_line = &commits[0];
+        let commit_hash = first_commit_line.split(" - ").next().unwrap();
+
+        // Try to create squash commit without staging changes
+        let result = run_squash_commit(test_repo.repo_path(), commit_hash.to_string()).unwrap();
 
         assert!(!result.success);
     }
