@@ -13,6 +13,7 @@ pub use pty_state::PtyState;
 use select_popup::{SelectContext, SelectResult};
 
 pub mod arguments;
+pub mod cursor_context;
 pub mod log_view;
 pub mod popup;
 pub mod pty_state;
@@ -50,6 +51,8 @@ pub struct Model {
     pub open_pr_branch: Option<String>,
     /// Current view mode (status view, log view, etc.)
     pub view_mode: ViewMode,
+    /// Cursor context for smart repositioning after refresh (consumed by refresh)
+    pub cursor_reposition_context: Option<cursor_context::CursorContext>,
 }
 
 #[derive(Debug, Clone)]

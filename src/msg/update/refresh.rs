@@ -35,10 +35,17 @@ fn refresh_status(model: &mut Model) {
     // Refresh the UI model by regenerating lines from git info
     if let Ok(lines) = model.git_info.get_lines() {
         model.ui_model.lines = lines;
-        // Clamp cursor position if lines changed
-        let max_pos = model.ui_model.lines.len().saturating_sub(1);
-        if model.ui_model.cursor_position > max_pos {
-            model.ui_model.cursor_position = max_pos;
+
+        // Smart cursor repositioning if context was saved
+        if let Some(context) = model.cursor_reposition_context.take() {
+            let new_position = context.find_best_position(&model.ui_model.lines);
+            model.ui_model.cursor_position = new_position;
+        } else {
+            // Fallback: clamp cursor position if lines changed
+            let max_pos = model.ui_model.lines.len().saturating_sub(1);
+            if model.ui_model.cursor_position > max_pos {
+                model.ui_model.cursor_position = max_pos;
+            }
         }
 
         // Restore collapsed state for files based on their paths

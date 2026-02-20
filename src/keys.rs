@@ -186,6 +186,7 @@ mod tests {
             arguments: None,
             open_pr_branch: None,
             view_mode: ViewMode::Status,
+            cursor_reposition_context: None,
         }
     }
 

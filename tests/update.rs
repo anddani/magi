@@ -39,6 +39,7 @@ fn test_refresh_message() {
         arguments: None,
         open_pr_branch: None,
         view_mode: ViewMode::Status,
+        cursor_reposition_context: None,
     };
 
     // Clear the lines to simulate outdated state
