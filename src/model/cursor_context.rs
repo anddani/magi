@@ -146,8 +146,8 @@ where
     }
 
     // Find next item of the same type after original position
-    for i in original_index..lines.len() {
-        if is_match(&lines[i]).is_some() {
+    for (i, line) in lines.iter().enumerate().skip(original_index) {
+        if is_match(line).is_some() {
             return i;
         }
     }
@@ -205,9 +205,9 @@ fn find_prev_section(lines: &[Line], from_index: usize) -> Option<usize> {
 /// If no section is found after, searches before the position.
 fn find_next_section(lines: &[Line], from_index: usize) -> usize {
     // First, search forward from the original position
-    for i in from_index..lines.len() {
+    for (i, line) in lines.iter().enumerate().skip(from_index) {
         if matches!(
-            lines[i].content,
+            line.content,
             LineContent::SectionHeader { .. } | LineContent::UnpulledSectionHeader { .. }
         ) {
             return i;
