@@ -22,7 +22,7 @@ fn test_show_fixup_commit_select_without_staged_changes_shows_toast() {
 
     let result = update(&mut model, Message::ShowFixupCommitSelect);
 
-    assert_eq!(result, None);
+    assert_eq!(result, Some(Message::DismissPopup));
     assert!(model.popup.is_none());
     assert!(matches!(model.toast, Some(Toast { .. })));
     if let Some(toast) = model.toast {

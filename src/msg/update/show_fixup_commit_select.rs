@@ -17,7 +17,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             style: ToastStyle::Warning,
             expires_at: Instant::now() + TOAST_DURATION,
         });
-        return None;
+        return Some(Message::DismissPopup);
     }
 
     let repo_path = model.git_info.repository.workdir()?;
