@@ -109,13 +109,13 @@ pub fn run_fixup_commit<P: AsRef<Path>>(
     repo_path: P,
     commit_hash: String,
 ) -> MagiResult<CommitResult> {
-    let status = git_cmd(
+    let output = git_cmd(
         &repo_path,
         &["commit", &format!("--fixup={}", commit_hash), "--no-edit"],
     )
-    .status()?;
+    .output()?;
 
-    if status.success() {
+    if output.status.success() {
         let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
 
         let commit_msg = String::from_utf8_lossy(&log_output.stdout)
@@ -127,9 +127,10 @@ pub fn run_fixup_commit<P: AsRef<Path>>(
             message: format!("Created fixup: {}", commit_msg),
         })
     } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
         Ok(CommitResult {
             success: false,
-            message: "Fixup commit failed".to_string(),
+            message: format!("Fixup commit failed: {}", stderr.trim()),
         })
     }
 }
