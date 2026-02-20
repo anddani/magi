@@ -23,6 +23,11 @@ impl TestRepo {
         // Initialize a new Git repository
         let local_repo = Repository::init(local_repo_path).unwrap();
 
+        // Configure git user identity for shell commands (needed for git commit via Command)
+        let mut config = local_repo.config().unwrap();
+        config.set_str("user.name", "Test User").unwrap();
+        config.set_str("user.email", "test@example.com").unwrap();
+
         // Set the default branch to main (libgit2 defaults to master)
         local_repo.set_head("refs/heads/main").unwrap();
 

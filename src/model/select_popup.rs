@@ -38,6 +38,8 @@ pub enum SelectContext {
     OpenPrBranchWithTarget,
     /// Selecting a target branch for an open PR
     OpenPrTarget,
+    /// Selecting a commit to fixup
+    FixupCommit,
 }
 
 /// State for the select popup (fuzzy finder style)

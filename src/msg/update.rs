@@ -21,6 +21,7 @@ mod exit_visual_mode;
 mod fetch_all_remotes;
 mod fetch_from_remote;
 mod fetch_upstream;
+mod fixup_commit;
 mod half_page_down;
 mod half_page_up;
 mod input_input;
@@ -57,6 +58,7 @@ mod show_delete_branch_popup;
 mod show_fetch_elsewhere_select;
 mod show_fetch_popup;
 mod show_fetch_upstream_select;
+mod show_fixup_commit_select;
 mod show_log;
 mod show_open_pr_select;
 mod show_open_pr_target_select;
@@ -101,6 +103,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PendingG => pending_g::update(model),
         Message::Commit => commit::update(model),
         Message::Amend(extra_args) => amend::update(model, extra_args),
+        Message::ShowFixupCommitSelect => show_fixup_commit_select::update(model),
+        Message::FixupCommit(commit_hash) => fixup_commit::update(model, commit_hash),
         Message::DismissPopup => dismiss_popup::update(model),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::StageSelected => stage_selected::update(model),
