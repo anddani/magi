@@ -4,34 +4,17 @@ use magi::git::discard::{
 };
 use magi::git::test_repo::TestRepo;
 use std::fs;
-use std::process::Command;
-
-/// Helper function to commit staged changes in a test repository using CLI git
-fn commit_changes(repo_path: &std::path::Path, message: &str) {
-    let output = Command::new("git")
-        .args(["-C", repo_path.to_str().unwrap(), "commit", "-m", message])
-        .env("GIT_AUTHOR_NAME", "Test User")
-        .env("GIT_AUTHOR_EMAIL", "test@example.com")
-        .env("GIT_COMMITTER_NAME", "Test User")
-        .env("GIT_COMMITTER_EMAIL", "test@example.com")
-        .output()
-        .expect("Failed to run git commit");
-    assert!(
-        output.status.success(),
-        "git commit failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-}
 
 #[test]
 fn test_discard_single_file() {
+    let file_name = "test.txt";
+    let original_content = "original content";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Modify the tracked file
-    let file_path = repo_path.join("test.txt");
-    let original_content = fs::read_to_string(&file_path).unwrap();
-    fs::write(&file_path, "modified content").unwrap();
+    test_repo
+        .create_file(file_name)
+        .write_file_content(file_name, original_content)
+        .stage_files(&[file_name])
+        .write_file_content(file_name, "modified content");
 
     // Verify file is modified
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -41,7 +24,7 @@ fn test_discard_single_file() {
     );
 
     // Discard changes
-    discard_files(repo_path, &["test.txt"]).unwrap();
+    discard_files(test_repo.repo_path(), &["test.txt"]).unwrap();
 
     // Verify file is no longer modified
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -51,25 +34,22 @@ fn test_discard_single_file() {
     );
 
     // Verify content is restored
-    let content = fs::read_to_string(&file_path).unwrap();
+    let content = fs::read_to_string(test_repo.repo_path().join(file_name)).unwrap();
     assert_eq!(content, original_content, "Content should be restored");
 }
 
 #[test]
 fn test_discard_multiple_files() {
+    let file_a = "file_a.txt";
+    let file_b = "file_b.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create and commit another file
-    let file2_path = repo_path.join("test2.txt");
-    fs::write(&file2_path, "initial content 2").unwrap();
-    magi::git::stage::stage_files(repo_path, &["test2.txt"]).unwrap();
-    commit_changes(repo_path, "Add test2.txt");
-
-    // Modify both files
-    let file1_path = repo_path.join("test.txt");
-    fs::write(&file1_path, "modified 1").unwrap();
-    fs::write(&file2_path, "modified 2").unwrap();
+    test_repo
+        .create_file(file_a)
+        .create_file(file_b)
+        .stage_files(&[file_a, file_b])
+        .commit("Add file_a.txt and file_b.txt")
+        .write_file_content(file_a, "modified a")
+        .write_file_content(file_b, "modified b");
 
     // Verify both files are modified
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -80,7 +60,7 @@ fn test_discard_multiple_files() {
     assert_eq!(modified_count, 2, "Both files should be modified");
 
     // Discard both files
-    discard_files(repo_path, &["test.txt", "test2.txt"]).unwrap();
+    discard_files(test_repo.repo_path(), &[file_a, file_b]).unwrap();
 
     // Verify no files are modified
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -92,19 +72,16 @@ fn test_discard_multiple_files() {
 
 #[test]
 fn test_discard_hunk() {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create a file with multiple lines
-    let file_path = repo_path.join("test.txt");
+    let file_name = "test.txt";
     let original_content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
-    fs::write(&file_path, original_content).unwrap();
-    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(repo_path, "Initial content");
-
-    // Modify the file to create a hunk
     let modified_content = "line 1\nMODIFIED\nline 3\nline 4\nline 5\n";
-    fs::write(&file_path, modified_content).unwrap();
+    let test_repo = TestRepo::new();
+    test_repo
+        .create_file(file_name)
+        .write_file_content(file_name, original_content)
+        .stage_files(&[file_name])
+        .commit("Initial content")
+        .write_file_content(file_name, modified_content);
 
     // Verify file is modified
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -114,7 +91,7 @@ fn test_discard_hunk() {
     );
 
     // Discard the hunk
-    discard_hunk(repo_path, "test.txt", 0).unwrap();
+    discard_hunk(test_repo.repo_path(), "test.txt", 0).unwrap();
 
     // Verify file is no longer modified
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -124,21 +101,22 @@ fn test_discard_hunk() {
     );
 
     // Verify content is restored
-    let content = fs::read_to_string(&file_path).unwrap();
+    let content = fs::read_to_string(test_repo.repo_path().join(file_name)).unwrap();
     assert_eq!(content, original_content, "Content should be restored");
 }
 
 #[test]
 fn test_discard_files_empty_list_is_noop() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Modify a file
-    let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, "modified content").unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Add test.txt")
+        .write_file_content(file_name, "modified content");
 
     // Discard with empty list
-    discard_files(repo_path, &[]).unwrap();
+    discard_files(test_repo.repo_path(), &[]).unwrap();
 
     // File should remain modified
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -150,36 +128,35 @@ fn test_discard_files_empty_list_is_noop() {
 
 #[test]
 fn test_discard_specific_file_leaves_other_unchanged() {
+    let file_a = "file_a.txt";
+    let file_b = "file_b.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create and commit another file
-    let file2_path = repo_path.join("test2.txt");
-    fs::write(&file2_path, "initial content 2").unwrap();
-    magi::git::stage::stage_files(repo_path, &["test2.txt"]).unwrap();
-    commit_changes(repo_path, "Add test2.txt");
-
-    // Modify both files
-    let file1_path = repo_path.join("test.txt");
-    fs::write(&file1_path, "modified 1").unwrap();
-    fs::write(&file2_path, "modified 2").unwrap();
+    test_repo
+        .create_file(file_a)
+        .create_file(file_b)
+        .write_file_content(file_a, "initial content a")
+        .write_file_content(file_b, "initial content b")
+        .stage_files(&[file_a, file_b])
+        .commit("Add file a and b")
+        .write_file_content(file_a, "modified a")
+        .write_file_content(file_b, "modified b");
 
     // Discard only test.txt
-    discard_files(repo_path, &["test.txt"]).unwrap();
+    discard_files(test_repo.repo_path(), &[file_a]).unwrap();
 
     // Verify test.txt is restored and test2.txt is still modified
     let statuses = test_repo.repo.statuses(None).unwrap();
     for entry in statuses.iter() {
         let path = entry.path().unwrap();
-        if path == "test.txt" {
+        if path == file_a {
             assert!(
                 !entry.status().is_wt_modified(),
-                "test.txt should not be modified after discard"
+                "file_a.txt should not be modified after discard"
             );
-        } else if path == "test2.txt" {
+        } else if path == file_b {
             assert!(
                 entry.status().is_wt_modified(),
-                "test2.txt should still be modified"
+                "file_b.txt should still be modified"
             );
         }
     }
@@ -187,27 +164,24 @@ fn test_discard_specific_file_leaves_other_unchanged() {
 
 #[test]
 fn test_discard_lines() {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create a file with multiple lines
-    let file_path = repo_path.join("test.txt");
+    let file_name = "test.txt";
     let original_content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
-    fs::write(&file_path, original_content).unwrap();
-    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(repo_path, "Initial content");
-
-    // Modify multiple lines
     let modified_content = "line 1\nMODIFIED 2\nMODIFIED 3\nline 4\nline 5\n";
-    fs::write(&file_path, modified_content).unwrap();
+    let test_repo = TestRepo::new();
+    test_repo
+        .create_file(file_name)
+        .write_file_content(file_name, original_content)
+        .stage_files(&[file_name])
+        .commit("Initial content")
+        .write_file_content(file_name, modified_content);
 
     // Discard only the first modified line (line index 0 in the hunk's diff lines)
     // The diff will have: - line 2\n + MODIFIED 2\n - line 3\n + MODIFIED 3
     // We want to discard line 2's change (indices 0 and 1 in the content lines)
-    discard_lines(repo_path, "test.txt", 0, &[0, 1]).unwrap();
+    discard_lines(test_repo.repo_path(), "test.txt", 0, &[0, 1]).unwrap();
 
     // Read the result
-    let content = fs::read_to_string(&file_path).unwrap();
+    let content = fs::read_to_string(test_repo.repo_path().join(file_name)).unwrap();
     // After discarding lines 0 and 1, we expect line 2 to be restored
     // while line 3 remains modified
     assert!(
@@ -226,14 +200,16 @@ fn test_discard_lines() {
 
 #[test]
 fn test_discard_staged_modified_file() {
+    let file_name = "test.txt";
+    let original_content = "original content";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Modify and stage a file
-    let file_path = repo_path.join("test.txt");
-    let original_content = fs::read_to_string(&file_path).unwrap();
-    fs::write(&file_path, "staged modification").unwrap();
-    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+    test_repo
+        .create_file(file_name)
+        .write_file_content(file_name, original_content)
+        .stage_files(&[file_name])
+        .commit("Add test.txt")
+        .write_file_content(file_name, "staged modification")
+        .stage_files(&[file_name]);
 
     // Verify file is staged
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -243,7 +219,7 @@ fn test_discard_staged_modified_file() {
     );
 
     // Discard staged changes - removes from BOTH index and working tree
-    discard_staged_files(repo_path, &["test.txt"]).unwrap();
+    discard_staged_files(test_repo.repo_path(), &[file_name]).unwrap();
 
     // Verify file is no longer staged
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -253,7 +229,7 @@ fn test_discard_staged_modified_file() {
     );
 
     // Working tree should be reverted to original content
-    let content = fs::read_to_string(&file_path).unwrap();
+    let content = fs::read_to_string(test_repo.repo_path().join(file_name)).unwrap();
     assert_eq!(
         content, original_content,
         "Working tree should be reverted to original content"
@@ -262,30 +238,25 @@ fn test_discard_staged_modified_file() {
 
 #[test]
 fn test_discard_staged_preserves_unstaged_changes() {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create a file with multiple lines and commit
-    let file_path = repo_path.join("test.txt");
+    let file_name = "test.txt";
     let original_content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
-    fs::write(&file_path, original_content).unwrap();
-    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(repo_path, "Initial content");
-
-    // Stage a change to line 2
     let staged_content = "line 1\nSTAGED CHANGE\nline 3\nline 4\nline 5\n";
-    fs::write(&file_path, staged_content).unwrap();
-    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
-
-    // Then make an additional unstaged change to line 4
     let working_content = "line 1\nSTAGED CHANGE\nline 3\nUNSTAGED CHANGE\nline 5\n";
-    fs::write(&file_path, working_content).unwrap();
+    let test_repo = TestRepo::new();
+    test_repo
+        .create_file(file_name)
+        .write_file_content(file_name, original_content)
+        .stage_files(&[file_name])
+        .commit("Initial content")
+        .write_file_content(file_name, staged_content)
+        .stage_files(&[file_name])
+        .write_file_content(file_name, working_content);
 
     // Discard staged changes
-    discard_staged_files(repo_path, &["test.txt"]).unwrap();
+    discard_staged_files(test_repo.repo_path(), &["test.txt"]).unwrap();
 
     // Staged change (line 2) should be reverted, unstaged change (line 4) preserved
-    let content = fs::read_to_string(&file_path).unwrap();
+    let content = fs::read_to_string(test_repo.repo_path().join(file_name)).unwrap();
     let expected = "line 1\nline 2\nline 3\nUNSTAGED CHANGE\nline 5\n";
     assert_eq!(
         content, expected,
@@ -295,13 +266,12 @@ fn test_discard_staged_preserves_unstaged_changes() {
 
 #[test]
 fn test_discard_staged_new_file_deletes_it() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create and stage a new file
-    let file_path = repo_path.join("new_file.txt");
-    fs::write(&file_path, "new file content").unwrap();
-    magi::git::stage::stage_files(repo_path, &["new_file.txt"]).unwrap();
+    test_repo
+        .create_file(file_name)
+        .write_file_content(file_name, "original content")
+        .stage_files(&[file_name]);
 
     // Verify file is staged as new
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -309,10 +279,13 @@ fn test_discard_staged_new_file_deletes_it() {
         statuses.iter().any(|s| s.status().is_index_new()),
         "File should be staged as new before discard"
     );
-    assert!(file_path.exists(), "File should exist before discard");
+    assert!(
+        test_repo.repo_path().join(file_name).exists(),
+        "File should exist before discard"
+    );
 
     // Discard staged new file - should delete it
-    discard_staged_files(repo_path, &["new_file.txt"]).unwrap();
+    discard_staged_files(test_repo.repo_path(), &[file_name]).unwrap();
 
     // Verify file is no longer staged and deleted
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -320,25 +293,25 @@ fn test_discard_staged_new_file_deletes_it() {
         !statuses.iter().any(|s| s.path() == Some("new_file.txt")),
         "File should not appear in status after discard"
     );
-    assert!(!file_path.exists(), "File should be deleted after discard");
+    assert!(
+        !test_repo.repo_path().join(file_name).exists(),
+        "File should be deleted after discard"
+    );
 }
 
 #[test]
 fn test_discard_staged_hunk() {
-    let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create a file with multiple lines
-    let file_path = repo_path.join("test.txt");
+    let file_name = "test.txt";
     let original_content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
-    fs::write(&file_path, original_content).unwrap();
-    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(repo_path, "Initial content");
-
-    // Modify and stage
     let modified_content = "line 1\nSTAGED CHANGE\nline 3\nline 4\nline 5\n";
-    fs::write(&file_path, modified_content).unwrap();
-    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+    let test_repo = TestRepo::new();
+    test_repo
+        .create_file(file_name)
+        .write_file_content(file_name, original_content)
+        .stage_files(&[file_name])
+        .commit("Initial content")
+        .write_file_content(file_name, modified_content)
+        .stage_files(&[file_name]);
 
     // Verify file is staged
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -348,7 +321,7 @@ fn test_discard_staged_hunk() {
     );
 
     // Discard the staged hunk - removes from both index and working tree
-    discard_staged_hunk(repo_path, "test.txt", 0).unwrap();
+    discard_staged_hunk(test_repo.repo_path(), "test.txt", 0).unwrap();
 
     // Verify file is no longer staged
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -358,7 +331,7 @@ fn test_discard_staged_hunk() {
     );
 
     // Working tree should be reverted to original content
-    let content = fs::read_to_string(&file_path).unwrap();
+    let content = fs::read_to_string(test_repo.repo_path().join(file_name)).unwrap();
     assert_eq!(
         content, original_content,
         "Working tree should be reverted to original content"
@@ -367,16 +340,17 @@ fn test_discard_staged_hunk() {
 
 #[test]
 fn test_discard_staged_files_empty_list_is_noop() {
+    let file_name = "test.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Modify and stage a file
-    let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, "staged content").unwrap();
-    magi::git::stage::stage_files(repo_path, &["test.txt"]).unwrap();
+    test_repo
+        .create_file(file_name)
+        .stage_files(&[file_name])
+        .commit("Add test.txt")
+        .write_file_content(file_name, "staged content")
+        .stage_files(&[file_name]);
 
     // Discard with empty list
-    discard_staged_files(repo_path, &[]).unwrap();
+    discard_staged_files(test_repo.repo_path(), &[]).unwrap();
 
     // File should remain staged
     let statuses = test_repo.repo.statuses(None).unwrap();
@@ -392,15 +366,17 @@ fn test_discard_staged_files_empty_list_is_noop() {
 
 #[test]
 fn test_discard_untracked_file() {
+    let file_name = "untracked.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
+    test_repo.create_file(file_name);
 
     // Create an untracked file
-    let file_path = repo_path.join("untracked.txt");
-    fs::write(&file_path, "untracked content").unwrap();
 
     // Verify file exists and is untracked
-    assert!(file_path.exists(), "File should exist before discard");
+    assert!(
+        test_repo.repo_path().join(file_name).exists(),
+        "File should exist before discard"
+    );
     let statuses = test_repo.repo.statuses(None).unwrap();
     assert!(
         statuses.iter().any(|s| s.status().is_wt_new()),
@@ -408,32 +384,32 @@ fn test_discard_untracked_file() {
     );
 
     // Discard untracked file
-    discard_untracked_files(repo_path, &["untracked.txt"]).unwrap();
+    discard_untracked_files(test_repo.repo_path(), &[file_name]).unwrap();
 
     // Verify file is deleted
-    assert!(!file_path.exists(), "File should be deleted after discard");
+    assert!(
+        !test_repo.repo_path().join(file_name).exists(),
+        "File should be deleted after discard"
+    );
     let statuses = test_repo.repo.statuses(None).unwrap();
     assert!(
-        !statuses.iter().any(|s| s.path() == Some("untracked.txt")),
+        !statuses.iter().any(|s| s.path() == Some(file_name)),
         "File should not appear in status after discard"
     );
 }
 
 #[test]
 fn test_discard_untracked_files_empty_list_is_noop() {
+    let file_name = "untracked.txt";
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-
-    // Create an untracked file
-    let file_path = repo_path.join("untracked.txt");
-    fs::write(&file_path, "untracked content").unwrap();
+    test_repo.create_file(file_name);
 
     // Discard with empty list
-    discard_untracked_files(repo_path, &[]).unwrap();
+    discard_untracked_files(test_repo.repo_path(), &[]).unwrap();
 
     // File should still exist
     assert!(
-        file_path.exists(),
+        test_repo.repo_path().join(file_name).exists(),
         "File should remain when discarding empty list"
     );
 }

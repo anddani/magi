@@ -1,4 +1,4 @@
-use magi::git::stage::stage_files;
+use magi::git::stage::{stage_files, stage_hunk};
 use magi::git::test_repo::TestRepo;
 use magi::model::{LineContent, Model, SectionType};
 use magi::msg::Message;
@@ -125,6 +125,105 @@ fn test_visual_unstage_two_staged_files() {
     assert!(
         has_file_b_somewhere,
         "file_b.txt should be unstaged (either as Unstaged or Untracked)"
+    );
+}
+
+/// When a file has two hunks and one is staged, visually selecting
+/// diff lines in the staged hunk and pressing 'u' must correctly unstage those lines.
+#[test]
+fn test_visual_unstage_lines_from_staged_hunk_when_other_hunk_is_unstaged() {
+    let file_name = "test.txt";
+    let test_repo = TestRepo::new();
+
+    // Create a file with 20 lines (enough separation for two distinct hunks)
+    let mut content = String::new();
+    for i in 1..=20 {
+        content.push_str(&format!("line {}\n", i));
+    }
+    test_repo
+        .create_file(file_name)
+        .write_file_content(file_name, &content)
+        .stage_files(&[file_name])
+        .commit("Initial 20 lines");
+
+    // Modify lines 2 and 19 to create two separate hunks
+    let modified = content
+        .replace("line 2\n", "MODIFIED 2\n")
+        .replace("line 19\n", "MODIFIED 19\n");
+    test_repo.write_file_content(file_name, &modified);
+
+    // Stage only hunk 0 (the line 2 change); hunk 1 (line 19) remains unstaged
+    stage_hunk(test_repo.repo_path(), "test.txt", 0).unwrap();
+
+    // Build the model (unstaged section first, then staged section in the UI)
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Remove staged file from collapsed_sections to expand it
+    model
+        .ui_model
+        .collapsed_sections
+        .remove(&SectionType::StagedFile {
+            path: "test.txt".to_string(),
+        });
+
+    // Find the deletion line ("-line 2") in the staged hunk
+    let deletion_pos = model
+        .ui_model
+        .lines
+        .iter()
+        .position(|l| {
+            matches!(&l.content, LineContent::DiffLine(dl) if dl.content == "line 2")
+                && matches!(&l.section, Some(SectionType::StagedHunk { path, .. }) if path == "test.txt")
+        })
+        .expect("staged deletion line should be present");
+
+    // The addition line ("+MODIFIED 2") comes right after
+    let addition_pos = deletion_pos + 1;
+    assert!(
+        matches!(
+            &model.ui_model.lines[addition_pos].content,
+            LineContent::DiffLine(dl) if dl.content == "MODIFIED 2"
+        ),
+        "addition line should follow the deletion line"
+    );
+    assert!(
+        matches!(
+            &model.ui_model.lines[addition_pos].section,
+            Some(SectionType::StagedHunk { path, .. }) if path == "test.txt"
+        ),
+        "addition line should be in the staged hunk"
+    );
+
+    // Enter visual mode on the deletion line, extend to the addition line
+    model.ui_model.cursor_position = deletion_pos;
+    update(&mut model, Message::EnterVisualMode);
+    model.ui_model.cursor_position = addition_pos;
+
+    // Unstage selected lines
+    let follow_up = update(&mut model, Message::UnstageSelected);
+    assert_eq!(follow_up, Some(Message::Refresh));
+    update(&mut model, Message::Refresh);
+
+    // After unstaging, the staged section should be empty for test.txt
+    let has_staged = model
+        .ui_model
+        .lines
+        .iter()
+        .any(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == "test.txt"));
+    assert!(
+        !has_staged,
+        "test.txt should no longer appear in staged changes after unstaging all its staged lines"
+    );
+
+    // The working tree should still have both modifications
+    let wt_content = fs::read_to_string(test_repo.repo_path().join(&file_name)).unwrap();
+    assert!(
+        wt_content.contains("MODIFIED 2"),
+        "working tree should still have MODIFIED 2"
+    );
+    assert!(
+        wt_content.contains("MODIFIED 19"),
+        "working tree should still have MODIFIED 19"
     );
 }
 

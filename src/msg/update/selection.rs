@@ -569,8 +569,11 @@ where
         return None;
     }
 
-    // Calculate which lines within the hunk are selected
-    let line_indices = compute_hunk_line_indices(lines, sel_start, sel_end, path, hunk_index);
+    // Calculate which lines within the hunk are selected.
+    // Pass is_matching_hunk so only the correct section type (staged vs unstaged)
+    // is counted, avoiding index inflation from the other section.
+    let line_indices =
+        compute_hunk_line_indices(lines, sel_start, sel_end, path, hunk_index, &is_matching_hunk);
     if line_indices.is_empty() {
         return None;
     }
@@ -620,24 +623,32 @@ where
 
 /// Computes the 0-based indices of diff lines within a hunk that are selected.
 /// Counts only DiffLine entries (not the hunk header) in the matching section.
-fn compute_hunk_line_indices(
+/// `is_matching_hunk` must be the same predicate used to identify the hunk type
+/// (staged vs unstaged), so that lines from the other section type with the same
+/// path and hunk_index are not mistakenly counted.
+fn compute_hunk_line_indices<F>(
     lines: &[Line],
     sel_start: usize,
     sel_end: usize,
     target_path: &str,
     target_hunk_index: usize,
-) -> Vec<usize> {
+    is_matching_hunk: F,
+) -> Vec<usize>
+where
+    F: Fn(&SectionType) -> bool,
+{
     let mut result = Vec::new();
     let mut line_idx_in_hunk: usize = 0;
 
     for (i, line) in lines.iter().enumerate() {
         let is_matching_section = match &line.section {
-            Some(SectionType::UnstagedHunk { path, hunk_index }) => {
-                path == target_path && *hunk_index == target_hunk_index
-            }
-            Some(SectionType::StagedHunk { path, hunk_index }) => {
-                path == target_path && *hunk_index == target_hunk_index
-            }
+            Some(section) if is_matching_hunk(section) => match section {
+                SectionType::UnstagedHunk { path, hunk_index }
+                | SectionType::StagedHunk { path, hunk_index } => {
+                    path == target_path && *hunk_index == target_hunk_index
+                }
+                _ => false,
+            },
             _ => false,
         };
 
