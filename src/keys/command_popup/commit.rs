@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     model::arguments::{Argument::Commit, CommitArgument},
-    msg::Message,
+    msg::{FixupType, Message},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
@@ -20,7 +20,8 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('e') => Some(Message::Amend(vec!["--no-edit".to_string()])),
         KeyCode::Char('a') => Some(Message::Amend(vec![])),
         KeyCode::Char('w') => Some(Message::Amend(vec!["--only".to_string()])),
-        KeyCode::Char('f') => Some(Message::ShowFixupCommitSelect),
+        KeyCode::Char('f') => Some(Message::ShowFixupCommitSelect(FixupType::Fixup)),
+        KeyCode::Char('s') => Some(Message::ShowFixupCommitSelect(FixupType::Squash)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

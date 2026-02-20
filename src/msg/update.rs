@@ -103,8 +103,12 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PendingG => pending_g::update(model),
         Message::Commit => commit::update(model),
         Message::Amend(extra_args) => amend::update(model, extra_args),
-        Message::ShowFixupCommitSelect => show_fixup_commit_select::update(model),
-        Message::FixupCommit(commit_hash) => fixup_commit::update(model, commit_hash),
+        Message::ShowFixupCommitSelect(fixup_type) => {
+            show_fixup_commit_select::update(model, fixup_type)
+        }
+        Message::FixupCommit(commit_hash, fixup_type) => {
+            fixup_commit::update(model, commit_hash, fixup_type)
+        }
         Message::DismissPopup => dismiss_popup::update(model),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::StageSelected => stage_selected::update(model),

@@ -6,10 +6,10 @@ use crate::{
         Model, Toast, ToastStyle,
         popup::{PopupContent, PopupContentCommand, SelectContext, SelectPopupState},
     },
-    msg::{Message, update::commit::TOAST_DURATION},
+    msg::{FixupType, Message, update::commit::TOAST_DURATION},
 };
 
-pub fn update(model: &mut Model) -> Option<Message> {
+pub fn update(model: &mut Model, fixup_type: FixupType) -> Option<Message> {
     // Check if there are staged changes
     if let Ok(false) = model.git_info.has_staged_changes() {
         model.toast = Some(Toast {
@@ -30,9 +30,13 @@ pub fn update(model: &mut Model) -> Option<Message> {
                 });
                 None
             } else {
-                let state = SelectPopupState::new("Fixup commit".to_string(), commits);
+                let title = match fixup_type {
+                    FixupType::Fixup => "Fixup commit".to_string(),
+                    FixupType::Squash => "Squash commit".to_string(),
+                };
+                let state = SelectPopupState::new(title, commits);
                 model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-                model.select_context = Some(SelectContext::FixupCommit);
+                model.select_context = Some(SelectContext::FixupCommit(fixup_type));
                 None
             }
         }
