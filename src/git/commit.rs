@@ -110,55 +110,9 @@ pub fn get_recent_commits_for_fixup<P: AsRef<Path>>(
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let commits = parse_commit_list(&stdout);
+    let commits = super::log::parse_log_output(&stdout, &[]);
 
     Ok(commits)
-}
-
-/// Parse the output of git log into LogEntry structs (without graph)
-fn parse_commit_list(output: &str) -> Vec<crate::model::LogEntry> {
-    const SEPARATOR: char = '\x0c';
-
-    output
-        .lines()
-        .filter_map(|line| {
-            let parts: Vec<&str> = line.split(SEPARATOR).collect();
-            if parts.len() >= 5 {
-                let hash = if parts[0].is_empty() {
-                    None
-                } else {
-                    Some(parts[0].to_string())
-                };
-                let refs = super::log::parse_refs_from_string(parts[1]);
-                let author = if parts[2].is_empty() {
-                    None
-                } else {
-                    Some(parts[2].to_string())
-                };
-                let time = if parts[3].is_empty() {
-                    None
-                } else {
-                    parts[3].strip_suffix(" ago").map(String::from)
-                };
-                let message = if parts[4].is_empty() {
-                    None
-                } else {
-                    Some(parts[4].to_string())
-                };
-
-                Some(crate::model::LogEntry::new(
-                    String::new(), // No graph for commit select
-                    hash,
-                    refs,
-                    author,
-                    time,
-                    message,
-                ))
-            } else {
-                None
-            }
-        })
-        .collect()
 }
 
 /// Runs `git commit --fixup=<commit_hash> --no-edit` to create a fixup commit.

@@ -76,8 +76,9 @@ pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult
     Ok(entries)
 }
 
-/// Parse the output of git log --graph into LogEntry structs
-fn parse_log_output(output: &str, remotes: &[String]) -> Vec<LogEntry> {
+/// Parse the output of git log into LogEntry structs
+/// Works with both --graph and non-graph output
+pub fn parse_log_output(output: &str, remotes: &[String]) -> Vec<LogEntry> {
     let mut entries = Vec::new();
 
     for line in output.lines() {
@@ -144,14 +145,6 @@ fn is_remote_branch(name: &str, remotes: &[String]) -> bool {
     remotes
         .iter()
         .any(|remote| name.starts_with(&format!("{}/", remote)))
-}
-
-/// Parse a refs string (e.g., "HEAD -> main, origin/main, tag: v1.0") into CommitRefs
-/// This is a helper for parsing refs from git log output without repository context
-pub fn parse_refs_from_string(refs_str: &str) -> Vec<CommitRef> {
-    // Without repository context, we can't determine which refs are remote branches
-    // So we treat all refs as local branches unless they match common patterns
-    parse_refs(refs_str, &[])
 }
 
 /// Parse a refs string (e.g., "HEAD -> main, origin/main, tag: v1.0") into CommitRefs
