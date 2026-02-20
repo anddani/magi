@@ -68,8 +68,8 @@ Here are a few features that the aforementioned applications lack:
         - [x] Amend
         - [x] Reword
         - [x] Extend
-        - [ ] Fixup
-        - [ ] Squash
+        - [x] Fixup
+        - [x] Squash
         - [ ] Alter
         - [ ] Augment
         - [ ] Revise
