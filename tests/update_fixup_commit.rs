@@ -1,11 +1,34 @@
 use magi::{
     git::{commit::get_recent_commits_for_fixup, test_repo::TestRepo},
-    model::popup::{PopupContent, PopupContentCommand, SelectContext},
+    model::{
+        Toast,
+        popup::{PopupContent, PopupContentCommand, SelectContext},
+    },
     msg::{Message, update::update},
 };
 
 mod utils;
 use utils::create_model_from_test_repo;
+
+#[test]
+fn test_show_fixup_commit_select_without_staged_changes_shows_toast() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(&mut model, Message::ShowFixupCommitSelect);
+
+    assert_eq!(result, None);
+    assert!(model.popup.is_none());
+    assert!(matches!(model.toast, Some(Toast { .. })));
+    if let Some(toast) = model.toast {
+        assert_eq!(toast.message, "Nothing staged to fixup");
+    }
+}
 
 #[test]
 fn test_show_fixup_commit_select_shows_popup() {
@@ -19,6 +42,11 @@ fn test_show_fixup_commit_select_shows_popup() {
         .write_file_content("file2.txt", "content2")
         .stage_files(&["file2.txt"])
         .commit("Second commit");
+
+    // Stage some changes to prepare for fixup
+    test_repo
+        .write_file_content("file1.txt", "modified content")
+        .stage_files(&["file1.txt"]);
 
     let mut model = create_model_from_test_repo(&test_repo);
 

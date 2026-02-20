@@ -1,13 +1,25 @@
+use std::time::Instant;
+
 use crate::{
     git::commit::get_recent_commits_for_fixup,
     model::{
-        Model,
+        Model, Toast, ToastStyle,
         popup::{PopupContent, PopupContentCommand, SelectContext, SelectPopupState},
     },
-    msg::Message,
+    msg::{Message, update::commit::TOAST_DURATION},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
+    // Check if there are staged changes
+    if let Ok(false) = model.git_info.has_staged_changes() {
+        model.toast = Some(Toast {
+            message: "Nothing staged to fixup".to_string(),
+            style: ToastStyle::Warning,
+            expires_at: Instant::now() + TOAST_DURATION,
+        });
+        return None;
+    }
+
     let repo_path = model.git_info.repository.workdir()?;
 
     match get_recent_commits_for_fixup(repo_path) {
