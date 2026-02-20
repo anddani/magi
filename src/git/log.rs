@@ -147,6 +147,14 @@ fn is_remote_branch(name: &str, remotes: &[String]) -> bool {
 }
 
 /// Parse a refs string (e.g., "HEAD -> main, origin/main, tag: v1.0") into CommitRefs
+/// This is a helper for parsing refs from git log output without repository context
+pub fn parse_refs_from_string(refs_str: &str) -> Vec<CommitRef> {
+    // Without repository context, we can't determine which refs are remote branches
+    // So we treat all refs as local branches unless they match common patterns
+    parse_refs(refs_str, &[])
+}
+
+/// Parse a refs string (e.g., "HEAD -> main, origin/main, tag: v1.0") into CommitRefs
 fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
     if refs_str.is_empty() {
         return Vec::new();

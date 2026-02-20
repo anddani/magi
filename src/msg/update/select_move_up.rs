@@ -7,8 +7,14 @@ use crate::{
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    if let Some(PopupContent::Command(PopupContentCommand::Select(ref mut state))) = model.popup {
-        state.move_up();
+    match &mut model.popup {
+        Some(PopupContent::Command(PopupContentCommand::Select(state))) => {
+            state.move_up();
+        }
+        Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) => {
+            state.move_up();
+        }
+        _ => {}
     }
     None
 }

@@ -7,8 +7,8 @@ use crate::{
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    let result =
-        if let Some(PopupContent::Command(PopupContentCommand::Select(ref state))) = model.popup {
+    let result = match &model.popup {
+        Some(PopupContent::Command(PopupContentCommand::Select(state))) => {
             if let Some(item) = state.selected_item() {
                 // Use the selected item from filtered results
                 SelectResult::Selected(item.to_string())
@@ -19,9 +19,21 @@ pub fn update(model: &mut Model) -> Option<Message> {
             } else {
                 SelectResult::NoneSelected
             }
-        } else {
-            return None;
-        };
+        }
+        Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) => {
+            if let Some(hash) = state.selected_commit_hash() {
+                // Use the selected commit hash
+                SelectResult::Selected(hash.to_string())
+            } else if !state.input_text.is_empty() {
+                // No matches, but user entered text - use the input text directly
+                // This allows entering arbitrary commit hashes
+                SelectResult::Selected(state.input_text.clone())
+            } else {
+                SelectResult::NoneSelected
+            }
+        }
+        _ => return None,
+    };
 
     // Store the result for the caller to retrieve
     model.select_result = Some(result.clone());

@@ -4,7 +4,7 @@ use crate::{
     git::commit::get_recent_commits_for_fixup,
     model::{
         Model, Toast, ToastStyle,
-        popup::{PopupContent, PopupContentCommand, SelectContext, SelectPopupState},
+        popup::{CommitSelectPopupState, PopupContent, PopupContentCommand, SelectContext},
     },
     msg::{FixupType, Message, update::commit::TOAST_DURATION},
 };
@@ -34,8 +34,10 @@ pub fn update(model: &mut Model, fixup_type: FixupType) -> Option<Message> {
                     FixupType::Fixup => "Fixup commit".to_string(),
                     FixupType::Squash => "Squash commit".to_string(),
                 };
-                let state = SelectPopupState::new(title, commits);
-                model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+                let state = CommitSelectPopupState::new(title, commits);
+                model.popup = Some(PopupContent::Command(PopupContentCommand::CommitSelect(
+                    state,
+                )));
                 model.select_context = Some(SelectContext::FixupCommit(fixup_type));
                 None
             }

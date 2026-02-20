@@ -80,14 +80,25 @@ pub fn run_amend_commit_with_editor<P: AsRef<Path>>(
 }
 
 /// Gets a list of recent commits for fixup selection.
-/// Returns a vector of strings in the format: "hash - message"
-pub fn get_recent_commits_for_fixup<P: AsRef<Path>>(repo_path: P) -> MagiResult<Vec<String>> {
+/// Returns a vector of LogEntry objects with commit information.
+pub fn get_recent_commits_for_fixup<P: AsRef<Path>>(
+    repo_path: P,
+) -> MagiResult<Vec<crate::model::LogEntry>> {
+    const SEPARATOR: char = '\x0c'; // Form feed character
+
+    // Format: hash<sep>refs<sep>author<sep>date<sep>message
+    let format = format!(
+        "%h{}%D{}%aN{}%ar{}%s",
+        SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
+    );
+
     let output = git_cmd(
         &repo_path,
         &[
             "log",
             &format!("-n{}", MAX_FIXUP_COMMITS),
-            "--format=%h - %s",
+            &format!("--format={}", format),
+            "--decorate=short",
             "HEAD",
         ],
     )
@@ -99,9 +110,55 @@ pub fn get_recent_commits_for_fixup<P: AsRef<Path>>(repo_path: P) -> MagiResult<
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let commits: Vec<String> = stdout.lines().map(|line| line.to_string()).collect();
+    let commits = parse_commit_list(&stdout);
 
     Ok(commits)
+}
+
+/// Parse the output of git log into LogEntry structs (without graph)
+fn parse_commit_list(output: &str) -> Vec<crate::model::LogEntry> {
+    const SEPARATOR: char = '\x0c';
+
+    output
+        .lines()
+        .filter_map(|line| {
+            let parts: Vec<&str> = line.split(SEPARATOR).collect();
+            if parts.len() >= 5 {
+                let hash = if parts[0].is_empty() {
+                    None
+                } else {
+                    Some(parts[0].to_string())
+                };
+                let refs = super::log::parse_refs_from_string(parts[1]);
+                let author = if parts[2].is_empty() {
+                    None
+                } else {
+                    Some(parts[2].to_string())
+                };
+                let time = if parts[3].is_empty() {
+                    None
+                } else {
+                    parts[3].strip_suffix(" ago").map(String::from)
+                };
+                let message = if parts[4].is_empty() {
+                    None
+                } else {
+                    Some(parts[4].to_string())
+                };
+
+                Some(crate::model::LogEntry::new(
+                    String::new(), // No graph for commit select
+                    hash,
+                    refs,
+                    author,
+                    time,
+                    message,
+                ))
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 /// Runs `git commit --fixup=<commit_hash> --no-edit` to create a fixup commit.
@@ -188,8 +245,8 @@ mod tests {
 
         // Note: TestRepo::new() creates an initial commit, so we have 3 commits total
         assert_eq!(commits.len(), 3);
-        assert!(commits[0].contains("Second commit"));
-        assert!(commits[1].contains("First commit"));
+        assert_eq!(commits[0].message.as_deref(), Some("Second commit"));
+        assert_eq!(commits[1].message.as_deref(), Some("First commit"));
     }
 
     #[test]
@@ -200,7 +257,7 @@ mod tests {
 
         // TestRepo::new() creates one initial commit
         assert_eq!(commits.len(), 1);
-        assert!(commits[0].contains("Initial commit"));
+        assert_eq!(commits[0].message.as_deref(), Some("Initial commit"));
     }
 
     #[test]
@@ -213,8 +270,7 @@ mod tests {
 
         // Get the hash of the first user commit (not the initial one)
         let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
-        let first_commit_line = &commits[0];
-        let commit_hash = first_commit_line.split(" - ").next().unwrap();
+        let commit_hash = commits[0].hash.as_ref().unwrap();
 
         // Make a change and stage it
         test_repo
@@ -230,7 +286,10 @@ mod tests {
         // Verify the commit message
         let commits_after = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
         assert_eq!(commits_after.len(), 3); // Initial + First commit + fixup commit
-        assert!(commits_after[0].contains("fixup! First commit"));
+        assert_eq!(
+            commits_after[0].message.as_deref(),
+            Some("fixup! First commit")
+        );
     }
 
     #[test]
@@ -243,8 +302,7 @@ mod tests {
 
         // Get the hash of the first user commit
         let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
-        let first_commit_line = &commits[0];
-        let commit_hash = first_commit_line.split(" - ").next().unwrap();
+        let commit_hash = commits[0].hash.as_ref().unwrap();
 
         // Try to create fixup commit without staging changes
         let result = run_fixup_commit(test_repo.repo_path(), commit_hash.to_string()).unwrap();
@@ -262,8 +320,7 @@ mod tests {
 
         // Get the hash of the first user commit (not the initial one)
         let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
-        let first_commit_line = &commits[0];
-        let commit_hash = first_commit_line.split(" - ").next().unwrap();
+        let commit_hash = commits[0].hash.as_ref().unwrap();
 
         // Make a change and stage it
         test_repo
@@ -279,7 +336,10 @@ mod tests {
         // Verify the commit message
         let commits_after = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
         assert_eq!(commits_after.len(), 3); // Initial + First commit + squash commit
-        assert!(commits_after[0].contains("squash! First commit"));
+        assert_eq!(
+            commits_after[0].message.as_deref(),
+            Some("squash! First commit")
+        );
     }
 
     #[test]
@@ -292,8 +352,7 @@ mod tests {
 
         // Get the hash of the first user commit
         let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
-        let first_commit_line = &commits[0];
-        let commit_hash = first_commit_line.split(" - ").next().unwrap();
+        let commit_hash = commits[0].hash.as_ref().unwrap();
 
         // Try to create squash commit without staging changes
         let result = run_squash_commit(test_repo.repo_path(), commit_hash.to_string()).unwrap();
