@@ -17,6 +17,46 @@ pub enum LogType {
     AllBranches,
 }
 
+/// Source of changes to discard
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiscardSource {
+    /// Discard unstaged changes (working tree)
+    Unstaged,
+    /// Discard staged changes (index) - for new files, this deletes them
+    Staged,
+    /// Discard untracked files (deletes them from disk)
+    Untracked,
+}
+
+/// Target for discard operations
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DiscardTarget {
+    /// Discard entire files
+    Files {
+        paths: Vec<String>,
+        source: DiscardSource,
+    },
+    /// Discard a single hunk
+    Hunk {
+        path: String,
+        hunk_index: usize,
+        source: DiscardSource,
+    },
+    /// Discard multiple hunks in the same file
+    Hunks {
+        path: String,
+        hunk_indices: Vec<usize>,
+        source: DiscardSource,
+    },
+    /// Discard specific lines within a hunk
+    Lines {
+        path: String,
+        hunk_index: usize,
+        line_indices: Vec<usize>,
+        source: DiscardSource,
+    },
+}
+
 #[derive(PartialEq, Eq, Debug)]
 pub enum Message {
     /// Quit application
@@ -59,6 +99,11 @@ pub enum Message {
     UnstageSelected,
     /// Unstage all staged files
     UnstageAll,
+
+    /// Discard changes under cursor (shows confirmation popup)
+    DiscardSelected,
+    /// Actually discard after user confirms
+    ConfirmDiscard(DiscardTarget),
 
     /// Enter visual selection mode (sets anchor at current cursor position)
     EnterVisualMode,

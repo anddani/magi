@@ -46,6 +46,9 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     ConfirmAction::DeleteBranch(branch) => {
                         Message::ConfirmDeleteBranch(branch.clone())
                     }
+                    ConfirmAction::DiscardChanges(target) => {
+                        Message::ConfirmDiscard(target.clone())
+                    }
                 };
                 Some(msg)
             }
@@ -119,6 +122,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (_, KeyCode::Char('s')) => Some(Message::StageSelected),
         (_, KeyCode::Char('S')) => Some(Message::StageAllModified),
         (_, KeyCode::Char('U')) => Some(Message::UnstageAll),
+        (_, KeyCode::Char('x')) => Some(Message::DiscardSelected),
 
         // Navigation
         (KeyModifiers::CONTROL, KeyCode::Char('u')) => Some(Message::HalfPageUp),
@@ -1184,5 +1188,76 @@ mod tests {
         let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::HalfPageUp));
+    }
+
+    // Discard tests
+
+    #[test]
+    fn test_x_triggers_discard_selected() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('x'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DiscardSelected));
+    }
+
+    #[test]
+    fn test_y_in_discard_confirm_popup_triggers_confirm_discard() {
+        use crate::model::popup::{ConfirmAction, ConfirmPopupState};
+        use crate::msg::{DiscardSource, DiscardTarget};
+
+        let mut model = create_test_model();
+        let target = DiscardTarget::Files {
+            paths: vec!["test.txt".to_string()],
+            source: DiscardSource::Unstaged,
+        };
+        model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
+            message: "Discard changes in test.txt?".to_string(),
+            on_confirm: ConfirmAction::DiscardChanges(target.clone()),
+        }));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('y'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ConfirmDiscard(target)));
+    }
+
+    #[test]
+    fn test_n_in_discard_confirm_popup_dismisses() {
+        use crate::model::popup::{ConfirmAction, ConfirmPopupState};
+        use crate::msg::{DiscardSource, DiscardTarget};
+
+        let mut model = create_test_model();
+        let target = DiscardTarget::Files {
+            paths: vec!["test.txt".to_string()],
+            source: DiscardSource::Unstaged,
+        };
+        model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
+            message: "Discard changes in test.txt?".to_string(),
+            on_confirm: ConfirmAction::DiscardChanges(target),
+        }));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('n'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_esc_in_discard_confirm_popup_dismisses() {
+        use crate::model::popup::{ConfirmAction, ConfirmPopupState};
+        use crate::msg::{DiscardSource, DiscardTarget};
+
+        let mut model = create_test_model();
+        let target = DiscardTarget::Files {
+            paths: vec!["test.txt".to_string()],
+            source: DiscardSource::Unstaged,
+        };
+        model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
+            message: "Discard changes in test.txt?".to_string(),
+            on_confirm: ConfirmAction::DiscardChanges(target),
+        }));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
     }
 }

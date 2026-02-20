@@ -17,6 +17,7 @@ pub mod commit;
 mod commit_utils;
 pub mod credential;
 mod diff_utils;
+pub mod discard;
 pub mod info;
 pub mod log;
 pub mod open_pr;

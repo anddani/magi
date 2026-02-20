@@ -38,6 +38,8 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::StageSelected
         | Message::UnstageSelected
         | Message::UnstageAll
+        | Message::DiscardSelected
+        | Message::ConfirmDiscard(_)
         | Message::DismissPopup
         | Message::EnterVisualMode
         | Message::ExitVisualMode

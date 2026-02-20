@@ -16,6 +16,8 @@ pub struct ConfirmPopupState {
 pub enum ConfirmAction {
     /// Delete a branch (stores the branch name)
     DeleteBranch(String),
+    /// Discard changes (stores the discard target)
+    DiscardChanges(crate::msg::DiscardTarget),
 }
 
 /// State for the credential input popup.

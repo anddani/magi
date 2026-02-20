@@ -63,13 +63,29 @@ pub fn stage_lines<P: AsRef<Path>>(
 
     let mut old_count: usize = 0;
     let mut new_count: usize = 0;
+    let mut ui_index: usize = 0;
+    let mut last_line_included = true;
 
-    for (i, line) in content_lines.iter().enumerate() {
-        let is_selected = selected_line_indices.contains(&i);
+    for line in content_lines.iter() {
+        // "\ No newline at end of file" marker: don't count, just
+        // include if the preceding line was included in the patch.
+        if line.starts_with('\\') {
+            if last_line_included {
+                modified_lines.push(line.to_string());
+            }
+            continue;
+        }
+
+        let is_selected = selected_line_indices.contains(&ui_index);
+        ui_index += 1;
+
         if line.starts_with('+') {
             if is_selected {
                 modified_lines.push(line.to_string());
                 new_count += 1;
+                last_line_included = true;
+            } else {
+                last_line_included = false;
             }
             // Unselected additions are simply omitted
         } else if let Some(stripped) = line.strip_prefix('-') {
@@ -83,11 +99,13 @@ pub fn stage_lines<P: AsRef<Path>>(
                 old_count += 1;
                 new_count += 1;
             }
+            last_line_included = true;
         } else {
             // Context line
             modified_lines.push(line.to_string());
             old_count += 1;
             new_count += 1;
+            last_line_included = true;
         }
     }
 
@@ -111,7 +129,7 @@ pub fn stage_lines<P: AsRef<Path>>(
 }
 
 /// Gets the diff output for a specific file.
-fn get_file_diff<P: AsRef<Path>>(repo_path: P, file: &str) -> MagiResult<String> {
+pub fn get_file_diff<P: AsRef<Path>>(repo_path: P, file: &str) -> MagiResult<String> {
     let output = git_cmd(&repo_path, &["diff", "--", file])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -121,7 +139,10 @@ fn get_file_diff<P: AsRef<Path>>(repo_path: P, file: &str) -> MagiResult<String>
 
 /// Extracts the diff file header and lines of a specific hunk from diff output.
 /// Returns (file_header, hunk_lines) where hunk_lines includes the @@ header.
-fn extract_hunk_from_diff(diff_output: &str, hunk_index: usize) -> MagiResult<(String, Vec<&str>)> {
+pub fn extract_hunk_from_diff(
+    diff_output: &str,
+    hunk_index: usize,
+) -> MagiResult<(String, Vec<&str>)> {
     let lines: Vec<&str> = diff_output.lines().collect();
 
     // Find the file header (everything before the first @@ line)
@@ -232,9 +253,22 @@ pub fn unstage_lines<P: AsRef<Path>>(
 
     let mut old_count: usize = 0;
     let mut new_count: usize = 0;
+    let mut ui_index: usize = 0;
+    let mut last_line_included = true;
 
-    for (i, line) in content_lines.iter().enumerate() {
-        let is_selected = selected_line_indices.contains(&i);
+    for line in content_lines.iter() {
+        // "\ No newline at end of file" marker: don't count, just
+        // include if the preceding line was included in the patch.
+        if line.starts_with('\\') {
+            if last_line_included {
+                modified_lines.push(line.to_string());
+            }
+            continue;
+        }
+
+        let is_selected = selected_line_indices.contains(&ui_index);
+        ui_index += 1;
+
         if let Some(stripped) = line.strip_prefix('+') {
             if is_selected {
                 modified_lines.push(line.to_string());
@@ -246,10 +280,14 @@ pub fn unstage_lines<P: AsRef<Path>>(
                 old_count += 1;
                 new_count += 1;
             }
+            last_line_included = true;
         } else if line.starts_with('-') {
             if is_selected {
                 modified_lines.push(line.to_string());
                 old_count += 1;
+                last_line_included = true;
+            } else {
+                last_line_included = false;
             }
             // Unselected deletions are simply omitted
         } else {
@@ -257,6 +295,7 @@ pub fn unstage_lines<P: AsRef<Path>>(
             modified_lines.push(line.to_string());
             old_count += 1;
             new_count += 1;
+            last_line_included = true;
         }
     }
 
@@ -330,7 +369,7 @@ fn apply_patch_cached_reverse<P: AsRef<Path>>(repo_path: P, patch: &str) -> Magi
 }
 
 /// Parses a hunk header like "@@ -7,6 +7,8 @@" to extract (old_start, new_start).
-fn parse_hunk_header_starts(header: &str) -> MagiResult<(usize, usize)> {
+pub fn parse_hunk_header_starts(header: &str) -> MagiResult<(usize, usize)> {
     // Format: @@ -old_start[,old_count] +new_start[,new_count] @@
     let parts: Vec<&str> = header.split_whitespace().collect();
     if parts.len() < 4 {
