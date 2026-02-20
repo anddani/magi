@@ -2,7 +2,7 @@ use magi::{
     git::{commit::get_recent_commits_for_fixup, test_repo::TestRepo},
     model::{
         Toast,
-        popup::{CommitSelectPopupState, PopupContent, PopupContentCommand, SelectContext},
+        popup::{PopupContent, PopupContentCommand, SelectContext},
     },
     msg::{FixupType, Message, update::update},
 };
@@ -206,7 +206,7 @@ fn test_show_squash_commit_select_shows_popup() {
     assert_eq!(result, None);
     assert!(matches!(
         model.popup,
-        Some(PopupContent::Command(PopupContentCommand::Select(_)))
+        Some(PopupContent::Command(PopupContentCommand::CommitSelect(_)))
     ));
     assert_eq!(
         model.select_context,
@@ -224,7 +224,7 @@ fn test_squash_commit_creates_squash() {
 
     // Get the hash of the first user commit
     let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
-    let first_commit_ref = commits[0].clone();
+    let first_commit_hash = commits[0].hash.as_ref().unwrap().to_string();
 
     // Make a change and stage it
     test_repo
@@ -235,7 +235,7 @@ fn test_squash_commit_creates_squash() {
 
     let result = update(
         &mut model,
-        Message::FixupCommit(first_commit_ref, FixupType::Squash),
+        Message::FixupCommit(first_commit_hash, FixupType::Squash),
     );
 
     assert_eq!(result, Some(Message::Refresh));
@@ -243,7 +243,10 @@ fn test_squash_commit_creates_squash() {
     // Verify the squash commit was created
     let commits_after = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
     assert_eq!(commits_after.len(), 3); // Initial + First commit + squash commit
-    assert!(commits_after[0].contains("squash! First commit"));
+    assert_eq!(
+        commits_after[0].message.as_deref(),
+        Some("squash! First commit")
+    );
 }
 
 #[test]
@@ -256,13 +259,13 @@ fn test_squash_commit_without_staged_changes_shows_error() {
 
     // Get the hash of the first user commit
     let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
-    let first_commit_ref = commits[0].clone();
+    let first_commit_hash = commits[0].hash.as_ref().unwrap().to_string();
 
     let mut model = create_model_from_test_repo(&test_repo);
 
     let result = update(
         &mut model,
-        Message::FixupCommit(first_commit_ref, FixupType::Squash),
+        Message::FixupCommit(first_commit_hash, FixupType::Squash),
     );
 
     assert_eq!(result, None);
@@ -284,18 +287,21 @@ fn test_squash_commit_extracts_hash_from_selection() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    // Simulate the format from get_recent_commits_for_fixup: "hash - message"
+    // Get the hash from the commit entry
     let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
-    let commit_ref = commits[0].clone(); // Should be in format "abc123 - First commit"
+    let commit_hash = commits[0].hash.as_ref().unwrap().to_string();
 
     let result = update(
         &mut model,
-        Message::FixupCommit(commit_ref, FixupType::Squash),
+        Message::FixupCommit(commit_hash, FixupType::Squash),
     );
 
     assert_eq!(result, Some(Message::Refresh));
 
     // Verify the squash commit was created with correct message
     let commits_after = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
-    assert!(commits_after[0].contains("squash! First commit"));
+    assert_eq!(
+        commits_after[0].message.as_deref(),
+        Some("squash! First commit")
+    );
 }

@@ -16,8 +16,8 @@ pub fn render(state: &CommitSelectPopupState, frame: &mut Frame, area: Rect, the
     // Width: full width
     let popup_width = area.width;
 
-    // Height: 25% of screen height (minimum 5 for header + border + at least 1 item)
-    let popup_height = (area.height / 4).max(5);
+    // Height: 50% of screen height (minimum 5 for header + border + at least 1 item)
+    let popup_height = (area.height / 2).max(5);
 
     // Position: bottom of screen, full width
     let x = area.x;
