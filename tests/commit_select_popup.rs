@@ -1,11 +1,19 @@
 use magi::{
-    git::{commit::get_recent_commits_for_fixup, test_repo::TestRepo},
+    git::{log::get_log_entries, test_repo::TestRepo},
     model::popup::{CommitSelectPopupState, PopupContent, PopupContentCommand},
-    msg::{FixupType, Message, SelectMessage, update::update},
+    msg::{FixupType, LogType, Message, SelectMessage, update::update},
 };
 
 mod utils;
 use utils::create_model_from_test_repo;
+
+/// Helper to get log entries for testing (filters out graph-only entries)
+fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> {
+    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+    let mut entries = get_log_entries(&repo, LogType::Current).unwrap();
+    entries.retain(|e| e.is_commit());
+    entries
+}
 
 #[test]
 fn test_commit_select_popup_displays_log_entries() {
@@ -237,7 +245,7 @@ fn test_commit_select_popup_confirm_returns_hash() {
 
 #[test]
 fn test_commit_select_popup_state_new() {
-    let commits = get_recent_commits_for_fixup(TestRepo::new().repo_path()).unwrap();
+    let commits = get_log_entries_for_test(&TestRepo::new());
     let state = CommitSelectPopupState::new("Test".to_string(), commits.clone());
 
     assert_eq!(state.title, "Test");
@@ -260,7 +268,7 @@ fn test_commit_select_popup_state_filter() {
         .stage_files(&["file2.txt"])
         .commit("Bug fix");
 
-    let commits = get_recent_commits_for_fixup(test_repo.repo_path()).unwrap();
+    let commits = get_log_entries_for_test(&test_repo);
     let mut state = CommitSelectPopupState::new("Test".to_string(), commits);
 
     // Filter by "feature"
