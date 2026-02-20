@@ -126,7 +126,7 @@ Here are a few features that the aforementioned applications lack:
 - [ ] Applying changes
     - [ ] Apply
     - [ ] Reverse
-    - [ ] Discard
+    - [x] Discard
     - [x] Stage
     - [x] Unstage
     - [x] Stage all
