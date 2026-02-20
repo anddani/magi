@@ -7,6 +7,7 @@ A terminal-based Git client.
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue)
 
 
+
 ---
 
 ## Features and goals
