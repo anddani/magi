@@ -572,8 +572,14 @@ where
     // Calculate which lines within the hunk are selected.
     // Pass is_matching_hunk so only the correct section type (staged vs unstaged)
     // is counted, avoiding index inflation from the other section.
-    let line_indices =
-        compute_hunk_line_indices(lines, sel_start, sel_end, path, hunk_index, &is_matching_hunk);
+    let line_indices = compute_hunk_line_indices(
+        lines,
+        sel_start,
+        sel_end,
+        path,
+        hunk_index,
+        &is_matching_hunk,
+    );
     if line_indices.is_empty() {
         return None;
     }
