@@ -21,6 +21,7 @@ pub enum CommitArgument {
     AllowEmpty,
     Verbose,
     DisableHooks,
+    ResetAuthor,
 }
 
 impl CommitArgument {
@@ -30,6 +31,7 @@ impl CommitArgument {
             CommitArgument::AllowEmpty,
             CommitArgument::Verbose,
             CommitArgument::DisableHooks,
+            CommitArgument::ResetAuthor,
         ]
     }
 
@@ -39,6 +41,7 @@ impl CommitArgument {
             CommitArgument::AllowEmpty => 'e',
             CommitArgument::Verbose => 'v',
             CommitArgument::DisableHooks => 'n',
+            CommitArgument::ResetAuthor => 'R',
         }
     }
 
@@ -52,6 +55,7 @@ impl CommitArgument {
             CommitArgument::AllowEmpty => "Allow empty commit",
             CommitArgument::Verbose => "Show diff of changes to be commited",
             CommitArgument::DisableHooks => "Disable hooks",
+            CommitArgument::ResetAuthor => "Claim authorship and reset author date",
         }
     }
 
@@ -61,6 +65,7 @@ impl CommitArgument {
             CommitArgument::AllowEmpty => "--allow-empty",
             CommitArgument::Verbose => "--verbose",
             CommitArgument::DisableHooks => "--no-verify",
+            CommitArgument::ResetAuthor => "--reset-author",
         }
     }
 }
