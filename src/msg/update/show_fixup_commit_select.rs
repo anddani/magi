@@ -1,12 +1,12 @@
 use std::time::Instant;
 
 use crate::{
-    git::commit::get_recent_commits_for_fixup,
+    git::log::get_log_entries,
     model::{
         Model, Toast, ToastStyle,
-        popup::{PopupContent, PopupContentCommand, SelectContext, SelectPopupState},
+        popup::{CommitSelectPopupState, PopupContent, PopupContentCommand, SelectContext},
     },
-    msg::{FixupType, Message, update::commit::TOAST_DURATION},
+    msg::{FixupType, LogType, Message, update::commit::TOAST_DURATION},
 };
 
 pub fn update(model: &mut Model, fixup_type: FixupType) -> Option<Message> {
@@ -20,10 +20,14 @@ pub fn update(model: &mut Model, fixup_type: FixupType) -> Option<Message> {
         return Some(Message::DismissPopup);
     }
 
-    let repo_path = model.git_info.repository.workdir()?;
+    match get_log_entries(&model.git_info.repository, LogType::Current) {
+        Ok(mut commits) => {
+            // Remove graph-only entries (keep only actual commits)
+            commits.retain(|entry| entry.is_commit());
 
-    match get_recent_commits_for_fixup(repo_path) {
-        Ok(commits) => {
+            // Limit to 50 commits for fixup selection
+            commits.truncate(50);
+
             if commits.is_empty() {
                 model.popup = Some(PopupContent::Error {
                     message: "No commits found in current branch".to_string(),
@@ -34,8 +38,10 @@ pub fn update(model: &mut Model, fixup_type: FixupType) -> Option<Message> {
                     FixupType::Fixup => "Fixup commit".to_string(),
                     FixupType::Squash => "Squash commit".to_string(),
                 };
-                let state = SelectPopupState::new(title, commits);
-                model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+                let state = CommitSelectPopupState::new(title, commits);
+                model.popup = Some(PopupContent::Command(PopupContentCommand::CommitSelect(
+                    state,
+                )));
                 model.select_context = Some(SelectContext::FixupCommit(fixup_type));
                 None
             }

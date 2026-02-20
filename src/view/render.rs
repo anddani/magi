@@ -16,6 +16,7 @@ use crate::{
 
 mod branch_popup;
 mod commit_popup;
+mod commit_select_popup;
 mod credential_popup;
 mod fetch_popup;
 mod help_popup;
@@ -99,6 +100,12 @@ pub fn render_popup(
                 // Select popup uses custom rendering, not the column layout
                 PopupContentCommand::Select(state) => {
                     select_popup::render(state, frame, area, theme);
+                    return;
+                }
+
+                // Commit select popup uses custom rendering with log line formatting
+                PopupContentCommand::CommitSelect(state) => {
+                    commit_select_popup::render(state, frame, area, theme);
                     return;
                 }
             };

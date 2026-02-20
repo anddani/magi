@@ -76,8 +76,9 @@ pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult
     Ok(entries)
 }
 
-/// Parse the output of git log --graph into LogEntry structs
-fn parse_log_output(output: &str, remotes: &[String]) -> Vec<LogEntry> {
+/// Parse the output of git log into LogEntry structs
+/// Works with both --graph and non-graph output
+pub fn parse_log_output(output: &str, remotes: &[String]) -> Vec<LogEntry> {
     let mut entries = Vec::new();
 
     for line in output.lines() {
