@@ -1,3 +1,11 @@
+<p align="center">
+  <img width="75%" src="assets/monitor_2.png" alt="Banner">
+</p>
+<p align="center">
+  <b>A Git TUI</b>
+</p>
+
+
 # 🧙 Magi {—*}
 A terminal-based Git client.
 
