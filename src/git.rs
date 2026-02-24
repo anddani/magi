@@ -15,6 +15,7 @@ pub fn git_cmd<P: AsRef<Path>>(repo_path: P, args: &[&str]) -> Command {
 pub mod checkout;
 pub mod commit;
 mod commit_utils;
+pub mod config;
 pub mod credential;
 mod diff_utils;
 pub mod discard;

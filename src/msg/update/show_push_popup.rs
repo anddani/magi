@@ -1,5 +1,8 @@
 use crate::{
-    git::push::{get_current_branch, get_push_remote, get_upstream_branch},
+    git::{
+        config::get_push_remote,
+        push::{get_current_branch, get_upstream_branch},
+    },
     model::{
         Model,
         popup::{PopupContent, PopupContentCommand, PushPopupState},
