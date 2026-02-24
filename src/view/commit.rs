@@ -1,10 +1,11 @@
 use ratatui::{
-    style::{Style, Stylize},
+    style::Style,
     text::{Line as TextLine, Span},
 };
 
 use crate::config::Theme;
 use crate::git::{CommitInfo, CommitRefType};
+use crate::view::util::ref_style;
 
 /// Generate the view lines for a commit
 /// If current_branch is provided, that branch will be highlighted with a background color
@@ -27,19 +28,30 @@ pub fn get_lines(
     // All refs (branches, tags) in order: current branch, HEAD/@, other local, remote, tags
     for commit_ref in &commit.refs {
         spans.push(Span::raw(" "));
+        let is_current = current_branch == Some(commit_ref.name.as_str());
+
+        if commit_ref.ref_type == CommitRefType::LocalBranch {
+            if let Some(remote) = &commit_ref.push_remote {
+                // Split-colored label: "remote/" in remote_branch color + "branch" in local_branch color
+                spans.push(Span::styled(
+                    format!("{}/", remote),
+                    ref_style(theme.remote_branch, is_current),
+                ));
+                spans.push(Span::styled(
+                    commit_ref.name.clone(),
+                    ref_style(theme.local_branch, is_current),
+                ));
+                continue;
+            }
+        }
+
         let color = match commit_ref.ref_type {
             CommitRefType::Head => theme.detached_head,
             CommitRefType::LocalBranch => theme.local_branch,
             CommitRefType::RemoteBranch => theme.remote_branch,
             CommitRefType::Tag => theme.tag_label,
         };
-        // Invert colors for checked out branch (color as background, dark text)
-        let style = if current_branch == Some(commit_ref.name.as_str()) {
-            Style::default().fg(color).underlined().bold()
-        } else {
-            Style::default().fg(color)
-        };
-        spans.push(Span::styled(commit_ref.name.clone(), style));
+        spans.push(Span::styled(commit_ref.name.clone(), ref_style(color, is_current)));
     }
 
     // Commit message - use text color
@@ -88,6 +100,7 @@ mod tests {
             refs: vec![CommitRef {
                 name: "main".to_string(),
                 ref_type: CommitRefType::LocalBranch,
+                push_remote: None,
             }],
             message: "Initial commit".to_string(),
         };
@@ -106,14 +119,17 @@ mod tests {
                 CommitRef {
                     name: "main".to_string(),
                     ref_type: CommitRefType::LocalBranch,
+                    push_remote: None,
                 },
                 CommitRef {
                     name: "origin/main".to_string(),
                     ref_type: CommitRefType::RemoteBranch,
+                    push_remote: None,
                 },
                 CommitRef {
                     name: "v1.0.0".to_string(),
                     ref_type: CommitRefType::Tag,
+                    push_remote: None,
                 },
             ],
             message: "Release commit".to_string(),
@@ -136,6 +152,7 @@ mod tests {
             refs: vec![CommitRef {
                 name: "@".to_string(),
                 ref_type: CommitRefType::Head,
+                push_remote: None,
             }],
             message: "Detached commit".to_string(),
         };
@@ -153,6 +170,7 @@ mod tests {
             refs: vec![CommitRef {
                 name: "@".to_string(),
                 ref_type: CommitRefType::Head,
+                push_remote: None,
             }],
             message: "Detached commit".to_string(),
         };
@@ -170,6 +188,7 @@ mod tests {
             refs: vec![CommitRef {
                 name: "main".to_string(),
                 ref_type: CommitRefType::LocalBranch,
+                push_remote: None,
             }],
             message: "Commit".to_string(),
         };
@@ -187,6 +206,7 @@ mod tests {
             refs: vec![CommitRef {
                 name: "origin/main".to_string(),
                 ref_type: CommitRefType::RemoteBranch,
+                push_remote: None,
             }],
             message: "Commit".to_string(),
         };
@@ -227,14 +247,17 @@ mod tests {
                 CommitRef {
                     name: "main".to_string(),
                     ref_type: CommitRefType::LocalBranch,
+                    push_remote: None,
                 },
                 CommitRef {
                     name: "feature".to_string(),
                     ref_type: CommitRefType::LocalBranch,
+                    push_remote: None,
                 },
                 CommitRef {
                     name: "origin/main".to_string(),
                     ref_type: CommitRefType::RemoteBranch,
+                    push_remote: None,
                 },
             ],
             message: "Commit".to_string(),

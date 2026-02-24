@@ -1,9 +1,10 @@
 use ratatui::{
-    style::{Color, Modifier, Style, Stylize},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
 };
 
 use crate::{config::Theme, git::CommitRefType, model::LogEntry};
+use crate::view::util::ref_style;
 
 /// Get the display lines for a log entry
 /// If current_branch is provided, that branch will be highlighted with inverted colors
@@ -40,19 +41,25 @@ pub fn get_lines(
             if commit_ref.ref_type == CommitRefType::Head && !is_detached_head {
                 continue;
             }
+            let is_current = current_branch == Some(commit_ref.name.as_str());
+
+            if commit_ref.ref_type == CommitRefType::LocalBranch {
+                if let Some(remote) = &commit_ref.push_remote {
+                    // Split-colored label: "remote/" in remote_branch color + "branch" in local_branch color
+                    spans.push(Span::styled(format!("{}/", remote), ref_style(theme.remote_branch, is_current)));
+                    spans.push(Span::styled(commit_ref.name.clone(), ref_style(theme.local_branch, is_current)));
+                    spans.push(Span::raw(" "));
+                    continue;
+                }
+            }
+
             let color = match commit_ref.ref_type {
                 CommitRefType::Head => theme.detached_head,
                 CommitRefType::LocalBranch => theme.local_branch,
                 CommitRefType::RemoteBranch => theme.remote_branch,
                 CommitRefType::Tag => theme.tag_label,
             };
-            // Invert colors for checked out branch (color as background, dark text)
-            let style = if current_branch == Some(commit_ref.name.as_str()) {
-                Style::default().fg(color).underlined().bold()
-            } else {
-                Style::default().fg(color)
-            };
-            spans.push(Span::styled(commit_ref.name.clone(), style));
+            spans.push(Span::styled(commit_ref.name.clone(), ref_style(color, is_current)));
             spans.push(Span::raw(" "));
         }
     }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use git2::Repository;
 
@@ -93,6 +93,82 @@ pub fn build_remote_branch_map(
     Ok(branch_map)
 }
 
+/// Build a map of local branch name -> push remote name.
+/// Checks `branch.<name>.pushRemote` per branch, falling back to `remote.pushDefault`.
+pub fn build_push_remote_map(repository: &Repository) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    let config = match repository.config() {
+        Ok(c) => c,
+        Err(_) => return map,
+    };
+    let push_default = config
+        .get_string("remote.pushDefault")
+        .ok()
+        .filter(|s| !s.is_empty());
+
+    if let Ok(branches) = repository.branches(Some(git2::BranchType::Local)) {
+        for (branch, _) in branches.flatten() {
+            if let Ok(Some(name)) = branch.name() {
+                let remote = config
+                    .get_string(&format!("branch.{}.pushRemote", name))
+                    .ok()
+                    .filter(|s| !s.is_empty())
+                    .or_else(|| push_default.clone());
+                if let Some(r) = remote {
+                    map.insert(name.to_string(), r);
+                }
+            }
+        }
+    }
+    map
+}
+
+/// Enrich a commit's refs with push remote info.
+///
+/// For each local branch that has a push remote configured AND whose push branch
+/// (`remote/local-name`) is also in the refs for this commit:
+/// - Sets `push_remote` on the local branch ref
+/// - Removes the matching remote branch ref (it's already shown via the split-colored label)
+///
+/// Remote branch refs with a different name are kept as-is.
+pub fn enrich_refs_with_push_remote(
+    refs: Vec<CommitRef>,
+    push_remote_map: &HashMap<String, String>,
+) -> Vec<CommitRef> {
+    // Collect all remote branch names present at this commit
+    let remote_names: HashSet<String> = refs
+        .iter()
+        .filter(|r| r.ref_type == CommitRefType::RemoteBranch)
+        .map(|r| r.name.clone())
+        .collect();
+
+    // Determine which remote refs to suppress (merged into a local branch label)
+    let mut suppressed: HashSet<String> = HashSet::new();
+
+    let mut enriched: Vec<CommitRef> = refs
+        .into_iter()
+        .map(|mut r| {
+            if r.ref_type == CommitRefType::LocalBranch {
+                if let Some(remote) = push_remote_map.get(&r.name) {
+                    let push_branch = format!("{}/{}", remote, r.name);
+                    if remote_names.contains(&push_branch) {
+                        r.push_remote = Some(remote.clone());
+                        suppressed.insert(push_branch);
+                    }
+                }
+            }
+            r
+        })
+        .collect();
+
+    // Remove suppressed remote refs
+    enriched.retain(|r| {
+        !(r.ref_type == CommitRefType::RemoteBranch && suppressed.contains(&r.name))
+    });
+
+    enriched
+}
+
 /// Builds refs (branches, tags) for a commit from the prebuilt maps
 pub fn build_refs_for_commit(
     oid: &git2::Oid,
@@ -106,6 +182,7 @@ pub fn build_refs_for_commit(
         refs.extend(branches.iter().map(|b| CommitRef {
             name: b.clone(),
             ref_type: CommitRefType::LocalBranch,
+            push_remote: None,
         }));
     }
 
@@ -113,6 +190,7 @@ pub fn build_refs_for_commit(
         refs.extend(branches.iter().map(|b| CommitRef {
             name: b.clone(),
             ref_type: CommitRefType::RemoteBranch,
+            push_remote: None,
         }));
     }
 
@@ -120,6 +198,7 @@ pub fn build_refs_for_commit(
         refs.push(CommitRef {
             name: tag.clone(),
             ref_type: CommitRefType::Tag,
+            push_remote: None,
         });
     }
 
@@ -198,6 +277,7 @@ mod tests {
         CommitRef {
             name: name.to_string(),
             ref_type: CommitRefType::LocalBranch,
+            push_remote: None,
         }
     }
 
@@ -205,6 +285,7 @@ mod tests {
         CommitRef {
             name: name.to_string(),
             ref_type: CommitRefType::RemoteBranch,
+            push_remote: None,
         }
     }
 
@@ -212,6 +293,7 @@ mod tests {
         CommitRef {
             name: name.to_string(),
             ref_type: CommitRefType::Tag,
+            push_remote: None,
         }
     }
 
@@ -219,6 +301,7 @@ mod tests {
         CommitRef {
             name: "@".to_string(),
             ref_type: CommitRefType::Head,
+            push_remote: None,
         }
     }
 
@@ -310,5 +393,47 @@ mod tests {
         assert_eq!(sorted.len(), 2);
         assert_eq!(sorted[0].name, "alpha");
         assert_eq!(sorted[1].name, "beta");
+    }
+
+    #[test]
+    fn test_enrich_merges_push_branch_at_same_commit() {
+        // Local branch "main" has pushRemote "origin" and "origin/main" is at the same commit
+        let refs = vec![local_branch("main"), remote_branch("origin/main")];
+        let push_remote_map: HashMap<String, String> =
+            [("main".to_string(), "origin".to_string())].into();
+
+        let enriched = enrich_refs_with_push_remote(refs, &push_remote_map);
+
+        // "origin/main" should be suppressed; "main" gets push_remote = Some("origin")
+        assert_eq!(enriched.len(), 1);
+        assert_eq!(enriched[0].name, "main");
+        assert_eq!(enriched[0].push_remote, Some("origin".to_string()));
+    }
+
+    #[test]
+    fn test_enrich_keeps_different_remote_branch_separately() {
+        // Local branch "main" has pushRemote "origin" but "origin/different" is at the same commit
+        let refs = vec![local_branch("main"), remote_branch("origin/different")];
+        let push_remote_map: HashMap<String, String> =
+            [("main".to_string(), "origin".to_string())].into();
+
+        let enriched = enrich_refs_with_push_remote(refs, &push_remote_map);
+
+        // Both refs remain; "main" has no push_remote (push branch not at same commit)
+        assert_eq!(enriched.len(), 2);
+        assert_eq!(enriched[0].push_remote, None);
+        assert_eq!(enriched[1].name, "origin/different");
+    }
+
+    #[test]
+    fn test_enrich_no_push_remote_configured() {
+        let refs = vec![local_branch("main"), remote_branch("origin/main")];
+        let push_remote_map: HashMap<String, String> = HashMap::new();
+
+        let enriched = enrich_refs_with_push_remote(refs, &push_remote_map);
+
+        // Nothing changes when no push remote is configured
+        assert_eq!(enriched.len(), 2);
+        assert_eq!(enriched[0].push_remote, None);
     }
 }

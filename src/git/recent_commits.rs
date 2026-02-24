@@ -6,8 +6,9 @@ use crate::{
 };
 
 use super::commit_utils::{
-    build_local_branch_map, build_refs_for_commit, build_remote_branch_map, build_tag_map,
-    create_commit_line, sort_refs,
+    build_local_branch_map, build_push_remote_map, build_refs_for_commit,
+    build_remote_branch_map, build_tag_map, create_commit_line, enrich_refs_with_push_remote,
+    sort_refs,
 };
 use super::{CommitRef, CommitRefType};
 
@@ -41,6 +42,9 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     // Build maps of commit OID -> branch names
     let local_branch_map = build_local_branch_map(repository)?;
     let remote_branch_map = build_remote_branch_map(repository)?;
+
+    // Build push remote map for split-colored labels
+    let push_remote_map = build_push_remote_map(repository);
 
     // Walk through commits
     let mut revwalk = repository.revwalk()?;
@@ -77,11 +81,15 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
             refs.push(CommitRef {
                 name: "@".to_string(),
                 ref_type: CommitRefType::Head,
+                push_remote: None,
             });
         }
 
         // Sort refs with current branch first (if applicable)
         let refs = sort_refs(refs, current_branch.as_deref());
+
+        // Enrich with push remote info (split-colored labels)
+        let refs = enrich_refs_with_push_remote(refs, &push_remote_map);
 
         lines.push(create_commit_line(
             &commit,
