@@ -15,9 +15,9 @@ pub enum HostingService {
     Codeberg,
 }
 
-/// Runs `git ls-remote --get-url origin` to get the remote URL.
-pub fn get_remote_url<P: AsRef<Path>>(repo_path: P) -> Result<String, String> {
-    let output = git_cmd(&repo_path, &["ls-remote", "--get-url", "origin"])
+/// Runs `git ls-remote --get-url <remote>` to get the remote URL.
+pub fn get_remote_url<P: AsRef<Path>>(repo_path: P, remote: &str) -> Result<String, String> {
+    let output = git_cmd(&repo_path, &["ls-remote", "--get-url", remote])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
@@ -26,17 +26,34 @@ pub fn get_remote_url<P: AsRef<Path>>(repo_path: P) -> Result<String, String> {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         return Err(if stderr.is_empty() {
-            "Failed to get remote URL".to_string()
+            format!("Failed to get remote URL for {}", remote)
         } else {
             stderr
         });
     }
 
     let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if url.is_empty() {
-        return Err("No remote URL found for origin".to_string());
+    // git ls-remote --get-url returns the remote name unchanged when it isn't configured
+    if url.is_empty() || url == remote {
+        return Err(format!("No remote URL found for {}", remote));
     }
     Ok(url)
+}
+
+/// Returns the value of `branch.<name>.remote` (the tracking upstream remote), if set.
+pub fn get_branch_upstream_remote<P: AsRef<Path>>(repo_path: P, branch: &str) -> Option<String> {
+    let key = format!("branch.{}.remote", branch);
+    let output = git_cmd(&repo_path, &["config", "--get", &key])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .output()
+        .ok()?;
+    if output.status.success() {
+        let remote = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if !remote.is_empty() { Some(remote) } else { None }
+    } else {
+        None
+    }
 }
 
 /// Parses a remote URL (SSH or HTTPS) and extracts (host, owner, repo).
@@ -230,6 +247,18 @@ pub fn has_upstream<P: AsRef<Path>>(repo_path: P, branch: &str) -> bool {
         .stderr(Stdio::null())
         .output()
         .is_ok_and(|output| output.status.success())
+}
+
+/// Checks if the given branch has any configured remote to push to:
+/// either a tracking upstream (`branch.<name>.remote`) or a push remote
+/// (`branch.<name>.pushRemote` / `remote.pushDefault`).
+pub fn has_any_remote<P: AsRef<Path>>(
+    repo_path: P,
+    branch: &str,
+    repo: &git2::Repository,
+) -> bool {
+    has_upstream(&repo_path, branch)
+        || crate::git::push::get_push_remote(repo, branch).is_some()
 }
 
 #[cfg(test)]
