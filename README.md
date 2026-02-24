@@ -4,12 +4,12 @@
     <img src="assets/monitor.png" alt="Banner">
 </div>
 
-<div>
+<div align="center">
     <img alt="Status: In development" src="https://img.shields.io/badge/Status-In%20Development-yellow" />
     <img alt="Language: Rust" src="https://img.shields.io/badge/Language-Rust-orange" />
     <a href="https://ratatui.rs"><img alt="Built with Ratatui" src="https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff" /></a>
     <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue" />
-<div align="center">
+</div>
 
 
 <!-- ![Status: In development](https://img.shields.io/badge/Status-In%20Development-yellow) -->
