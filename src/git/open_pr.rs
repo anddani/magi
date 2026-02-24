@@ -50,7 +50,11 @@ pub fn get_branch_upstream_remote<P: AsRef<Path>>(repo_path: P, branch: &str) ->
         .ok()?;
     if output.status.success() {
         let remote = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        if !remote.is_empty() { Some(remote) } else { None }
+        if !remote.is_empty() {
+            Some(remote)
+        } else {
+            None
+        }
     } else {
         None
     }
@@ -252,13 +256,8 @@ pub fn has_upstream<P: AsRef<Path>>(repo_path: P, branch: &str) -> bool {
 /// Checks if the given branch has any configured remote to push to:
 /// either a tracking upstream (`branch.<name>.remote`) or a push remote
 /// (`branch.<name>.pushRemote` / `remote.pushDefault`).
-pub fn has_any_remote<P: AsRef<Path>>(
-    repo_path: P,
-    branch: &str,
-    repo: &git2::Repository,
-) -> bool {
-    has_upstream(&repo_path, branch)
-        || crate::git::push::get_push_remote(repo, branch).is_some()
+pub fn has_any_remote<P: AsRef<Path>>(repo_path: P, branch: &str, repo: &git2::Repository) -> bool {
+    has_upstream(&repo_path, branch) || crate::git::push::get_push_remote(repo, branch).is_some()
 }
 
 #[cfg(test)]

@@ -28,9 +28,5 @@ pub fn update(model: &mut Model, remote: String) -> Option<Message> {
 
     let operation_name = format!("Push to {}/{}", remote, current_branch);
 
-    execute_push(
-        model,
-        vec![remote, current_branch],
-        operation_name,
-    )
+    execute_push(model, vec![remote, current_branch], operation_name)
 }
