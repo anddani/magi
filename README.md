@@ -1,5 +1,6 @@
 <div align="center">
     <h1>Magi</h1>
+    <p>A terminal-based Git client.</p>
     <img src="assets/monitor.png" alt="Banner">
     <img alt="Status: In development" src="https://img.shields.io/badge/Status-In%20Development-yellow" />
     <img alt="Language: Rust" src="https://img.shields.io/badge/Language-Rust-orange" />
@@ -7,7 +8,6 @@
     <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue" />
 </div>
 
-A terminal-based Git client.
 
 <!-- ![Status: In development](https://img.shields.io/badge/Status-In%20Development-yellow) -->
 <!-- ![Language: Rust](https://img.shields.io/badge/Language-Rust-orange) -->
