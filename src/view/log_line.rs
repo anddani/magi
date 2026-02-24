@@ -3,8 +3,8 @@ use ratatui::{
     text::{Line, Span},
 };
 
-use crate::{config::Theme, git::CommitRefType, model::LogEntry};
 use crate::view::util::ref_style;
+use crate::{config::Theme, git::CommitRefType, model::LogEntry};
 
 /// Get the display lines for a log entry
 /// If current_branch is provided, that branch will be highlighted with inverted colors
@@ -46,8 +46,14 @@ pub fn get_lines(
             if commit_ref.ref_type == CommitRefType::LocalBranch {
                 if let Some(remote) = &commit_ref.push_remote {
                     // Split-colored label: "remote/" in remote_branch color + "branch" in local_branch color
-                    spans.push(Span::styled(format!("{}/", remote), ref_style(theme.remote_branch, is_current)));
-                    spans.push(Span::styled(commit_ref.name.clone(), ref_style(theme.local_branch, is_current)));
+                    spans.push(Span::styled(
+                        format!("{}/", remote),
+                        ref_style(theme.remote_branch, is_current),
+                    ));
+                    spans.push(Span::styled(
+                        commit_ref.name.clone(),
+                        ref_style(theme.local_branch, is_current),
+                    ));
                     spans.push(Span::raw(" "));
                     continue;
                 }
@@ -59,7 +65,10 @@ pub fn get_lines(
                 CommitRefType::RemoteBranch => theme.remote_branch,
                 CommitRefType::Tag => theme.tag_label,
             };
-            spans.push(Span::styled(commit_ref.name.clone(), ref_style(color, is_current)));
+            spans.push(Span::styled(
+                commit_ref.name.clone(),
+                ref_style(color, is_current),
+            ));
             spans.push(Span::raw(" "));
         }
     }

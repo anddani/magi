@@ -51,7 +51,10 @@ pub fn get_lines(
             CommitRefType::RemoteBranch => theme.remote_branch,
             CommitRefType::Tag => theme.tag_label,
         };
-        spans.push(Span::styled(commit_ref.name.clone(), ref_style(color, is_current)));
+        spans.push(Span::styled(
+            commit_ref.name.clone(),
+            ref_style(color, is_current),
+        ));
     }
 
     // Commit message - use text color

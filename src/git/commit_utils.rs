@@ -162,9 +162,8 @@ pub fn enrich_refs_with_push_remote(
         .collect();
 
     // Remove suppressed remote refs
-    enriched.retain(|r| {
-        !(r.ref_type == CommitRefType::RemoteBranch && suppressed.contains(&r.name))
-    });
+    enriched
+        .retain(|r| !(r.ref_type == CommitRefType::RemoteBranch && suppressed.contains(&r.name)));
 
     enriched
 }

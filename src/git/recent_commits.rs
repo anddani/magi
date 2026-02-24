@@ -6,9 +6,8 @@ use crate::{
 };
 
 use super::commit_utils::{
-    build_local_branch_map, build_push_remote_map, build_refs_for_commit,
-    build_remote_branch_map, build_tag_map, create_commit_line, enrich_refs_with_push_remote,
-    sort_refs,
+    build_local_branch_map, build_push_remote_map, build_refs_for_commit, build_remote_branch_map,
+    build_tag_map, create_commit_line, enrich_refs_with_push_remote, sort_refs,
 };
 use super::{CommitRef, CommitRefType};
 
