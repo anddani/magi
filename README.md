@@ -13,6 +13,7 @@
 </div>
 -->
 
+---
 
 ![Status: In development](https://img.shields.io/badge/Status-In%20Development-yellow)
 ![Language: Rust](https://img.shields.io/badge/Language-Rust-orange)
