@@ -42,6 +42,8 @@ pub enum SelectContext {
     FixupCommit(crate::msg::FixupType),
     /// Selecting a push remote to pull from (sets branch.<name>.pushRemote)
     PullPushRemote,
+    /// Selecting a push remote to push to (sets branch.<name>.pushRemote)
+    PushPushRemote,
 }
 
 /// State for the select popup (fuzzy finder style)

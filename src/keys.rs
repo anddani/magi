@@ -385,6 +385,7 @@ mod tests {
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
             PushPopupState {
                 upstream: Some("origin/main".to_string()),
+                push_remote: None,
             },
         )));
 
@@ -399,7 +400,10 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState { upstream: None },
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+            },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
@@ -413,7 +417,10 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState { upstream: None },
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+            },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('t'));
@@ -427,7 +434,10 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState { upstream: None },
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+            },
         )));
 
         let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('T'));
@@ -441,7 +451,10 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState { upstream: None },
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+            },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
@@ -455,7 +468,10 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState { upstream: None },
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+            },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
@@ -470,7 +486,10 @@ mod tests {
         let mut model = create_test_model();
         model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState { upstream: None },
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+            },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
@@ -488,7 +507,10 @@ mod tests {
         let mut model = create_test_model();
         model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState { upstream: None },
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+            },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('x'));
@@ -502,7 +524,10 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-            PushPopupState { upstream: None },
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+            },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);

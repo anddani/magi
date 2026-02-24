@@ -1,16 +1,22 @@
 use crate::{
-    git::open_pr::{
-        build_pr_url, detect_service, get_remote_url, open_in_browser, parse_remote_url,
+    git::{
+        config::{get_remote, get_remote_url},
+        open_pr::{build_pr_url, detect_service, open_in_browser, parse_remote_url},
     },
     model::{Model, popup::PopupContent},
     msg::Message,
 };
 
 pub fn update(model: &mut Model, branch: String, target: Option<String>) -> Option<Message> {
-    let remote_url = match get_remote_url(&model.workdir) {
-        Ok(url) => url,
-        Err(e) => {
-            model.popup = Some(PopupContent::Error { message: e });
+    // Determine the remote to use: push remote first, then tracking upstream, then "origin"
+    let remote = get_remote(&model.git_info.repository, &branch);
+
+    let remote_url = match get_remote_url(&model.git_info.repository, &remote) {
+        Some(url) => url,
+        None => {
+            model.popup = Some(PopupContent::Error {
+                message: "Unable to find remote URL".to_string(),
+            });
             return None;
         }
     };

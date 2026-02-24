@@ -183,6 +183,10 @@ pub enum Message {
     ShowPushUpstreamSelect,
     /// Push to a specific remote/branch (setting it as upstream)
     PushToRemote(String),
+    /// Show select popup to choose push remote for push
+    ShowPushPushRemoteSelect,
+    /// Push to push remote (setting branch.<name>.pushRemote)
+    PushToPushRemote(String),
     /// Show select popup to choose remote for pushing all tags
     ShowPushAllTagsSelect,
     /// Push all tags to a specific remote

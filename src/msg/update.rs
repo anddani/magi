@@ -38,6 +38,7 @@ mod pull_upstream;
 mod push_all_tags;
 mod push_helper;
 mod push_tag;
+mod push_to_push_remote;
 mod push_to_remote;
 mod push_upstream;
 mod quit;
@@ -68,6 +69,7 @@ mod show_pull_push_remote_select;
 mod show_pull_upstream_select;
 mod show_push_all_tags_select;
 mod show_push_popup;
+mod show_push_push_remote_select;
 mod show_push_tag_select;
 mod show_push_upstream_select;
 mod show_rename_branch_input;
@@ -159,6 +161,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PushUpstream => push_upstream::update(model),
         Message::ShowPushUpstreamSelect => show_push_upstream_select::update(model),
         Message::PushToRemote(upstream) => push_to_remote::update(model, upstream),
+        Message::ShowPushPushRemoteSelect => show_push_push_remote_select::update(model),
+        Message::PushToPushRemote(remote) => push_to_push_remote::update(model, remote),
         Message::ShowPushAllTagsSelect => show_push_all_tags_select::update(model),
         Message::PushAllTags(remote) => push_all_tags::update(model, remote),
         Message::ShowPushTagSelect => show_push_tag_select::update(model),

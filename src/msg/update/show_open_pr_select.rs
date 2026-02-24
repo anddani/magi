@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use crate::{
-    git::{checkout::get_local_branches, open_pr::has_upstream},
+    git::{checkout::get_local_branches, open_pr::has_any_remote},
     model::{
         BranchSuggestion, Model, Toast, ToastStyle,
         popup::{PopupContent, PopupContentCommand, SelectPopupState},
@@ -31,10 +31,10 @@ pub fn update(model: &mut Model, with_target: bool) -> Option<Message> {
         }
     };
 
-    // Get only local branches that have an upstream set
+    // Get only local branches that have a remote configured (upstream or push remote)
     let mut branches: Vec<String> = get_local_branches(&model.git_info.repository)
         .into_iter()
-        .filter(|b| has_upstream(&model.workdir, b))
+        .filter(|b| has_any_remote(&model.workdir, b, &model.git_info.repository))
         .collect();
 
     if branches.is_empty() {

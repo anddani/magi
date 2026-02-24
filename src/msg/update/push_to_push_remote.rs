@@ -1,13 +1,13 @@
 use crate::{
     git::{config::set_push_remote, push::get_current_branch},
-    model::{Model, arguments::Arguments::PullArguments, popup::PopupContent},
+    model::{Model, popup::PopupContent},
     msg::Message,
 };
 
-use super::pty_helper::execute_pty_command;
+use super::push_helper::execute_push;
 
-/// Pull from the given remote, treating it as the push remote.
-/// Sets `branch.<name>.pushRemote` to the remote, then runs `git pull -v <remote> <current_branch>`.
+/// Push to the given remote, treating it as the push remote.
+/// Sets `branch.<name>.pushRemote` to the remote, then runs `git push -v <remote> <current_branch>`.
 pub fn update(model: &mut Model, remote: String) -> Option<Message> {
     let current_branch = match get_current_branch(&model.workdir).ok().flatten() {
         Some(branch) => branch,
@@ -26,18 +26,7 @@ pub fn update(model: &mut Model, remote: String) -> Option<Message> {
         return None;
     }
 
-    let mut args = vec![
-        "pull".to_string(),
-        "-v".to_string(),
-        remote.clone(),
-        current_branch.clone(),
-    ];
+    let operation_name = format!("Push to {}/{}", remote, current_branch);
 
-    if let Some(PullArguments(arguments)) = model.arguments.take() {
-        args.extend(arguments.into_iter().map(|a| a.flag().to_string()));
-    }
-
-    let operation_name = format!("Pull from {}/{}", remote, current_branch);
-
-    execute_pty_command(model, args, operation_name)
+    execute_push(model, vec![remote, current_branch], operation_name)
 }

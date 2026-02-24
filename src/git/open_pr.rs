@@ -3,6 +3,8 @@ use std::process::{Command, Stdio};
 
 use regex::Regex;
 
+use crate::git::config::get_push_remote;
+
 use super::git_cmd;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,30 +15,6 @@ pub enum HostingService {
     AzureDevOps,
     Gitea,
     Codeberg,
-}
-
-/// Runs `git ls-remote --get-url origin` to get the remote URL.
-pub fn get_remote_url<P: AsRef<Path>>(repo_path: P) -> Result<String, String> {
-    let output = git_cmd(&repo_path, &["ls-remote", "--get-url", "origin"])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .map_err(|e| format!("Failed to run git: {}", e))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        return Err(if stderr.is_empty() {
-            "Failed to get remote URL".to_string()
-        } else {
-            stderr
-        });
-    }
-
-    let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if url.is_empty() {
-        return Err("No remote URL found for origin".to_string());
-    }
-    Ok(url)
 }
 
 /// Parses a remote URL (SSH or HTTPS) and extracts (host, owner, repo).
@@ -230,6 +208,13 @@ pub fn has_upstream<P: AsRef<Path>>(repo_path: P, branch: &str) -> bool {
         .stderr(Stdio::null())
         .output()
         .is_ok_and(|output| output.status.success())
+}
+
+/// Checks if the given branch has any configured remote to push to:
+/// either a tracking upstream (`branch.<name>.remote`) or a push remote
+/// (`branch.<name>.pushRemote` / `remote.pushDefault`).
+pub fn has_any_remote<P: AsRef<Path>>(repo_path: P, branch: &str, repo: &git2::Repository) -> bool {
+    has_upstream(&repo_path, branch) || get_push_remote(repo, branch).is_some()
 }
 
 #[cfg(test)]
