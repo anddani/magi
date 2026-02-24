@@ -79,16 +79,16 @@ pub fn parse_remote_branch(upstream: &str) -> (String, String) {
 pub fn get_push_remote(repo: &Repository, branch: &str) -> Option<String> {
     let config = repo.config().ok()?;
     // Check branch-specific push remote first
-    if let Ok(remote) = config.get_string(&format!("branch.{}.pushRemote", branch)) {
-        if !remote.is_empty() {
-            return Some(remote);
-        }
+    if let Ok(remote) = config.get_string(&format!("branch.{}.pushRemote", branch))
+        && !remote.is_empty()
+    {
+        return Some(remote);
     }
     // Fall back to global push default
-    if let Ok(remote) = config.get_string("remote.pushDefault") {
-        if !remote.is_empty() {
-            return Some(remote);
-        }
+    if let Ok(remote) = config.get_string("remote.pushDefault")
+        && !remote.is_empty()
+    {
+        return Some(remote);
     }
     None
 }
