@@ -30,8 +30,8 @@ pub fn get_lines(
         spans.push(Span::raw(" "));
         let is_current = current_branch == Some(commit_ref.name.as_str());
 
-        if commit_ref.ref_type == CommitRefType::LocalBranch {
-            if let Some(remote) = &commit_ref.push_remote {
+        if commit_ref.ref_type == CommitRefType::LocalBranch
+            && let Some(remote) = &commit_ref.push_remote {
                 // Split-colored label: "remote/" in remote_branch color + "branch" in local_branch color
                 spans.push(Span::styled(
                     format!("{}/", remote),
@@ -43,7 +43,6 @@ pub fn get_lines(
                 ));
                 continue;
             }
-        }
 
         let color = match commit_ref.ref_type {
             CommitRefType::Head => theme.detached_head,

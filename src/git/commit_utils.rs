@@ -148,15 +148,14 @@ pub fn enrich_refs_with_push_remote(
     let mut enriched: Vec<CommitRef> = refs
         .into_iter()
         .map(|mut r| {
-            if r.ref_type == CommitRefType::LocalBranch {
-                if let Some(remote) = push_remote_map.get(&r.name) {
+            if r.ref_type == CommitRefType::LocalBranch
+                && let Some(remote) = push_remote_map.get(&r.name) {
                     let push_branch = format!("{}/{}", remote, r.name);
                     if remote_names.contains(&push_branch) {
                         r.push_remote = Some(remote.clone());
                         suppressed.insert(push_branch);
                     }
                 }
-            }
             r
         })
         .collect();
