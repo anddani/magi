@@ -40,6 +40,8 @@ pub enum SelectContext {
     OpenPrTarget,
     /// Selecting a commit to fixup or squash
     FixupCommit(crate::msg::FixupType),
+    /// Selecting a push remote to pull from (sets branch.<name>.pushRemote)
+    PullPushRemote,
 }
 
 /// State for the select popup (fuzzy finder style)

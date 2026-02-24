@@ -198,6 +198,10 @@ pub enum Message {
     ShowPullUpstreamSelect,
     /// Pull from a specific remote/branch (setting it as upstream)
     PullFromRemote(String),
+    /// Show select popup to choose push remote for pull
+    ShowPullPushRemoteSelect,
+    /// Pull from push remote (setting branch.<name>.pushRemote)
+    PullFromPushRemote(String),
 
     /// Show select popup to pick source branch for PR (opens to default target)
     ShowOpenPrSelect,

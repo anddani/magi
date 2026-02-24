@@ -910,6 +910,37 @@ mod tests {
     }
 
     #[test]
+    fn test_p_in_pull_popup_with_push_remote_pulls_from_push_remote() {
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState {
+                upstream: None,
+                push_remote: Some("origin".to_string()),
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::PullFromPushRemote("origin".to_string())));
+    }
+
+    #[test]
+    fn test_p_in_pull_popup_without_push_remote_shows_select() {
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState { upstream: None, push_remote: None },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowPullPushRemoteSelect));
+    }
+
+    #[test]
     fn test_u_in_pull_popup_with_upstream_pulls() {
         use crate::model::popup::PullPopupState;
 
@@ -917,6 +948,7 @@ mod tests {
         model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
             PullPopupState {
                 upstream: Some("origin/main".to_string()),
+                push_remote: None,
             },
         )));
 
@@ -931,7 +963,7 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
-            PullPopupState { upstream: None },
+            PullPopupState { upstream: None, push_remote: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
@@ -945,7 +977,7 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
-            PullPopupState { upstream: None },
+            PullPopupState { upstream: None, push_remote: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
@@ -959,7 +991,7 @@ mod tests {
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
-            PullPopupState { upstream: None },
+            PullPopupState { upstream: None, push_remote: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
@@ -974,7 +1006,7 @@ mod tests {
         let mut model = create_test_model();
         model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
-            PullPopupState { upstream: None },
+            PullPopupState { upstream: None, push_remote: None },
         )));
 
         // 'r' is not a valid pull argument key, so it should exit arg mode
@@ -992,7 +1024,7 @@ mod tests {
         let mut model = create_test_model();
         model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
-            PullPopupState { upstream: None },
+            PullPopupState { upstream: None, push_remote: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
@@ -1012,7 +1044,7 @@ mod tests {
         let mut model = create_test_model();
         model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
-            PullPopupState { upstream: None },
+            PullPopupState { upstream: None, push_remote: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('r'));
@@ -1032,7 +1064,7 @@ mod tests {
         let mut model = create_test_model();
         model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
-            PullPopupState { upstream: None },
+            PullPopupState { upstream: None, push_remote: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
@@ -1052,7 +1084,7 @@ mod tests {
         let mut model = create_test_model();
         model.arg_mode = true;
         model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
-            PullPopupState { upstream: None },
+            PullPopupState { upstream: None, push_remote: None },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('F'));

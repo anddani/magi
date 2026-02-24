@@ -32,6 +32,7 @@ mod move_up;
 mod open_pr;
 mod pending_g;
 mod pty_helper;
+mod pull_from_push_remote;
 mod pull_from_remote;
 mod pull_upstream;
 mod push_all_tags;
@@ -63,6 +64,7 @@ mod show_log;
 mod show_open_pr_select;
 mod show_open_pr_target_select;
 mod show_pull_popup;
+mod show_pull_push_remote_select;
 mod show_pull_upstream_select;
 mod show_push_all_tags_select;
 mod show_push_popup;
@@ -165,6 +167,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::PullUpstream => pull_upstream::update(model),
         Message::ShowPullUpstreamSelect => show_pull_upstream_select::update(model),
         Message::PullFromRemote(upstream) => pull_from_remote::update(model, upstream),
+        Message::ShowPullPushRemoteSelect => show_pull_push_remote_select::update(model),
+        Message::PullFromPushRemote(remote) => pull_from_push_remote::update(model, remote),
         Message::ShowOpenPrSelect => show_open_pr_select::update(model, false),
         Message::ShowOpenPrWithTargetSelect => show_open_pr_select::update(model, true),
         Message::ShowOpenPrTargetSelect(branch) => {

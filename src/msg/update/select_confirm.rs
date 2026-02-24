@@ -95,6 +95,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::FixupCommit(fixup_type)), SelectResult::Selected(commit)) => {
             Some(Message::FixupCommit(commit, fixup_type))
         }
+        (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
+            Some(Message::PullFromPushRemote(remote))
+        }
         _ => None,
     }
 }
