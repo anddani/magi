@@ -1,7 +1,7 @@
 <div align="center">
     <h1>Magi</h1>
     <p>A terminal-based Git client.</p>
-    <br />
+    <br>
     <img src="assets/monitor.png" alt="Banner">
     <img alt="Status: In development" src="https://img.shields.io/badge/Status-In%20Development-yellow" />
     <img alt="Language: Rust" src="https://img.shields.io/badge/Language-Rust-orange" />
