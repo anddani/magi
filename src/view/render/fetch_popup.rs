@@ -83,6 +83,28 @@ pub fn content<'a>(
         }
     };
 
+    let push_remote_description = {
+        let current_branch = model.git_info.current_branch().unwrap_or_default();
+        match &state.push_remote {
+            Some(remote) => {
+                let remote_style = if model.arg_mode {
+                    faded_style
+                } else {
+                    Style::default().fg(theme.remote_branch)
+                };
+                vec![
+                    Span::styled("p", cmd_key_style),
+                    Span::styled(" ", cmd_desc_style),
+                    Span::styled(format!("{}/{}", remote, current_branch), remote_style),
+                ]
+            }
+            None => vec![
+                Span::styled("p", cmd_key_style),
+                Span::styled(" ${push-remote}, setting that", cmd_desc_style),
+            ],
+        }
+    };
+
     let elsewhere_line = Line::from(vec![
         Span::styled("e", cmd_key_style),
         Span::styled(" elsewhere", cmd_desc_style),
@@ -95,6 +117,7 @@ pub fn content<'a>(
 
     let mut commands: Vec<Line> = vec![
         Line::from(upstream_description),
+        Line::from(push_remote_description),
         elsewhere_line,
         all_remotes_line,
     ];
