@@ -127,6 +127,9 @@ pub struct CommitInfo {
 pub struct CommitRef {
     pub name: String,
     pub ref_type: CommitRefType,
+    /// For LocalBranch: the push remote name (e.g., "origin") when the push branch
+    /// (`remote/local-name`) is at the same commit. Used to render a split-colored label.
+    pub push_remote: Option<String>,
 }
 
 /// Type of reference pointing to a commit

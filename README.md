@@ -4,28 +4,14 @@
     <img src="assets/monitor.png" alt="Banner">
 </div>
 
-<!--
-<div align="center">
-    <img alt="Status: In development" src="https://img.shields.io/badge/Status-In%20Development-yellow" />
-    <img alt="Language: Rust" src="https://img.shields.io/badge/Language-Rust-orange" />
-    <a href="https://ratatui.rs"><img alt="Built with Ratatui" src="https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff" /></a>
-    <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue" />
-</div>
--->
-
 ---
 
-<!-- ![Status: In development](https://img.shields.io/badge/Status-In%20Development-yellow) -->
-<!-- ![Language: Rust](https://img.shields.io/badge/Language-Rust-orange) -->
-<!-- [![Built With Ratatui](https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff)](https://ratatui.rs) -->
-<!-- ![License: MIT](https://img.shields.io/badge/License-MIT-blue) -->
 <div align="center">
     <img alt="Status: In development" src="https://img.shields.io/badge/Status-In%20Development-yellow" />
     <img alt="Language: Rust" src="https://img.shields.io/badge/Language-Rust-orange" />
     <a href="https://ratatui.rs"><img alt="Built with Ratatui" src="https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff" /></a>
     <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue" />
 </div>
-
 
 ## Features and goals
 
@@ -35,6 +21,20 @@ Magi is inspired by [Magit](https://magit.vc/), the legendary Emacs Git interfac
 - **Faithful emulation of Magit**
 - **Vi(m) bindings first class citizen**
 - **No Emacs Required**
+
+## Installation
+
+```
+# Homebrew
+brew install magi
+
+# Nix
+nix-env -iA nixpkgs.magi
+
+# Arch Linux
+pacman -S magi
+    
+```
 
 ## Motivation
 

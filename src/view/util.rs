@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line as TextLine, Span},
 };
 
@@ -12,6 +12,16 @@ use crate::{config::Theme, model::Line};
 /// Style for the highlighted section (faded background)
 pub fn selection_style(bg_color: Color) -> Style {
     Style::default().bg(bg_color)
+}
+
+/// Returns a ref label style with the given color.
+/// When `is_current` is true, adds underline and bold to indicate the checked-out branch.
+pub fn ref_style(color: Color, is_current: bool) -> Style {
+    if is_current {
+        Style::default().fg(color).underlined().bold()
+    } else {
+        Style::default().fg(color)
+    }
 }
 
 /// Converts a raw line index scroll offset to visible line count.

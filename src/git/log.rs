@@ -7,7 +7,7 @@ use crate::{
     msg::LogType,
 };
 
-use super::commit_utils::sort_refs;
+use super::commit_utils::{build_push_remote_map, enrich_refs_with_push_remote, sort_refs};
 
 const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
@@ -71,7 +71,16 @@ pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let entries = parse_log_output(&stdout, &remotes);
+    let mut entries = parse_log_output(&stdout, &remotes);
+
+    // Enrich refs with push remote info (split-colored labels)
+    let push_remote_map = build_push_remote_map(repository);
+    for entry in &mut entries {
+        if !entry.refs.is_empty() {
+            let refs = std::mem::take(&mut entry.refs);
+            entry.refs = enrich_refs_with_push_remote(refs, &push_remote_map);
+        }
+    }
 
     Ok(entries)
 }
@@ -168,6 +177,7 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
                 refs.push(CommitRef {
                     name: "@".to_string(),
                     ref_type: CommitRefType::Head,
+                    push_remote: None,
                 });
             }
             p if p.starts_with("HEAD -> ") => {
@@ -177,6 +187,7 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
                 refs.push(CommitRef {
                     name: branch_name.to_string(),
                     ref_type: CommitRefType::LocalBranch,
+                    push_remote: None,
                 });
             }
             p if p.starts_with("tag: ") => {
@@ -184,6 +195,7 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
                 refs.push(CommitRef {
                     name: tag_name.to_string(),
                     ref_type: CommitRefType::Tag,
+                    push_remote: None,
                 });
             }
             p if is_remote_branch(p, remotes) => {
@@ -191,6 +203,7 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
                 refs.push(CommitRef {
                     name: part.to_string(),
                     ref_type: CommitRefType::RemoteBranch,
+                    push_remote: None,
                 });
             }
             _ => {
@@ -198,6 +211,7 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
                 refs.push(CommitRef {
                     name: part.to_string(),
                     ref_type: CommitRefType::LocalBranch,
+                    push_remote: None,
                 });
             }
         }

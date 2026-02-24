@@ -49,6 +49,8 @@ pub struct FetchPopupState {
 pub struct PullPopupState {
     /// The current upstream branch name, if set
     pub upstream: Option<String>,
+    /// The configured push remote name (branch.<name>.pushRemote), if set
+    pub push_remote: Option<String>,
 }
 
 /// Context for what action the input popup is performing
