@@ -31,18 +31,19 @@ pub fn get_lines(
         let is_current = current_branch == Some(commit_ref.name.as_str());
 
         if commit_ref.ref_type == CommitRefType::LocalBranch
-            && let Some(remote) = &commit_ref.push_remote {
-                // Split-colored label: "remote/" in remote_branch color + "branch" in local_branch color
-                spans.push(Span::styled(
-                    format!("{}/", remote),
-                    ref_style(theme.remote_branch, is_current),
-                ));
-                spans.push(Span::styled(
-                    commit_ref.name.clone(),
-                    ref_style(theme.local_branch, is_current),
-                ));
-                continue;
-            }
+            && let Some(remote) = &commit_ref.push_remote
+        {
+            // Split-colored label: "remote/" in remote_branch color + "branch" in local_branch color
+            spans.push(Span::styled(
+                format!("{}/", remote),
+                ref_style(theme.remote_branch, is_current),
+            ));
+            spans.push(Span::styled(
+                commit_ref.name.clone(),
+                ref_style(theme.local_branch, is_current),
+            ));
+            continue;
+        }
 
         let color = match commit_ref.ref_type {
             CommitRefType::Head => theme.detached_head,
