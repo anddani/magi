@@ -19,6 +19,13 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PushPopupState) -> Option<Mes
     }
 
     match key.code {
+        KeyCode::Char('p') => {
+            if let Some(remote) = &state.push_remote {
+                Some(Message::PushToPushRemote(remote.clone()))
+            } else {
+                Some(Message::ShowPushPushRemoteSelect)
+            }
+        }
         KeyCode::Char('u') => {
             if state.upstream.is_some() {
                 Some(Message::PushUpstream)

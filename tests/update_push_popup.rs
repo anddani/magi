@@ -16,7 +16,7 @@ fn create_push_popup_model() -> Model {
 
     // Set up push popup state
     model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
-        PushPopupState { upstream: None },
+        PushPopupState { upstream: None, push_remote: None },
     )));
 
     model

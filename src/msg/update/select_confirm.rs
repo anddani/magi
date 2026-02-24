@@ -98,6 +98,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::PullFromPushRemote(remote))
         }
+        (Some(SelectContext::PushPushRemote), SelectResult::Selected(remote)) => {
+            Some(Message::PushToPushRemote(remote))
+        }
         _ => None,
     }
 }

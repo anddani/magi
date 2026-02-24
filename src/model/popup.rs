@@ -35,6 +35,8 @@ pub struct CredentialPopupState {
 pub struct PushPopupState {
     /// The current upstream branch name, if set
     pub upstream: Option<String>,
+    /// The configured push remote name (branch.<name>.pushRemote), if set
+    pub push_remote: Option<String>,
 }
 
 /// State for the Fetch popup

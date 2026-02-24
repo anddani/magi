@@ -1,5 +1,5 @@
 use crate::{
-    git::push::get_upstream_branch,
+    git::push::{get_current_branch, get_push_remote, get_upstream_branch},
     model::{
         Model,
         popup::{PopupContent, PopupContentCommand, PushPopupState},
@@ -11,7 +11,15 @@ pub fn update(model: &mut Model) -> Option<Message> {
     // Get the upstream branch if set
     let upstream = get_upstream_branch(&model.workdir).ok().flatten();
 
-    let state = PushPopupState { upstream };
+    let push_remote = get_current_branch(&model.workdir)
+        .ok()
+        .flatten()
+        .and_then(|branch| get_push_remote(&model.git_info.repository, &branch));
+
+    let state = PushPopupState {
+        upstream,
+        push_remote,
+    };
 
     model.popup = Some(PopupContent::Command(PopupContentCommand::Push(state)));
     None
