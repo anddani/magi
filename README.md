@@ -1,18 +1,18 @@
 <p align="center">
-  <img width="75%" src="assets/monitor.png" alt="Banner">
+  <img src="assets/monitor.png" alt="Banner">
+  <h1>Magi</h1>
 </p>
-<p align="center">
-  <b>A Git TUI</b>
-</p>
+<img alt="Status: In development" src="https://img.shields.io/badge/Status-In%20Development-yellow" />
+<img alt="Language: Rust" src="https://img.shields.io/badge/Language-Rust-orange" />
+<a href="https://ratatui.rs"><img alt="Built with Ratatui" src="https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff" /></a>
+<img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue" />
 
-
-# 🧙 Magi {—*}
 A terminal-based Git client.
 
-![Status: In development](https://img.shields.io/badge/Status-In%20Development-yellow)
-![Language: Rust](https://img.shields.io/badge/Language-Rust-orange)
-[![Built With Ratatui](https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff)](https://ratatui.rs)
-![License: MIT](https://img.shields.io/badge/License-MIT-blue)
+<!-- ![Status: In development](https://img.shields.io/badge/Status-In%20Development-yellow) -->
+<!-- ![Language: Rust](https://img.shields.io/badge/Language-Rust-orange) -->
+<!-- [![Built With Ratatui](https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff)](https://ratatui.rs) -->
+<!-- ![License: MIT](https://img.shields.io/badge/License-MIT-blue) -->
 
 
 
