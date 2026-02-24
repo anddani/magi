@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="assets/monitor.png" alt="Banner">
   <h1>Magi</h1>
+  <img src="assets/monitor.png" alt="Banner">
 </p>
 <img alt="Status: In development" src="https://img.shields.io/badge/Status-In%20Development-yellow" />
 <img alt="Language: Rust" src="https://img.shields.io/badge/Language-Rust-orange" />
