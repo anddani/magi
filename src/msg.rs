@@ -177,6 +177,10 @@ pub enum Message {
     ShowFetchElsewhereSelect,
     /// Fetch from a specific remote/branch
     FetchFromRemote(String),
+    /// Show select popup to choose push remote for fetch
+    ShowFetchPushRemoteSelect,
+    /// Fetch from push remote (setting branch.<name>.pushRemote)
+    FetchFromPushRemote(String),
     /// Push to upstream (or create it if specified)
     PushUpstream,
     /// Show select popup to choose upstream for push
