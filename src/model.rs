@@ -149,6 +149,7 @@ impl UiModel {
 pub enum LineContent {
     EmptyLine,
     HeadRef(GitRef),
+    MergeRef(GitRef),
     PushRef(GitRef),
     Tag(TagInfo),
     SectionHeader {
