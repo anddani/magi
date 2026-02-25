@@ -87,7 +87,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Extend
         - [x] Fixup
         - [x] Squash
-        - [ ] Alter
+        - [x] Alter
         - [ ] Augment
         - [ ] Revise
         - [ ] Instant fixup
