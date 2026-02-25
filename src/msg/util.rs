@@ -53,6 +53,8 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::FetchUpstream
         | Message::ShowFetchUpstreamSelect
         | Message::ShowFetchElsewhereSelect
+        | Message::ShowFetchAnotherBranchSelect
+        | Message::ShowFetchAnotherBranchBranchSelect(_)
         | Message::FetchFromRemote(_)
         | Message::ShowFetchPushRemoteSelect
         | Message::FetchFromPushRemote(_)

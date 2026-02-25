@@ -13,7 +13,10 @@ use crate::{
         arguments::{Arguments::FetchArguments, FetchArgument},
         popup::FetchPopupState,
     },
-    view::render::util::{argument_line, column_title},
+    view::render::{
+        popup_content::{PopupColumn, PopupRow},
+        util::argument_line,
+    },
 };
 
 pub fn content<'a>(
@@ -46,7 +49,7 @@ pub fn content<'a>(
             HashSet::new()
         };
 
-    let mut arguments: Vec<Line> = FetchArgument::all()
+    let arguments: Vec<Line> = FetchArgument::all()
         .iter()
         .map(|arg| {
             argument_line(
@@ -60,30 +63,12 @@ pub fn content<'a>(
         })
         .collect();
 
-    let upstream_description = match &state.upstream {
-        Some(upstream) => {
-            // Upstream is set - show in remote branch color (or faded if in arg_mode)
-            let upstream_style = if model.arg_mode {
-                faded_style
-            } else {
-                Style::default().fg(theme.remote_branch)
-            };
-            vec![
-                Span::styled(" u", cmd_key_style),
-                Span::styled(" ", cmd_desc_style),
-                Span::styled(upstream.clone(), upstream_style),
-            ]
-        }
-        None => {
-            // No upstream - show suggestion with ", setting it"
-            vec![
-                Span::styled(" u", cmd_key_style),
-                Span::styled(" ${upstream}, setting it", cmd_desc_style),
-            ]
-        }
+    let arguments_col = PopupColumn {
+        title: Some("Arguments"),
+        content: arguments,
     };
 
-    let push_remote_description = {
+    let push_remote_line = {
         let current_branch = model.git_info.current_branch().unwrap_or_default();
         match &state.push_remote {
             Some(remote) => {
@@ -92,16 +77,39 @@ pub fn content<'a>(
                 } else {
                     Style::default().fg(theme.remote_branch)
                 };
-                vec![
+                Line::from(vec![
                     Span::styled(" p", cmd_key_style),
                     Span::styled(" ", cmd_desc_style),
                     Span::styled(format!("{}/{}", remote, current_branch), remote_style),
-                ]
+                ])
             }
-            None => vec![
+            None => Line::from(vec![
                 Span::styled(" p", cmd_key_style),
                 Span::styled(" ${push-remote}, setting that", cmd_desc_style),
-            ],
+            ]),
+        }
+    };
+
+    let upstream_line = match &state.upstream {
+        Some(upstream) => {
+            // Upstream is set - show in remote branch color (or faded if in arg_mode)
+            let upstream_style = if model.arg_mode {
+                faded_style
+            } else {
+                Style::default().fg(theme.remote_branch)
+            };
+            Line::from(vec![
+                Span::styled(" u", cmd_key_style),
+                Span::styled(" ", cmd_desc_style),
+                Span::styled(upstream.clone(), upstream_style),
+            ])
+        }
+        None => {
+            // No upstream - show suggestion with ", setting it"
+            Line::from(vec![
+                Span::styled(" u", cmd_key_style),
+                Span::styled(" ${upstream}, setting it", cmd_desc_style),
+            ])
         }
     };
 
@@ -115,21 +123,36 @@ pub fn content<'a>(
         Span::styled(" all remotes", cmd_desc_style),
     ]);
 
-    let mut commands: Vec<Line> = vec![
-        Line::from(push_remote_description),
-        Line::from(upstream_description),
-        elsewhere_line,
-        all_remotes_line,
-    ];
+    let fetch_from_col = PopupColumn {
+        title: Some("Fetch from"),
+        content: vec![
+            push_remote_line,
+            upstream_line,
+            elsewhere_line,
+            all_remotes_line,
+        ],
+    };
 
-    let mut content: Vec<Line> = vec![];
-    content.push(column_title("Arguments", theme));
-    content.append(&mut arguments);
+    let fetch_col = PopupColumn {
+        title: Some("Fetch"),
+        content: vec![Line::from(vec![
+            Span::styled(" o", cmd_key_style),
+            Span::styled(" another branch", cmd_desc_style),
+        ])],
+    };
 
-    content.push(Line::from(""));
-
-    content.push(column_title("Fetch from", theme));
-    content.append(&mut commands);
-
-    CommandPopupContent::single_column("Fetch", content)
+    CommandPopupContent {
+        title: "Fetch",
+        rows: vec![
+            PopupRow {
+                columns: vec![arguments_col],
+            },
+            PopupRow {
+                columns: vec![fetch_from_col],
+            },
+            PopupRow {
+                columns: vec![fetch_col],
+            },
+        ],
+    }
 }

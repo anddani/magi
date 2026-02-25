@@ -46,6 +46,10 @@ pub enum SelectContext {
     PushPushRemote,
     /// Selecting a push remote to fetch from (sets branch.<name>.pushRemote)
     FetchPushRemote,
+    /// Selecting a remote to fetch a specific branch from (step 1 of 2)
+    FetchAnotherBranchRemote,
+    /// Selecting a branch to fetch from the previously chosen remote (step 2 of 2)
+    FetchAnotherBranch,
 }
 
 /// State for the select popup (fuzzy finder style)
