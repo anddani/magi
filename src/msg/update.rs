@@ -80,9 +80,11 @@ mod show_push_upstream_select;
 mod show_rename_branch_input;
 mod show_rename_branch_popup;
 mod show_select_popup;
+mod show_stash_apply_select;
 mod show_stash_message_input;
 mod stage_all_modified;
 mod stage_selected;
+mod stash_apply;
 mod stash_both;
 mod toggle_argument;
 mod toggle_section;
@@ -123,6 +125,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::DismissPopup => dismiss_popup::update(model),
         Message::ShowStashMessageInput => show_stash_message_input::update(model),
         Message::StashBoth(message) => stash_both::update(model, message),
+        Message::ShowStashApplySelect => show_stash_apply_select::update(model),
+        Message::StashApply(stash_ref) => stash_apply::update(model, stash_ref),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::StageSelected => stage_selected::update(model),
         Message::UnstageSelected => unstage_selected::update(model),

@@ -55,6 +55,14 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         ])],
     };
 
+    let use_col = PopupColumn {
+        title: Some("Use"),
+        content: vec![Line::from(vec![
+            Span::styled(" a", key_style),
+            Span::styled(" Apply", desc_style),
+        ])],
+    };
+
     CommandPopupContent {
         title: "Stash",
         rows: vec![
@@ -62,7 +70,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
                 columns: vec![arguments_col],
             },
             PopupRow {
-                columns: vec![stash],
+                columns: vec![stash, use_col],
             },
         ],
     }

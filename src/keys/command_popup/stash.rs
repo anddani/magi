@@ -17,6 +17,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
 
     match key.code {
         KeyCode::Char('z') => Some(Message::ShowStashMessageInput),
+        KeyCode::Char('a') => Some(Message::ShowStashApplySelect),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

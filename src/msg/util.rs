@@ -100,6 +100,8 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ExitLogView
         | Message::ShowFixupCommitSelect(_)
         | Message::ShowStashMessageInput
-        | Message::StashBoth(_) => false,
+        | Message::StashBoth(_)
+        | Message::ShowStashApplySelect
+        | Message::StashApply(_) => false,
     }
 }
