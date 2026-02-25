@@ -147,11 +147,7 @@ pub fn run_augment_commit<P: AsRef<Path>>(
 ) -> MagiResult<CommitResult> {
     let status = git_cmd(
         &repo_path,
-        &[
-            "commit",
-            &format!("--squash={}", commit_hash),
-            "--edit",
-        ],
+        &["commit", &format!("--squash={}", commit_hash), "--edit"],
     )
     .status()?;
 
