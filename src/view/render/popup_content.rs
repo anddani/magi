@@ -18,7 +18,12 @@ impl<'a> PopupColumn<'a> {
     /// Width in terminal columns (max of title length and widest content line)
     pub fn width(&self) -> usize {
         let title_width = self.title.map(|t| t.len()).unwrap_or(0);
-        let content_width = self.content.iter().map(|line| line.width()).max().unwrap_or(0);
+        let content_width = self
+            .content
+            .iter()
+            .map(|line| line.width())
+            .max()
+            .unwrap_or(0);
         title_width.max(content_width)
     }
 }
@@ -32,7 +37,11 @@ pub struct PopupRow<'a> {
 impl<'a> PopupRow<'a> {
     /// Height of this row (tallest column)
     pub fn height(&self) -> usize {
-        self.columns.iter().map(|col| col.height()).max().unwrap_or(0)
+        self.columns
+            .iter()
+            .map(|col| col.height())
+            .max()
+            .unwrap_or(0)
     }
 }
 
