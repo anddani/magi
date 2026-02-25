@@ -104,6 +104,12 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::FetchPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::FetchFromPushRemote(remote))
         }
+        (Some(SelectContext::FetchAnotherBranchRemote), SelectResult::Selected(remote)) => {
+            Some(Message::ShowFetchAnotherBranchBranchSelect(remote))
+        }
+        (Some(SelectContext::FetchAnotherBranch), SelectResult::Selected(branch)) => {
+            Some(Message::FetchFromRemote(branch))
+        }
         _ => None,
     }
 }
