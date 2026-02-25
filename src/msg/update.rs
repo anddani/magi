@@ -34,9 +34,7 @@ mod move_up;
 mod open_pr;
 mod pending_g;
 mod pty_helper;
-mod pull_from_push_remote;
-mod pull_from_remote;
-mod pull_upstream;
+mod pull;
 mod push_all_tags;
 mod push_helper;
 mod push_tag;
@@ -185,11 +183,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowPushTagSelect => show_push_tag_select::update(model),
         Message::PushTag(tag) => push_tag::update(model, tag),
         Message::ShowPullPopup => show_pull_popup::update(model),
-        Message::PullUpstream => pull_upstream::update(model),
         Message::ShowPullUpstreamSelect => show_pull_upstream_select::update(model),
-        Message::PullFromRemote(upstream) => pull_from_remote::update(model, upstream),
         Message::ShowPullPushRemoteSelect => show_pull_push_remote_select::update(model),
-        Message::PullFromPushRemote(remote) => pull_from_push_remote::update(model, remote),
         Message::ShowOpenPrSelect => show_open_pr_select::update(model, false),
         Message::ShowOpenPrWithTargetSelect => show_open_pr_select::update(model, true),
         Message::ShowOpenPrTargetSelect(branch) => {
@@ -218,6 +213,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowLog(log_type) => show_log::update(model, log_type),
         Message::ExitLogView => exit_log_view::update(model),
 
+        Message::Pull(pull_command) => pull::update(model, pull_command),
         Message::Stash(stash_command) => stash::update(model, stash_command),
     }
 }
