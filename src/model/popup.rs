@@ -72,6 +72,8 @@ pub enum InputContext {
         /// The current name of the branch being renamed
         old_name: String,
     },
+    /// Stash message input
+    StashMessage,
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -198,6 +200,7 @@ pub enum PopupContentCommand {
     Pull(PullPopupState),
     Branch,
     Log,
+    Stash,
     Select(SelectPopupState),
     CommitSelect(CommitSelectPopupState),
 }

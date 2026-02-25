@@ -40,6 +40,10 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled("  P       ", key_style),
             Span::styled("Push", desc_style),
         ]),
+        Line::from(vec![
+            Span::styled("  z       ", key_style),
+            Span::styled("Stash", desc_style),
+        ]),
         Line::from(""),
         // General section
         Line::from(Span::styled("Applying changes", section_style)),

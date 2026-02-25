@@ -171,6 +171,11 @@ pub enum Message {
     DeleteBranch(String),
     /// Actually delete the branch after user confirmation
     ConfirmDeleteBranch(String),
+    /// Show input popup for stash message
+    ShowStashMessageInput,
+    /// Stash both index and working tree with the given message (git stash push [-m msg])
+    StashBoth(String),
+
     /// Fetch all remotes
     FetchAllRemotes,
     /// Fetch all populated submodules (git fetch --recurse-submodules)
