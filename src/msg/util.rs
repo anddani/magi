@@ -50,6 +50,7 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::ShowCheckoutLocalBranchPopup
         | Message::CheckoutBranch(_)
         | Message::FetchAllRemotes
+        | Message::FetchModules
         | Message::FetchUpstream
         | Message::ShowFetchUpstreamSelect
         | Message::ShowFetchElsewhereSelect

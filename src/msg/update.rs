@@ -21,6 +21,7 @@ mod exit_visual_mode;
 mod fetch_all_remotes;
 mod fetch_from_push_remote;
 mod fetch_from_remote;
+mod fetch_modules;
 mod fetch_upstream;
 mod fixup_commit;
 mod half_page_down;
@@ -158,6 +159,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::DeleteBranch(branch) => delete_branch::update(model, branch),
         Message::ConfirmDeleteBranch(branch) => confirm_delete_branch::update(model, branch),
         Message::FetchAllRemotes => fetch_all_remotes::update(model),
+        Message::FetchModules => fetch_modules::update(model),
         Message::FetchUpstream => fetch_upstream::update(model),
         Message::ShowFetchUpstreamSelect => show_fetch_upstream_select::update(model),
         Message::ShowFetchElsewhereSelect => show_fetch_elsewhere_select::update(model),
