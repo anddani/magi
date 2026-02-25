@@ -38,6 +38,7 @@ pub fn update(model: &mut Model, fixup_type: FixupType) -> Option<Message> {
                     FixupType::Fixup => "Fixup commit".to_string(),
                     FixupType::Squash => "Squash commit".to_string(),
                     FixupType::Alter => "Alter commit".to_string(),
+                    FixupType::Augment => "Augment commit".to_string(),
                 };
                 let state = CommitSelectPopupState::new(title, commits);
                 model.popup = Some(PopupContent::Command(PopupContentCommand::CommitSelect(

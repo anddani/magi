@@ -13,6 +13,8 @@ pub enum FixupType {
     Squash,
     /// Create an alter commit (git commit --fixup=amend: --edit)
     Alter,
+    /// Create an augment commit (git commit --squash= --edit)
+    Augment,
 }
 
 /// Type of log view to display

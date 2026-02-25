@@ -139,6 +139,41 @@ pub fn run_squash_commit<P: AsRef<Path>>(
     }
 }
 
+/// Runs `git commit --squash=<commit_hash> --edit` to create an augment commit.
+/// Opens the user's configured editor to author a temporary squash message.
+pub fn run_augment_commit<P: AsRef<Path>>(
+    repo_path: P,
+    commit_hash: String,
+) -> MagiResult<CommitResult> {
+    let status = git_cmd(
+        &repo_path,
+        &[
+            "commit",
+            &format!("--squash={}", commit_hash),
+            "--edit",
+        ],
+    )
+    .status()?;
+
+    if status.success() {
+        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
+
+        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
+            .trim()
+            .to_string();
+
+        Ok(CommitResult {
+            success: true,
+            message: format!("Created augment: {}", commit_msg),
+        })
+    } else {
+        Ok(CommitResult {
+            success: false,
+            message: "Augment commit aborted".to_string(),
+        })
+    }
+}
+
 /// Runs `git commit --fixup=amend:<commit_hash> --edit` to create an alter commit.
 /// Opens the user's configured editor to author the final commit message.
 pub fn run_alter_commit<P: AsRef<Path>>(

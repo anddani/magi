@@ -23,6 +23,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('f') => Some(Message::ShowFixupCommitSelect(FixupType::Fixup)),
         KeyCode::Char('s') => Some(Message::ShowFixupCommitSelect(FixupType::Squash)),
         KeyCode::Char('A') => Some(Message::ShowFixupCommitSelect(FixupType::Alter)),
+        KeyCode::Char('n') => Some(Message::ShowFixupCommitSelect(FixupType::Augment)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }
