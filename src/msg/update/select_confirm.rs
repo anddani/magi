@@ -3,7 +3,7 @@ use crate::{
         Model,
         popup::{PopupContent, PopupContentCommand, SelectContext, SelectResult},
     },
-    msg::{Message, StashCommand},
+    msg::{Message, PullCommand, StashCommand},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -64,7 +64,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             Some(Message::FetchFromRemote(remote))
         }
         (Some(SelectContext::PullUpstream), SelectResult::Selected(upstream)) => {
-            Some(Message::PullFromRemote(upstream))
+            Some(Message::Pull(PullCommand::PullFromUpstream(upstream)))
         }
         (Some(SelectContext::DeleteBranch), SelectResult::Selected(branch)) => {
             Some(Message::DeleteBranch(branch))
@@ -96,7 +96,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             Some(Message::FixupCommit(commit, fixup_type))
         }
         (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
-            Some(Message::PullFromPushRemote(remote))
+            Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))
         }
         (Some(SelectContext::PushPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::PushToPushRemote(remote))

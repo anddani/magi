@@ -5,7 +5,7 @@ use crate::{
         arguments::{Argument::Pull, PullArgument},
         popup::PullPopupState,
     },
-    msg::Message,
+    msg::{Message, PullCommand},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool, state: &PullPopupState) -> Option<Message> {
@@ -21,14 +21,16 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PullPopupState) -> Option<Mes
     match key.code {
         KeyCode::Char('p') => {
             if let Some(remote) = &state.push_remote {
-                Some(Message::PullFromPushRemote(remote.clone()))
+                Some(Message::Pull(PullCommand::PullFromPushRemote(
+                    remote.clone(),
+                )))
             } else {
                 Some(Message::ShowPullPushRemoteSelect)
             }
         }
         KeyCode::Char('u') => {
             if state.upstream.is_some() {
-                Some(Message::PullUpstream)
+                Some(Message::Pull(PullCommand::PullUpstream))
             } else {
                 Some(Message::ShowPullUpstreamSelect)
             }

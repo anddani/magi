@@ -154,7 +154,7 @@ mod tests {
     use crate::model::arguments::{FetchArgument, PushArgument};
     use crate::model::popup::PopupContentCommand;
     use crate::model::{RunningState, UiModel};
-    use crate::msg::SelectMessage;
+    use crate::msg::{PullCommand, SelectMessage};
     use crossterm::event::{KeyEvent, KeyEventKind, KeyEventState};
 
     fn create_key_event(modifiers: KeyModifiers, code: KeyCode) -> KeyEvent {
@@ -1012,7 +1012,9 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::PullFromPushRemote("origin".to_string()))
+            Some(Message::Pull(PullCommand::PullFromPushRemote(
+                "origin".to_string()
+            )))
         );
     }
 
@@ -1047,7 +1049,7 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::PullUpstream));
+        assert_eq!(result, Some(Message::Pull(PullCommand::PullUpstream)));
     }
 
     #[test]

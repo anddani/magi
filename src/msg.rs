@@ -176,6 +176,7 @@ pub enum Message {
     /// Show apply stash popup, or immediately apply if cursor is on a stash entry
     ShowStashApplySelect,
 
+    Pull(PullCommand),
     Stash(StashCommand),
 
     /// Fetch all remotes
@@ -217,16 +218,10 @@ pub enum Message {
     /// Push a single tag to origin
     PushTag(String),
 
-    /// Pull from upstream
-    PullUpstream,
     /// Show select popup to choose upstream for pull
     ShowPullUpstreamSelect,
-    /// Pull from a specific remote/branch (setting it as upstream)
-    PullFromRemote(String),
     /// Show select popup to choose push remote for pull
     ShowPullPushRemoteSelect,
-    /// Pull from push remote (setting branch.<name>.pushRemote)
-    PullFromPushRemote(String),
 
     /// Show select popup to pick source branch for PR (opens to default target)
     ShowOpenPrSelect,
@@ -257,6 +252,17 @@ pub enum Message {
     ShowLog(LogType),
     /// Exit log view and return to status view
     ExitLogView,
+}
+
+/// Messages for pull commands
+#[derive(PartialEq, Eq, Debug)]
+pub enum PullCommand {
+    /// Pull from push remote (setting branch.<name>.pushRemote)
+    PullFromPushRemote(String),
+    /// Pull from a specific remote/branch (setting it as upstream)
+    PullFromUpstream(String),
+    /// Pull from upstream
+    PullUpstream,
 }
 
 /// Messages for stash commands
