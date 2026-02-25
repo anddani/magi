@@ -28,8 +28,13 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         return None;
     };
 
-    let branch_name = state.input_text.trim().to_string();
-    if branch_name.is_empty() {
+    // Stash message allows empty input (git will use the default message)
+    if let InputContext::StashMessage = state.context {
+        return Some(Message::StashBoth(state.input_text.trim().to_string()));
+    }
+
+    let input = state.input_text.trim().to_string();
+    if input.is_empty() {
         // Restore the popup if input is empty
         model.popup = Some(PopupContent::Input(state));
         return None;
@@ -41,12 +46,13 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             checkout,
         } => Some(Message::CreateNewBranch {
             starting_point,
-            branch_name,
+            branch_name: input,
             checkout,
         }),
         InputContext::RenameBranch { old_name } => Some(Message::RenameBranch {
             old_name,
-            new_name: branch_name,
+            new_name: input,
         }),
+        InputContext::StashMessage => unreachable!(),
     }
 }

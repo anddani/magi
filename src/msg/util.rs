@@ -98,6 +98,8 @@ pub fn is_external_command(msg: &Message) -> bool {
         | Message::OpenPr { .. }
         | Message::ShowLog(_)
         | Message::ExitLogView
-        | Message::ShowFixupCommitSelect(_) => false,
+        | Message::ShowFixupCommitSelect(_)
+        | Message::ShowStashMessageInput
+        | Message::StashBoth(_) => false,
     }
 }

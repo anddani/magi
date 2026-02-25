@@ -25,6 +25,9 @@ fn command_popup_keys(c: char) -> Option<Message> {
         'l' => Some(Message::ShowPopup(PopupContent::Command(
             PopupContentCommand::Log,
         ))),
+        'z' | 'Z' => Some(Message::ShowPopup(PopupContent::Command(
+            PopupContentCommand::Stash,
+        ))),
         _ => None,
     }
 }
