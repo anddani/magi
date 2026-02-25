@@ -3,7 +3,7 @@ use crate::{
         Model,
         popup::{InputContext, PopupContent},
     },
-    msg::Message,
+    msg::{Message, StashCommand},
 };
 
 /// Handle a character input in the input popup
@@ -30,7 +30,9 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
 
     // Stash message allows empty input (git will use the default message)
     if let InputContext::StashMessage = state.context {
-        return Some(Message::StashBoth(state.input_text.trim().to_string()));
+        return Some(Message::Stash(StashCommand::StashBoth(
+            state.input_text.trim().to_string(),
+        )));
     }
 
     let input = state.input_text.trim().to_string();

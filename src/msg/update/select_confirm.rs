@@ -3,7 +3,7 @@ use crate::{
         Model,
         popup::{PopupContent, PopupContentCommand, SelectContext, SelectResult},
     },
-    msg::Message,
+    msg::{Message, StashCommand},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -117,7 +117,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
                 .next()
                 .unwrap_or(&stash_display)
                 .to_string();
-            Some(Message::StashApply(stash_ref))
+            Some(Message::Stash(StashCommand::Apply(stash_ref)))
         }
         _ => None,
     }
