@@ -3,7 +3,10 @@ use std::collections::HashSet;
 use crate::{
     model::{
         Model,
-        arguments::{Argument, Arguments, CommitArgument, FetchArgument, PushArgument},
+        arguments::{
+            Argument, Arguments, CommitArgument, FetchArgument, PullArgument, PushArgument,
+            StashArgument,
+        },
     },
     msg::Message,
 };
@@ -13,9 +16,8 @@ pub fn update(model: &mut Model, argument: Argument) -> Option<Message> {
         Argument::Commit(push_arg) => toggle_commit_argument(model, push_arg),
         Argument::Push(push_arg) => toggle_push_argument(model, push_arg),
         Argument::Fetch(fetch_arg) => toggle_fetch_argument(model, fetch_arg),
-        Argument::Pull(_pull_arg) => {
-            // TODO: Implement pull arguments when needed
-        }
+        Argument::Stash(fetch_arg) => toggle_stash_argument(model, fetch_arg),
+        Argument::Pull(pull_arg) => toggle_pull_argument(model, pull_arg),
     }
     // Exit arg mode after toggling
     model.arg_mode = false;
@@ -63,6 +65,36 @@ fn toggle_fetch_argument(model: &mut Model, argument: FetchArgument) {
             let mut set = HashSet::new();
             set.insert(argument);
             model.arguments = Some(Arguments::FetchArguments(set));
+        }
+    }
+}
+
+fn toggle_stash_argument(model: &mut Model, argument: StashArgument) {
+    match &mut model.arguments {
+        Some(Arguments::StashArguments(set)) => {
+            if !set.remove(&argument) {
+                set.insert(argument);
+            }
+        }
+        _ => {
+            let mut set = HashSet::new();
+            set.insert(argument);
+            model.arguments = Some(Arguments::StashArguments(set));
+        }
+    }
+}
+
+fn toggle_pull_argument(model: &mut Model, argument: PullArgument) {
+    match &mut model.arguments {
+        Some(Arguments::PullArguments(set)) => {
+            if !set.remove(&argument) {
+                set.insert(argument);
+            }
+        }
+        _ => {
+            let mut set = HashSet::new();
+            set.insert(argument);
+            model.arguments = Some(Arguments::PullArguments(set));
         }
     }
 }

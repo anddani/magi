@@ -5,6 +5,7 @@ pub enum Arguments {
     FetchArguments(HashSet<FetchArgument>),
     PushArguments(HashSet<PushArgument>),
     PullArguments(HashSet<PullArgument>),
+    StashArguments(HashSet<StashArgument>),
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -13,6 +14,7 @@ pub enum Argument {
     Fetch(FetchArgument),
     Push(PushArgument),
     Pull(PullArgument),
+    Stash(StashArgument),
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -227,6 +229,39 @@ impl PullArgument {
             PullArgument::Rebase => "--rebase",
             PullArgument::Autostash => "--autostash",
             PullArgument::Force => "--force",
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum StashArgument {
+    IncludeUntracked,
+}
+
+impl StashArgument {
+    pub fn all() -> Vec<StashArgument> {
+        vec![StashArgument::IncludeUntracked]
+    }
+
+    pub fn key(&self) -> char {
+        match self {
+            StashArgument::IncludeUntracked => 'u',
+        }
+    }
+
+    pub fn from_key(key: char) -> Option<StashArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            StashArgument::IncludeUntracked => "Also save untracked files",
+        }
+    }
+
+    pub fn flag(&self) -> &'static str {
+        match self {
+            StashArgument::IncludeUntracked => "--include-untracked",
         }
     }
 }

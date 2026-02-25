@@ -30,7 +30,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Log => log::keys(key),
         PopupContentCommand::Pull(state) => pull::keys(key, arg_mode, state),
         PopupContentCommand::Push(state) => push::keys(key, arg_mode, state),
-        PopupContentCommand::Stash => stash::keys(key),
+        PopupContentCommand::Stash => stash::keys(key, arg_mode),
         PopupContentCommand::Select(_) => select::keys(key),
         PopupContentCommand::CommitSelect(_) => select::keys(key),
     }
