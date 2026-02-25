@@ -84,8 +84,7 @@ mod show_stash_apply_select;
 mod show_stash_message_input;
 mod stage_all_modified;
 mod stage_selected;
-mod stash_apply;
-mod stash_both;
+mod stash;
 mod toggle_argument;
 mod toggle_section;
 mod unstage_all;
@@ -124,9 +123,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         }
         Message::DismissPopup => dismiss_popup::update(model),
         Message::ShowStashMessageInput => show_stash_message_input::update(model),
-        Message::StashBoth(message) => stash_both::update(model, message),
         Message::ShowStashApplySelect => show_stash_apply_select::update(model),
-        Message::StashApply(stash_ref) => stash_apply::update(model, stash_ref),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::StageSelected => stage_selected::update(model),
         Message::UnstageSelected => unstage_selected::update(model),
@@ -220,5 +217,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Credentials(credentials_msg) => credentials_input::update(model, credentials_msg),
         Message::ShowLog(log_type) => show_log::update(model, log_type),
         Message::ExitLogView => exit_log_view::update(model),
+
+        Message::Stash(stash_command) => stash::update(model, stash_command),
     }
 }

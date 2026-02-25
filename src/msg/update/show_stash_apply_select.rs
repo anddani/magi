@@ -4,7 +4,7 @@ use crate::{
         popup::{PopupContent, PopupContentCommand, SelectPopupState},
         select_popup::SelectContext,
     },
-    msg::Message,
+    msg::{Message, StashCommand},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -13,7 +13,10 @@ pub fn update(model: &mut Model) -> Option<Message> {
     if let Some(line) = model.ui_model.lines.get(cursor_pos)
         && let LineContent::Stash(entry) = &line.content
     {
-        return Some(Message::StashApply(format!("stash@{{{}}}", entry.index)));
+        return Some(Message::Stash(StashCommand::Apply(format!(
+            "stash@{{{}}}",
+            entry.index
+        ))));
     }
 
     // Otherwise collect all stash entries and show a selection popup

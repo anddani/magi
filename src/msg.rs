@@ -173,12 +173,10 @@ pub enum Message {
     ConfirmDeleteBranch(String),
     /// Show input popup for stash message
     ShowStashMessageInput,
-    /// Stash both index and working tree with the given message (git stash push [-m msg])
-    StashBoth(String),
     /// Show apply stash popup, or immediately apply if cursor is on a stash entry
     ShowStashApplySelect,
-    /// Apply a stash by its reference (e.g. "stash@{0}")
-    StashApply(String),
+
+    Stash(StashCommand),
 
     /// Fetch all remotes
     FetchAllRemotes,
@@ -259,6 +257,15 @@ pub enum Message {
     ShowLog(LogType),
     /// Exit log view and return to status view
     ExitLogView,
+}
+
+/// Messages for stash commands
+#[derive(PartialEq, Eq, Debug)]
+pub enum StashCommand {
+    /// Stash both index and working tree with the given message (git stash push [-m msg])
+    StashBoth(String),
+    /// Apply a stash by its reference (e.g. "stash@{0}")
+    Apply(String),
 }
 
 /// Messages for the select popup
