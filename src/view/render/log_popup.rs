@@ -14,19 +14,19 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
 
     let commands: Vec<Line> = vec![
         Line::from(vec![
-            Span::styled("l", key_style),
+            Span::styled(" l", key_style),
             Span::styled(" current", desc_style),
         ]),
         Line::from(vec![
-            Span::styled("L", key_style),
+            Span::styled(" L", key_style),
             Span::styled(" local branches", desc_style),
         ]),
         Line::from(vec![
-            Span::styled("b", key_style),
+            Span::styled(" b", key_style),
             Span::styled(" all branches", desc_style),
         ]),
         Line::from(vec![
-            Span::styled("a", key_style),
+            Span::styled(" a", key_style),
             Span::styled(" all references", desc_style),
         ]),
     ];

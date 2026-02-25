@@ -12,7 +12,10 @@ use crate::{
         Model,
         arguments::{Arguments::CommitArguments, CommitArgument},
     },
-    view::render::util::{argument_line, column_title},
+    view::render::{
+        popup_content::{PopupColumn, PopupRow},
+        util::argument_line,
+    },
 };
 
 pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
@@ -21,8 +24,6 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
 
-    let mut content: Vec<Line> = vec![];
-
     let selected_args: HashSet<CommitArgument> =
         if let Some(CommitArguments(ref args)) = model.arguments {
             args.clone()
@@ -30,7 +31,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             HashSet::new()
         };
 
-    let mut arguments: Vec<Line> = CommitArgument::all()
+    let arguments: Vec<Line> = CommitArgument::all()
         .iter()
         .map(|arg| {
             argument_line(
@@ -43,42 +44,63 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             )
         })
         .collect();
-    content.push(column_title("Arguments", theme));
-    content.append(&mut arguments);
 
-    content.push(Line::from(""));
+    let arguments_col = PopupColumn {
+        title: Some("Arguments"),
+        content: arguments,
+    };
 
-    content.push(column_title("Create", theme));
-    content.push(Line::from(vec![
-        Span::styled("c", key_style),
-        Span::styled(" Commit", desc_style),
-    ]));
+    let create_col = PopupColumn {
+        title: Some("Create"),
+        content: vec![Line::from(vec![
+            Span::styled(" c", key_style),
+            Span::styled(" Commit", desc_style),
+        ])],
+    };
 
-    content.push(Line::from(""));
+    let edit_head_col = PopupColumn {
+        title: Some("Edit HEAD"),
+        content: vec![
+            Line::from(vec![
+                Span::styled(" e", key_style),
+                Span::styled(" Extend", desc_style),
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" a", key_style),
+                Span::styled(" Amend", desc_style),
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" w", key_style),
+                Span::styled(" Reword", desc_style),
+            ]),
+        ],
+    };
 
-    content.push(column_title("Edit HEAD", theme));
-    content.append(&mut vec![
-        Line::from(vec![
-            Span::styled("e", key_style),
-            Span::styled(" Extend", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("a", key_style),
-            Span::styled(" Amend", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("w", key_style),
-            Span::styled(" Reword", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("f", key_style),
-            Span::styled(" Fixup", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("s", key_style),
-            Span::styled(" Squash", desc_style),
-        ]),
-    ]);
+    let edit_col = PopupColumn {
+        title: Some("Edit"),
+        content: vec![
+            Line::from(vec![
+                Span::styled(" f", key_style),
+                Span::styled(" Fixup", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" s", key_style),
+                Span::styled(" Squash", desc_style),
+            ]),
+        ],
+    };
 
-    CommandPopupContent::single_column("Commit", content)
+    CommandPopupContent {
+        title: "Commit",
+        rows: vec![
+            PopupRow {
+                columns: vec![arguments_col],
+            },
+            PopupRow {
+                columns: vec![create_col, edit_head_col, edit_col],
+            },
+        ],
+    }
 }
