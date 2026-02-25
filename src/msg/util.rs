@@ -23,8 +23,8 @@ pub fn visible_lines_between(
 
 /// Returns true if [`Message`] requires to pause Ratatui rendering
 pub fn is_external_command(msg: &Message) -> bool {
-    match msg {
-        Message::Commit | Message::Amend(_) | Message::FixupCommit(_, _) => true,
-        _ => false,
-    }
+    matches!(
+        msg,
+        Message::Commit | Message::Amend(_) | Message::FixupCommit(_, _)
+    )
 }
