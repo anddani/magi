@@ -175,6 +175,10 @@ pub enum Message {
     ShowStashMessageInput,
     /// Stash both index and working tree with the given message (git stash push [-m msg])
     StashBoth(String),
+    /// Show apply stash popup, or immediately apply if cursor is on a stash entry
+    ShowStashApplySelect,
+    /// Apply a stash by its reference (e.g. "stash@{0}")
+    StashApply(String),
 
     /// Fetch all remotes
     FetchAllRemotes,

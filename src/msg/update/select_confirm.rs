@@ -110,6 +110,15 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::FetchAnotherBranch), SelectResult::Selected(branch)) => {
             Some(Message::FetchFromRemote(branch))
         }
+        (Some(SelectContext::ApplyStash), SelectResult::Selected(stash_display)) => {
+            // Extract "stash@{N}" from "stash@{N}: message"
+            let stash_ref = stash_display
+                .split(": ")
+                .next()
+                .unwrap_or(&stash_display)
+                .to_string();
+            Some(Message::StashApply(stash_ref))
+        }
         _ => None,
     }
 }

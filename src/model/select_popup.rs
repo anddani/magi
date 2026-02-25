@@ -50,6 +50,8 @@ pub enum SelectContext {
     FetchAnotherBranchRemote,
     /// Selecting a branch to fetch from the previously chosen remote (step 2 of 2)
     FetchAnotherBranch,
+    /// Selecting a stash to apply
+    ApplyStash,
 }
 
 /// State for the select popup (fuzzy finder style)
