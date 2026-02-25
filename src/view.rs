@@ -25,6 +25,7 @@ mod push_ref;
 mod render;
 mod section_header;
 mod staged_file;
+mod stash;
 mod unpulled_section_header;
 mod unstaged_file;
 mod untracked_file;
@@ -151,6 +152,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
                 is_detached_head,
                 model.git_info.current_branch().as_deref(),
             ),
+            crate::model::LineContent::Stash(stash_entry) => stash::get_lines(stash_entry, theme),
         };
 
         let is_cursor_line = index == cursor_pos;

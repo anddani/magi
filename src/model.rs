@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use crate::config::Theme;
-use crate::git::{CommitInfo, CommitRefType, GitInfo, GitRef, TagInfo};
+use crate::git::{CommitInfo, CommitRefType, GitInfo, GitRef, StashEntry, TagInfo};
 use crate::model::arguments::Arguments;
 use crate::msg::Message;
 
@@ -168,6 +168,8 @@ pub enum LineContent {
     Commit(CommitInfo),
     /// A line in the git log view (with graph)
     LogLine(LogEntry),
+    /// A stash entry in the stash stack
+    Stash(StashEntry),
 }
 
 /// A suggestion derived from the line under the cursor.
@@ -342,6 +344,8 @@ pub enum SectionType {
     RecentCommits,
     /// The "Unpulled from upstream" section
     Unpulled,
+    /// The "Stashes" section
+    Stashes,
 }
 
 impl SectionType {
@@ -363,6 +367,7 @@ impl SectionType {
             }
             SectionType::RecentCommits => None,
             SectionType::Unpulled => None,
+            SectionType::Stashes => None,
         }
     }
 

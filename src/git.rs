@@ -27,6 +27,7 @@ pub mod push;
 pub mod recent_commits;
 pub mod stage;
 pub mod staged_changes;
+pub mod stashes;
 pub mod test_repo;
 pub mod unpulled_commits;
 pub mod unstaged_changes;
@@ -68,6 +69,7 @@ impl GitInfo {
         let untracked_files = untracked_files::get_lines(&self.repository)?;
         let unstaged_changes = unstaged_changes::get_lines(&self.repository)?;
         let staged_changes = staged_changes::get_lines(&self.repository)?;
+        let stashes = stashes::get_lines(&self.repository)?;
         let unpulled_commits = unpulled_commits::get_lines(&self.repository)?;
         let recent_commits = recent_commits::get_lines(&self.repository)?;
 
@@ -76,8 +78,9 @@ impl GitInfo {
             untracked_files,
             unstaged_changes,
             staged_changes,
-            recent_commits,
+            stashes,
             unpulled_commits,
+            recent_commits,
         ];
         let result = all_sections
             .into_iter()
@@ -152,6 +155,15 @@ pub enum ReferenceType {
     LocalBranch,
     RemoteBranch,
     DetachedHead,
+}
+
+/// Represents a single stash entry in the stash stack
+#[derive(Debug, Clone)]
+pub struct StashEntry {
+    /// Stash index (0-based), used to format "stash@{N}"
+    pub index: usize,
+    /// Stash message (e.g., "WIP on main: abc1234 commit message")
+    pub message: String,
 }
 
 impl GitRef {
