@@ -236,16 +236,18 @@ impl PullArgument {
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum StashArgument {
     IncludeUntracked,
+    All,
 }
 
 impl StashArgument {
     pub fn all() -> Vec<StashArgument> {
-        vec![StashArgument::IncludeUntracked]
+        vec![StashArgument::IncludeUntracked, StashArgument::All]
     }
 
     pub fn key(&self) -> char {
         match self {
             StashArgument::IncludeUntracked => 'u',
+            StashArgument::All => 'a',
         }
     }
 
@@ -256,12 +258,14 @@ impl StashArgument {
     pub fn description(&self) -> &'static str {
         match self {
             StashArgument::IncludeUntracked => "Also save untracked files",
+            StashArgument::All => "Also save untracked and ignored files",
         }
     }
 
     pub fn flag(&self) -> &'static str {
         match self {
             StashArgument::IncludeUntracked => "--include-untracked",
+            StashArgument::All => "--all",
         }
     }
 }
