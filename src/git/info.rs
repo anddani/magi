@@ -1,11 +1,13 @@
 // Define the module structure
 pub mod get_head_ref;
 pub mod get_latest_tag;
+pub mod get_merge_ref;
 pub mod get_push_ref;
 
 // Re-export the functions from the submodules
 pub use get_head_ref::get_head_ref;
 pub use get_latest_tag::get_latest_tag;
+pub use get_merge_ref::get_merge_ref;
 pub use get_push_ref::get_push_ref;
 
 use crate::{
@@ -22,30 +24,36 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
 
     // Get the head reference
     let head_ref = get_head_ref(repository)?;
-    let line = Line {
+    lines.push(Line {
         content: LineContent::HeadRef(head_ref),
         section: Some(SectionType::Info),
-    };
-    lines.push(line);
+    });
 
-    // Get the push reference
+    // Get the merge (upstream) reference
+    if let Some(merge_ref) = get_merge_ref(repository)? {
+        lines.push(Line {
+            content: LineContent::MergeRef(merge_ref),
+            section: Some(SectionType::Info),
+        });
+    }
+
+    // Get the push remote reference (only when pushRemote/pushDefault is configured)
     if let Some(push_ref) = get_push_ref(repository)? {
-        let line = Line {
+        lines.push(Line {
             content: LineContent::PushRef(push_ref),
             section: Some(SectionType::Info),
-        };
-        lines.push(line);
+        });
     }
+
     // Get the latest tag
     if let Some(tag_info) = get_latest_tag(repository)? {
-        let line = Line {
+        lines.push(Line {
             content: LineContent::Tag(TagInfo {
                 name: tag_info.name,
                 commits_ahead: tag_info.commits_ahead,
             }),
             section: Some(SectionType::Info),
-        };
-        lines.push(line);
+        });
     }
 
     Ok(lines)

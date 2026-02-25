@@ -21,6 +21,7 @@ mod diff_line;
 mod head_ref;
 mod latest_tag;
 mod log_line;
+mod merge_ref;
 mod push_ref;
 mod render;
 mod section_header;
@@ -120,6 +121,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
             crate::model::LineContent::HeadRef(git_ref) => {
                 head_ref::get_lines(git_ref, is_section_collapsed, theme)
             }
+            crate::model::LineContent::MergeRef(git_ref) => merge_ref::get_lines(git_ref, theme),
             crate::model::LineContent::PushRef(git_ref) => push_ref::get_lines(git_ref, theme),
             crate::model::LineContent::Tag(tag_info) => latest_tag::get_lines(tag_info, theme),
             crate::model::LineContent::SectionHeader { title, count } => {
