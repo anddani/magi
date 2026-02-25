@@ -1,5 +1,5 @@
 use crate::{
-    git::commit::{run_fixup_commit, run_squash_commit},
+    git::commit::{run_alter_commit, run_fixup_commit, run_squash_commit},
     model::{Model, popup::PopupContent},
     msg::{FixupType, Message},
 };
@@ -27,6 +27,7 @@ pub fn update(model: &mut Model, commit_ref: String, fixup_type: FixupType) -> O
     let result = match fixup_type {
         FixupType::Fixup => run_fixup_commit(repo_path, commit_hash),
         FixupType::Squash => run_squash_commit(repo_path, commit_hash),
+        FixupType::Alter => run_alter_commit(repo_path, commit_hash),
     };
 
     match result {
@@ -44,6 +45,7 @@ pub fn update(model: &mut Model, commit_ref: String, fixup_type: FixupType) -> O
             let operation = match fixup_type {
                 FixupType::Fixup => "Fixup",
                 FixupType::Squash => "Squash",
+                FixupType::Alter => "Alter",
             };
             model.popup = Some(PopupContent::Error {
                 message: format!("{} commit failed: {}", operation, err),

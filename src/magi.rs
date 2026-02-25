@@ -132,6 +132,7 @@ fn run_loop(mut terminal: DefaultTerminal, path: Option<PathBuf>) -> MagiResult<
 
             // Resume TUI
             terminal = ratatui::init();
+            terminal.clear()?;
 
             // Process the commit result message(s)
             while let Some(m) = current_msg {

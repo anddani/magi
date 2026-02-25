@@ -11,6 +11,8 @@ pub enum FixupType {
     Fixup,
     /// Create a squash commit (git commit --squash)
     Squash,
+    /// Create an alter commit (git commit --fixup=amend: --edit)
+    Alter,
 }
 
 /// Type of log view to display
