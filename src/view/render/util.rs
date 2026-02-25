@@ -35,7 +35,7 @@ pub fn argument_line<'a>(
         faded_style // Gray when not selected
     };
     Line::from(vec![
-        Span::styled("-", dash_style),
+        Span::styled(" -", dash_style),
         Span::styled(key.to_string(), key_style),
         Span::styled(format!(" {description} ("), desc_style),
         Span::styled(flag, flag_style),

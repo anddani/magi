@@ -49,13 +49,13 @@ pub fn content<'a>(
                     Style::default().fg(theme.remote_branch)
                 };
                 vec![
-                    Span::styled("p", cmd_key_style),
+                    Span::styled(" p", cmd_key_style),
                     Span::styled(" ", cmd_desc_style),
                     Span::styled(format!("{}/{}", remote, current_branch), remote_style),
                 ]
             }
             None => vec![
-                Span::styled("p", cmd_key_style),
+                Span::styled(" p", cmd_key_style),
                 Span::styled(" ${push-remote}, setting that", cmd_desc_style),
             ],
         }
@@ -70,7 +70,7 @@ pub fn content<'a>(
                 Style::default().fg(theme.remote_branch)
             };
             vec![
-                Span::styled("u", cmd_key_style),
+                Span::styled(" u", cmd_key_style),
                 Span::styled(" ", cmd_desc_style),
                 Span::styled(upstream.clone(), upstream_style),
             ]
@@ -78,7 +78,7 @@ pub fn content<'a>(
         None => {
             // No upstream - show suggestion with ", setting it"
             vec![
-                Span::styled("u", cmd_key_style),
+                Span::styled(" u", cmd_key_style),
                 Span::styled(" ${upstream}, setting it", cmd_desc_style),
             ]
         }

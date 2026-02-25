@@ -92,8 +92,10 @@ impl<'a> CommandPopupContent<'a> {
         }
     }
 
-    /// Total content height (sum of every row's height)
+    /// Total content height (sum of every row's height plus 1-unit gaps between rows)
     pub fn total_content_height(&self) -> usize {
-        self.rows.iter().map(|row| row.height()).sum()
+        let rows_height: usize = self.rows.iter().map(|row| row.height()).sum();
+        let gaps = self.rows.len().saturating_sub(1);
+        rows_height + gaps
     }
 }

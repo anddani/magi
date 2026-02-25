@@ -237,7 +237,9 @@ fn render_command_popup(
         .map(|row| Constraint::Length(row.height() as u16))
         .collect();
 
-    let row_areas = Layout::vertical(row_constraints).split(inner_area);
+    let row_areas = Layout::vertical(row_constraints)
+        .spacing(1)
+        .split(inner_area);
 
     for (row_idx, row) in content.rows.iter().enumerate() {
         let row_area = row_areas[row_idx];

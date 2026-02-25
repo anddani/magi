@@ -69,7 +69,7 @@ pub fn content<'a>(
                 Style::default().fg(theme.remote_branch)
             };
             vec![
-                Span::styled("u", cmd_key_style),
+                Span::styled(" u", cmd_key_style),
                 Span::styled(" ", cmd_desc_style),
                 Span::styled(upstream.clone(), upstream_style),
             ]
@@ -77,7 +77,7 @@ pub fn content<'a>(
         None => {
             // No upstream - show suggestion with ", setting it"
             vec![
-                Span::styled("u", cmd_key_style),
+                Span::styled(" u", cmd_key_style),
                 Span::styled(" ${upstream}, setting it", cmd_desc_style),
             ]
         }
@@ -93,31 +93,31 @@ pub fn content<'a>(
                     Style::default().fg(theme.remote_branch)
                 };
                 vec![
-                    Span::styled("p", cmd_key_style),
+                    Span::styled(" p", cmd_key_style),
                     Span::styled(" ", cmd_desc_style),
                     Span::styled(format!("{}/{}", remote, current_branch), remote_style),
                 ]
             }
             None => vec![
-                Span::styled("p", cmd_key_style),
+                Span::styled(" p", cmd_key_style),
                 Span::styled(" ${push-remote}, setting that", cmd_desc_style),
             ],
         }
     };
 
     let elsewhere_line = Line::from(vec![
-        Span::styled("e", cmd_key_style),
+        Span::styled(" e", cmd_key_style),
         Span::styled(" elsewhere", cmd_desc_style),
     ]);
 
     let all_remotes_line = Line::from(vec![
-        Span::styled("a", cmd_key_style),
+        Span::styled(" a", cmd_key_style),
         Span::styled(" all remotes", cmd_desc_style),
     ]);
 
     let mut commands: Vec<Line> = vec![
-        Line::from(upstream_description),
         Line::from(push_remote_description),
+        Line::from(upstream_description),
         elsewhere_line,
         all_remotes_line,
     ];
