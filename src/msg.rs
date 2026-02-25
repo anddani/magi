@@ -177,6 +177,7 @@ pub enum Message {
     ShowStashApplySelect,
 
     Pull(PullCommand),
+    Push(PushCommand),
     Stash(StashCommand),
 
     /// Fetch all remotes
@@ -199,24 +200,14 @@ pub enum Message {
     ShowFetchPushRemoteSelect,
     /// Fetch from push remote (setting branch.<name>.pushRemote)
     FetchFromPushRemote(String),
-    /// Push to upstream (or create it if specified)
-    PushUpstream,
     /// Show select popup to choose upstream for push
     ShowPushUpstreamSelect,
-    /// Push to a specific remote/branch (setting it as upstream)
-    PushToRemote(String),
     /// Show select popup to choose push remote for push
     ShowPushPushRemoteSelect,
-    /// Push to push remote (setting branch.<name>.pushRemote)
-    PushToPushRemote(String),
     /// Show select popup to choose remote for pushing all tags
     ShowPushAllTagsSelect,
-    /// Push all tags to a specific remote
-    PushAllTags(String),
     /// Show select popup to choose a tag to push
     ShowPushTagSelect,
-    /// Push a single tag to origin
-    PushTag(String),
 
     /// Show select popup to choose upstream for pull
     ShowPullUpstreamSelect,
@@ -263,6 +254,21 @@ pub enum PullCommand {
     PullFromUpstream(String),
     /// Pull from upstream
     PullUpstream,
+}
+
+/// Messages for push commands
+#[derive(PartialEq, Eq, Debug)]
+pub enum PushCommand {
+    /// Push to upstream (or create it if specified)
+    PushUpstream,
+    /// Push to a specific remote/branch (setting it as upstream)
+    PushToRemote(String),
+    /// Push to push remote (setting branch.<name>.pushRemote)
+    PushToPushRemote(String),
+    /// Push all tags to a specific remote
+    PushAllTags(String),
+    /// Push a single tag to origin
+    PushTag(String),
 }
 
 /// Messages for stash commands

@@ -3,7 +3,7 @@ use crate::{
         Model,
         popup::{PopupContent, PopupContentCommand, SelectContext, SelectResult},
     },
-    msg::{Message, PullCommand, StashCommand},
+    msg::{Message, PullCommand, PushCommand, StashCommand},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -55,7 +55,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             checkout,
         }),
         (Some(SelectContext::PushUpstream), SelectResult::Selected(upstream)) => {
-            Some(Message::PushToRemote(upstream))
+            Some(Message::Push(PushCommand::PushToRemote(upstream)))
         }
         (Some(SelectContext::FetchUpstream), SelectResult::Selected(upstream)) => {
             Some(Message::FetchFromRemote(upstream))
@@ -73,9 +73,11 @@ pub fn update(model: &mut Model) -> Option<Message> {
             Some(Message::ShowRenameBranchInput(branch))
         }
         (Some(SelectContext::PushAllTags), SelectResult::Selected(remote)) => {
-            Some(Message::PushAllTags(remote))
+            Some(Message::Push(PushCommand::PushAllTags(remote)))
         }
-        (Some(SelectContext::PushTag), SelectResult::Selected(tag)) => Some(Message::PushTag(tag)),
+        (Some(SelectContext::PushTag), SelectResult::Selected(tag)) => {
+            Some(Message::Push(PushCommand::PushTag(tag)))
+        }
         (Some(SelectContext::OpenPrBranch), SelectResult::Selected(branch)) => {
             Some(Message::OpenPr {
                 branch,
@@ -99,7 +101,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))
         }
         (Some(SelectContext::PushPushRemote), SelectResult::Selected(remote)) => {
-            Some(Message::PushToPushRemote(remote))
+            Some(Message::Push(PushCommand::PushToPushRemote(remote)))
         }
         (Some(SelectContext::FetchPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::FetchFromPushRemote(remote))

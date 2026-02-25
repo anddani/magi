@@ -35,12 +35,7 @@ mod open_pr;
 mod pending_g;
 mod pty_helper;
 mod pull;
-mod push_all_tags;
-mod push_helper;
-mod push_tag;
-mod push_to_push_remote;
-mod push_to_remote;
-mod push_upstream;
+mod push;
 mod quit;
 mod refresh;
 mod rename_branch;
@@ -173,15 +168,10 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::FetchFromRemote(upstream) => fetch_from_remote::update(model, upstream),
         Message::ShowFetchPushRemoteSelect => show_fetch_push_remote_select::update(model),
         Message::FetchFromPushRemote(remote) => fetch_from_push_remote::update(model, remote),
-        Message::PushUpstream => push_upstream::update(model),
         Message::ShowPushUpstreamSelect => show_push_upstream_select::update(model),
-        Message::PushToRemote(upstream) => push_to_remote::update(model, upstream),
         Message::ShowPushPushRemoteSelect => show_push_push_remote_select::update(model),
-        Message::PushToPushRemote(remote) => push_to_push_remote::update(model, remote),
         Message::ShowPushAllTagsSelect => show_push_all_tags_select::update(model),
-        Message::PushAllTags(remote) => push_all_tags::update(model, remote),
         Message::ShowPushTagSelect => show_push_tag_select::update(model),
-        Message::PushTag(tag) => push_tag::update(model, tag),
         Message::ShowPullPopup => show_pull_popup::update(model),
         Message::ShowPullUpstreamSelect => show_pull_upstream_select::update(model),
         Message::ShowPullPushRemoteSelect => show_pull_push_remote_select::update(model),
@@ -215,5 +205,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
 
         Message::Pull(pull_command) => pull::update(model, pull_command),
         Message::Stash(stash_command) => stash::update(model, stash_command),
+
+        Message::Push(push_command) => push::update(model, push_command),
     }
 }
