@@ -169,6 +169,8 @@ pub enum Message {
     ConfirmDeleteBranch(String),
     /// Fetch all remotes
     FetchAllRemotes,
+    /// Fetch all populated submodules (git fetch --recurse-submodules)
+    FetchModules,
     /// Fetch from upstream
     FetchUpstream,
     /// Show select popup to choose upstream for fetch

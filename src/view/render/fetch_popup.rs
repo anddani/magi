@@ -135,10 +135,16 @@ pub fn content<'a>(
 
     let fetch_col = PopupColumn {
         title: Some("Fetch"),
-        content: vec![Line::from(vec![
-            Span::styled(" o", cmd_key_style),
-            Span::styled(" another branch", cmd_desc_style),
-        ])],
+        content: vec![
+            Line::from(vec![
+                Span::styled(" o", cmd_key_style),
+                Span::styled(" another branch", cmd_desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" m", cmd_key_style),
+                Span::styled(" submodules", cmd_desc_style),
+            ]),
+        ],
     };
 
     CommandPopupContent {
