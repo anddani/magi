@@ -3,8 +3,8 @@ use ratatui::{
     text::{Line, Span},
 };
 
-use super::popup_content::CommandPopupContent;
-use crate::{config::Theme, view::render::util::column_title};
+use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
+use crate::config::Theme;
 
 pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     let key_style = Style::default()
@@ -12,45 +12,60 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
 
-    let content: Vec<Line> = vec![
-        column_title("Checkout", theme),
-        Line::from(vec![
-            Span::styled("b", key_style),
-            Span::styled(" branch/revision", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("l", key_style),
-            Span::styled(" local branch", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("c", key_style),
-            Span::styled(" new branch", desc_style),
-        ]),
-        Line::from(""),
-        column_title("Create", theme),
-        Line::from(vec![
-            Span::styled("n", key_style),
-            Span::styled(" new branch", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("o", key_style),
-            Span::styled(" new PR to default branch", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("O", key_style),
-            Span::styled(" new PR to...", desc_style),
-        ]),
-        Line::from(""),
-        column_title("Do", theme),
-        Line::from(vec![
-            Span::styled("m", key_style),
-            Span::styled(" rename", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("x", key_style),
-            Span::styled(" delete", desc_style),
-        ]),
-    ];
+    let checkout = PopupColumn {
+        title: Some("Checkout"),
+        content: vec![
+            Line::from(vec![
+                Span::styled(" b", key_style),
+                Span::styled(" branch/revision", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" l", key_style),
+                Span::styled(" local branch", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" c", key_style),
+                Span::styled(" new branch", desc_style),
+            ]),
+        ],
+    };
 
-    CommandPopupContent::single_column("Branch", content)
+    let create = PopupColumn {
+        title: Some("Create"),
+        content: vec![
+            Line::from(vec![
+                Span::styled(" n", key_style),
+                Span::styled(" new branch", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" o", key_style),
+                Span::styled(" new PR to default branch", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" O", key_style),
+                Span::styled(" new PR to...", desc_style),
+            ]),
+        ],
+    };
+
+    let do_col = PopupColumn {
+        title: Some("Do"),
+        content: vec![
+            Line::from(vec![
+                Span::styled(" m", key_style),
+                Span::styled(" rename", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" x", key_style),
+                Span::styled(" delete", desc_style),
+            ]),
+        ],
+    };
+
+    CommandPopupContent {
+        title: "Branch",
+        rows: vec![PopupRow {
+            columns: vec![checkout, create, do_col],
+        }],
+    }
 }

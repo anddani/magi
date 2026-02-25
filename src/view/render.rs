@@ -207,7 +207,7 @@ fn render_command_popup(
         .add_modifier(Modifier::BOLD);
 
     // Calculate popup dimensions
-    let popup_height = (content.max_content_height() + 2) as u16; // +2 for border
+    let popup_height = (content.total_content_height() + 2) as u16; // +2 for border
     let popup_width = area.width;
     let popup_area = bottom_half_rect(popup_width, popup_height, area);
 
@@ -230,27 +230,40 @@ fn render_command_popup(
         popup_area.height.saturating_sub(2),
     );
 
-    // Create layout constraints based on number of columns
-    let constraints: Vec<Constraint> = content
-        .columns
+    // Stack rows vertically, each row sized to its tallest column
+    let row_constraints: Vec<Constraint> = content
+        .rows
         .iter()
-        .map(|_| Constraint::Ratio(1, content.columns.len() as u32))
+        .map(|row| Constraint::Length(row.height() as u16))
         .collect();
 
-    let column_areas = Layout::horizontal(constraints).split(inner_area);
+    let row_areas = Layout::vertical(row_constraints).split(inner_area);
 
-    // Render each column
-    for (i, column) in content.columns.iter().enumerate() {
-        let mut column_content: Vec<TextLine> = Vec::new();
+    for (row_idx, row) in content.rows.iter().enumerate() {
+        let row_area = row_areas[row_idx];
 
-        // Add column title if present
-        if let Some(title) = column.title {
-            column_content.push(TextLine::from(Span::styled(title, column_title_style)));
+        // Each column takes only as much horizontal space as its content requires
+        let col_constraints: Vec<Constraint> = row
+            .columns
+            .iter()
+            .map(|col| Constraint::Length(col.width() as u16))
+            .collect();
+
+        let col_areas = Layout::horizontal(col_constraints)
+            .spacing(2)
+            .split(row_area);
+
+        for (col_idx, column) in row.columns.iter().enumerate() {
+            let mut column_content: Vec<TextLine> = Vec::new();
+
+            if let Some(title) = column.title {
+                column_content.push(TextLine::from(Span::styled(title, column_title_style)));
+            }
+
+            column_content.extend(column.content.clone());
+
+            let paragraph = Paragraph::new(column_content);
+            frame.render_widget(paragraph, col_areas[col_idx]);
         }
-
-        column_content.extend(column.content.clone());
-
-        let paragraph = Paragraph::new(column_content);
-        frame.render_widget(paragraph, column_areas[i]);
     }
 }
