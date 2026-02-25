@@ -22,6 +22,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('w') => Some(Message::Amend(vec!["--only".to_string()])),
         KeyCode::Char('f') => Some(Message::ShowFixupCommitSelect(FixupType::Fixup)),
         KeyCode::Char('s') => Some(Message::ShowFixupCommitSelect(FixupType::Squash)),
+        KeyCode::Char('A') => Some(Message::ShowFixupCommitSelect(FixupType::Alter)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }
