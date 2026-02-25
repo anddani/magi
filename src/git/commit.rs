@@ -145,7 +145,7 @@ pub fn run_alter_commit<P: AsRef<Path>>(
     repo_path: P,
     commit_hash: String,
 ) -> MagiResult<CommitResult> {
-    let output = git_cmd(
+    let status = git_cmd(
         &repo_path,
         &[
             "commit",
@@ -153,9 +153,9 @@ pub fn run_alter_commit<P: AsRef<Path>>(
             "--edit",
         ],
     )
-    .output()?;
+    .status()?;
 
-    if output.status.success() {
+    if status.success() {
         let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
 
         let commit_msg = String::from_utf8_lossy(&log_output.stdout)
