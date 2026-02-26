@@ -29,6 +29,7 @@ fn command_popup_keys(c: char) -> Option<Message> {
             PopupContentCommand::Stash,
         ))),
         'r' => Some(Message::ShowRebasePopup),
+        '_' => Some(Message::ShowRevertPopup),
         _ => None,
     }
 }

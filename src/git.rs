@@ -25,6 +25,7 @@ pub mod open_pr;
 pub mod pty_command;
 pub mod push;
 pub mod recent_commits;
+pub mod revert;
 pub mod stage;
 pub mod staged_changes;
 pub mod stashes;
@@ -65,6 +66,12 @@ impl GitInfo {
             section: None,
         };
 
+        let workdir = self
+            .repository
+            .workdir()
+            .unwrap_or_else(|| std::path::Path::new("."));
+
+        let reverting_lines = revert::get_reverting_lines(workdir)?;
         let lines = info::get_lines(&self.repository)?;
         let untracked_files = untracked_files::get_lines(&self.repository)?;
         let unstaged_changes = unstaged_changes::get_lines(&self.repository)?;
@@ -74,6 +81,7 @@ impl GitInfo {
         let recent_commits = recent_commits::get_lines(&self.repository)?;
 
         let all_sections = [
+            reverting_lines,
             lines,
             untracked_files,
             unstaged_changes,
@@ -104,7 +112,7 @@ impl GitInfo {
 pub struct GitRef {
     pub name: String,
     pub commit_hash: String,
-    pub commit_message: String,
+    pub commit_summary: String,
     pub reference_type: ReferenceType,
 }
 
@@ -171,33 +179,33 @@ impl GitRef {
     pub fn new(
         name: String,
         commit_hash: String,
-        commit_message: String,
+        commit_summary: String,
         reference_type: ReferenceType,
     ) -> Self {
         Self {
             name,
             commit_hash,
-            commit_message,
+            commit_summary,
             reference_type,
         }
     }
 
     /// Creates a new GitRef for a remote branch
-    pub fn new_remote_branch(name: String, commit_hash: String, commit_message: String) -> Self {
+    pub fn new_remote_branch(name: String, commit_hash: String, commit_summary: String) -> Self {
         Self::new(
             name,
             commit_hash,
-            commit_message,
+            commit_summary,
             ReferenceType::RemoteBranch,
         )
     }
 
     /// Creates a new GitRef for a detached HEAD
-    pub fn new_detached_head(commit_hash: String, commit_message: String) -> Self {
+    pub fn new_detached_head(commit_hash: String, commit_summary: String) -> Self {
         Self::new(
             "HEAD (detached)".to_string(),
             commit_hash,
-            commit_message,
+            commit_summary,
             ReferenceType::DetachedHead,
         )
     }

@@ -173,6 +173,11 @@ pub enum Message {
     /// Show rebase popup
     ShowRebasePopup,
 
+    /// Show revert popup
+    ShowRevertPopup,
+    /// Execute a revert command
+    Revert(RevertCommand),
+
     /// Show a select popup
     ShowSelectPopup(SelectPopup),
 
@@ -250,6 +255,19 @@ pub enum PushCommand {
 pub enum RebaseCommand {
     /// Rebase the current branch onto the given target ref/commit
     Elsewhere(String),
+}
+
+/// Messages for revert commands
+#[derive(PartialEq, Eq, Debug)]
+pub enum RevertCommand {
+    /// Revert the given commit hashes (--no-edit)
+    Commits(Vec<String>),
+    /// Continue after resolving conflicts
+    Continue,
+    /// Skip the current conflicting commit
+    Skip,
+    /// Abort the revert sequence
+    Abort,
 }
 
 /// Which working-tree area to stash

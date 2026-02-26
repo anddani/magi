@@ -171,6 +171,13 @@ pub enum LineContent {
     LogLine(LogEntry),
     /// A stash entry in the stash stack
     Stash(StashEntry),
+    /// An entry in the "Reverting" sequencer section
+    RevertingEntry {
+        hash: String,
+        message: String,
+        /// true = the commit currently stopped on (REVERT_HEAD), false = pending
+        is_current: bool,
+    },
 }
 
 /// A suggestion derived from the line under the cursor.
@@ -347,6 +354,8 @@ pub enum SectionType {
     Unpulled,
     /// The "Stashes" section
     Stashes,
+    /// The "Reverting" sequencer section
+    Reverting,
 }
 
 impl SectionType {
@@ -369,6 +378,7 @@ impl SectionType {
             SectionType::RecentCommits => None,
             SectionType::Unpulled => None,
             SectionType::Stashes => None,
+            SectionType::Reverting => None,
         }
     }
 
