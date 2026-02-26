@@ -15,6 +15,7 @@ pub fn update(model: &mut Model, stash_command: StashCommand) -> Option<Message>
     };
     match stash_command {
         StashCommand::StashBoth(message) => stash_both(model, message, extra_args),
+        StashCommand::StashIndex(message) => stash_index(model, message),
         StashCommand::Apply(stash_ref) => apply(model, stash_ref, extra_args),
         StashCommand::Pop(stash_ref) => pop(model, stash_ref, extra_args),
         StashCommand::Drop(stash_ref) => drop(model, stash_ref),
@@ -31,6 +32,20 @@ fn stash_both(model: &mut Model, message: String, extra_args: Vec<String>) -> Op
     args.extend(extra_args);
 
     execute_pty_command(model, args, "Stash".to_string())
+}
+
+fn stash_index(model: &mut Model, message: String) -> Option<Message> {
+    let mut args = vec![
+        "stash".to_string(),
+        "push".to_string(),
+        "--staged".to_string(),
+    ];
+
+    if !message.is_empty() {
+        args.extend(["-m".to_string(), message]);
+    }
+
+    execute_pty_command(model, args, "Stash index".to_string())
 }
 
 fn apply(model: &mut Model, stash_ref: String, extra_args: Vec<String>) -> Option<Message> {

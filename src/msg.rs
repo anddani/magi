@@ -163,6 +163,8 @@ pub enum Message {
     ConfirmDeleteBranch(String),
     /// Show input popup for stash message
     ShowStashMessageInput,
+    /// Show input popup for stash index message (stash only staged changes)
+    ShowStashIndexInput,
 
     Fetch(FetchCommand),
     Pull(PullCommand),
@@ -257,6 +259,8 @@ pub enum RebaseCommand {
 pub enum StashCommand {
     /// Stash both index and working tree with the given message (git stash push [-m msg])
     StashBoth(String),
+    /// Stash only the index (staged changes) with the given message (git stash push --staged [-m msg])
+    StashIndex(String),
     /// Apply a stash by its reference (e.g. "stash@{0}")
     Apply(String),
     /// Pop a stash by its reference (e.g. "stash@{0}") - applies and removes it
