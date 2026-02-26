@@ -8,6 +8,7 @@ mod fetch;
 mod log;
 mod pull;
 mod push;
+mod rebase;
 mod select;
 mod stash;
 
@@ -31,6 +32,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Pull(state) => pull::keys(key, arg_mode, state),
         PopupContentCommand::Push(state) => push::keys(key, arg_mode, state),
         PopupContentCommand::Stash => stash::keys(key, arg_mode),
+        PopupContentCommand::Rebase(_) => rebase::keys(key),
         PopupContentCommand::Select(_) => select::keys(key),
         PopupContentCommand::CommitSelect(_) => select::keys(key),
     }

@@ -23,6 +23,8 @@ pub enum ConfirmAction {
     PopStash(String),
     /// Drop a stash (stores the stash reference, e.g. "stash@{0}" or "all")
     DropStash(String),
+    /// Rebase the current branch onto the given target ref/commit
+    RebaseElsewhere(String),
 }
 
 /// State for the credential input popup.
@@ -196,6 +198,13 @@ impl CommitSelectPopupState {
     }
 }
 
+/// State for the Rebase popup
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RebasePopupState {
+    /// The currently checked out branch name
+    pub branch: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContentCommand {
     Commit,
@@ -205,6 +214,7 @@ pub enum PopupContentCommand {
     Branch,
     Log,
     Stash,
+    Rebase(RebasePopupState),
     Select(SelectPopupState),
     CommitSelect(CommitSelectPopupState),
 }

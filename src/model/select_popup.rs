@@ -56,6 +56,8 @@ pub enum SelectContext {
     PopStash,
     /// Selecting a stash to drop
     DropStash,
+    /// Selecting a commit to rebase onto (rebase elsewhere)
+    RebaseElsewhere,
 }
 
 /// State for the select popup (fuzzy finder style)

@@ -25,6 +25,7 @@ mod log_popup;
 mod popup_content;
 mod pull_popup;
 mod push_popup;
+mod rebase_popup;
 mod select_popup;
 mod stash_popup;
 mod util;
@@ -98,6 +99,8 @@ pub fn render_popup(
                 PopupContentCommand::Branch => branch_popup::content(theme),
                 PopupContentCommand::Log => log_popup::content(theme),
                 PopupContentCommand::Stash => stash_popup::content(theme, model),
+
+                PopupContentCommand::Rebase(state) => rebase_popup::content(theme, state),
 
                 // Select popup uses custom rendering, not the column layout
                 PopupContentCommand::Select(state) => {
