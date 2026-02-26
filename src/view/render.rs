@@ -100,11 +100,7 @@ pub fn render_popup(
                 PopupContentCommand::Log => log_popup::content(theme),
                 PopupContentCommand::Stash => stash_popup::content(theme, model),
 
-                // Rebase popup uses custom rendering with colored branch name
-                PopupContentCommand::Rebase(state) => {
-                    rebase_popup::render(state, frame, area, theme);
-                    return;
-                }
+                PopupContentCommand::Rebase(state) => rebase_popup::content(theme, state),
 
                 // Select popup uses custom rendering, not the column layout
                 PopupContentCommand::Select(state) => {
