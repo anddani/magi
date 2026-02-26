@@ -124,6 +124,20 @@ pub fn update(model: &mut Model) -> Option<Message> {
                 .to_string();
             Some(Message::Stash(StashCommand::Apply(stash_ref)))
         }
+        (Some(SelectContext::PopStash), SelectResult::Selected(stash_display)) => {
+            // Extract "stash@{N}" from "stash@{N}: message"
+            let stash_ref = stash_display
+                .split(": ")
+                .next()
+                .unwrap_or(&stash_display)
+                .to_string();
+            // Show confirmation dialog before popping
+            model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
+                message: format!("Pop {}?", stash_display),
+                on_confirm: ConfirmAction::PopStash(stash_ref),
+            }));
+            None
+        }
         (Some(SelectContext::DropStash), SelectResult::Selected(stash_display)) => {
             // Extract "stash@{N}" from "stash@{N}: message"
             let stash_ref = stash_display

@@ -119,6 +119,8 @@ pub enum Message {
     DiscardSelected,
     /// Actually discard after user confirms
     ConfirmDiscard(DiscardTarget),
+    /// Actually pop stash after user confirms
+    ConfirmPopStash(String),
     /// Actually drop stash after user confirms (stash ref or "all")
     ConfirmDropStash(String),
 
@@ -246,6 +248,8 @@ pub enum StashCommand {
     StashBoth(String),
     /// Apply a stash by its reference (e.g. "stash@{0}")
     Apply(String),
+    /// Pop a stash by its reference (e.g. "stash@{0}") - applies and removes it
+    Pop(String),
     /// Drop a stash by its reference (e.g. "stash@{0}"), or "all" to drop all stashes
     Drop(String),
 }
@@ -296,6 +300,8 @@ pub enum SelectDialog {
     // Stash-related
     /// Show apply stash popup, or immediately apply if cursor is on a stash entry
     StashApply,
+    /// Show pop stash popup, or immediately pop if cursor is on a stash entry
+    StashPop,
     /// Show drop stash popup, or immediately drop if cursor is on a stash entry
     StashDrop,
 
