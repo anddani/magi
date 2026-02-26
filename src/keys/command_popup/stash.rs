@@ -17,6 +17,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
 
     match key.code {
         KeyCode::Char('z') => Some(Message::ShowStashMessageInput),
+        KeyCode::Char('i') => Some(Message::ShowStashIndexInput),
         KeyCode::Char('a') => Some(Message::ShowSelectPopup(SelectPopup::StashApply)),
         KeyCode::Char('p') => Some(Message::ShowSelectPopup(SelectPopup::StashPop)),
         KeyCode::Char('k') => Some(Message::ShowSelectPopup(SelectPopup::StashDrop)),

@@ -34,6 +34,11 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             state.input_text.trim().to_string(),
         )));
     }
+    if let InputContext::StashIndexMessage = state.context {
+        return Some(Message::Stash(StashCommand::StashIndex(
+            state.input_text.trim().to_string(),
+        )));
+    }
 
     let input = state.input_text.trim().to_string();
     if input.is_empty() {
@@ -55,6 +60,6 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             old_name,
             new_name: input,
         }),
-        InputContext::StashMessage => unreachable!(),
+        InputContext::StashMessage | InputContext::StashIndexMessage => unreachable!(),
     }
 }

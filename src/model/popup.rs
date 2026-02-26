@@ -80,6 +80,8 @@ pub enum InputContext {
     },
     /// Stash message input
     StashMessage,
+    /// Stash index message input (stash only staged changes)
+    StashIndexMessage,
 }
 
 /// State for text input popups (e.g., new branch name)
