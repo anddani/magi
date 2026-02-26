@@ -5,7 +5,7 @@ use crate::{
         arguments::{Argument::Fetch, FetchArgument},
         popup::FetchPopupState,
     },
-    msg::Message,
+    msg::{FetchCommand, Message},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Message> {
@@ -21,22 +21,24 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
     match key.code {
         KeyCode::Char('u') => {
             if state.upstream.is_some() {
-                Some(Message::FetchUpstream)
+                Some(Message::Fetch(FetchCommand::FetchUpstream))
             } else {
                 Some(Message::ShowFetchUpstreamSelect)
             }
         }
         KeyCode::Char('p') => {
             if let Some(remote) = &state.push_remote {
-                Some(Message::FetchFromPushRemote(remote.clone()))
+                Some(Message::Fetch(FetchCommand::FetchFromPushRemote(
+                    remote.clone(),
+                )))
             } else {
                 Some(Message::ShowFetchPushRemoteSelect)
             }
         }
-        KeyCode::Char('a') => Some(Message::FetchAllRemotes),
+        KeyCode::Char('a') => Some(Message::Fetch(FetchCommand::FetchAllRemotes)),
         KeyCode::Char('e') => Some(Message::ShowFetchElsewhereSelect),
         KeyCode::Char('o') => Some(Message::ShowFetchAnotherBranchSelect),
-        KeyCode::Char('m') => Some(Message::FetchModules),
+        KeyCode::Char('m') => Some(Message::Fetch(FetchCommand::FetchModules)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

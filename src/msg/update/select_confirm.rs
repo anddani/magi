@@ -3,7 +3,7 @@ use crate::{
         Model,
         popup::{PopupContent, PopupContentCommand, SelectContext, SelectResult},
     },
-    msg::{Message, PullCommand, PushCommand, StashCommand},
+    msg::{FetchCommand, Message, PullCommand, PushCommand, StashCommand},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -57,11 +57,11 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::PushUpstream), SelectResult::Selected(upstream)) => {
             Some(Message::Push(PushCommand::PushToRemote(upstream)))
         }
-        (Some(SelectContext::FetchUpstream), SelectResult::Selected(upstream)) => {
-            Some(Message::FetchFromRemote(upstream))
-        }
+        (Some(SelectContext::FetchUpstream), SelectResult::Selected(upstream)) => Some(
+            Message::Fetch(FetchCommand::FetchFromRemoteBranch(upstream)),
+        ),
         (Some(SelectContext::FetchElsewhere), SelectResult::Selected(remote)) => {
-            Some(Message::FetchFromRemote(remote))
+            Some(Message::Fetch(FetchCommand::FetchFromRemoteBranch(remote)))
         }
         (Some(SelectContext::PullUpstream), SelectResult::Selected(upstream)) => {
             Some(Message::Pull(PullCommand::PullFromUpstream(upstream)))
@@ -104,13 +104,13 @@ pub fn update(model: &mut Model) -> Option<Message> {
             Some(Message::Push(PushCommand::PushToPushRemote(remote)))
         }
         (Some(SelectContext::FetchPushRemote), SelectResult::Selected(remote)) => {
-            Some(Message::FetchFromPushRemote(remote))
+            Some(Message::Fetch(FetchCommand::FetchFromPushRemote(remote)))
         }
         (Some(SelectContext::FetchAnotherBranchRemote), SelectResult::Selected(remote)) => {
             Some(Message::ShowFetchAnotherBranchBranchSelect(remote))
         }
         (Some(SelectContext::FetchAnotherBranch), SelectResult::Selected(branch)) => {
-            Some(Message::FetchFromRemote(branch))
+            Some(Message::Fetch(FetchCommand::FetchFromRemoteBranch(branch)))
         }
         (Some(SelectContext::ApplyStash), SelectResult::Selected(stash_display)) => {
             // Extract "stash@{N}" from "stash@{N}: message"
