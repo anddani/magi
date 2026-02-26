@@ -1,7 +1,7 @@
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     model::popup::{CommitSelectPopupState, PopupContent, PopupContentCommand},
-    msg::{FixupType, LogType, Message, SelectMessage, update::update},
+    msg::{FixupType, LogType, Message, SelectDialog, SelectMessage, update::update},
 };
 
 mod utils;
@@ -36,7 +36,10 @@ fn test_commit_select_popup_displays_log_entries() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Show the commit select popup
-    let _result = update(&mut model, Message::ShowFixupCommitSelect(FixupType::Fixup));
+    let _result = update(
+        &mut model,
+        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+    );
 
     // Verify popup is CommitSelect, not plain Select
     assert!(matches!(
@@ -75,7 +78,10 @@ fn test_commit_select_popup_filters_by_hash() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Show the commit select popup
-    let _result = update(&mut model, Message::ShowFixupCommitSelect(FixupType::Fixup));
+    let _result = update(
+        &mut model,
+        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+    );
 
     // Get initial commit count
     let initial_count =
@@ -139,7 +145,10 @@ fn test_commit_select_popup_filters_by_message() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Show the commit select popup
-    let _result = update(&mut model, Message::ShowFixupCommitSelect(FixupType::Fixup));
+    let _result = update(
+        &mut model,
+        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+    );
 
     // Filter by "feature"
     for c in "feature".chars() {
@@ -178,7 +187,10 @@ fn test_commit_select_popup_navigation() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Show the commit select popup
-    let _result = update(&mut model, Message::ShowFixupCommitSelect(FixupType::Fixup));
+    let _result = update(
+        &mut model,
+        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+    );
 
     // Initially at first commit
     if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) = &model.popup {
@@ -221,7 +233,10 @@ fn test_commit_select_popup_confirm_returns_hash() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Show the commit select popup
-    let _result = update(&mut model, Message::ShowFixupCommitSelect(FixupType::Fixup));
+    let _result = update(
+        &mut model,
+        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+    );
 
     // Get the expected hash
     let expected_hash =

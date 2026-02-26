@@ -101,8 +101,6 @@ pub enum Message {
     Commit,
     /// Amend the last commit
     Amend(Vec<String>),
-    /// Show select popup to choose commit for fixup or squash
-    ShowFixupCommitSelect(FixupType),
     /// Create a fixup or squash commit for the specified commit hash
     FixupCommit(String, FixupType),
 
@@ -135,24 +133,12 @@ pub enum Message {
     ShowFetchPopup,
     /// Show pull popup with options
     ShowPullPopup,
-    /// Show the checkout branch select popup
-    ShowCheckoutBranchPopup,
-    /// Show the checkout local branch select popup (only local branches)
-    ShowCheckoutLocalBranchPopup,
-    /// Show the delete branch select popup
-    ShowDeleteBranchPopup,
-    /// Show the rename branch select popup (select branch to rename)
-    ShowRenameBranchPopup,
     /// Show the input popup for the new branch name (renaming old_name)
     ShowRenameBranchInput(String),
     /// Rename a branch
     RenameBranch {
         old_name: String,
         new_name: String,
-    },
-    /// Show the create new branch popup (select starting point)
-    ShowCreateNewBranchPopup {
-        checkout: bool,
     },
     /// Show the input popup for new branch name
     ShowCreateNewBranchInput {
@@ -173,44 +159,15 @@ pub enum Message {
     ConfirmDeleteBranch(String),
     /// Show input popup for stash message
     ShowStashMessageInput,
-    /// Show apply stash popup, or immediately apply if cursor is on a stash entry
-    ShowStashApplySelect,
 
     Fetch(FetchCommand),
     Pull(PullCommand),
     Push(PushCommand),
     Stash(StashCommand),
 
-    /// Show select popup to choose upstream for fetch
-    ShowFetchUpstreamSelect,
-    /// Show select popup to choose a remote to fetch from
-    ShowFetchElsewhereSelect,
-    /// Show select popup to fetch a specific branch (picks remote first if multiple)
-    ShowFetchAnotherBranchSelect,
-    /// Show select popup to choose a branch from the given remote to fetch
-    ShowFetchAnotherBranchBranchSelect(String),
-    /// Show select popup to choose push remote for fetch
-    ShowFetchPushRemoteSelect,
-    /// Show select popup to choose upstream for push
-    ShowPushUpstreamSelect,
-    /// Show select popup to choose push remote for push
-    ShowPushPushRemoteSelect,
-    /// Show select popup to choose remote for pushing all tags
-    ShowPushAllTagsSelect,
-    /// Show select popup to choose a tag to push
-    ShowPushTagSelect,
+    /// Show a select dialog
+    ShowSelectDialog(SelectDialog),
 
-    /// Show select popup to choose upstream for pull
-    ShowPullUpstreamSelect,
-    /// Show select popup to choose push remote for pull
-    ShowPullPushRemoteSelect,
-
-    /// Show select popup to pick source branch for PR (opens to default target)
-    ShowOpenPrSelect,
-    /// Show select popup to pick source branch for PR, then pick target
-    ShowOpenPrWithTargetSelect,
-    /// Show select popup to pick target branch for PR (source already chosen)
-    ShowOpenPrTargetSelect(String),
     /// Open PR creation page in browser
     OpenPr {
         branch: String,
@@ -287,6 +244,66 @@ pub enum StashCommand {
     StashBoth(String),
     /// Apply a stash by its reference (e.g. "stash@{0}")
     Apply(String),
+}
+
+/// Messages for showing select dialogs
+#[derive(PartialEq, Eq, Debug)]
+pub enum SelectDialog {
+    // Fetch-related
+    /// Show select popup to choose upstream for fetch
+    FetchUpstream,
+    /// Show select popup to choose a remote to fetch from
+    FetchElsewhere,
+    /// Show select popup to fetch a specific branch (picks remote first if multiple)
+    FetchAnotherBranch,
+    /// Show select popup to choose a branch from the given remote to fetch
+    FetchAnotherBranchBranch(String),
+    /// Show select popup to choose push remote for fetch
+    FetchPushRemote,
+
+    // Push-related
+    /// Show select popup to choose upstream for push
+    PushUpstream,
+    /// Show select popup to choose push remote for push
+    PushPushRemote,
+    /// Show select popup to choose remote for pushing all tags
+    PushAllTags,
+    /// Show select popup to choose a tag to push
+    PushTag,
+
+    // Pull-related
+    /// Show select popup to choose upstream for pull
+    PullUpstream,
+    /// Show select popup to choose push remote for pull
+    PullPushRemote,
+
+    // Branch-related
+    /// Show the checkout branch select popup
+    CheckoutBranch,
+    /// Show the checkout local branch select popup (only local branches)
+    CheckoutLocalBranch,
+    /// Show the delete branch select popup
+    DeleteBranch,
+    /// Show the rename branch select popup (select branch to rename)
+    RenameBranch,
+    /// Show the create new branch popup (select starting point)
+    CreateNewBranch { checkout: bool },
+
+    // Stash-related
+    /// Show apply stash popup, or immediately apply if cursor is on a stash entry
+    StashApply,
+
+    // Fixup-related
+    /// Show select popup to choose commit for fixup or squash
+    FixupCommit(FixupType),
+
+    // PR-related
+    /// Show select popup to pick source branch for PR (opens to default target)
+    OpenPr,
+    /// Show select popup to pick source branch for PR, then pick target
+    OpenPrWithTarget,
+    /// Show select popup to pick target branch for PR (source already chosen)
+    OpenPrTarget(String),
 }
 
 /// Messages for the select popup
