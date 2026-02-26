@@ -146,9 +146,7 @@ pub fn get_reverting_lines(workdir: &Path) -> MagiResult<Vec<crate::model::Line>
 
 /// Runs `git revert --continue` which opens the user's configured editor
 /// to edit the commit message after resolving conflicts.
-pub fn run_revert_continue_with_editor<P: AsRef<Path>>(
-    repo_path: P,
-) -> MagiResult<CommitResult> {
+pub fn run_revert_continue_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
     let status = git_cmd(&repo_path, &["revert", "--continue"]).status()?;
 
     if status.success() {
