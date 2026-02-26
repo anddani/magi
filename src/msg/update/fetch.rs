@@ -23,15 +23,19 @@ pub fn update(model: &mut Model, fetch_command: FetchCommand) -> Option<Message>
         vec![]
     };
     match fetch_command {
-        FetchCommand::FetchUpstream => fetch_upstream(model),
-        FetchCommand::FetchFromRemoteBranch(upstream) => fetch_from_remote_branch(model, upstream),
-        FetchCommand::FetchFromPushRemote(remote) => fetch_from_push_remote(model, remote),
-        FetchCommand::FetchAllRemotes => fetch_from_all_remotes(model),
-        FetchCommand::FetchModules => fetch_submodules(model),
+        FetchCommand::FetchUpstream => fetch_upstream(model, extra_args),
+        FetchCommand::FetchFromRemoteBranch(upstream) => {
+            fetch_from_remote_branch(model, upstream, extra_args)
+        }
+        FetchCommand::FetchFromPushRemote(remote) => {
+            fetch_from_push_remote(model, remote, extra_args)
+        }
+        FetchCommand::FetchAllRemotes => fetch_from_all_remotes(model, extra_args),
+        FetchCommand::FetchModules => fetch_submodules(model, extra_args),
     }
 }
 
-fn fetch_upstream(model: &mut Model) -> Option<Message> {
+fn fetch_upstream(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
     // Get the upstream from popup state
     let upstream =
         if let Some(PopupContent::Command(PopupContentCommand::Fetch(ref state))) = model.popup {
@@ -55,14 +59,16 @@ fn fetch_upstream(model: &mut Model) -> Option<Message> {
         args.push(branch);
     }
 
-    if let Some(FetchArguments(arguments)) = model.arguments.take() {
-        args.extend(arguments.into_iter().map(|a| a.flag().to_string()));
-    }
+    args.extend(extra_args);
 
     execute_pty_command(model, args, format!("Fetch from {}", upstream))
 }
 
-fn fetch_from_remote_branch(model: &mut Model, remote_branch: String) -> Option<Message> {
+fn fetch_from_remote_branch(
+    model: &mut Model,
+    remote_branch: String,
+    extra_args: Vec<String>,
+) -> Option<Message> {
     let (remote, branch) = parse_remote_branch(&remote_branch);
 
     let mut args = vec!["fetch".to_string(), "-v".to_string(), remote];
@@ -72,9 +78,7 @@ fn fetch_from_remote_branch(model: &mut Model, remote_branch: String) -> Option<
         args.push(branch);
     }
 
-    if let Some(FetchArguments(arguments)) = model.arguments.take() {
-        args.extend(arguments.into_iter().map(|a| a.flag().to_string()));
-    }
+    args.extend(extra_args);
 
     let operation_name = format!("Fetch from {}", remote_branch);
 
@@ -83,7 +87,11 @@ fn fetch_from_remote_branch(model: &mut Model, remote_branch: String) -> Option<
 
 /// Fetch from the given remote, treating it as the push remote.
 /// Sets `branch.<name>.pushRemote` to the remote, then runs `git fetch -v <remote>`.
-fn fetch_from_push_remote(model: &mut Model, remote: String) -> Option<Message> {
+fn fetch_from_push_remote(
+    model: &mut Model,
+    remote: String,
+    extra_args: Vec<String>,
+) -> Option<Message> {
     let current_branch = match get_current_branch(&model.workdir).ok().flatten() {
         Some(branch) => branch,
         None => {
@@ -104,35 +112,29 @@ fn fetch_from_push_remote(model: &mut Model, remote: String) -> Option<Message> 
 
     let mut args = vec!["fetch".to_string(), "-v".to_string(), remote.clone()];
 
-    if let Some(FetchArguments(arguments)) = model.arguments.take() {
-        args.extend(arguments.into_iter().map(|a| a.flag().to_string()));
-    }
+    args.extend(extra_args);
 
     let operation_name = format!("Fetch from {}", remote);
 
     execute_pty_command(model, args, operation_name)
 }
 
-fn fetch_from_all_remotes(model: &mut Model) -> Option<Message> {
+fn fetch_from_all_remotes(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
     let mut args = vec!["fetch".to_string(), "-v".to_string(), "--all".to_string()];
 
-    if let Some(FetchArguments(arguments)) = model.arguments.take() {
-        args.extend(arguments.into_iter().map(|a| a.flag().to_string()));
-    }
+    args.extend(extra_args);
 
     execute_pty_command(model, args, "Fetch all".to_string())
 }
 
-fn fetch_submodules(model: &mut Model) -> Option<Message> {
+fn fetch_submodules(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
     let mut args = vec![
         "fetch".to_string(),
         "-v".to_string(),
         "--recurse-submodules".to_string(),
     ];
 
-    if let Some(FetchArguments(arguments)) = model.arguments.take() {
-        args.extend(arguments.into_iter().map(|a| a.flag().to_string()));
-    }
+    args.extend(extra_args);
 
     execute_pty_command(model, args, "Fetch submodules".to_string())
 }
