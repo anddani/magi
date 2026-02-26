@@ -16,17 +16,15 @@ pub fn keys(key: KeyEvent, state: &RevertPopupState) -> Option<Message> {
         };
     }
 
+    let has_commits = !state.selected_commits.is_empty();
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
-        KeyCode::Char('_') => {
-            if !state.selected_commits.is_empty() {
-                Some(Message::Revert(RevertCommand::Commits(
-                    state.selected_commits.clone(),
-                )))
-            } else {
-                None
-            }
-        }
+        KeyCode::Char('_') if has_commits => Some(Message::Revert(RevertCommand::Commits(
+            state.selected_commits.clone(),
+        ))),
+        KeyCode::Char('v') if has_commits => Some(Message::Revert(RevertCommand::NoCommit(
+            state.selected_commits.clone(),
+        ))),
         _ => None,
     }
 }

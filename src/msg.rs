@@ -260,8 +260,10 @@ pub enum RebaseCommand {
 /// Messages for revert commands
 #[derive(PartialEq, Eq, Debug)]
 pub enum RevertCommand {
-    /// Revert the given commit hashes (--no-edit)
+    /// Revert the given commit hashes, creating a revert commit (--no-edit)
     Commits(Vec<String>),
+    /// Revert the given commit hashes into the worktree without committing (--no-commit)
+    NoCommit(Vec<String>),
     /// Continue after resolving conflicts
     Continue,
     /// Skip the current conflicting commit
