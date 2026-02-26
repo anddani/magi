@@ -52,6 +52,8 @@ pub enum SelectContext {
     FetchAnotherBranch,
     /// Selecting a stash to apply
     ApplyStash,
+    /// Selecting a stash to drop
+    DropStash,
 }
 
 /// State for the select popup (fuzzy finder style)

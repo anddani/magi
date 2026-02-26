@@ -119,6 +119,8 @@ pub enum Message {
     DiscardSelected,
     /// Actually discard after user confirms
     ConfirmDiscard(DiscardTarget),
+    /// Actually drop stash after user confirms (stash ref or "all")
+    ConfirmDropStash(String),
 
     /// Enter visual selection mode (sets anchor at current cursor position)
     EnterVisualMode,
@@ -244,6 +246,8 @@ pub enum StashCommand {
     StashBoth(String),
     /// Apply a stash by its reference (e.g. "stash@{0}")
     Apply(String),
+    /// Drop a stash by its reference (e.g. "stash@{0}"), or "all" to drop all stashes
+    Drop(String),
 }
 
 /// Messages for showing select dialogs
@@ -292,6 +296,8 @@ pub enum SelectDialog {
     // Stash-related
     /// Show apply stash popup, or immediately apply if cursor is on a stash entry
     StashApply,
+    /// Show drop stash popup, or immediately drop if cursor is on a stash entry
+    StashDrop,
 
     // Fixup-related
     /// Show select popup to choose commit for fixup or squash

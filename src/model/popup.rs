@@ -19,6 +19,8 @@ pub enum ConfirmAction {
     DeleteBranch(String),
     /// Discard changes (stores the discard target)
     DiscardChanges(crate::msg::DiscardTarget),
+    /// Drop a stash (stores the stash reference, e.g. "stash@{0}" or "all")
+    DropStash(String),
 }
 
 /// State for the credential input popup.
