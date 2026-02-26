@@ -25,6 +25,7 @@ pub mod open_pr;
 pub mod pty_command;
 pub mod push;
 pub mod recent_commits;
+pub mod revert;
 pub mod stage;
 pub mod staged_changes;
 pub mod stashes;
@@ -65,6 +66,12 @@ impl GitInfo {
             section: None,
         };
 
+        let workdir = self
+            .repository
+            .workdir()
+            .unwrap_or_else(|| std::path::Path::new("."));
+
+        let reverting_lines = revert::get_reverting_lines(workdir)?;
         let lines = info::get_lines(&self.repository)?;
         let untracked_files = untracked_files::get_lines(&self.repository)?;
         let unstaged_changes = unstaged_changes::get_lines(&self.repository)?;
@@ -74,6 +81,7 @@ impl GitInfo {
         let recent_commits = recent_commits::get_lines(&self.repository)?;
 
         let all_sections = [
+            reverting_lines,
             lines,
             untracked_files,
             unstaged_changes,

@@ -24,6 +24,7 @@ mod log_line;
 mod merge_ref;
 mod push_ref;
 mod render;
+mod reverting_entry;
 mod section_header;
 mod staged_file;
 mod stash;
@@ -155,6 +156,11 @@ pub fn view(model: &Model, frame: &mut Frame) {
                 model.git_info.current_branch().as_deref(),
             ),
             crate::model::LineContent::Stash(stash_entry) => stash::get_lines(stash_entry, theme),
+            crate::model::LineContent::RevertingEntry {
+                hash,
+                message,
+                is_current,
+            } => reverting_entry::get_lines(hash, message, *is_current, theme),
         };
 
         let is_cursor_line = index == cursor_pos;

@@ -206,6 +206,15 @@ pub struct RebasePopupState {
     pub branch: String,
 }
 
+/// State for the Revert popup
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RevertPopupState {
+    /// Whether a revert sequence is currently in progress (conflict stopped)
+    pub in_progress: bool,
+    /// Commit hashes selected for reverting (empty when in_progress or no commit under cursor)
+    pub selected_commits: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContentCommand {
     Commit,
@@ -216,6 +225,7 @@ pub enum PopupContentCommand {
     Log,
     Stash,
     Rebase(RebasePopupState),
+    Revert(RevertPopupState),
     Select(SelectPopupState),
     CommitSelect(CommitSelectPopupState),
 }
