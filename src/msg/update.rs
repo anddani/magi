@@ -35,7 +35,7 @@ mod pty_helper;
 mod pull;
 mod push;
 mod quit;
-mod rebase_elsewhere;
+mod rebase;
 mod refresh;
 mod rename_branch;
 mod scroll_line_down;
@@ -154,6 +154,6 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Stash(stash_command) => stash::update(model, stash_command),
         Message::Push(push_command) => push::update(model, push_command),
         Message::ShowRebasePopup => show_rebase_popup::update(model),
-        Message::RebaseElsewhere(target) => rebase_elsewhere::update(model, target),
+        Message::Rebase(rebase_command) => rebase::update(model, rebase_command),
     }
 }

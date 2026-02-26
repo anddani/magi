@@ -4,7 +4,7 @@ use crate::{
     model::Model,
     model::ViewMode,
     model::popup::{ConfirmAction, PopupContent, PopupContentCommand},
-    msg::Message,
+    msg::{Message, RebaseCommand},
 };
 
 mod command_popup;
@@ -60,7 +60,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                         Message::ConfirmDropStash(stash_ref.clone())
                     }
                     ConfirmAction::RebaseElsewhere(target) => {
-                        Message::RebaseElsewhere(target.clone())
+                        Message::Rebase(RebaseCommand::Elsewhere(target.clone()))
                     }
                 };
                 Some(msg)

@@ -6,7 +6,9 @@ use crate::{
             SelectResult,
         },
     },
-    msg::{FetchCommand, Message, PullCommand, PushCommand, SelectPopup, StashCommand},
+    msg::{
+        FetchCommand, Message, PullCommand, PushCommand, RebaseCommand, SelectPopup, StashCommand,
+    },
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -101,7 +103,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             Some(Message::FixupCommit(commit, fixup_type))
         }
         (Some(SelectContext::RebaseElsewhere), SelectResult::Selected(commit)) => {
-            Some(Message::RebaseElsewhere(commit))
+            Some(Message::Rebase(RebaseCommand::Elsewhere(commit)))
         }
         (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))

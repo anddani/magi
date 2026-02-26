@@ -168,11 +168,10 @@ pub enum Message {
     Pull(PullCommand),
     Push(PushCommand),
     Stash(StashCommand),
+    Rebase(RebaseCommand),
 
     /// Show rebase popup
     ShowRebasePopup,
-    /// Rebase the current branch onto the given target ref/commit
-    RebaseElsewhere(String),
 
     /// Show a select popup
     ShowSelectPopup(SelectPopup),
@@ -244,6 +243,13 @@ pub enum PushCommand {
     PushAllTags(String),
     /// Push a single tag to origin
     PushTag(String),
+}
+
+/// Messages for rebase commands
+#[derive(PartialEq, Eq, Debug)]
+pub enum RebaseCommand {
+    /// Rebase the current branch onto the given target ref/commit
+    Elsewhere(String),
 }
 
 /// Messages for stash commands

@@ -7,7 +7,7 @@ use magi::{
             RebasePopupState, SelectContext,
         },
     },
-    msg::{LogType, Message, SelectMessage, SelectPopup, update::update},
+    msg::{LogType, Message, RebaseCommand, SelectMessage, SelectPopup, update::update},
 };
 
 mod utils;
@@ -322,7 +322,9 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
 
     assert_eq!(
         result,
-        Some(Message::RebaseElsewhere(expected_hash.clone()))
+        Some(Message::Rebase(RebaseCommand::Elsewhere(
+            expected_hash.clone()
+        )))
     );
     assert!(model.popup.is_none());
     assert!(model.select_context.is_none());
