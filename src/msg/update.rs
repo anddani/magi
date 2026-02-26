@@ -1,6 +1,6 @@
 use crate::{
     model::Model,
-    msg::{InputMessage, Message, SelectDialog, SelectMessage},
+    msg::{InputMessage, Message, SelectMessage},
 };
 
 mod amend;
@@ -45,36 +45,14 @@ mod select_input_char;
 mod select_move_down;
 mod select_move_up;
 mod selection;
-mod show_checkout_branch_popup;
-mod show_checkout_local_branch_popup;
 mod show_checkout_new_branch_input;
-mod show_checkout_new_branch_popup;
-mod show_delete_branch_popup;
-mod show_fetch_another_branch_branch_select;
-mod show_fetch_another_branch_select;
-mod show_fetch_elsewhere_select;
 mod show_fetch_popup;
-mod show_fetch_push_remote_select;
-mod show_fetch_upstream_select;
-mod show_fixup_commit_select;
 mod show_log;
-mod show_open_pr_select;
-mod show_open_pr_target_select;
 mod show_pull_popup;
-mod show_pull_push_remote_select;
-mod show_pull_upstream_select;
-mod show_push_all_tags_select;
 mod show_push_popup;
-mod show_push_push_remote_select;
-mod show_push_tag_select;
-mod show_push_upstream_select;
 mod show_rename_branch_input;
-mod show_rename_branch_popup;
 mod show_select_popup;
-mod show_stash_apply_select;
-mod show_stash_drop_select;
 mod show_stash_message_input;
-mod show_stash_pop_select;
 mod stage_all_modified;
 mod stage_selected;
 mod stash;
@@ -149,44 +127,11 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::DeleteBranch(branch) => delete_branch::update(model, branch),
         Message::ConfirmDeleteBranch(branch) => confirm_delete_branch::update(model, branch),
         Message::OpenPr { branch, target } => open_pr::update(model, branch, target),
-        Message::ShowSelectDialog(show_select) => match show_select {
-            SelectDialog::FetchUpstream => show_fetch_upstream_select::update(model),
-            SelectDialog::FetchElsewhere => show_fetch_elsewhere_select::update(model),
-            SelectDialog::FetchAnotherBranch => show_fetch_another_branch_select::update(model),
-            SelectDialog::FetchAnotherBranchBranch(remote) => {
-                show_fetch_another_branch_branch_select::update(model, remote)
-            }
-            SelectDialog::FetchPushRemote => show_fetch_push_remote_select::update(model),
-            SelectDialog::PushUpstream => show_push_upstream_select::update(model),
-            SelectDialog::PushPushRemote => show_push_push_remote_select::update(model),
-            SelectDialog::PushAllTags => show_push_all_tags_select::update(model),
-            SelectDialog::PushTag => show_push_tag_select::update(model),
-            SelectDialog::PullUpstream => show_pull_upstream_select::update(model),
-            SelectDialog::PullPushRemote => show_pull_push_remote_select::update(model),
-            SelectDialog::CheckoutBranch => show_checkout_branch_popup::update(model),
-            SelectDialog::CheckoutLocalBranch => show_checkout_local_branch_popup::update(model),
-            SelectDialog::DeleteBranch => show_delete_branch_popup::update(model),
-            SelectDialog::RenameBranch => show_rename_branch_popup::update(model),
-            SelectDialog::CreateNewBranch { checkout } => {
-                show_checkout_new_branch_popup::update(model, checkout)
-            }
-            SelectDialog::StashApply => show_stash_apply_select::update(model),
-            SelectDialog::StashPop => show_stash_pop_select::update(model),
-            SelectDialog::StashDrop => show_stash_drop_select::update(model),
-            SelectDialog::FixupCommit(fixup_type) => {
-                show_fixup_commit_select::update(model, fixup_type)
-            }
-            SelectDialog::OpenPr => show_open_pr_select::update(model, false),
-            SelectDialog::OpenPrWithTarget => show_open_pr_select::update(model, true),
-            SelectDialog::OpenPrTarget(branch) => show_open_pr_target_select::update(model, branch),
-        },
+        Message::ShowSelectPopup(popup) => show_select_popup::update(model, popup),
         Message::EnterArgMode => enter_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),
         Message::Select(select_msg) => match select_msg {
-            SelectMessage::Show { title, options } => {
-                show_select_popup::update(model, title, options)
-            }
             SelectMessage::InputChar(c) => select_input_char::update(model, c),
             SelectMessage::InputBackspace => select_input_backspace::update(model),
             SelectMessage::MoveUp => select_move_up::update(model),

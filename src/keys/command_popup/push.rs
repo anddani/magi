@@ -5,7 +5,7 @@ use crate::{
         arguments::{Argument::Push, PushArgument},
         popup::PushPopupState,
     },
-    msg::{Message, PushCommand, SelectDialog},
+    msg::{Message, PushCommand, SelectPopup},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool, state: &PushPopupState) -> Option<Message> {
@@ -23,18 +23,18 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PushPopupState) -> Option<Mes
             if let Some(remote) = &state.push_remote {
                 Some(Message::Push(PushCommand::PushToPushRemote(remote.clone())))
             } else {
-                Some(Message::ShowSelectDialog(SelectDialog::PushPushRemote))
+                Some(Message::ShowSelectPopup(SelectPopup::PushPushRemote))
             }
         }
         KeyCode::Char('u') => {
             if state.upstream.is_some() {
                 Some(Message::Push(PushCommand::PushUpstream))
             } else {
-                Some(Message::ShowSelectDialog(SelectDialog::PushUpstream))
+                Some(Message::ShowSelectPopup(SelectPopup::PushUpstream))
             }
         }
-        KeyCode::Char('t') => Some(Message::ShowSelectDialog(SelectDialog::PushAllTags)),
-        KeyCode::Char('T') => Some(Message::ShowSelectDialog(SelectDialog::PushTag)),
+        KeyCode::Char('t') => Some(Message::ShowSelectPopup(SelectPopup::PushAllTags)),
+        KeyCode::Char('T') => Some(Message::ShowSelectPopup(SelectPopup::PushTag)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

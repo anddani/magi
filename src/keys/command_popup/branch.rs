@@ -1,22 +1,22 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::msg::{Message, SelectDialog};
+use crate::msg::{Message, SelectPopup};
 
 pub fn keys(key: KeyEvent) -> Option<Message> {
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
-        KeyCode::Char('b') => Some(Message::ShowSelectDialog(SelectDialog::CheckoutBranch)),
-        KeyCode::Char('l') => Some(Message::ShowSelectDialog(SelectDialog::CheckoutLocalBranch)),
-        KeyCode::Char('c') => Some(Message::ShowSelectDialog(SelectDialog::CreateNewBranch {
+        KeyCode::Char('b') => Some(Message::ShowSelectPopup(SelectPopup::CheckoutBranch)),
+        KeyCode::Char('l') => Some(Message::ShowSelectPopup(SelectPopup::CheckoutLocalBranch)),
+        KeyCode::Char('c') => Some(Message::ShowSelectPopup(SelectPopup::CreateNewBranch {
             checkout: true,
         })),
-        KeyCode::Char('n') => Some(Message::ShowSelectDialog(SelectDialog::CreateNewBranch {
+        KeyCode::Char('n') => Some(Message::ShowSelectPopup(SelectPopup::CreateNewBranch {
             checkout: false,
         })),
-        KeyCode::Char('m') => Some(Message::ShowSelectDialog(SelectDialog::RenameBranch)),
-        KeyCode::Char('x') => Some(Message::ShowSelectDialog(SelectDialog::DeleteBranch)),
-        KeyCode::Char('o') => Some(Message::ShowSelectDialog(SelectDialog::OpenPr)),
-        KeyCode::Char('O') => Some(Message::ShowSelectDialog(SelectDialog::OpenPrWithTarget)),
+        KeyCode::Char('m') => Some(Message::ShowSelectPopup(SelectPopup::RenameBranch)),
+        KeyCode::Char('x') => Some(Message::ShowSelectPopup(SelectPopup::DeleteBranch)),
+        KeyCode::Char('o') => Some(Message::ShowSelectPopup(SelectPopup::OpenPr)),
+        KeyCode::Char('O') => Some(Message::ShowSelectPopup(SelectPopup::OpenPrWithTarget)),
         _ => None,
     }
 }

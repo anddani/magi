@@ -31,7 +31,7 @@ fn test_pop_stash_on_stash_entry_shows_confirm() {
     // Press 'p' key to pop stash
     let result = update(
         &mut model,
-        Message::ShowSelectDialog(magi::msg::SelectDialog::StashPop),
+        Message::ShowSelectPopup(magi::msg::SelectPopup::StashPop),
     );
 
     // Should show confirmation popup
@@ -78,7 +78,7 @@ fn test_pop_stash_not_on_entry_shows_select() {
     // Press 'p' key to pop stash
     let result = update(
         &mut model,
-        Message::ShowSelectDialog(magi::msg::SelectDialog::StashPop),
+        Message::ShowSelectPopup(magi::msg::SelectPopup::StashPop),
     );
 
     // Should show select popup
@@ -104,7 +104,7 @@ fn test_pop_stash_no_stashes_shows_error() {
     // Press 'p' key to pop stash (no stashes exist)
     let result = update(
         &mut model,
-        Message::ShowSelectDialog(magi::msg::SelectDialog::StashPop),
+        Message::ShowSelectPopup(magi::msg::SelectPopup::StashPop),
     );
 
     // Should show error popup
