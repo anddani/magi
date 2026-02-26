@@ -58,12 +58,12 @@ fn test_show_revert_popup_on_commit_line_selects_hash() {
         .expect("Expected a commit line");
     model.ui_model.cursor_position = commit_pos;
 
-    let expected_hash =
-        if let LineContent::Commit(info) = &model.ui_model.lines[commit_pos].content {
-            info.hash.clone()
-        } else {
-            panic!("Not a commit line");
-        };
+    let expected_hash = if let LineContent::Commit(info) = &model.ui_model.lines[commit_pos].content
+    {
+        info.hash.clone()
+    } else {
+        panic!("Not a commit line");
+    };
 
     let result = update(&mut model, Message::ShowRevertPopup);
 
@@ -213,12 +213,11 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
         .position(|l| matches!(&l.content, LineContent::LogLine(e) if e.hash.is_some()))
         .expect("Expected at least one log line with a hash");
 
-    let expected_hash =
-        if let LineContent::LogLine(entry) = &log_lines[log_commit_pos].content {
-            entry.hash.clone().unwrap()
-        } else {
-            panic!("Not a log line");
-        };
+    let expected_hash = if let LineContent::LogLine(entry) = &log_lines[log_commit_pos].content {
+        entry.hash.clone().unwrap()
+    } else {
+        panic!("Not a log line");
+    };
 
     model.ui_model.lines = log_lines;
     model.view_mode = ViewMode::Log(LogType::Current);

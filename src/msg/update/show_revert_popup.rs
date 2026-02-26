@@ -40,10 +40,7 @@ fn collect_selected_commits(model: &Model) -> Vec<String> {
     if let Some((start, end)) = model.ui_model.visual_selection_range() {
         // Visual mode: every line in the range must be a commit
         let range = &model.ui_model.lines[start..=end];
-        let commits: Vec<String> = range
-            .iter()
-            .filter_map(hash_from_line)
-            .collect();
+        let commits: Vec<String> = range.iter().filter_map(hash_from_line).collect();
 
         // Only accept if ALL lines in the selection are commits
         if commits.len() == range.len() {
