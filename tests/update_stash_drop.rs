@@ -35,10 +35,10 @@ fn test_drop_stash_on_section_header_shows_confirm_all() {
 
     model.ui_model.cursor_position = stashes_header_pos;
 
-    // Press 'k' key to drop stash (via ShowSelectDialog -> StashDrop)
+    // Press 'k' key to drop stash (via ShowSelectPopup -> StashDrop)
     let result = update(
         &mut model,
-        Message::ShowSelectDialog(magi::msg::SelectDialog::StashDrop),
+        Message::ShowSelectPopup(magi::msg::SelectPopup::StashDrop),
     );
 
     // Should show confirmation popup for dropping all stashes
@@ -78,7 +78,7 @@ fn test_drop_stash_on_stash_entry_shows_confirm_single() {
     // Press 'k' key to drop stash
     let result = update(
         &mut model,
-        Message::ShowSelectDialog(magi::msg::SelectDialog::StashDrop),
+        Message::ShowSelectPopup(magi::msg::SelectPopup::StashDrop),
     );
 
     // Should show confirmation popup for dropping single stash

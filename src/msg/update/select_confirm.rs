@@ -6,7 +6,7 @@ use crate::{
             SelectResult,
         },
     },
-    msg::{FetchCommand, Message, PullCommand, PushCommand, SelectDialog, StashCommand},
+    msg::{FetchCommand, Message, PullCommand, PushCommand, SelectPopup, StashCommand},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -87,9 +87,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
                 target: None,
             })
         }
-        (Some(SelectContext::OpenPrBranchWithTarget), SelectResult::Selected(branch)) => Some(
-            Message::ShowSelectDialog(SelectDialog::OpenPrTarget(branch)),
-        ),
+        (Some(SelectContext::OpenPrBranchWithTarget), SelectResult::Selected(branch)) => {
+            Some(Message::ShowSelectPopup(SelectPopup::OpenPrTarget(branch)))
+        }
         (Some(SelectContext::OpenPrTarget), SelectResult::Selected(target)) => {
             let branch = model.open_pr_branch.take().unwrap_or_default();
             Some(Message::OpenPr {
@@ -110,7 +110,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             Some(Message::Fetch(FetchCommand::FetchFromPushRemote(remote)))
         }
         (Some(SelectContext::FetchAnotherBranchRemote), SelectResult::Selected(remote)) => Some(
-            Message::ShowSelectDialog(SelectDialog::FetchAnotherBranchBranch(remote)),
+            Message::ShowSelectPopup(SelectPopup::FetchAnotherBranchBranch(remote)),
         ),
         (Some(SelectContext::FetchAnotherBranch), SelectResult::Selected(branch)) => {
             Some(Message::Fetch(FetchCommand::FetchFromRemoteBranch(branch)))
@@ -131,7 +131,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
                 .next()
                 .unwrap_or(&stash_display)
                 .to_string();
-            // Show confirmation dialog before popping
+            // Show confirmation popup before popping
             model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
                 message: format!("Pop {}?", stash_display),
                 on_confirm: ConfirmAction::PopStash(stash_ref),
@@ -145,7 +145,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
                 .next()
                 .unwrap_or(&stash_display)
                 .to_string();
-            // Show confirmation dialog before dropping
+            // Show confirmation popup before dropping
             model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
                 message: format!("Drop {}?", stash_display),
                 on_confirm: ConfirmAction::DropStash(stash_ref),

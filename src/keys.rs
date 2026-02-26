@@ -81,7 +81,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         return command_popup::handle_command_popup_key(key, command, model.arg_mode);
     }
 
-    // Let commands from help popup open dialogs
+    // Let commands from help popup open popups
     if model.popup == Some(PopupContent::Help) {
         return match (key.modifiers, key.code) {
             (_, KeyCode::Esc)
@@ -419,8 +419,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::PushUpstream
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::PushUpstream
             ))
         );
     }
@@ -441,8 +441,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::PushAllTags
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::PushAllTags
             ))
         );
     }
@@ -463,7 +463,7 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(crate::msg::SelectDialog::PushTag))
+            Some(Message::ShowSelectPopup(crate::msg::SelectPopup::PushTag))
         );
     }
 
@@ -692,8 +692,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::RenameBranch
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::RenameBranch
             ))
         );
     }
@@ -724,8 +724,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::CheckoutBranch
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::CheckoutBranch
             ))
         );
     }
@@ -738,8 +738,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::CreateNewBranch { checkout: true }
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::CreateNewBranch { checkout: true }
             ))
         );
     }
@@ -752,8 +752,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::CheckoutLocalBranch
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::CheckoutLocalBranch
             ))
         );
     }
@@ -869,8 +869,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::FetchUpstream
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::FetchUpstream
             ))
         );
     }
@@ -1027,8 +1027,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::FetchPushRemote
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::FetchPushRemote
             ))
         );
     }
@@ -1082,8 +1082,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::PullPushRemote
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::PullPushRemote
             ))
         );
     }
@@ -1121,8 +1121,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectDialog(
-                crate::msg::SelectDialog::PullUpstream
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::PullUpstream
             ))
         );
     }

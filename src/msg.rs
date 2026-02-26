@@ -169,8 +169,8 @@ pub enum Message {
     Push(PushCommand),
     Stash(StashCommand),
 
-    /// Show a select dialog
-    ShowSelectDialog(SelectDialog),
+    /// Show a select popup
+    ShowSelectPopup(SelectPopup),
 
     /// Open PR creation page in browser
     OpenPr {
@@ -254,9 +254,9 @@ pub enum StashCommand {
     Drop(String),
 }
 
-/// Messages for showing select dialogs
+/// Messages for showing select popups
 #[derive(PartialEq, Eq, Debug)]
-pub enum SelectDialog {
+pub enum SelectPopup {
     // Fetch-related
     /// Show select popup to choose upstream for fetch
     FetchUpstream,
@@ -321,8 +321,6 @@ pub enum SelectDialog {
 /// Messages for the select popup
 #[derive(PartialEq, Eq, Debug)]
 pub enum SelectMessage {
-    /// Show a select popup with the given title and options
-    Show { title: String, options: Vec<String> },
     /// Input a character into select popup filter
     InputChar(char),
     /// Delete last character from select popup filter

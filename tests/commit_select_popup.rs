@@ -1,7 +1,7 @@
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     model::popup::{CommitSelectPopupState, PopupContent, PopupContentCommand},
-    msg::{FixupType, LogType, Message, SelectDialog, SelectMessage, update::update},
+    msg::{FixupType, LogType, Message, SelectPopup, SelectMessage, update::update},
 };
 
 mod utils;
@@ -38,7 +38,7 @@ fn test_commit_select_popup_displays_log_entries() {
     // Show the commit select popup
     let _result = update(
         &mut model,
-        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
     );
 
     // Verify popup is CommitSelect, not plain Select
@@ -80,7 +80,7 @@ fn test_commit_select_popup_filters_by_hash() {
     // Show the commit select popup
     let _result = update(
         &mut model,
-        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
     );
 
     // Get initial commit count
@@ -147,7 +147,7 @@ fn test_commit_select_popup_filters_by_message() {
     // Show the commit select popup
     let _result = update(
         &mut model,
-        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
     );
 
     // Filter by "feature"
@@ -189,7 +189,7 @@ fn test_commit_select_popup_navigation() {
     // Show the commit select popup
     let _result = update(
         &mut model,
-        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
     );
 
     // Initially at first commit
@@ -235,7 +235,7 @@ fn test_commit_select_popup_confirm_returns_hash() {
     // Show the commit select popup
     let _result = update(
         &mut model,
-        Message::ShowSelectDialog(SelectDialog::FixupCommit(FixupType::Fixup)),
+        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
     );
 
     // Get the expected hash
