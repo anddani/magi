@@ -64,7 +64,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             ]),
             Line::from(vec![
                 Span::styled(" k", key_style),
-                Span::styled(" drop", desc_style),
+                Span::styled(" Drop", desc_style),
             ]),
         ],
     };
