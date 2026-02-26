@@ -28,6 +28,7 @@ fn command_popup_keys(c: char) -> Option<Message> {
         'z' | 'Z' => Some(Message::ShowPopup(PopupContent::Command(
             PopupContentCommand::Stash,
         ))),
+        'r' => Some(Message::ShowRebasePopup),
         _ => None,
     }
 }
@@ -57,6 +58,9 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     }
                     ConfirmAction::DropStash(stash_ref) => {
                         Message::ConfirmDropStash(stash_ref.clone())
+                    }
+                    ConfirmAction::RebaseElsewhere(target) => {
+                        Message::RebaseElsewhere(target.clone())
                     }
                 };
                 Some(msg)

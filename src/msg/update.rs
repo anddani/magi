@@ -35,6 +35,7 @@ mod pty_helper;
 mod pull;
 mod push;
 mod quit;
+mod rebase_elsewhere;
 mod refresh;
 mod rename_branch;
 mod scroll_line_down;
@@ -50,6 +51,7 @@ mod show_fetch_popup;
 mod show_log;
 mod show_pull_popup;
 mod show_push_popup;
+mod show_rebase_popup;
 mod show_rename_branch_input;
 mod show_select_popup;
 mod show_stash_message_input;
@@ -151,5 +153,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Pull(pull_command) => pull::update(model, pull_command),
         Message::Stash(stash_command) => stash::update(model, stash_command),
         Message::Push(push_command) => push::update(model, push_command),
+        Message::ShowRebasePopup => show_rebase_popup::update(model),
+        Message::RebaseElsewhere(target) => rebase_elsewhere::update(model, target),
     }
 }

@@ -100,6 +100,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::FixupCommit(fixup_type)), SelectResult::Selected(commit)) => {
             Some(Message::FixupCommit(commit, fixup_type))
         }
+        (Some(SelectContext::RebaseElsewhere), SelectResult::Selected(commit)) => {
+            Some(Message::RebaseElsewhere(commit))
+        }
         (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))
         }

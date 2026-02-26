@@ -169,6 +169,11 @@ pub enum Message {
     Push(PushCommand),
     Stash(StashCommand),
 
+    /// Show rebase popup
+    ShowRebasePopup,
+    /// Rebase the current branch onto the given target ref/commit
+    RebaseElsewhere(String),
+
     /// Show a select popup
     ShowSelectPopup(SelectPopup),
 
@@ -308,6 +313,10 @@ pub enum SelectPopup {
     // Fixup-related
     /// Show select popup to choose commit for fixup or squash
     FixupCommit(FixupType),
+
+    // Rebase-related
+    /// Show select popup (or confirm) to pick a commit/ref to rebase onto
+    RebaseElsewhere,
 
     // PR-related
     /// Show select popup to pick source branch for PR (opens to default target)

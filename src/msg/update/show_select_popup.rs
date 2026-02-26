@@ -69,6 +69,8 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
 
         SelectPopup::FixupCommit(fixup_type) => show_fixup_commit(model, fixup_type),
 
+        SelectPopup::RebaseElsewhere => show_rebase_elsewhere(model),
+
         SelectPopup::OpenPr => show_open_pr(model, false),
         SelectPopup::OpenPrWithTarget => show_open_pr(model, true),
         SelectPopup::OpenPrTarget(b) => show_open_pr_target(model, b),
@@ -636,4 +638,56 @@ fn show_open_pr_target(model: &mut Model, branch: String) -> Option<Message> {
     let state = SelectPopupState::new("Open PR to".to_string(), branches);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
+}
+
+// ── Rebase ────────────────────────────────────────────────────────────────────
+
+fn show_rebase_elsewhere(model: &mut Model) -> Option<Message> {
+    let cursor_pos = model.ui_model.cursor_position;
+
+    // If cursor is on a commit line, suggest it and ask for confirmation
+    if let Some(line) = model.ui_model.lines.get(cursor_pos) {
+        let hash = match &line.content {
+            LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
+            LineContent::LogLine(entry) => entry.hash.clone(),
+            _ => None,
+        };
+
+        if let Some(hash) = hash {
+            model.popup = None;
+            model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
+                message: format!("Rebase onto {}?", hash),
+                on_confirm: ConfirmAction::RebaseElsewhere(hash),
+            }));
+            return None;
+        }
+    }
+
+    // Otherwise show a commit select popup with all commits
+    match get_log_entries(&model.git_info.repository, LogType::AllReferences) {
+        Ok(mut commits) => {
+            commits.retain(|entry| entry.is_commit());
+            commits.truncate(100);
+
+            if commits.is_empty() {
+                model.popup = Some(PopupContent::Error {
+                    message: "No commits found".to_string(),
+                });
+                None
+            } else {
+                let state = CommitSelectPopupState::new("Rebase elsewhere".to_string(), commits);
+                model.popup = Some(PopupContent::Command(PopupContentCommand::CommitSelect(
+                    state,
+                )));
+                model.select_context = Some(SelectContext::RebaseElsewhere);
+                None
+            }
+        }
+        Err(err) => {
+            model.popup = Some(PopupContent::Error {
+                message: format!("Failed to get commits: {}", err),
+            });
+            None
+        }
+    }
 }
