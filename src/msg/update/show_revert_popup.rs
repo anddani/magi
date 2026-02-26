@@ -24,6 +24,16 @@ pub fn update(model: &mut Model) -> Option<Message> {
     None
 }
 
+/// Extract a commit hash from a line, if the line represents a commit.
+/// Handles both status-view `Commit` lines and log-view `LogLine` entries.
+fn hash_from_line(line: &crate::model::Line) -> Option<String> {
+    match &line.content {
+        LineContent::Commit(info) => Some(info.hash.clone()),
+        LineContent::LogLine(entry) => entry.hash.clone(),
+        _ => None,
+    }
+}
+
 /// Collect commit hashes from the visual selection or cursor position.
 /// Returns an empty vec if the selection contains non-commit lines.
 fn collect_selected_commits(model: &Model) -> Vec<String> {
@@ -32,13 +42,7 @@ fn collect_selected_commits(model: &Model) -> Vec<String> {
         let range = &model.ui_model.lines[start..=end];
         let commits: Vec<String> = range
             .iter()
-            .filter_map(|line| {
-                if let LineContent::Commit(info) = &line.content {
-                    Some(info.hash.clone())
-                } else {
-                    None
-                }
-            })
+            .filter_map(hash_from_line)
             .collect();
 
         // Only accept if ALL lines in the selection are commits
@@ -48,12 +52,10 @@ fn collect_selected_commits(model: &Model) -> Vec<String> {
             vec![]
         }
     } else {
-        // Normal mode: cursor line must be a commit
+        // Normal mode: cursor line must be a commit or log entry
         let cursor = model.ui_model.cursor_position;
-        if let Some(line) = model.ui_model.lines.get(cursor)
-            && let LineContent::Commit(info) = &line.content
-        {
-            return vec![info.hash.clone()];
+        if let Some(hash) = model.ui_model.lines.get(cursor).and_then(hash_from_line) {
+            return vec![hash];
         }
         vec![]
     }

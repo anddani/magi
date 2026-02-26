@@ -1,12 +1,12 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 use magi::{
-    git::test_repo::TestRepo,
+    git::{log::get_log_entries, test_repo::TestRepo},
     keys::handle_key,
     model::{
-        LineContent,
+        Line, LineContent, ViewMode,
         popup::{PopupContent, PopupContentCommand, RevertPopupState},
     },
-    msg::{Message, RevertCommand, update::update},
+    msg::{LogType, Message, RevertCommand, update::update},
 };
 
 mod utils;
@@ -181,6 +181,56 @@ fn test_show_revert_popup_visual_selection_with_non_commit_gives_empty() {
         assert!(state.selected_commits.is_empty());
     } else {
         panic!("Expected Revert popup");
+    }
+}
+
+// ── ShowRevertPopup — log view (LogLine) ──────────────────────────────────────
+
+#[test]
+fn test_show_revert_popup_on_log_line_selects_hash() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Populate the model with log-view lines (as ShowLog does)
+    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+    let log_lines: Vec<Line> = get_log_entries(&repo, LogType::Current)
+        .unwrap()
+        .into_iter()
+        .map(|entry| Line {
+            content: LineContent::LogLine(entry),
+            section: None,
+        })
+        .collect();
+
+    // Find a log line that has a hash
+    let log_commit_pos = log_lines
+        .iter()
+        .position(|l| matches!(&l.content, LineContent::LogLine(e) if e.hash.is_some()))
+        .expect("Expected at least one log line with a hash");
+
+    let expected_hash =
+        if let LineContent::LogLine(entry) = &log_lines[log_commit_pos].content {
+            entry.hash.clone().unwrap()
+        } else {
+            panic!("Not a log line");
+        };
+
+    model.ui_model.lines = log_lines;
+    model.view_mode = ViewMode::Log(LogType::Current);
+    model.ui_model.cursor_position = log_commit_pos;
+
+    update(&mut model, Message::ShowRevertPopup);
+
+    if let Some(PopupContent::Command(PopupContentCommand::Revert(state))) = &model.popup {
+        assert!(!state.in_progress);
+        assert_eq!(state.selected_commits, vec![expected_hash]);
+    } else {
+        panic!("Expected Revert popup with selected commit from log view");
     }
 }
 
