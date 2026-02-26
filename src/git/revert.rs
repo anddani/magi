@@ -2,10 +2,13 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
+use super::git_cmd;
 use crate::{
     errors::MagiResult,
     model::{LineContent, SectionType},
 };
+
+pub use super::commit::CommitResult;
 
 /// Returns true if a revert sequence is currently in progress.
 /// Checks for REVERT_HEAD or a sequencer/todo file starting with "revert".
@@ -139,6 +142,30 @@ pub fn get_reverting_lines(workdir: &Path) -> MagiResult<Vec<crate::model::Line>
     }
 
     Ok(lines)
+}
+
+/// Runs `git revert --continue` which opens the user's configured editor
+/// to edit the commit message after resolving conflicts.
+pub fn run_revert_continue_with_editor<P: AsRef<Path>>(
+    repo_path: P,
+) -> MagiResult<CommitResult> {
+    let status = git_cmd(&repo_path, &["revert", "--continue"]).status()?;
+
+    if status.success() {
+        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
+        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
+            .trim()
+            .to_string();
+        Ok(CommitResult {
+            success: true,
+            message: commit_msg,
+        })
+    } else {
+        Ok(CommitResult {
+            success: false,
+            message: "Revert continue aborted".to_string(),
+        })
+    }
 }
 
 #[cfg(test)]

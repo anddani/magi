@@ -1,7 +1,12 @@
+use std::time::{Duration, Instant};
+
 use crate::{
-    model::Model,
+    git::revert::{self, CommitResult},
+    model::{Model, Toast, ToastStyle, popup::PopupContent},
     msg::{Message, RevertCommand, update::pty_helper::execute_pty_command},
 };
+
+const TOAST_DURATION: Duration = Duration::from_secs(5);
 
 pub fn update(model: &mut Model, cmd: RevertCommand) -> Option<Message> {
     match cmd {
@@ -32,11 +37,26 @@ fn no_commit(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
 }
 
 fn continue_revert(model: &mut Model) -> Option<Message> {
-    execute_pty_command(
-        model,
-        vec!["revert".to_string(), "--continue".to_string()],
-        "Revert".to_string(),
-    )
+    model.popup = None;
+    match revert::run_revert_continue_with_editor(&model.workdir) {
+        Ok(CommitResult { success, message }) => {
+            model.toast = Some(Toast {
+                message,
+                style: if success {
+                    ToastStyle::Success
+                } else {
+                    ToastStyle::Warning
+                },
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
 }
 
 fn skip_revert(model: &mut Model) -> Option<Message> {

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::{
     model::{Line, SectionType},
-    msg::Message,
+    msg::{Message, RevertCommand},
 };
 
 /// Count visible lines between two raw line indices (exclusive of end).
@@ -25,6 +25,9 @@ pub fn visible_lines_between(
 pub fn is_external_command(msg: &Message) -> bool {
     matches!(
         msg,
-        Message::Commit | Message::Amend(_) | Message::FixupCommit(_, _)
+        Message::Commit
+            | Message::Amend(_)
+            | Message::FixupCommit(_, _)
+            | Message::Revert(RevertCommand::Continue)
     )
 }
