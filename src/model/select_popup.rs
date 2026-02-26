@@ -52,6 +52,8 @@ pub enum SelectContext {
     FetchAnotherBranch,
     /// Selecting a stash to apply
     ApplyStash,
+    /// Selecting a stash to pop (apply and remove)
+    PopStash,
     /// Selecting a stash to drop
     DropStash,
 }
