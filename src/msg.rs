@@ -161,10 +161,8 @@ pub enum Message {
     DeleteBranch(String),
     /// Actually delete the branch after user confirmation
     ConfirmDeleteBranch(String),
-    /// Show input popup for stash message
-    ShowStashMessageInput,
-    /// Show input popup for stash index message (stash only staged changes)
-    ShowStashIndexInput,
+    /// Show input popup for stash message, carrying which kind of stash to create
+    ShowStashInput(StashType),
 
     Fetch(FetchCommand),
     Pull(PullCommand),
@@ -254,13 +252,51 @@ pub enum RebaseCommand {
     Elsewhere(String),
 }
 
+/// Which working-tree area to stash
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum StashType {
+    /// Stash both index and working tree (git stash push)
+    Both,
+    /// Stash only the index / staged changes (git stash push --staged)
+    Index,
+    /// Stash only the working tree, keeping the index intact (git stash push --keep-index)
+    Workspace,
+}
+
+impl StashType {
+    /// Human-readable title used in the input popup
+    pub fn title(self) -> &'static str {
+        match self {
+            StashType::Both => "Stash message",
+            StashType::Index => "Stash index message",
+            StashType::Workspace => "Stash workspace message",
+        }
+    }
+
+    /// Extra git flag for this stash type, if any
+    pub fn flag(self) -> Option<&'static str> {
+        match self {
+            StashType::Both => None,
+            StashType::Index => Some("--staged"),
+            StashType::Workspace => Some("--keep-index"),
+        }
+    }
+
+    /// Title shown in the PTY output panel
+    pub fn pty_title(self) -> &'static str {
+        match self {
+            StashType::Both => "Stash",
+            StashType::Index => "Stash index",
+            StashType::Workspace => "Stash workspace",
+        }
+    }
+}
+
 /// Messages for stash commands
 #[derive(PartialEq, Eq, Debug)]
 pub enum StashCommand {
-    /// Stash both index and working tree with the given message (git stash push [-m msg])
-    StashBoth(String),
-    /// Stash only the index (staged changes) with the given message (git stash push --staged [-m msg])
-    StashIndex(String),
+    /// Stash changes according to the given type and optional message
+    Push(StashType, String),
     /// Apply a stash by its reference (e.g. "stash@{0}")
     Apply(String),
     /// Pop a stash by its reference (e.g. "stash@{0}") - applies and removes it

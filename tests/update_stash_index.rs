@@ -1,7 +1,7 @@
 use magi::{
     git::test_repo::TestRepo,
     model::popup::{InputContext, PopupContent},
-    msg::{Message, StashCommand, update::update},
+    msg::{Message, StashCommand, StashType, update::update},
 };
 
 mod utils;
@@ -12,7 +12,7 @@ fn test_show_stash_index_input_opens_input_popup() {
     let test_repo = TestRepo::new();
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let result = update(&mut model, Message::ShowStashIndexInput);
+    let result = update(&mut model, Message::ShowStashInput(StashType::Index));
 
     assert_eq!(result, None);
 
@@ -20,7 +20,7 @@ fn test_show_stash_index_input_opens_input_popup() {
         model.popup,
         Some(PopupContent::Input(ref state))
             if state.title == "Stash index message"
-            && matches!(state.context, InputContext::StashIndexMessage)
+            && matches!(state.context, InputContext::Stash(StashType::Index))
     ));
 }
 
@@ -29,10 +29,8 @@ fn test_confirm_stash_index_input_with_message_triggers_stash_index() {
     let test_repo = TestRepo::new();
     let mut model = create_model_from_test_repo(&test_repo);
 
-    // Open the index input popup
-    update(&mut model, Message::ShowStashIndexInput);
+    update(&mut model, Message::ShowStashInput(StashType::Index));
 
-    // Type a message
     update(
         &mut model,
         Message::Input(magi::msg::InputMessage::InputChar('m')),
@@ -66,13 +64,13 @@ fn test_confirm_stash_index_input_with_message_triggers_stash_index() {
         Message::Input(magi::msg::InputMessage::InputChar('h')),
     );
 
-    // Confirm
     let result = update(&mut model, Message::Input(magi::msg::InputMessage::Confirm));
 
     assert_eq!(model.popup, None);
     assert_eq!(
         result,
-        Some(Message::Stash(StashCommand::StashIndex(
+        Some(Message::Stash(StashCommand::Push(
+            StashType::Index,
             "my stash".to_string()
         )))
     );
@@ -83,15 +81,16 @@ fn test_confirm_stash_index_input_empty_triggers_stash_index_with_empty_message(
     let test_repo = TestRepo::new();
     let mut model = create_model_from_test_repo(&test_repo);
 
-    // Open the index input popup
-    update(&mut model, Message::ShowStashIndexInput);
+    update(&mut model, Message::ShowStashInput(StashType::Index));
 
-    // Confirm with empty input (allowed, git uses default message)
     let result = update(&mut model, Message::Input(magi::msg::InputMessage::Confirm));
 
     assert_eq!(model.popup, None);
     assert_eq!(
         result,
-        Some(Message::Stash(StashCommand::StashIndex(String::new())))
+        Some(Message::Stash(StashCommand::Push(
+            StashType::Index,
+            String::new()
+        )))
     );
 }

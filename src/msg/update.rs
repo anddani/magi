@@ -54,8 +54,7 @@ mod show_push_popup;
 mod show_rebase_popup;
 mod show_rename_branch_input;
 mod show_select_popup;
-mod show_stash_index_input;
-mod show_stash_message_input;
+mod show_stash_input;
 mod stage_all_modified;
 mod stage_selected;
 mod stash;
@@ -93,8 +92,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             fixup_commit::update(model, commit_hash, fixup_type)
         }
         Message::DismissPopup => dismiss_popup::update(model),
-        Message::ShowStashMessageInput => show_stash_message_input::update(model),
-        Message::ShowStashIndexInput => show_stash_index_input::update(model),
+        Message::ShowStashInput(stash_type) => show_stash_input::update(model, stash_type),
         Message::StageAllModified => stage_all_modified::update(model),
         Message::StageSelected => stage_selected::update(model),
         Message::UnstageSelected => unstage_selected::update(model),
