@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     model::arguments::{Argument::Stash, StashArgument},
-    msg::{Message, SelectPopup},
+    msg::{Message, SelectPopup, StashType},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
@@ -16,8 +16,9 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
     }
 
     match key.code {
-        KeyCode::Char('z') => Some(Message::ShowStashMessageInput),
-        KeyCode::Char('i') => Some(Message::ShowStashIndexInput),
+        KeyCode::Char('z') => Some(Message::ShowStashInput(StashType::Both)),
+        KeyCode::Char('i') => Some(Message::ShowStashInput(StashType::Index)),
+        KeyCode::Char('w') => Some(Message::ShowStashInput(StashType::Worktree)),
         KeyCode::Char('a') => Some(Message::ShowSelectPopup(SelectPopup::StashApply)),
         KeyCode::Char('p') => Some(Message::ShowSelectPopup(SelectPopup::StashPop)),
         KeyCode::Char('k') => Some(Message::ShowSelectPopup(SelectPopup::StashDrop)),

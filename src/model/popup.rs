@@ -2,6 +2,7 @@ pub use super::select_popup::{SelectContext, SelectPopupState, SelectResult};
 
 use crate::git::credential::CredentialType;
 use crate::model::LogEntry;
+use crate::msg::StashType;
 
 /// State for a confirmation popup (e.g., "Are you sure you want to delete?")
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -78,10 +79,8 @@ pub enum InputContext {
         /// The current name of the branch being renamed
         old_name: String,
     },
-    /// Stash message input
-    StashMessage,
-    /// Stash index message input (stash only staged changes)
-    StashIndexMessage,
+    /// Stash push input — carries which kind of stash to create
+    Stash(StashType),
 }
 
 /// State for text input popups (e.g., new branch name)

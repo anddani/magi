@@ -28,14 +28,10 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         return None;
     };
 
-    // Stash message allows empty input (git will use the default message)
-    if let InputContext::StashMessage = state.context {
-        return Some(Message::Stash(StashCommand::StashBoth(
-            state.input_text.trim().to_string(),
-        )));
-    }
-    if let InputContext::StashIndexMessage = state.context {
-        return Some(Message::Stash(StashCommand::StashIndex(
+    // Stash push allows empty input (git will use the default message)
+    if let InputContext::Stash(stash_type) = state.context {
+        return Some(Message::Stash(StashCommand::Push(
+            stash_type,
             state.input_text.trim().to_string(),
         )));
     }
@@ -60,6 +56,6 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             old_name,
             new_name: input,
         }),
-        InputContext::StashMessage | InputContext::StashIndexMessage => unreachable!(),
+        InputContext::Stash(_) => unreachable!(),
     }
 }

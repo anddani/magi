@@ -3,13 +3,13 @@ use crate::{
         Model,
         popup::{InputContext, InputPopupState, PopupContent},
     },
-    msg::Message,
+    msg::{Message, StashType},
 };
 
-pub fn update(model: &mut Model) -> Option<Message> {
+pub fn update(model: &mut Model, stash_type: StashType) -> Option<Message> {
     let state = InputPopupState::new(
-        "Stash index message".to_string(),
-        InputContext::StashIndexMessage,
+        stash_type.title().to_string(),
+        InputContext::Stash(stash_type),
     );
     model.popup = Some(PopupContent::Input(state));
     None
