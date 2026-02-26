@@ -66,7 +66,7 @@ pub fn format_ref_with_colors<'a>(ref_info: &GitRef, label: &str, theme: &Theme)
 
     // Commit message
     spans.push(Span::styled(
-        ref_info.commit_message.clone(),
+        ref_info.commit_summary.clone(),
         Style::default().fg(theme.text),
     ));
 

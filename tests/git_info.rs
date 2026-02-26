@@ -11,7 +11,7 @@ fn test_get_head_ref_attached() -> Result<(), git2::Error> {
     assert_eq!(head_ref.name, "main");
     assert_eq!(head_ref.reference_type, ReferenceType::LocalBranch);
     assert_eq!(head_ref.commit_hash.len(), 7);
-    assert_eq!(head_ref.commit_message, "Initial commit");
+    assert_eq!(head_ref.commit_summary, "Initial commit");
 
     Ok(())
 }
@@ -28,7 +28,7 @@ fn test_get_head_ref_detached() -> Result<(), git2::Error> {
         ReferenceType::DetachedHead
     );
     assert_eq!(detached_head_ref.commit_hash.len(), 7);
-    assert_eq!(detached_head_ref.commit_message, "Initial commit");
+    assert_eq!(detached_head_ref.commit_summary, "Initial commit");
 
     Ok(())
 }
@@ -42,7 +42,7 @@ fn test_get_head_ref_remote_branch() -> Result<(), git2::Error> {
     assert_eq!(head_ref.name, "origin/main");
     assert_eq!(head_ref.reference_type, ReferenceType::RemoteBranch);
     assert_eq!(head_ref.commit_hash.len(), 7);
-    assert_eq!(head_ref.commit_message, "Initial commit");
+    assert_eq!(head_ref.commit_summary, "Initial commit");
 
     Ok(())
 }

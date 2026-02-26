@@ -34,12 +34,12 @@ pub fn get_push_ref(repo: &Repository) -> Result<Option<GitRef>, git2::Error> {
     let commit = push_ref.peel_to_commit()?;
     let commit_hash = commit.id().to_string();
     let short_hash = &commit_hash[..7];
-    let commit_message = commit.message().unwrap_or("").to_string();
+    let commit_summary = commit.summary().unwrap_or("").to_string();
     let push_shorthand = push_ref.shorthand().unwrap_or(&push_ref_name).to_string();
 
     Ok(Some(GitRef::new_remote_branch(
         push_shorthand,
         short_hash.to_string(),
-        commit_message,
+        commit_summary,
     )))
 }
