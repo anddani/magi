@@ -411,7 +411,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowPushUpstreamSelect));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::PushUpstream
+            ))
+        );
     }
 
     #[test]
@@ -428,7 +433,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('t'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowPushAllTagsSelect));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::PushAllTags
+            ))
+        );
     }
 
     #[test]
@@ -445,7 +455,10 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('T'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowPushTagSelect));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(crate::msg::ShowSelectDialog::PushTag))
+        );
     }
 
     #[test]
@@ -671,7 +684,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('m'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowRenameBranchPopup));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::RenameBranch
+            ))
+        );
     }
 
     #[test]
@@ -698,7 +716,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowCheckoutBranchPopup));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::CheckoutBranch
+            ))
+        );
     }
 
     #[test]
@@ -709,7 +732,9 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowCreateNewBranchPopup { checkout: true })
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::CreateNewBranch { checkout: true }
+            ))
         );
     }
 
@@ -719,7 +744,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('l'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowCheckoutLocalBranchPopup));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::CheckoutLocalBranch
+            ))
+        );
     }
 
     // Input popup tests
@@ -831,7 +861,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowFetchUpstreamSelect));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::FetchUpstream
+            ))
+        );
     }
 
     #[test]
@@ -984,7 +1019,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowFetchPushRemoteSelect));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::FetchPushRemote
+            ))
+        );
     }
 
     // Pull popup tests
@@ -1034,7 +1074,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowPullPushRemoteSelect));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::PullPushRemote
+            ))
+        );
     }
 
     #[test]
@@ -1068,7 +1113,12 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::ShowPullUpstreamSelect));
+        assert_eq!(
+            result,
+            Some(Message::ShowSelect(
+                crate::msg::ShowSelectDialog::PullUpstream
+            ))
+        );
     }
 
     #[test]

@@ -4,7 +4,7 @@ use magi::{
         Toast,
         popup::{PopupContent, PopupContentCommand, SelectContext},
     },
-    msg::{FixupType, LogType, Message, update::update},
+    msg::{FixupType, LogType, Message, ShowSelectDialog, update::update},
 };
 
 mod utils;
@@ -28,7 +28,10 @@ fn test_show_fixup_commit_select_without_staged_changes_shows_toast() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let result = update(&mut model, Message::ShowFixupCommitSelect(FixupType::Fixup));
+    let result = update(
+        &mut model,
+        Message::ShowSelect(ShowSelectDialog::FixupCommit(FixupType::Fixup)),
+    );
 
     assert_eq!(result, Some(Message::DismissPopup));
     assert!(model.popup.is_none());
@@ -58,7 +61,10 @@ fn test_show_fixup_commit_select_shows_popup() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let result = update(&mut model, Message::ShowFixupCommitSelect(FixupType::Fixup));
+    let result = update(
+        &mut model,
+        Message::ShowSelect(ShowSelectDialog::FixupCommit(FixupType::Fixup)),
+    );
 
     assert_eq!(result, None);
     assert!(matches!(
@@ -175,7 +181,7 @@ fn test_show_squash_commit_select_without_staged_changes_shows_toast() {
 
     let result = update(
         &mut model,
-        Message::ShowFixupCommitSelect(FixupType::Squash),
+        Message::ShowSelect(ShowSelectDialog::FixupCommit(FixupType::Squash)),
     );
 
     assert_eq!(result, Some(Message::DismissPopup));
@@ -208,7 +214,7 @@ fn test_show_squash_commit_select_shows_popup() {
 
     let result = update(
         &mut model,
-        Message::ShowFixupCommitSelect(FixupType::Squash),
+        Message::ShowSelect(ShowSelectDialog::FixupCommit(FixupType::Squash)),
     );
 
     assert_eq!(result, None);

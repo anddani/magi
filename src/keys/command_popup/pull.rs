@@ -5,7 +5,7 @@ use crate::{
         arguments::{Argument::Pull, PullArgument},
         popup::PullPopupState,
     },
-    msg::{Message, PullCommand},
+    msg::{Message, PullCommand, ShowSelectDialog},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool, state: &PullPopupState) -> Option<Message> {
@@ -25,14 +25,14 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PullPopupState) -> Option<Mes
                     remote.clone(),
                 )))
             } else {
-                Some(Message::ShowPullPushRemoteSelect)
+                Some(Message::ShowSelect(ShowSelectDialog::PullPushRemote))
             }
         }
         KeyCode::Char('u') => {
             if state.upstream.is_some() {
                 Some(Message::Pull(PullCommand::PullUpstream))
             } else {
-                Some(Message::ShowPullUpstreamSelect)
+                Some(Message::ShowSelect(ShowSelectDialog::PullUpstream))
             }
         }
         KeyCode::Char('-') => Some(Message::EnterArgMode),

@@ -3,7 +3,7 @@ use crate::{
         Model,
         popup::{PopupContent, PopupContentCommand, SelectContext, SelectResult},
     },
-    msg::{FetchCommand, Message, PullCommand, PushCommand, StashCommand},
+    msg::{FetchCommand, Message, PullCommand, PushCommand, ShowSelectDialog, StashCommand},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -85,7 +85,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             })
         }
         (Some(SelectContext::OpenPrBranchWithTarget), SelectResult::Selected(branch)) => {
-            Some(Message::ShowOpenPrTargetSelect(branch))
+            Some(Message::ShowSelect(ShowSelectDialog::OpenPrTarget(branch)))
         }
         (Some(SelectContext::OpenPrTarget), SelectResult::Selected(target)) => {
             let branch = model.open_pr_branch.take().unwrap_or_default();
@@ -106,9 +106,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
         (Some(SelectContext::FetchPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Fetch(FetchCommand::FetchFromPushRemote(remote)))
         }
-        (Some(SelectContext::FetchAnotherBranchRemote), SelectResult::Selected(remote)) => {
-            Some(Message::ShowFetchAnotherBranchBranchSelect(remote))
-        }
+        (Some(SelectContext::FetchAnotherBranchRemote), SelectResult::Selected(remote)) => Some(
+            Message::ShowSelect(ShowSelectDialog::FetchAnotherBranchBranch(remote)),
+        ),
         (Some(SelectContext::FetchAnotherBranch), SelectResult::Selected(branch)) => {
             Some(Message::Fetch(FetchCommand::FetchFromRemoteBranch(branch)))
         }

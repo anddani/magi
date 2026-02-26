@@ -5,7 +5,7 @@ use crate::{
         arguments::{Argument::Fetch, FetchArgument},
         popup::FetchPopupState,
     },
-    msg::{FetchCommand, Message},
+    msg::{FetchCommand, Message, ShowSelectDialog},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Message> {
@@ -23,7 +23,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
             if state.upstream.is_some() {
                 Some(Message::Fetch(FetchCommand::FetchUpstream))
             } else {
-                Some(Message::ShowFetchUpstreamSelect)
+                Some(Message::ShowSelect(ShowSelectDialog::FetchUpstream))
             }
         }
         KeyCode::Char('p') => {
@@ -32,12 +32,12 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
                     remote.clone(),
                 )))
             } else {
-                Some(Message::ShowFetchPushRemoteSelect)
+                Some(Message::ShowSelect(ShowSelectDialog::FetchPushRemote))
             }
         }
         KeyCode::Char('a') => Some(Message::Fetch(FetchCommand::FetchAllRemotes)),
-        KeyCode::Char('e') => Some(Message::ShowFetchElsewhereSelect),
-        KeyCode::Char('o') => Some(Message::ShowFetchAnotherBranchSelect),
+        KeyCode::Char('e') => Some(Message::ShowSelect(ShowSelectDialog::FetchElsewhere)),
+        KeyCode::Char('o') => Some(Message::ShowSelect(ShowSelectDialog::FetchAnotherBranch)),
         KeyCode::Char('m') => Some(Message::Fetch(FetchCommand::FetchModules)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
