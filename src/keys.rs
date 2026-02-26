@@ -52,6 +52,9 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     ConfirmAction::DiscardChanges(target) => {
                         Message::ConfirmDiscard(target.clone())
                     }
+                    ConfirmAction::DropStash(stash_ref) => {
+                        Message::ConfirmDropStash(stash_ref.clone())
+                    }
                 };
                 Some(msg)
             }

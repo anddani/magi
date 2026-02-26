@@ -136,4 +136,22 @@ impl TestRepo {
     pub fn repo_path(&self) -> &Path {
         self.repo.workdir().unwrap()
     }
+
+    pub fn create_stash(&self, message: &str) -> &Self {
+        use std::process::Command;
+        let workdir = self.repo.workdir().unwrap();
+        Command::new("git")
+            .args([
+                "-C",
+                workdir.to_str().unwrap(),
+                "stash",
+                "push",
+                "-u",
+                "-m",
+                message,
+            ])
+            .output()
+            .expect("Failed to create stash");
+        self
+    }
 }

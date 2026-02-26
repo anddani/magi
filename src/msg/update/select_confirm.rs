@@ -1,7 +1,10 @@
 use crate::{
     model::{
         Model,
-        popup::{PopupContent, PopupContentCommand, SelectContext, SelectResult},
+        popup::{
+            ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand, SelectContext,
+            SelectResult,
+        },
     },
     msg::{FetchCommand, Message, PullCommand, PushCommand, SelectDialog, StashCommand},
 };
@@ -120,6 +123,20 @@ pub fn update(model: &mut Model) -> Option<Message> {
                 .unwrap_or(&stash_display)
                 .to_string();
             Some(Message::Stash(StashCommand::Apply(stash_ref)))
+        }
+        (Some(SelectContext::DropStash), SelectResult::Selected(stash_display)) => {
+            // Extract "stash@{N}" from "stash@{N}: message"
+            let stash_ref = stash_display
+                .split(": ")
+                .next()
+                .unwrap_or(&stash_display)
+                .to_string();
+            // Show confirmation dialog before dropping
+            model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
+                message: format!("Drop {}?", stash_display),
+                on_confirm: ConfirmAction::DropStash(stash_ref),
+            }));
+            None
         }
         _ => None,
     }

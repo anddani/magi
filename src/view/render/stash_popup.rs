@@ -57,10 +57,16 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
 
     let use_col = PopupColumn {
         title: Some("Use"),
-        content: vec![Line::from(vec![
-            Span::styled(" a", key_style),
-            Span::styled(" Apply", desc_style),
-        ])],
+        content: vec![
+            Line::from(vec![
+                Span::styled(" a", key_style),
+                Span::styled(" Apply", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" k", key_style),
+                Span::styled(" Drop", desc_style),
+            ]),
+        ],
     };
 
     CommandPopupContent {

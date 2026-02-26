@@ -9,6 +9,7 @@ mod checkout_new_branch;
 mod commit;
 mod confirm_delete_branch;
 mod confirm_discard;
+mod confirm_drop_stash;
 mod credentials_input;
 mod delete_branch;
 mod discard_selected;
@@ -70,6 +71,7 @@ mod show_rename_branch_input;
 mod show_rename_branch_popup;
 mod show_select_popup;
 mod show_stash_apply_select;
+mod show_stash_drop_select;
 mod show_stash_message_input;
 mod stage_all_modified;
 mod stage_selected;
@@ -115,6 +117,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::UnstageAll => unstage_all::update(model),
         Message::DiscardSelected => discard_selected::update(model),
         Message::ConfirmDiscard(target) => confirm_discard::update(model, target),
+        Message::ConfirmDropStash(stash_ref) => confirm_drop_stash::update(model, stash_ref),
         Message::EnterVisualMode => enter_visual_mode::update(model),
         Message::ExitVisualMode => exit_visual_mode::update(model),
         Message::ShowPopup(content) => {
@@ -165,6 +168,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
                 show_checkout_new_branch_popup::update(model, checkout)
             }
             SelectDialog::StashApply => show_stash_apply_select::update(model),
+            SelectDialog::StashDrop => show_stash_drop_select::update(model),
             SelectDialog::FixupCommit(fixup_type) => {
                 show_fixup_commit_select::update(model, fixup_type)
             }
