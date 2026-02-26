@@ -60,7 +60,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             ]),
             Line::from(vec![
                 Span::styled(" w", key_style),
-                Span::styled(" workspace", desc_style),
+                Span::styled(" worktree", desc_style),
             ]),
         ],
     };

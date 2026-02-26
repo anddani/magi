@@ -8,28 +8,28 @@ mod utils;
 use utils::create_model_from_test_repo;
 
 #[test]
-fn test_show_stash_workspace_input_opens_input_popup() {
+fn test_show_stash_worktree_input_opens_input_popup() {
     let test_repo = TestRepo::new();
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let result = update(&mut model, Message::ShowStashInput(StashType::Workspace));
+    let result = update(&mut model, Message::ShowStashInput(StashType::Worktree));
 
     assert_eq!(result, None);
 
     assert!(matches!(
         model.popup,
         Some(PopupContent::Input(ref state))
-            if state.title == "Stash workspace message"
-            && matches!(state.context, InputContext::Stash(StashType::Workspace))
+            if state.title == "Stash worktree message"
+            && matches!(state.context, InputContext::Stash(StashType::Worktree))
     ));
 }
 
 #[test]
-fn test_confirm_stash_workspace_input_with_message_triggers_stash_workspace() {
+fn test_confirm_stash_worktree_input_with_message_triggers_stash_worktree() {
     let test_repo = TestRepo::new();
     let mut model = create_model_from_test_repo(&test_repo);
 
-    update(&mut model, Message::ShowStashInput(StashType::Workspace));
+    update(&mut model, Message::ShowStashInput(StashType::Worktree));
 
     update(
         &mut model,
@@ -50,18 +50,18 @@ fn test_confirm_stash_workspace_input_with_message_triggers_stash_workspace() {
     assert_eq!(
         result,
         Some(Message::Stash(StashCommand::Push(
-            StashType::Workspace,
+            StashType::Worktree,
             "wip".to_string()
         )))
     );
 }
 
 #[test]
-fn test_confirm_stash_workspace_input_empty_triggers_stash_workspace_with_empty_message() {
+fn test_confirm_stash_worktree_input_empty_triggers_stash_worktree_with_empty_message() {
     let test_repo = TestRepo::new();
     let mut model = create_model_from_test_repo(&test_repo);
 
-    update(&mut model, Message::ShowStashInput(StashType::Workspace));
+    update(&mut model, Message::ShowStashInput(StashType::Worktree));
 
     let result = update(&mut model, Message::Input(magi::msg::InputMessage::Confirm));
 
@@ -69,7 +69,7 @@ fn test_confirm_stash_workspace_input_empty_triggers_stash_workspace_with_empty_
     assert_eq!(
         result,
         Some(Message::Stash(StashCommand::Push(
-            StashType::Workspace,
+            StashType::Worktree,
             String::new()
         )))
     );

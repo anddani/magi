@@ -37,7 +37,7 @@ fn push(
         args.extend(["-m".to_string(), message]);
     }
 
-    // extra_args only apply to StashType::Both (index/workspace ignore them)
+    // extra_args only apply to StashType::Both (index/worktree ignore them)
     if stash_type == StashType::Both {
         args.extend(extra_args);
     }
