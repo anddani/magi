@@ -6,12 +6,20 @@ use crate::{
 };
 
 pub fn keys(key: KeyEvent, state: &RevertPopupState) -> Option<Message> {
+    if state.in_progress {
+        return match key.code {
+            KeyCode::Char('q') => Some(Message::DismissPopup),
+            KeyCode::Char('_') => Some(Message::Revert(RevertCommand::Continue)),
+            KeyCode::Char('s') => Some(Message::Revert(RevertCommand::Skip)),
+            KeyCode::Char('a') => Some(Message::Revert(RevertCommand::Abort)),
+            _ => None,
+        };
+    }
+
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
         KeyCode::Char('_') => {
-            if state.in_progress {
-                Some(Message::Revert(RevertCommand::Continue))
-            } else if !state.selected_commits.is_empty() {
+            if !state.selected_commits.is_empty() {
                 Some(Message::Revert(RevertCommand::Commits(
                     state.selected_commits.clone(),
                 )))
@@ -19,8 +27,6 @@ pub fn keys(key: KeyEvent, state: &RevertPopupState) -> Option<Message> {
                 None
             }
         }
-        KeyCode::Char('s') if state.in_progress => Some(Message::Revert(RevertCommand::Skip)),
-        KeyCode::Char('a') if state.in_progress => Some(Message::Revert(RevertCommand::Abort)),
         _ => None,
     }
 }
