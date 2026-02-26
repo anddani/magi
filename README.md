@@ -154,4 +154,9 @@ Here are a few features that the aforementioned applications lack:
 ## License
 
 [MIT](./LICENSE)
+<<<<<<< HEAD
 te2st
+||||||| 32b26c8 (README)
+test
+=======
+>>>>>>> parent of 32b26c8 (README)
