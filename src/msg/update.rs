@@ -1,6 +1,6 @@
 use crate::{
     model::Model,
-    msg::{InputMessage, Message, SelectMessage, ShowSelectDialog},
+    msg::{InputMessage, Message, SelectDialog, SelectMessage},
 };
 
 mod amend;
@@ -143,38 +143,34 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::DeleteBranch(branch) => delete_branch::update(model, branch),
         Message::ConfirmDeleteBranch(branch) => confirm_delete_branch::update(model, branch),
         Message::OpenPr { branch, target } => open_pr::update(model, branch, target),
-        Message::ShowSelect(show_select) => match show_select {
-            ShowSelectDialog::FetchUpstream => show_fetch_upstream_select::update(model),
-            ShowSelectDialog::FetchElsewhere => show_fetch_elsewhere_select::update(model),
-            ShowSelectDialog::FetchAnotherBranch => show_fetch_another_branch_select::update(model),
-            ShowSelectDialog::FetchAnotherBranchBranch(remote) => {
+        Message::ShowSelectDialog(show_select) => match show_select {
+            SelectDialog::FetchUpstream => show_fetch_upstream_select::update(model),
+            SelectDialog::FetchElsewhere => show_fetch_elsewhere_select::update(model),
+            SelectDialog::FetchAnotherBranch => show_fetch_another_branch_select::update(model),
+            SelectDialog::FetchAnotherBranchBranch(remote) => {
                 show_fetch_another_branch_branch_select::update(model, remote)
             }
-            ShowSelectDialog::FetchPushRemote => show_fetch_push_remote_select::update(model),
-            ShowSelectDialog::PushUpstream => show_push_upstream_select::update(model),
-            ShowSelectDialog::PushPushRemote => show_push_push_remote_select::update(model),
-            ShowSelectDialog::PushAllTags => show_push_all_tags_select::update(model),
-            ShowSelectDialog::PushTag => show_push_tag_select::update(model),
-            ShowSelectDialog::PullUpstream => show_pull_upstream_select::update(model),
-            ShowSelectDialog::PullPushRemote => show_pull_push_remote_select::update(model),
-            ShowSelectDialog::CheckoutBranch => show_checkout_branch_popup::update(model),
-            ShowSelectDialog::CheckoutLocalBranch => {
-                show_checkout_local_branch_popup::update(model)
-            }
-            ShowSelectDialog::DeleteBranch => show_delete_branch_popup::update(model),
-            ShowSelectDialog::RenameBranch => show_rename_branch_popup::update(model),
-            ShowSelectDialog::CreateNewBranch { checkout } => {
+            SelectDialog::FetchPushRemote => show_fetch_push_remote_select::update(model),
+            SelectDialog::PushUpstream => show_push_upstream_select::update(model),
+            SelectDialog::PushPushRemote => show_push_push_remote_select::update(model),
+            SelectDialog::PushAllTags => show_push_all_tags_select::update(model),
+            SelectDialog::PushTag => show_push_tag_select::update(model),
+            SelectDialog::PullUpstream => show_pull_upstream_select::update(model),
+            SelectDialog::PullPushRemote => show_pull_push_remote_select::update(model),
+            SelectDialog::CheckoutBranch => show_checkout_branch_popup::update(model),
+            SelectDialog::CheckoutLocalBranch => show_checkout_local_branch_popup::update(model),
+            SelectDialog::DeleteBranch => show_delete_branch_popup::update(model),
+            SelectDialog::RenameBranch => show_rename_branch_popup::update(model),
+            SelectDialog::CreateNewBranch { checkout } => {
                 show_checkout_new_branch_popup::update(model, checkout)
             }
-            ShowSelectDialog::StashApply => show_stash_apply_select::update(model),
-            ShowSelectDialog::FixupCommit(fixup_type) => {
+            SelectDialog::StashApply => show_stash_apply_select::update(model),
+            SelectDialog::FixupCommit(fixup_type) => {
                 show_fixup_commit_select::update(model, fixup_type)
             }
-            ShowSelectDialog::OpenPr => show_open_pr_select::update(model, false),
-            ShowSelectDialog::OpenPrWithTarget => show_open_pr_select::update(model, true),
-            ShowSelectDialog::OpenPrTarget(branch) => {
-                show_open_pr_target_select::update(model, branch)
-            }
+            SelectDialog::OpenPr => show_open_pr_select::update(model, false),
+            SelectDialog::OpenPrWithTarget => show_open_pr_select::update(model, true),
+            SelectDialog::OpenPrTarget(branch) => show_open_pr_target_select::update(model, branch),
         },
         Message::EnterArgMode => enter_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),

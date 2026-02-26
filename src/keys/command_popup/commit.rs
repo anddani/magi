@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     model::arguments::{Argument::Commit, CommitArgument},
-    msg::{FixupType, Message, ShowSelectDialog},
+    msg::{FixupType, Message, SelectDialog},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
@@ -20,16 +20,16 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('e') => Some(Message::Amend(vec!["--no-edit".to_string()])),
         KeyCode::Char('a') => Some(Message::Amend(vec![])),
         KeyCode::Char('w') => Some(Message::Amend(vec!["--only".to_string()])),
-        KeyCode::Char('f') => Some(Message::ShowSelect(ShowSelectDialog::FixupCommit(
+        KeyCode::Char('f') => Some(Message::ShowSelectDialog(SelectDialog::FixupCommit(
             FixupType::Fixup,
         ))),
-        KeyCode::Char('s') => Some(Message::ShowSelect(ShowSelectDialog::FixupCommit(
+        KeyCode::Char('s') => Some(Message::ShowSelectDialog(SelectDialog::FixupCommit(
             FixupType::Squash,
         ))),
-        KeyCode::Char('A') => Some(Message::ShowSelect(ShowSelectDialog::FixupCommit(
+        KeyCode::Char('A') => Some(Message::ShowSelectDialog(SelectDialog::FixupCommit(
             FixupType::Alter,
         ))),
-        KeyCode::Char('n') => Some(Message::ShowSelect(ShowSelectDialog::FixupCommit(
+        KeyCode::Char('n') => Some(Message::ShowSelectDialog(SelectDialog::FixupCommit(
             FixupType::Augment,
         ))),
         KeyCode::Char('-') => Some(Message::EnterArgMode),

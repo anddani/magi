@@ -5,7 +5,7 @@ use crate::{
         popup::{PopupContent, PopupContentCommand, SelectPopupState},
         select_popup::SelectContext,
     },
-    msg::{Message, ShowSelectDialog},
+    msg::{Message, SelectDialog},
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -19,8 +19,8 @@ pub fn update(model: &mut Model) -> Option<Message> {
     }
 
     if remotes.len() == 1 {
-        return Some(Message::ShowSelect(
-            ShowSelectDialog::FetchAnotherBranchBranch(remotes.into_iter().next().unwrap()),
+        return Some(Message::ShowSelectDialog(
+            SelectDialog::FetchAnotherBranchBranch(remotes.into_iter().next().unwrap()),
         ));
     }
 

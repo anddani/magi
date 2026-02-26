@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     model::arguments::{Argument::Stash, StashArgument},
-    msg::{Message, ShowSelectDialog},
+    msg::{Message, SelectDialog},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
@@ -17,7 +17,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
 
     match key.code {
         KeyCode::Char('z') => Some(Message::ShowStashMessageInput),
-        KeyCode::Char('a') => Some(Message::ShowSelect(ShowSelectDialog::StashApply)),
+        KeyCode::Char('a') => Some(Message::ShowSelectDialog(SelectDialog::StashApply)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

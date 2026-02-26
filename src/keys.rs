@@ -413,8 +413,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::PushUpstream
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::PushUpstream
             ))
         );
     }
@@ -435,8 +435,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::PushAllTags
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::PushAllTags
             ))
         );
     }
@@ -457,7 +457,7 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(crate::msg::ShowSelectDialog::PushTag))
+            Some(Message::ShowSelectDialog(crate::msg::SelectDialog::PushTag))
         );
     }
 
@@ -686,8 +686,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::RenameBranch
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::RenameBranch
             ))
         );
     }
@@ -718,8 +718,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::CheckoutBranch
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::CheckoutBranch
             ))
         );
     }
@@ -732,8 +732,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::CreateNewBranch { checkout: true }
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::CreateNewBranch { checkout: true }
             ))
         );
     }
@@ -746,8 +746,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::CheckoutLocalBranch
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::CheckoutLocalBranch
             ))
         );
     }
@@ -863,8 +863,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::FetchUpstream
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::FetchUpstream
             ))
         );
     }
@@ -1021,8 +1021,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::FetchPushRemote
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::FetchPushRemote
             ))
         );
     }
@@ -1076,8 +1076,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::PullPushRemote
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::PullPushRemote
             ))
         );
     }
@@ -1115,8 +1115,8 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelect(
-                crate::msg::ShowSelectDialog::PullUpstream
+            Some(Message::ShowSelectDialog(
+                crate::msg::SelectDialog::PullUpstream
             ))
         );
     }

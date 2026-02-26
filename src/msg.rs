@@ -166,7 +166,7 @@ pub enum Message {
     Stash(StashCommand),
 
     /// Show a select dialog
-    ShowSelect(ShowSelectDialog),
+    ShowSelectDialog(SelectDialog),
 
     /// Open PR creation page in browser
     OpenPr {
@@ -248,7 +248,7 @@ pub enum StashCommand {
 
 /// Messages for showing select dialogs
 #[derive(PartialEq, Eq, Debug)]
-pub enum ShowSelectDialog {
+pub enum SelectDialog {
     // Fetch-related
     /// Show select popup to choose upstream for fetch
     FetchUpstream,
