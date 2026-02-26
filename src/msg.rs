@@ -176,16 +176,11 @@ pub enum Message {
     /// Show apply stash popup, or immediately apply if cursor is on a stash entry
     ShowStashApplySelect,
 
+    Fetch(FetchCommand),
     Pull(PullCommand),
     Push(PushCommand),
     Stash(StashCommand),
 
-    /// Fetch all remotes
-    FetchAllRemotes,
-    /// Fetch all populated submodules (git fetch --recurse-submodules)
-    FetchModules,
-    /// Fetch from upstream
-    FetchUpstream,
     /// Show select popup to choose upstream for fetch
     ShowFetchUpstreamSelect,
     /// Show select popup to choose a remote to fetch from
@@ -194,12 +189,8 @@ pub enum Message {
     ShowFetchAnotherBranchSelect,
     /// Show select popup to choose a branch from the given remote to fetch
     ShowFetchAnotherBranchBranchSelect(String),
-    /// Fetch from a specific remote/branch
-    FetchFromRemote(String),
     /// Show select popup to choose push remote for fetch
     ShowFetchPushRemoteSelect,
-    /// Fetch from push remote (setting branch.<name>.pushRemote)
-    FetchFromPushRemote(String),
     /// Show select popup to choose upstream for push
     ShowPushUpstreamSelect,
     /// Show select popup to choose push remote for push
@@ -243,6 +234,24 @@ pub enum Message {
     ShowLog(LogType),
     /// Exit log view and return to status view
     ExitLogView,
+}
+
+/// Messages for pull commands
+#[derive(PartialEq, Eq, Debug)]
+pub enum FetchCommand {
+    // TODO: Should be combined with below
+    /// Fetch from upstream
+    FetchUpstream,
+    // TODO: Rename to FetchFromRef
+    /// Fetch from a specific remote/branch
+    FetchFromRemoteBranch(String),
+    /// Fetch from push remote (setting branch.<name>.pushRemote)
+    FetchFromPushRemote(String),
+    /// Fetch all remotes
+    FetchAllRemotes,
+    // TODO: Rename to FetchSubmodules
+    /// Fetch all populated submodules (git fetch --recurse-submodules)
+    FetchModules,
 }
 
 /// Messages for pull commands

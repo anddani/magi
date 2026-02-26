@@ -18,11 +18,7 @@ mod enter_visual_mode;
 mod exit_arg_mode;
 mod exit_log_view;
 mod exit_visual_mode;
-mod fetch_all_remotes;
-mod fetch_from_push_remote;
-mod fetch_from_remote;
-mod fetch_modules;
-mod fetch_upstream;
+mod fetch;
 mod fixup_commit;
 mod half_page_down;
 mod half_page_up;
@@ -156,18 +152,13 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::CheckoutBranch(branch) => checkout_branch::update(model, branch),
         Message::DeleteBranch(branch) => delete_branch::update(model, branch),
         Message::ConfirmDeleteBranch(branch) => confirm_delete_branch::update(model, branch),
-        Message::FetchAllRemotes => fetch_all_remotes::update(model),
-        Message::FetchModules => fetch_modules::update(model),
-        Message::FetchUpstream => fetch_upstream::update(model),
         Message::ShowFetchUpstreamSelect => show_fetch_upstream_select::update(model),
         Message::ShowFetchElsewhereSelect => show_fetch_elsewhere_select::update(model),
         Message::ShowFetchAnotherBranchSelect => show_fetch_another_branch_select::update(model),
         Message::ShowFetchAnotherBranchBranchSelect(remote) => {
             show_fetch_another_branch_branch_select::update(model, remote)
         }
-        Message::FetchFromRemote(upstream) => fetch_from_remote::update(model, upstream),
         Message::ShowFetchPushRemoteSelect => show_fetch_push_remote_select::update(model),
-        Message::FetchFromPushRemote(remote) => fetch_from_push_remote::update(model, remote),
         Message::ShowPushUpstreamSelect => show_push_upstream_select::update(model),
         Message::ShowPushPushRemoteSelect => show_push_push_remote_select::update(model),
         Message::ShowPushAllTagsSelect => show_push_all_tags_select::update(model),
@@ -203,9 +194,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowLog(log_type) => show_log::update(model, log_type),
         Message::ExitLogView => exit_log_view::update(model),
 
+        Message::Fetch(fetch_command) => fetch::update(model, fetch_command),
         Message::Pull(pull_command) => pull::update(model, pull_command),
         Message::Stash(stash_command) => stash::update(model, stash_command),
-
         Message::Push(push_command) => push::update(model, push_command),
     }
 }
