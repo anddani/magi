@@ -1,7 +1,7 @@
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     model::popup::{CommitSelectPopupState, PopupContent, PopupContentCommand},
-    msg::{FixupType, LogType, Message, SelectPopup, SelectMessage, update::update},
+    msg::{FixupType, LogType, Message, SelectMessage, SelectPopup, update::update},
 };
 
 mod utils;
