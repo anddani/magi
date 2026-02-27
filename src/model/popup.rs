@@ -204,6 +204,8 @@ impl CommitSelectPopupState {
 pub struct RebasePopupState {
     /// The currently checked out branch name
     pub branch: String,
+    /// Whether a rebase sequence is currently in progress (conflict stopped)
+    pub in_progress: bool,
 }
 
 /// State for the Revert popup

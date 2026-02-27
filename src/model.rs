@@ -178,6 +178,13 @@ pub enum LineContent {
         /// true = the commit currently stopped on (REVERT_HEAD), false = pending
         is_current: bool,
     },
+    /// An entry in the "Rebasing" sequencer section
+    RebasingEntry {
+        hash: String,
+        message: String,
+        /// true = the commit currently stopped on (conflict), false = pending in todo
+        is_current: bool,
+    },
 }
 
 /// A suggestion derived from the line under the cursor.
@@ -356,6 +363,8 @@ pub enum SectionType {
     Stashes,
     /// The "Reverting" sequencer section
     Reverting,
+    /// The "Rebasing" sequencer section
+    Rebasing,
 }
 
 impl SectionType {
@@ -379,6 +388,7 @@ impl SectionType {
             SectionType::Unpulled => None,
             SectionType::Stashes => None,
             SectionType::Reverting => None,
+            SectionType::Rebasing => None,
         }
     }
 
