@@ -716,11 +716,16 @@ fn show_reset_branch_pick(model: &mut Model) -> Option<Message> {
         .lines
         .get(model.ui_model.cursor_position)
         .and_then(|line| {
-            suggestions_from_line(line)
-                .into_iter()
-                .find(|s| matches!(s, BranchSuggestion::LocalBranch(name) if branches.contains(name)))
+            suggestions_from_line(line).into_iter().find(
+                |s| matches!(s, BranchSuggestion::LocalBranch(name) if branches.contains(name)),
+            )
         })
-        .or_else(|| model.git_info.current_branch().map(BranchSuggestion::LocalBranch));
+        .or_else(|| {
+            model
+                .git_info
+                .current_branch()
+                .map(BranchSuggestion::LocalBranch)
+        });
 
     if let Some(ref preferred) = preferred
         && let Some(idx) = branches.iter().position(|b| b == preferred.name())
@@ -775,12 +780,20 @@ fn show_reset_branch_target(model: &mut Model, branch: String) -> Option<Message
         }
     }
     for b in &remote_branches {
-        if preferred.as_ref().map(|p| p.name() != b.as_str()).unwrap_or(true) {
+        if preferred
+            .as_ref()
+            .map(|p| p.name() != b.as_str())
+            .unwrap_or(true)
+        {
             options.push(b.clone());
         }
     }
     for tag in &tags {
-        if preferred.as_ref().map(|p| p.name() != tag.as_str()).unwrap_or(true) {
+        if preferred
+            .as_ref()
+            .map(|p| p.name() != tag.as_str())
+            .unwrap_or(true)
+        {
             options.push(tag.clone());
         }
     }
