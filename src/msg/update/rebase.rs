@@ -1,5 +1,8 @@
+use std::time::{Duration, Instant};
+
 use crate::{
-    model::Model,
+    git::rebase::{self, CommitResult},
+    model::{Model, Toast, ToastStyle, popup::PopupContent},
     msg::{Message, RebaseCommand, update::pty_helper::execute_pty_command},
 };
 
@@ -17,12 +20,29 @@ fn elsewhere(model: &mut Model, target: String) -> Option<Message> {
     execute_pty_command(model, args, "Rebase".to_string())
 }
 
+const TOAST_DURATION: Duration = Duration::from_secs(5);
+
 fn continue_rebase(model: &mut Model) -> Option<Message> {
-    execute_pty_command(
-        model,
-        vec!["rebase".to_string(), "--continue".to_string()],
-        "Rebase".to_string(),
-    )
+    model.popup = None;
+    match rebase::run_rebase_continue_with_editor(&model.workdir) {
+        Ok(CommitResult { success, message }) => {
+            model.toast = Some(Toast {
+                message,
+                style: if success {
+                    ToastStyle::Success
+                } else {
+                    ToastStyle::Warning
+                },
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
 }
 
 fn skip_rebase(model: &mut Model) -> Option<Message> {
