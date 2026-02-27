@@ -72,9 +72,9 @@ impl GitInfo {
             .workdir()
             .unwrap_or_else(|| std::path::Path::new("."));
 
+        let info_lines = info::get_lines(&self.repository)?;
         let rebasing_lines = rebase::get_rebasing_lines(workdir)?;
         let reverting_lines = revert::get_reverting_lines(workdir)?;
-        let lines = info::get_lines(&self.repository)?;
         let untracked_files = untracked_files::get_lines(&self.repository)?;
         let unstaged_changes = unstaged_changes::get_lines(&self.repository)?;
         let staged_changes = staged_changes::get_lines(&self.repository)?;
@@ -83,9 +83,9 @@ impl GitInfo {
         let recent_commits = recent_commits::get_lines(&self.repository)?;
 
         let all_sections = [
+            info_lines,
             rebasing_lines,
             reverting_lines,
-            lines,
             untracked_files,
             unstaged_changes,
             staged_changes,
