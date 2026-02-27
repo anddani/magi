@@ -1,10 +1,10 @@
 use std::fs;
 use std::path::Path;
-use std::process::Command;
 
 use super::git_cmd;
 use crate::{
     errors::MagiResult,
+    git::{commit::get_commit_result, read_commit_message},
     model::{LineContent, SectionType},
 };
 
@@ -87,21 +87,6 @@ pub fn get_rebasing_entries(workdir: &Path) -> Vec<RebasingEntry> {
     entries
 }
 
-fn read_commit_message(workdir: &Path, hash: &str) -> Option<String> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(workdir)
-        .args(["log", "--format=%s", "-1", hash])
-        .output()
-        .ok()?;
-
-    if output.status.success() {
-        Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
-    } else {
-        None
-    }
-}
-
 /// Returns model lines for the "Rebasing" section.
 /// Returns an empty vec if no rebase is in progress.
 pub fn get_rebasing_lines(workdir: &Path) -> MagiResult<Vec<crate::model::Line>> {
@@ -143,21 +128,7 @@ pub fn get_rebasing_lines(workdir: &Path) -> MagiResult<Vec<crate::model::Line>>
 pub fn run_rebase_continue_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
     let status = git_cmd(&repo_path, &["rebase", "--continue"]).status()?;
 
-    if status.success() {
-        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
-        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
-            .trim()
-            .to_string();
-        Ok(CommitResult {
-            success: true,
-            message: commit_msg,
-        })
-    } else {
-        Ok(CommitResult {
-            success: false,
-            message: "Rebase continue aborted".to_string(),
-        })
-    }
+    get_commit_result(repo_path, status, "Rebase continue")
 }
 
 #[cfg(test)]

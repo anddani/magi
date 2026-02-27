@@ -12,6 +12,19 @@ pub fn git_cmd<P: AsRef<Path>>(repo_path: P, args: &[&str]) -> Command {
     cmd
 }
 
+/// Reads the subject line of a commit from git log.
+pub fn read_commit_message(workdir: &Path, hash: &str) -> Option<String> {
+    let output = git_cmd(workdir, &["log", "--format=%s", "-1", hash])
+        .output()
+        .ok()?;
+
+    if output.status.success() {
+        Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    } else {
+        None
+    }
+}
+
 pub mod checkout;
 pub mod commit;
 mod commit_utils;

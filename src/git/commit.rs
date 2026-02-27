@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, process::ExitStatus};
 
 use super::git_cmd;
 use crate::errors::MagiResult;
@@ -7,6 +7,30 @@ use crate::errors::MagiResult;
 pub struct CommitResult {
     pub success: bool,
     pub message: String,
+}
+
+pub fn get_commit_result<P: AsRef<Path>>(
+    repo_path: P,
+    status: ExitStatus,
+    op: &str,
+) -> MagiResult<CommitResult> {
+    if status.success() {
+        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
+
+        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
+            .trim()
+            .to_string();
+
+        Ok(CommitResult {
+            success: true,
+            message: format!("{}: {}", op, commit_msg),
+        })
+    } else {
+        Ok(CommitResult {
+            success: false,
+            message: format!("{} aborted", op),
+        })
+    }
 }
 
 /// Runs `git commit` which opens the user's configured editor.
@@ -26,26 +50,7 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(
     // - User's configured editor opens correctly
     let status = git_cmd(&repo_path, &["commit"]).args(flags).status()?;
 
-    if status.success() {
-        // Get the commit message from the last commit
-        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
-
-        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
-            .trim()
-            .to_string();
-
-        Ok(CommitResult {
-            success: true,
-            message: commit_msg,
-        })
-    } else {
-        // User aborted or hook failed
-        // Try to get more info about what happened
-        Ok(CommitResult {
-            success: false,
-            message: "Commit aborted".to_string(),
-        })
-    }
+    get_commit_result(repo_path, status, "Commit")
 }
 
 /// Runs `git commit --amend` to amend the last commit.
@@ -58,23 +63,7 @@ pub fn run_amend_commit_with_editor<P: AsRef<Path>>(
         .args(flags)
         .status()?;
 
-    if status.success() {
-        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
-
-        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
-            .trim()
-            .to_string();
-
-        Ok(CommitResult {
-            success: true,
-            message: format!("Amended: {}", commit_msg),
-        })
-    } else {
-        Ok(CommitResult {
-            success: false,
-            message: "Amend aborted".to_string(),
-        })
-    }
+    get_commit_result(repo_path, status, "Amend")
 }
 
 /// Runs `git commit --fixup=<commit_hash> --no-edit` to create a fixup commit.
@@ -88,24 +77,7 @@ pub fn run_fixup_commit<P: AsRef<Path>>(
     )
     .output()?;
 
-    if output.status.success() {
-        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
-
-        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
-            .trim()
-            .to_string();
-
-        Ok(CommitResult {
-            success: true,
-            message: format!("Created fixup: {}", commit_msg),
-        })
-    } else {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        Ok(CommitResult {
-            success: false,
-            message: format!("Fixup commit failed: {}", stderr.trim()),
-        })
-    }
+    get_commit_result(repo_path, output.status, "Fixup")
 }
 
 /// Runs `git commit --squash=<commit_hash> --no-edit` to create a squash commit.
@@ -119,24 +91,7 @@ pub fn run_squash_commit<P: AsRef<Path>>(
     )
     .output()?;
 
-    if output.status.success() {
-        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
-
-        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
-            .trim()
-            .to_string();
-
-        Ok(CommitResult {
-            success: true,
-            message: format!("Created squash: {}", commit_msg),
-        })
-    } else {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        Ok(CommitResult {
-            success: false,
-            message: format!("Squash commit failed: {}", stderr.trim()),
-        })
-    }
+    get_commit_result(repo_path, output.status, "Squash")
 }
 
 /// Runs `git commit --squash=<commit_hash> --edit` to create an augment commit.
@@ -151,23 +106,7 @@ pub fn run_augment_commit<P: AsRef<Path>>(
     )
     .status()?;
 
-    if status.success() {
-        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
-
-        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
-            .trim()
-            .to_string();
-
-        Ok(CommitResult {
-            success: true,
-            message: format!("Created augment: {}", commit_msg),
-        })
-    } else {
-        Ok(CommitResult {
-            success: false,
-            message: "Augment commit aborted".to_string(),
-        })
-    }
+    get_commit_result(repo_path, status, "Augment")
 }
 
 /// Runs `git commit --fixup=amend:<commit_hash> --edit` to create an alter commit.
@@ -186,23 +125,7 @@ pub fn run_alter_commit<P: AsRef<Path>>(
     )
     .status()?;
 
-    if status.success() {
-        let log_output = git_cmd(&repo_path, &["log", "-1", "--format=%s"]).output()?;
-
-        let commit_msg = String::from_utf8_lossy(&log_output.stdout)
-            .trim()
-            .to_string();
-
-        Ok(CommitResult {
-            success: true,
-            message: format!("Created alter: {}", commit_msg),
-        })
-    } else {
-        Ok(CommitResult {
-            success: false,
-            message: "Alter commit aborted".to_string(),
-        })
-    }
+    get_commit_result(repo_path, status, "Alter")
 }
 
 #[cfg(test)]
