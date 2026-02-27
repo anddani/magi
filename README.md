@@ -154,3 +154,15 @@ Here are a few features that the aforementioned applications lack:
 ## License
 
 [MIT](./LICENSE)
+<<<<<<< HEAD
+<<<<<<< HEAD
+te2st
+||||||| 32b26c8 (README)
+test
+=======
+>>>>>>> parent of 32b26c8 (README)
+||||||| 508d9e9 (README 2)
+te2st
+=======
+test
+>>>>>>> parent of 508d9e9 (README 2)

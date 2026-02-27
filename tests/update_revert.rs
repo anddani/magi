@@ -399,3 +399,71 @@ fn test_esc_dismisses_revert_popup() {
     let result = handle_key(key(KeyCode::Esc), &model);
     assert_eq!(result, Some(Message::DismissPopup));
 }
+
+// ── v key — revert no commit ──────────────────────────────────────────────────
+
+#[test]
+fn test_v_in_revert_popup_with_commits_triggers_no_commit_revert() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        RevertPopupState {
+            in_progress: false,
+            selected_commits: vec!["abc1234".to_string()],
+        },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('v')), &model);
+    assert_eq!(
+        result,
+        Some(Message::Revert(RevertCommand::NoCommit(vec![
+            "abc1234".to_string()
+        ])))
+    );
+}
+
+#[test]
+fn test_v_in_revert_popup_without_commits_does_nothing() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        RevertPopupState {
+            in_progress: false,
+            selected_commits: vec![],
+        },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('v')), &model);
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_v_in_revert_popup_in_progress_does_nothing() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        RevertPopupState {
+            in_progress: true,
+            selected_commits: vec![],
+        },
+    )));
+
+    // 'v' is not a recognised key in in-progress mode
+    let result = handle_key(key(KeyCode::Char('v')), &model);
+    assert_eq!(result, None);
+}

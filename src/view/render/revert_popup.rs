@@ -31,19 +31,23 @@ pub fn content<'a>(theme: &Theme, state: &'a RevertPopupState) -> CommandPopupCo
         ];
         CommandPopupContent::single_column("Reverting", key_lines)
     } else {
-        // Normal revert — show "Revert commit(s)", grayed if no commits selected
+        // Normal revert — both actions grayed out when no commits are selected
         let has_commits = !state.selected_commits.is_empty();
-        let key_line = Line::from(vec![
-            Span::styled(" _", if has_commits { key_style } else { grayed_style }),
-            Span::styled(
-                "  Revert commit(s)",
-                if has_commits {
-                    desc_style
-                } else {
-                    grayed_style
-                },
-            ),
-        ]);
-        CommandPopupContent::single_column("Revert commits", vec![key_line])
+        let (act_key, act_desc) = if has_commits {
+            (key_style, desc_style)
+        } else {
+            (grayed_style, grayed_style)
+        };
+        let key_lines = vec![
+            Line::from(vec![
+                Span::styled(" _", act_key),
+                Span::styled("  Revert commit(s)", act_desc),
+            ]),
+            Line::from(vec![
+                Span::styled(" v", act_key),
+                Span::styled("  Revert no commit", act_desc),
+            ]),
+        ];
+        CommandPopupContent::single_column("Revert commits", key_lines)
     }
 }
