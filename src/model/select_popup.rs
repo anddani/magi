@@ -58,6 +58,10 @@ pub enum SelectContext {
     DropStash,
     /// Selecting a commit to rebase onto (rebase elsewhere)
     RebaseElsewhere,
+    /// Selecting a local branch to reset
+    ResetBranchPick,
+    /// Selecting a target to reset the given branch to (holds branch name)
+    ResetBranchTarget(String),
 }
 
 /// State for the select popup (fuzzy finder style)

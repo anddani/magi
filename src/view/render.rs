@@ -26,6 +26,7 @@ mod popup_content;
 mod pull_popup;
 mod push_popup;
 mod rebase_popup;
+mod reset_popup;
 mod revert_popup;
 mod select_popup;
 mod stash_popup;
@@ -101,6 +102,7 @@ pub fn render_popup(
                 PopupContentCommand::Log => log_popup::content(theme),
                 PopupContentCommand::Stash => stash_popup::content(theme, model),
 
+                PopupContentCommand::Reset => reset_popup::content(theme),
                 PopupContentCommand::Rebase(state) => rebase_popup::content(theme, state),
                 PopupContentCommand::Revert(state) => revert_popup::content(theme, state),
 

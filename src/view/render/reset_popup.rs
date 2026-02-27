@@ -1,0 +1,32 @@
+use ratatui::{
+    style::{Modifier, Style},
+    text::{Line, Span},
+};
+
+use super::popup_content::CommandPopupContent;
+use crate::{
+    config::Theme,
+    view::render::popup_content::{PopupColumn, PopupRow},
+};
+
+pub fn content<'a>(theme: &Theme) -> CommandPopupContent<'a> {
+    let key_style = Style::default()
+        .fg(theme.local_branch)
+        .add_modifier(Modifier::BOLD);
+    let desc_style = Style::default();
+
+    let reset_col = PopupColumn {
+        title: Some("Reset"),
+        content: vec![Line::from(vec![
+            Span::styled(" b", key_style),
+            Span::styled("  branch", desc_style),
+        ])],
+    };
+
+    CommandPopupContent {
+        title: "Reset",
+        rows: vec![PopupRow {
+            columns: vec![reset_col],
+        }],
+    }
+}
