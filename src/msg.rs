@@ -255,6 +255,12 @@ pub enum PushCommand {
 pub enum RebaseCommand {
     /// Rebase the current branch onto the given target ref/commit
     Elsewhere(String),
+    /// Continue after resolving conflicts
+    Continue,
+    /// Skip the current conflicting commit
+    Skip,
+    /// Abort the rebase sequence
+    Abort,
 }
 
 /// Messages for revert commands

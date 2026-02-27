@@ -23,6 +23,7 @@ mod latest_tag;
 mod log_line;
 mod merge_ref;
 mod push_ref;
+mod rebasing_entry;
 mod render;
 mod reverting_entry;
 mod section_header;
@@ -161,6 +162,11 @@ pub fn view(model: &Model, frame: &mut Frame) {
                 message,
                 is_current,
             } => reverting_entry::get_lines(hash, message, *is_current, theme),
+            crate::model::LineContent::RebasingEntry {
+                hash,
+                message,
+                is_current,
+            } => rebasing_entry::get_lines(hash, message, *is_current, theme),
         };
 
         let is_cursor_line = index == cursor_pos;
