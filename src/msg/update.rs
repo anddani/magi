@@ -38,6 +38,7 @@ mod quit;
 mod rebase;
 mod refresh;
 mod rename_branch;
+mod reset_branch;
 mod revert;
 mod scroll_line_down;
 mod scroll_line_up;
@@ -54,6 +55,7 @@ mod show_pull_popup;
 mod show_push_popup;
 mod show_rebase_popup;
 mod show_rename_branch_input;
+mod show_reset_popup;
 mod show_revert_popup;
 mod show_select_popup;
 mod show_stash_input;
@@ -159,5 +161,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Rebase(rebase_command) => rebase::update(model, rebase_command),
         Message::ShowRevertPopup => show_revert_popup::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),
+        Message::ShowResetPopup => show_reset_popup::update(model),
+        Message::ResetBranch { branch, target } => reset_branch::update(model, branch, target),
     }
 }

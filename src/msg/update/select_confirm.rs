@@ -1,4 +1,5 @@
 use crate::{
+    git::reset::has_uncommitted_changes,
     model::{
         Model,
         popup::{
@@ -104,6 +105,23 @@ pub fn update(model: &mut Model) -> Option<Message> {
         }
         (Some(SelectContext::RebaseElsewhere), SelectResult::Selected(commit)) => {
             Some(Message::Rebase(RebaseCommand::Elsewhere(commit)))
+        }
+        (Some(SelectContext::ResetBranchPick), SelectResult::Selected(branch)) => Some(
+            Message::ShowSelectPopup(SelectPopup::ResetBranchTarget(branch)),
+        ),
+        (Some(SelectContext::ResetBranchTarget(branch)), SelectResult::Selected(target)) => {
+            let current_branch = model.git_info.current_branch();
+            if current_branch.as_deref() == Some(branch.as_str())
+                && has_uncommitted_changes(&model.git_info.repository)
+            {
+                model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
+                    message: "Uncommitted changes will be lost. Proceed?".to_string(),
+                    on_confirm: ConfirmAction::ResetBranch { branch, target },
+                }));
+                None
+            } else {
+                Some(Message::ResetBranch { branch, target })
+            }
         }
         (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))

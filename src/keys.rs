@@ -30,6 +30,7 @@ fn command_popup_keys(c: char) -> Option<Message> {
         ))),
         'r' => Some(Message::ShowRebasePopup),
         '_' => Some(Message::ShowRevertPopup),
+        'O' => Some(Message::ShowResetPopup),
         _ => None,
     }
 }
@@ -63,6 +64,10 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     ConfirmAction::RebaseElsewhere(target) => {
                         Message::Rebase(RebaseCommand::Elsewhere(target.clone()))
                     }
+                    ConfirmAction::ResetBranch { branch, target } => Message::ResetBranch {
+                        branch: branch.clone(),
+                        target: target.clone(),
+                    },
                 };
                 Some(msg)
             }

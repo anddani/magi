@@ -178,6 +178,14 @@ pub enum Message {
     /// Execute a revert command
     Revert(RevertCommand),
 
+    /// Show reset popup
+    ShowResetPopup,
+    /// Reset a branch to a target ref/commit
+    ResetBranch {
+        branch: String,
+        target: String,
+    },
+
     /// Show a select popup
     ShowSelectPopup(SelectPopup),
 
@@ -389,6 +397,12 @@ pub enum SelectPopup {
     // Rebase-related
     /// Show select popup (or confirm) to pick a commit/ref to rebase onto
     RebaseElsewhere,
+
+    // Reset-related
+    /// Show select popup to pick which local branch to reset
+    ResetBranchPick,
+    /// Show select popup to pick a target to reset the given branch to
+    ResetBranchTarget(String),
 
     // PR-related
     /// Show select popup to pick source branch for PR (opens to default target)

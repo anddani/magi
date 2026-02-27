@@ -26,6 +26,8 @@ pub enum ConfirmAction {
     DropStash(String),
     /// Rebase the current branch onto the given target ref/commit
     RebaseElsewhere(String),
+    /// Reset a branch to a target ref/commit
+    ResetBranch { branch: String, target: String },
 }
 
 /// State for the credential input popup.
@@ -226,6 +228,7 @@ pub enum PopupContentCommand {
     Branch,
     Log,
     Stash,
+    Reset,
     Rebase(RebasePopupState),
     Revert(RevertPopupState),
     Select(SelectPopupState),

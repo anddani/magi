@@ -74,6 +74,9 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
         SelectPopup::OpenPr => show_open_pr(model, false),
         SelectPopup::OpenPrWithTarget => show_open_pr(model, true),
         SelectPopup::OpenPrTarget(b) => show_open_pr_target(model, b),
+
+        SelectPopup::ResetBranchPick => show_reset_branch_pick(model),
+        SelectPopup::ResetBranchTarget(branch) => show_reset_branch_target(model, branch),
     }
 }
 
@@ -690,4 +693,67 @@ fn show_rebase_elsewhere(model: &mut Model) -> Option<Message> {
             None
         }
     }
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+
+/// Step 1: pick which local branch to reset.
+fn show_reset_branch_pick(model: &mut Model) -> Option<Message> {
+    let mut branches = get_local_branches(&model.git_info.repository);
+
+    if branches.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No local branches found".to_string(),
+        });
+        return None;
+    }
+
+    // Prioritize the currently checked-out branch
+    let current_branch = model.git_info.current_branch();
+    if let Some(ref current) = current_branch
+        && let Some(idx) = branches.iter().position(|b| b == current)
+    {
+        let branch = branches.remove(idx);
+        branches.insert(0, branch);
+    }
+
+    model.select_context = Some(SelectContext::ResetBranchPick);
+    let state = SelectPopupState::new("Reset: select branch".to_string(), branches);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
+
+/// Step 2: pick what to reset the given branch to (local branches, remote branches, tags).
+fn show_reset_branch_target(model: &mut Model, branch: String) -> Option<Message> {
+    let local_branches: Vec<String> = get_local_branches(&model.git_info.repository)
+        .into_iter()
+        .filter(|b| b != &branch)
+        .collect();
+
+    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
+        .into_iter()
+        .filter_map(|b| match b {
+            BranchEntry::Remote(name) => Some(name),
+            _ => None,
+        })
+        .collect();
+
+    let tags = get_local_tags(&model.git_info.repository);
+
+    let mut options: Vec<String> = Vec::new();
+    options.extend(local_branches);
+    options.extend(remote_branches);
+    options.extend(tags);
+
+    if options.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No references found".to_string(),
+        });
+        return None;
+    }
+
+    model.select_context = Some(SelectContext::ResetBranchTarget(branch));
+    let state = SelectPopupState::new("Reset branch to".to_string(), options);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
 }
