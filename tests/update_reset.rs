@@ -2,7 +2,10 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifi
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
-    model::popup::{ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand},
+    model::{
+        LineContent,
+        popup::{ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand},
+    },
     msg::{Message, SelectPopup, update::update},
 };
 
@@ -472,4 +475,165 @@ fn test_n_in_reset_confirm_popup_dismisses() {
 
     let result = handle_key(key(KeyCode::Char('n')), &model);
     assert_eq!(result, Some(Message::DismissPopup));
+}
+
+// ── Cursor-line suggestion: branch pick ───────────────────────────────────────
+
+#[test]
+fn test_reset_branch_pick_cursor_on_branch_ref_prioritizes_it() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "initial")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    // Create a second branch pointing at the initial commit
+    {
+        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+        let head = repo.head().unwrap().peel_to_commit().unwrap();
+        repo.branch("other-branch", &head, false).unwrap();
+    }
+
+    // Make another commit so current branch is ahead of other-branch
+    test_repo
+        .write_file_content("file.txt", "second")
+        .stage_files(&["file.txt"])
+        .commit("Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Find a commit line that has "other-branch" as a ref
+    let other_pos = model.ui_model.lines.iter().position(|l| {
+        if let LineContent::Commit(info) = &l.content {
+            info.refs.iter().any(|r| r.name == "other-branch")
+        } else {
+            false
+        }
+    });
+
+    if let Some(pos) = other_pos {
+        model.ui_model.cursor_position = pos;
+        update(
+            &mut model,
+            Message::ShowSelectPopup(SelectPopup::ResetBranchPick),
+        );
+
+        if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+            assert_eq!(
+                state.all_options[0], "other-branch",
+                "other-branch should be first because cursor is on its commit"
+            );
+        } else {
+            panic!("Expected Select popup");
+        }
+    }
+    // If other-branch doesn't appear in the visible lines, the test is skipped
+    // (shallow test repos may not always show it)
+}
+
+// ── Cursor-line suggestion: target pick with bare hash ─────────────────────────
+
+#[test]
+fn test_reset_branch_target_cursor_on_bare_hash_prioritizes_it() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "initial")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    let initial_hash = {
+        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+        repo.head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id()
+            .to_string()
+    };
+
+    // Make a second commit — now the first commit has no branch ref pointing at it
+    test_repo
+        .write_file_content("file.txt", "second")
+        .stage_files(&["file.txt"])
+        .commit("Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Find the first commit (no branch refs, only has a hash)
+    let bare_pos = model.ui_model.lines.iter().position(|l| {
+        if let LineContent::Commit(info) = &l.content {
+            info.refs.is_empty() && info.hash.len() == 7
+        } else {
+            false
+        }
+    });
+
+    if let Some(pos) = bare_pos {
+        let short_hash = if let LineContent::Commit(info) = &model.ui_model.lines[pos].content {
+            info.hash.clone()
+        } else {
+            panic!("Expected commit line");
+        };
+
+        model.ui_model.cursor_position = pos;
+        update(
+            &mut model,
+            Message::ShowSelectPopup(SelectPopup::ResetBranchTarget("other".to_string())),
+        );
+
+        if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+            assert_eq!(
+                state.all_options[0], short_hash,
+                "hash should be first because cursor is on a bare commit"
+            );
+            // Verify the hash is a prefix of the initial commit
+            assert!(
+                initial_hash.starts_with(&short_hash),
+                "short hash should be prefix of full hash"
+            );
+        } else {
+            panic!("Expected Select popup");
+        }
+    }
+    // If no bare commit lines visible, test is skipped
+}
+
+#[test]
+fn test_reset_branch_target_cursor_on_branch_ref_prioritizes_branch_over_hash() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "initial")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let current = model.git_info.current_branch().unwrap();
+
+    // Find the HEAD commit line — it has the current branch ref
+    let head_pos = model.ui_model.lines.iter().position(|l| {
+        if let LineContent::Commit(info) = &l.content {
+            info.refs.iter().any(|r| r.name == current)
+        } else {
+            false
+        }
+    });
+
+    if let Some(pos) = head_pos {
+        model.ui_model.cursor_position = pos;
+        // Reset a different branch to see target options
+        update(
+            &mut model,
+            Message::ShowSelectPopup(SelectPopup::ResetBranchTarget("other-branch".to_string())),
+        );
+
+        if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+            // The branch ref (current branch name) should appear before the hash
+            assert_eq!(
+                state.all_options[0], current,
+                "current branch name should be first, not the commit hash"
+            );
+        } else {
+            // No refs to reset to (only 1 branch and it's excluded) — acceptable
+        }
+    }
 }

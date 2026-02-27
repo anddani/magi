@@ -698,6 +698,8 @@ fn show_rebase_elsewhere(model: &mut Model) -> Option<Message> {
 // ── Reset ─────────────────────────────────────────────────────────────────────
 
 /// Step 1: pick which local branch to reset.
+/// If the cursor is on a line with a local branch, that branch is pre-selected.
+/// Falls back to the currently checked-out branch.
 fn show_reset_branch_pick(model: &mut Model) -> Option<Message> {
     let mut branches = get_local_branches(&model.git_info.repository);
 
@@ -708,10 +710,20 @@ fn show_reset_branch_pick(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    // Prioritize the currently checked-out branch
-    let current_branch = model.git_info.current_branch();
-    if let Some(ref current) = current_branch
-        && let Some(idx) = branches.iter().position(|b| b == current)
+    // Prefer a local branch from the cursor line, fall back to current branch
+    let preferred = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| {
+            suggestions_from_line(line)
+                .into_iter()
+                .find(|s| matches!(s, BranchSuggestion::LocalBranch(name) if branches.contains(name)))
+        })
+        .or_else(|| model.git_info.current_branch().map(BranchSuggestion::LocalBranch));
+
+    if let Some(ref preferred) = preferred
+        && let Some(idx) = branches.iter().position(|b| b == preferred.name())
     {
         let branch = branches.remove(idx);
         branches.insert(0, branch);
@@ -724,6 +736,8 @@ fn show_reset_branch_pick(model: &mut Model) -> Option<Message> {
 }
 
 /// Step 2: pick what to reset the given branch to (local branches, remote branches, tags).
+/// The first suggestion from the cursor line is prioritized — including a bare commit hash when
+/// the line has no named refs (e.g. the cursor is on a plain commit line).
 fn show_reset_branch_target(model: &mut Model, branch: String) -> Option<Message> {
     let local_branches: Vec<String> = get_local_branches(&model.git_info.repository)
         .into_iter()
@@ -740,10 +754,36 @@ fn show_reset_branch_target(model: &mut Model, branch: String) -> Option<Message
 
     let tags = get_local_tags(&model.git_info.repository);
 
+    // Take the highest-priority suggestion from the cursor line.
+    // suggestions_from_line returns: local branches first, then remote, then the hash.
+    // So if the line has branch refs we get those; if it's a bare commit we get the hash.
+    let preferred = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| suggestions_from_line(line).into_iter().next());
+
     let mut options: Vec<String> = Vec::new();
-    options.extend(local_branches);
-    options.extend(remote_branches);
-    options.extend(tags);
+
+    if let Some(ref preferred) = preferred {
+        options.push(preferred.name().to_string());
+    }
+
+    for b in &local_branches {
+        if preferred.as_ref().map(|p| p.name() != b).unwrap_or(true) {
+            options.push(b.clone());
+        }
+    }
+    for b in &remote_branches {
+        if preferred.as_ref().map(|p| p.name() != b.as_str()).unwrap_or(true) {
+            options.push(b.clone());
+        }
+    }
+    for tag in &tags {
+        if preferred.as_ref().map(|p| p.name() != tag.as_str()).unwrap_or(true) {
+            options.push(tag.clone());
+        }
+    }
 
     if options.is_empty() {
         model.popup = Some(PopupContent::Error {
