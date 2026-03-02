@@ -109,26 +109,29 @@
             };
             magi-x86_64-linux-musl =
               let
-                staticPkgs = pkgs.pkgsStatic;
-                naersk-static = staticPkgs.callPackage naersk {
+                crossPkgs = pkgs.pkgsCross.musl64;
+                naersk-cross = crossPkgs.callPackage naersk {
                   cargo = toolchain;
                   rustc = toolchain;
                 };
+                rustTarget = crossPkgs.stdenv.hostPlatform.rust.rustcTarget;
               in
-              naersk-static.buildPackage {
+              naersk-cross.buildPackage {
                 src = ./.;
                 singleStep = true;
                 strictDeps = true;
-                nativeBuildInputs = [ staticPkgs.buildPackages.pkg-config ];
-                buildInputs = with staticPkgs; [
+                nativeBuildInputs = [ crossPkgs.buildPackages.pkg-config ];
+                buildInputs = with pkgs.pkgsStatic; [
                   openssl
                   zlib
                   libgit2
                   libssh2
                 ];
+                CARGO_BUILD_TARGET = rustTarget;
                 LIBSSH2_SYS_USE_PKG_CONFIG = "1";
                 PKG_CONFIG_ALLOW_CROSS = "1";
-                CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER = "${staticPkgs.stdenv.cc}/bin/${staticPkgs.stdenv.cc.targetPrefix}cc";
+                OPENSSL_STATIC = "1";
+                CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER = "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
               };
           };
         checks.default = naersk'.buildPackage {
