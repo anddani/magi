@@ -126,6 +126,7 @@
                   zlib
                   libgit2
                   libssh2
+                  pcre2
                 ];
                 CARGO_BUILD_TARGET = rustTarget;
                 LIBSSH2_SYS_USE_PKG_CONFIG = "1";
