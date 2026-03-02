@@ -17,9 +17,7 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            use_cross: false
           - target: aarch64-unknown-linux-gnu
-            use_cross: true
 
     steps:
       - uses: actions/checkout@v4
@@ -30,16 +28,10 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install cross
-        if: matrix.use_cross
         uses: taiki-e/install-action@cross
 
       - name: Build
-        run: |
-          if [ "${{ matrix.use_cross }}" = "true" ]; then
-            cross build --release --target ${{ matrix.target }}
-          else
-            cargo build --release --target ${{ matrix.target }}
-          fi
+        run: cross build --release --target ${{ matrix.target }}
 
       - name: Create archive and checksum
         run: |
