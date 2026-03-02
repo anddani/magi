@@ -131,6 +131,7 @@
                 CARGO_BUILD_TARGET = rustTarget;
                 LIBSSH2_SYS_USE_PKG_CONFIG = "1";
                 PKG_CONFIG_ALLOW_CROSS = "1";
+                PKG_CONFIG_ALL_STATIC = "1";
                 OPENSSL_STATIC = "1";
                 CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER = "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
               };
