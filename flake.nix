@@ -56,6 +56,33 @@
             pkg-config
           ];
         };
+
+        mkCrossPackage =
+          {
+            crossSystem,
+            cargoEnvVar,
+          }:
+          let
+            crossPkgs = import nixpkgs {
+              localSystem = system;
+              crossSystem = lib.systems.elaborate crossSystem;
+              overlays = overlays;
+            };
+            naersk-cross = crossPkgs.callPackage naersk {
+              cargo = toolchain;
+              rustc = toolchain;
+            };
+          in
+          naersk-cross.buildPackage {
+            src = ./.;
+            strictDeps = true;
+            nativeBuildInputs = [ crossPkgs.buildPackages.pkg-config ];
+            buildInputs = with crossPkgs; [
+              openssl
+              libgit2
+            ];
+            "${cargoEnvVar}" = "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
+          };
       in
       {
         packages.default = magi;
@@ -76,6 +103,20 @@
             toolchain
             pkgs.rust-analyzer
           ];
+        };
+      }
+      # Cross-compile aarch64 Linux binary from x86_64-linux runner
+      // lib.optionalAttrs (system == "x86_64-linux") {
+        packages.magi-aarch64-linux = mkCrossPackage {
+          crossSystem = "aarch64-linux";
+          cargoEnvVar = "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER";
+        };
+      }
+      # Cross-compile x86_64 macOS binary from aarch64-darwin (Apple Silicon) runner
+      // lib.optionalAttrs (system == "aarch64-darwin") {
+        packages.magi-x86_64-darwin = mkCrossPackage {
+          crossSystem = "x86_64-darwin";
+          cargoEnvVar = "CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER";
         };
       }
     );
