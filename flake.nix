@@ -73,6 +73,7 @@
               cargo = toolchain;
               rustc = toolchain;
             };
+            rustTarget = crossPkgs.stdenv.hostPlatform.rust.rustcTarget;
           in
           naersk-cross.buildPackage {
             src = ./.;
@@ -85,10 +86,9 @@
               libgit2
               libssh2
             ];
+            CARGO_BUILD_TARGET = rustTarget;
             LIBSSH2_SYS_USE_PKG_CONFIG = "1";
             PKG_CONFIG_ALLOW_CROSS = "1";
-            ZLIB_INCLUDE_DIR = "${crossPkgs.zlib.dev}/include";
-            ZLIB_LIB_DIR = "${crossPkgs.zlib}/lib";
             "${linkerEnvVar}" = "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
           };
       in
