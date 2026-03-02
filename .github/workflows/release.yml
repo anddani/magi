@@ -9,25 +9,17 @@ env:
   BINARY_NAME: magi
 
 jobs:
-  build:
+  build-linux:
     name: Build ${{ matrix.target }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
             use_cross: false
           - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
             use_cross: true
-          - target: x86_64-apple-darwin
-            os: macos-13
-            use_cross: false
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            use_cross: false
 
     steps:
       - uses: actions/checkout@v4
@@ -50,11 +42,10 @@ jobs:
           fi
 
       - name: Create archive and checksum
-        shell: bash
         run: |
           ARCHIVE="${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
           tar -C "target/${{ matrix.target }}/release" -czf "$ARCHIVE" "${{ env.BINARY_NAME }}"
-          openssl dgst -sha256 -r "$ARCHIVE" | awk '{print $1, $2}' > "${ARCHIVE}.sha256"
+          sha256sum "$ARCHIVE" > "${ARCHIVE}.sha256"
           echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
 
       - name: Upload artifact
@@ -65,9 +56,44 @@ jobs:
             ${{ env.ARCHIVE }}
             ${{ env.ARCHIVE }}.sha256
 
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Build aarch64-apple-darwin
+        run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Build x86_64-apple-darwin
+        run: cargo build --release --target x86_64-apple-darwin
+
+      - name: Create archives and checksums
+        run: |
+          TAG="${{ github.ref_name }}"
+
+          AARCH64_ARCHIVE="${{ env.BINARY_NAME }}-${TAG}-aarch64-apple-darwin.tar.gz"
+          tar -C "target/aarch64-apple-darwin/release" -czf "$AARCH64_ARCHIVE" "${{ env.BINARY_NAME }}"
+          shasum -a 256 "$AARCH64_ARCHIVE" > "${AARCH64_ARCHIVE}.sha256"
+
+          X86_ARCHIVE="${{ env.BINARY_NAME }}-${TAG}-x86_64-apple-darwin.tar.gz"
+          tar -C "target/x86_64-apple-darwin/release" -czf "$X86_ARCHIVE" "${{ env.BINARY_NAME }}"
+          shasum -a 256 "$X86_ARCHIVE" > "${X86_ARCHIVE}.sha256"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: "*.tar.gz*"
+
   release:
     name: Create Release
-    needs: build
+    needs: [build-linux, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
