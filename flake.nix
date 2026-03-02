@@ -42,6 +42,7 @@
             "x86_64-apple-darwin"
             "aarch64-apple-darwin"
             "x86_64-unknown-linux-gnu"
+            "x86_64-unknown-linux-musl"
             "aarch64-unknown-linux-gnu"
           ];
         };
@@ -69,15 +70,28 @@
           src = ./.;
           mode = "test";
         };
-        devShells.default = pkgs.mkShell {
-          nativeBuildInputs = [
-            pkgs.openssl
-            pkgs.pkg-config
-            pkgs.perl
-            toolchain
-            pkgs.rust-analyzer
-          ];
-        };
+        devShells.default =
+          let
+            aarch64LinuxCC = pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc;
+          in
+          pkgs.mkShell (
+            {
+              nativeBuildInputs =
+                [
+                  pkgs.openssl
+                  pkgs.pkg-config
+                  pkgs.perl
+                  toolchain
+                  pkgs.rust-analyzer
+                ]
+                ++ lib.optionals pkgs.stdenv.isLinux [
+                  aarch64LinuxCC
+                ];
+            }
+            // lib.optionalAttrs pkgs.stdenv.isLinux {
+              CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = "${aarch64LinuxCC}/bin/${aarch64LinuxCC.targetPrefix}cc";
+            }
+          );
       }
     );
 }
