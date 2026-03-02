@@ -5,90 +5,72 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
-env:
-  BINARY_NAME: magi
+permissions:
+  contents: write
 
 jobs:
-  build-linux:
-    name: Build ${{ matrix.target }}
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.build }}
+    runs-on: ${{ matrix.os }}
+    env:
+      BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
     strategy:
       fail-fast: false
       matrix:
+        build: [linux-x86, linux-x86-musl, linux-aarch64, darwin-x86, darwin-aarch64]
         include:
-          - target: x86_64-unknown-linux-gnu
-          - target: aarch64-unknown-linux-gnu
+          - build: linux-x86
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - build: linux-x86-musl
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - build: linux-aarch64
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - build: darwin-x86
+            os: macos-15-intel
+            target: x86_64-apple-darwin
+          - build: darwin-aarch64
+            os: macos-latest
+            target: aarch64-apple-darwin
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: cachix/install-nix-action@v30
         with:
-          targets: ${{ matrix.target }}
+          nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Install cross
-        run: cargo install cross
+      - uses: cachix/cachix-action@v15
+        with:
+          name: nix-community
+          skipPush: true
 
-      - name: Build
-        run: cross build --release --target ${{ matrix.target }}
+      - name: Build release binary
+        run: nix develop --command cargo build --verbose --release --target ${{ matrix.target }}
 
-      - name: Create archive and checksum
+      - name: Bundle release
+        shell: bash
         run: |
-          ARCHIVE="${{ env.BINARY_NAME }}-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
-          tar -C "target/${{ matrix.target }}/release" -czf "$ARCHIVE" "${{ env.BINARY_NAME }}"
-          sha256sum "$ARCHIVE" > "${ARCHIVE}.sha256"
-          echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
+          mkdir -p "$BUILD_NAME"
+          cp README.md LICENSE "$BUILD_NAME/"
+          cp "target/${{ matrix.target }}/release/magi" "$BUILD_NAME/"
+          tar -czf "${BUILD_NAME}.tar.gz" "$BUILD_NAME"
+          openssl dgst -sha256 -r "${BUILD_NAME}.tar.gz" | awk '{print $1}' > "${BUILD_NAME}.tar.gz.sha256"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-${{ matrix.target }}
+          name: ${{ env.BUILD_NAME }}
           path: |
-            ${{ env.ARCHIVE }}
-            ${{ env.ARCHIVE }}.sha256
-
-  build-macos:
-    name: Build macOS
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
-
-      - name: Build aarch64-apple-darwin
-        run: cargo build --release --target aarch64-apple-darwin
-
-      - name: Build x86_64-apple-darwin
-        run: cargo build --release --target x86_64-apple-darwin
-
-      - name: Create archives and checksums
-        run: |
-          TAG="${{ github.ref_name }}"
-
-          AARCH64_ARCHIVE="${{ env.BINARY_NAME }}-${TAG}-aarch64-apple-darwin.tar.gz"
-          tar -C "target/aarch64-apple-darwin/release" -czf "$AARCH64_ARCHIVE" "${{ env.BINARY_NAME }}"
-          shasum -a 256 "$AARCH64_ARCHIVE" > "${AARCH64_ARCHIVE}.sha256"
-
-          X86_ARCHIVE="${{ env.BINARY_NAME }}-${TAG}-x86_64-apple-darwin.tar.gz"
-          tar -C "target/x86_64-apple-darwin/release" -czf "$X86_ARCHIVE" "${{ env.BINARY_NAME }}"
-          shasum -a 256 "$X86_ARCHIVE" > "${X86_ARCHIVE}.sha256"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-artifacts
-          path: "*.tar.gz*"
+            ${{ env.BUILD_NAME }}.tar.gz
+            ${{ env.BUILD_NAME }}.tar.gz.sha256
 
   release:
     name: Create Release
-    needs: [build-linux, build-macos]
+    needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
