@@ -58,40 +58,55 @@
             zlib
           ];
         };
+
+        mkCrossPackage =
+          crossPkgs:
+          let
+            naersk-cross = crossPkgs.callPackage naersk {
+              cargo = toolchain;
+              rustc = toolchain;
+            };
+          in
+          naersk-cross.buildPackage {
+            src = ./.;
+            strictDeps = true;
+            nativeBuildInputs = [ crossPkgs.buildPackages.pkg-config ];
+            buildInputs = with crossPkgs; [
+              openssl
+              libgit2
+              zlib
+            ];
+            CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER =
+              "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
+          };
       in
       {
-        packages.default = magi;
-        packages.magi = magi;
-        packages.clippy = naersk'.buildPackage {
-          src = ./.;
-          mode = "clippy";
-        };
+        packages =
+          {
+            default = magi;
+            magi = magi;
+            clippy = naersk'.buildPackage {
+              src = ./.;
+              mode = "clippy";
+            };
+          }
+          // lib.optionalAttrs (system == "x86_64-linux") {
+            magi-aarch64-linux = mkCrossPackage pkgs.pkgsCross.aarch64-multiplatform;
+            magi-x86_64-linux-musl = mkCrossPackage pkgs.pkgsCross.musl64;
+          };
         checks.default = naersk'.buildPackage {
           src = ./.;
           mode = "test";
         };
-        devShells.default =
-          let
-            aarch64LinuxCC = pkgs.pkgsCross.aarch64-multiplatform.stdenv.cc;
-          in
-          pkgs.mkShell (
-            {
-              nativeBuildInputs =
-                [
-                  pkgs.openssl
-                  pkgs.pkg-config
-                  pkgs.perl
-                  toolchain
-                  pkgs.rust-analyzer
-                ]
-                ++ lib.optionals pkgs.stdenv.isLinux [
-                  aarch64LinuxCC
-                ];
-            }
-            // lib.optionalAttrs pkgs.stdenv.isLinux {
-              CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER = "${aarch64LinuxCC}/bin/${aarch64LinuxCC.targetPrefix}cc";
-            }
-          );
+        devShells.default = pkgs.mkShell {
+          nativeBuildInputs = [
+            pkgs.openssl
+            pkgs.pkg-config
+            pkgs.perl
+            toolchain
+            pkgs.rust-analyzer
+          ];
+        };
       }
     );
 }
