@@ -52,15 +52,20 @@
         };
         magi = naersk'.buildPackage {
           src = ./.;
-          propagatedBuildInputs = with pkgs; [
+          nativeBuildInputs = with pkgs; [ pkg-config ];
+          buildInputs = with pkgs; [
             openssl
-            pkg-config
             zlib
+            libgit2
+            libssh2
           ];
         };
 
         mkCrossPackage =
-          crossPkgs:
+          {
+            crossPkgs,
+            linkerEnvVar,
+          }:
           let
             naersk-cross = crossPkgs.callPackage naersk {
               cargo = toolchain;
@@ -73,11 +78,11 @@
             nativeBuildInputs = [ crossPkgs.buildPackages.pkg-config ];
             buildInputs = with crossPkgs; [
               openssl
+              zlib.dev
               libgit2
-              zlib
+              libssh2
             ];
-            CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER =
-              "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
+            "${linkerEnvVar}" = "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
           };
       in
       {
@@ -91,8 +96,14 @@
             };
           }
           // lib.optionalAttrs (system == "x86_64-linux") {
-            magi-aarch64-linux = mkCrossPackage pkgs.pkgsCross.aarch64-multiplatform;
-            magi-x86_64-linux-musl = mkCrossPackage pkgs.pkgsCross.musl64;
+            magi-aarch64-linux = mkCrossPackage {
+              crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
+              linkerEnvVar = "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER";
+            };
+            magi-x86_64-linux-musl = mkCrossPackage {
+              crossPkgs = pkgs.pkgsCross.musl64;
+              linkerEnvVar = "CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER";
+            };
           };
         checks.default = naersk'.buildPackage {
           src = ./.;
