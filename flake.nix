@@ -54,6 +54,7 @@
           propagatedBuildInputs = with pkgs; [
             openssl
             pkg-config
+            zlib
           ];
         };
 
@@ -80,34 +81,34 @@
             buildInputs = with crossPkgs; [
               openssl
               libgit2
+              zlib
             ];
             "${cargoEnvVar}" = "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
           };
       in
       {
-        packages =
-          {
-            default = magi;
-            magi = magi;
-            clippy = naersk'.buildPackage {
-              src = ./.;
-              mode = "clippy";
-            };
-          }
-          # Cross-compile aarch64 Linux binary from x86_64-linux runner
-          // lib.optionalAttrs (system == "x86_64-linux") {
-            magi-aarch64-linux = mkCrossPackage {
-              crossSystem = "aarch64-linux";
-              cargoEnvVar = "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER";
-            };
-          }
-          # Cross-compile x86_64 macOS binary from aarch64-darwin (Apple Silicon) runner
-          // lib.optionalAttrs (system == "aarch64-darwin") {
-            magi-x86_64-darwin = mkCrossPackage {
-              crossSystem = "x86_64-darwin";
-              cargoEnvVar = "CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER";
-            };
+        packages = {
+          default = magi;
+          magi = magi;
+          clippy = naersk'.buildPackage {
+            src = ./.;
+            mode = "clippy";
           };
+        }
+        # Cross-compile aarch64 Linux binary from x86_64-linux runner
+        // lib.optionalAttrs (system == "x86_64-linux") {
+          magi-aarch64-linux = mkCrossPackage {
+            crossSystem = "aarch64-linux";
+            cargoEnvVar = "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER";
+          };
+        }
+        # Cross-compile x86_64 macOS binary from aarch64-darwin (Apple Silicon) runner
+        // lib.optionalAttrs (system == "aarch64-darwin") {
+          magi-x86_64-darwin = mkCrossPackage {
+            crossSystem = "x86_64-darwin";
+            cargoEnvVar = "CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER";
+          };
+        };
         checks.default = naersk'.buildPackage {
           src = ./.;
           mode = "test";
