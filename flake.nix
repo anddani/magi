@@ -52,6 +52,7 @@
         };
         magi = naersk'.buildPackage {
           src = ./.;
+          singleStep = true;
           nativeBuildInputs = with pkgs; [ pkg-config ];
           buildInputs = with pkgs; [
             openssl
@@ -59,6 +60,7 @@
             libgit2
             libssh2
           ];
+          LIBSSH2_SYS_USE_PKG_CONFIG = "1";
         };
 
         mkCrossPackage =
@@ -74,6 +76,7 @@
           in
           naersk-cross.buildPackage {
             src = ./.;
+            singleStep = true;
             strictDeps = true;
             nativeBuildInputs = [ crossPkgs.buildPackages.pkg-config ];
             buildInputs = with crossPkgs; [
@@ -82,6 +85,10 @@
               libgit2
               libssh2
             ];
+            LIBSSH2_SYS_USE_PKG_CONFIG = "1";
+            PKG_CONFIG_ALLOW_CROSS = "1";
+            ZLIB_INCLUDE_DIR = "${crossPkgs.zlib.dev}/include";
+            ZLIB_LIB_DIR = "${crossPkgs.zlib}/lib";
             "${linkerEnvVar}" = "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
           };
       in
