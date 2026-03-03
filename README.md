@@ -28,6 +28,7 @@ Magi is inspired by [Magit](https://magit.vc/), the legendary Emacs Git interfac
 
 ```
 # Homebrew
+brew tap anddani/homebrew-magi
 brew install magi
 
 # Nix
