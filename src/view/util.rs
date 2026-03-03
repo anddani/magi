@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use ratatui::{
-    style::{Color, Modifier, Style, Stylize},
+    style::{Color, Modifier, Style},
     text::{Line as TextLine, Span},
 };
 
