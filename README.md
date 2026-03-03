@@ -22,6 +22,8 @@ Magi is inspired by [Magit](https://magit.vc/), the legendary Emacs Git interfac
 - **Vi(m) bindings first class citizen**
 - **No Emacs Required**
 
+<img alt="Welcome to VHS" src="assets/magi.gif" />
+
 ## Installation
 
 ```
