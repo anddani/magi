@@ -1,7 +1,6 @@
 name: Release
 
 on:
-  pull_request:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
@@ -14,8 +13,7 @@ jobs:
     name: Build ${{ matrix.build }}
     runs-on: ubuntu-latest
     env:
-      # BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
-      BUILD_NAME: "magi-PR-${{ matrix.target }}"
+      BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
     strategy:
       fail-fast: false
       matrix:
@@ -64,8 +62,7 @@ jobs:
     name: Build ${{ matrix.build }}
     runs-on: ${{ matrix.os }}
     env:
-      # BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
-      BUILD_NAME: "magi-PR-${{ matrix.target }}"
+      BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
     strategy:
       fail-fast: false
       matrix:
@@ -103,18 +100,18 @@ jobs:
             ${{ env.BUILD_NAME }}.tar.gz
             ${{ env.BUILD_NAME }}.tar.gz.sha256
 
-  # release:
-  #   name: Create Release
-  #   needs: [build-linux, build-darwin]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         path: artifacts
-  #         merge-multiple: true
+  release:
+    name: Create Release
+    needs: [build-linux, build-darwin]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
 
-  #     - name: Create GitHub Release
-  #       uses: softprops/action-gh-release@v2
-  #       with:
-  #         files: artifacts/*
-  #         generate_release_notes: true
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
