@@ -42,6 +42,7 @@
             "x86_64-apple-darwin"
             "aarch64-apple-darwin"
             "x86_64-unknown-linux-gnu"
+            "x86_64-unknown-linux-musl"
             "aarch64-unknown-linux-gnu"
           ];
         };
@@ -51,19 +52,90 @@
         };
         magi = naersk'.buildPackage {
           src = ./.;
-          propagatedBuildInputs = with pkgs; [
+          singleStep = true;
+          nativeBuildInputs = with pkgs; [ pkg-config ];
+          buildInputs = with pkgs; [
             openssl
-            pkg-config
+            zlib
+            libgit2
+            libssh2
           ];
+          LIBSSH2_SYS_USE_PKG_CONFIG = "1";
         };
+
+        mkCrossPackage =
+          {
+            crossPkgs,
+            linkerEnvVar,
+          }:
+          let
+            naersk-cross = crossPkgs.callPackage naersk {
+              cargo = toolchain;
+              rustc = toolchain;
+            };
+            rustTarget = crossPkgs.stdenv.hostPlatform.rust.rustcTarget;
+          in
+          naersk-cross.buildPackage {
+            src = ./.;
+            singleStep = true;
+            strictDeps = true;
+            nativeBuildInputs = [ crossPkgs.buildPackages.pkg-config ];
+            buildInputs = with crossPkgs; [
+              openssl
+              zlib.dev
+              libgit2
+              libssh2
+            ];
+            CARGO_BUILD_TARGET = rustTarget;
+            LIBSSH2_SYS_USE_PKG_CONFIG = "1";
+            PKG_CONFIG_ALLOW_CROSS = "1";
+            "${linkerEnvVar}" = "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
+          };
       in
       {
-        packages.default = magi;
-        packages.magi = magi;
-        packages.clippy = naersk'.buildPackage {
-          src = ./.;
-          mode = "clippy";
-        };
+        packages =
+          {
+            default = magi;
+            magi = magi;
+            clippy = naersk'.buildPackage {
+              src = ./.;
+              mode = "clippy";
+            };
+          }
+          // lib.optionalAttrs (system == "x86_64-linux") {
+            magi-aarch64-linux = mkCrossPackage {
+              crossPkgs = pkgs.pkgsCross.aarch64-multiplatform;
+              linkerEnvVar = "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER";
+            };
+            magi-x86_64-linux-musl =
+              let
+                crossPkgs = pkgs.pkgsCross.musl64;
+                naersk-cross = crossPkgs.callPackage naersk {
+                  cargo = toolchain;
+                  rustc = toolchain;
+                };
+                rustTarget = crossPkgs.stdenv.hostPlatform.rust.rustcTarget;
+              in
+              naersk-cross.buildPackage {
+                src = ./.;
+                singleStep = true;
+                strictDeps = true;
+                nativeBuildInputs = [ crossPkgs.buildPackages.pkg-config ];
+                buildInputs = with pkgs.pkgsStatic; [
+                  openssl
+                  zlib
+                  libgit2
+                  libssh2
+                  pcre2
+                ];
+                CARGO_BUILD_TARGET = rustTarget;
+                LIBSSH2_SYS_USE_PKG_CONFIG = "1";
+                PKG_CONFIG_ALLOW_CROSS = "1";
+                PKG_CONFIG_ALL_STATIC = "1";
+                OPENSSL_STATIC = "1";
+                CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER = "${crossPkgs.stdenv.cc}/bin/${crossPkgs.stdenv.cc.targetPrefix}cc";
+              };
+          };
         checks.default = naersk'.buildPackage {
           src = ./.;
           mode = "test";
