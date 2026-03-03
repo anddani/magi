@@ -9,36 +9,24 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-linux:
     name: Build ${{ matrix.build }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     env:
       BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
     strategy:
       fail-fast: false
       matrix:
-        build: [linux-x86, linux-x86-musl, linux-aarch64, darwin-x86, darwin-aarch64]
         include:
           - build: linux-x86
-            os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             nix_attr: magi
           - build: linux-x86-musl
-            os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             nix_attr: magi-x86_64-linux-musl
           - build: linux-aarch64
-            os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             nix_attr: magi-aarch64-linux
-          - build: darwin-x86
-            os: macos-15-intel
-            target: x86_64-apple-darwin
-            nix_attr: magi
-          - build: darwin-aarch64
-            os: macos-latest
-            target: aarch64-apple-darwin
-            nix_attr: magi
 
     steps:
       - uses: actions/checkout@v4
@@ -52,11 +40,10 @@ jobs:
           name: nix-community
           skipPush: true
 
-      - name: Build release binary
+      - name: Build
         run: nix build .#${{ matrix.nix_attr }} -o result
 
       - name: Bundle release
-        shell: bash
         run: |
           mkdir -p "$BUILD_NAME"
           cp README.md LICENSE "$BUILD_NAME/"
@@ -64,8 +51,49 @@ jobs:
           tar -czf "${BUILD_NAME}.tar.gz" "$BUILD_NAME"
           openssl dgst -sha256 -r "${BUILD_NAME}.tar.gz" | awk '{print $1}' > "${BUILD_NAME}.tar.gz.sha256"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BUILD_NAME }}
+          path: |
+            ${{ env.BUILD_NAME }}.tar.gz
+            ${{ env.BUILD_NAME }}.tar.gz.sha256
+
+  build-darwin:
+    name: Build ${{ matrix.build }}
+    runs-on: ${{ matrix.os }}
+    env:
+      BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - build: darwin-aarch64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            binary_path: target/release/magi
+          - build: darwin-x86
+            os: macos-15-intel
+            target: x86_64-apple-darwin
+            cargo_flags: --target=x86_64-apple-darwin
+            binary_path: target/x86_64-apple-darwin/release/magi
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build
+        run: cargo build --release --locked ${{ matrix.cargo_flags }}
+
+      - name: Bundle release
+        run: |
+          mkdir -p "$BUILD_NAME"
+          cp README.md LICENSE "$BUILD_NAME/"
+          cp "${{ matrix.binary_path }}" "$BUILD_NAME/"
+          tar -czf "${BUILD_NAME}.tar.gz" "$BUILD_NAME"
+          openssl dgst -sha256 -r "${BUILD_NAME}.tar.gz" | awk '{print $1}' > "${BUILD_NAME}.tar.gz.sha256"
+
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BUILD_NAME }}
           path: |
@@ -74,7 +102,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: build
+    needs: [build-linux, build-darwin]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
