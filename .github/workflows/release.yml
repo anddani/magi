@@ -14,7 +14,8 @@ jobs:
     name: Build ${{ matrix.build }}
     runs-on: ubuntu-latest
     env:
-      BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
+      # BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
+      BUILD_NAME: "magi-PR-${{ matrix.target }}"
     strategy:
       fail-fast: false
       matrix:
@@ -63,7 +64,8 @@ jobs:
     name: Build ${{ matrix.build }}
     runs-on: ${{ matrix.os }}
     env:
-      BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
+      # BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
+      BUILD_NAME: "magi-PR-${{ matrix.target }}"
     strategy:
       fail-fast: false
       matrix:
