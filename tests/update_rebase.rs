@@ -9,7 +9,7 @@ use magi::{
             RebasePopupState, SelectContext,
         },
     },
-    msg::{LogType, Message, RebaseCommand, SelectMessage, SelectPopup, update::update},
+    msg::{CommitSelect, LogType, Message, RebaseCommand, SelectMessage, update::update},
 };
 
 mod utils;
@@ -87,7 +87,7 @@ fn test_rebase_elsewhere_on_commit_shows_confirmation() {
 
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::RebaseElsewhere),
+        Message::ShowCommitSelect(CommitSelect::RebaseElsewhere),
     );
 
     assert_eq!(result, None);
@@ -132,7 +132,7 @@ fn test_rebase_elsewhere_confirmation_message_contains_hash() {
 
     update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::RebaseElsewhere),
+        Message::ShowCommitSelect(CommitSelect::RebaseElsewhere),
     );
 
     if let Some(PopupContent::Confirm(state)) = &model.popup {
@@ -170,7 +170,7 @@ fn test_rebase_elsewhere_not_on_commit_shows_log_pick_view() {
 
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::RebaseElsewhere),
+        Message::ShowCommitSelect(CommitSelect::RebaseElsewhere),
     );
 
     assert_eq!(result, None);
@@ -237,7 +237,7 @@ fn test_e_in_rebase_popup_shows_rebase_elsewhere() {
     let result = handle_key(key, &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::RebaseElsewhere))
+        Some(Message::ShowCommitSelect(CommitSelect::RebaseElsewhere))
     );
 }
 

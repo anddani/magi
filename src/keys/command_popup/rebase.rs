@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     model::popup::RebasePopupState,
-    msg::{Message, RebaseCommand, SelectPopup},
+    msg::{CommitSelect, Message, RebaseCommand},
 };
 
 pub fn keys(key: KeyEvent, state: &RebasePopupState) -> Option<Message> {
@@ -18,7 +18,7 @@ pub fn keys(key: KeyEvent, state: &RebasePopupState) -> Option<Message> {
 
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
-        KeyCode::Char('e') => Some(Message::ShowSelectPopup(SelectPopup::RebaseElsewhere)),
+        KeyCode::Char('e') => Some(Message::ShowCommitSelect(CommitSelect::RebaseElsewhere)),
         _ => None,
     }
 }

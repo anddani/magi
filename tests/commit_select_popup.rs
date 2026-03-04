@@ -4,7 +4,7 @@ use magi::{
         ViewMode,
         popup::{CommitSelectPopupState, SelectContext},
     },
-    msg::{FixupType, LogType, Message, SelectMessage, SelectPopup, update::update},
+    msg::{CommitSelect, FixupType, LogType, Message, SelectMessage, update::update},
 };
 
 mod utils;
@@ -41,7 +41,7 @@ fn test_commit_select_popup_displays_log_entries() {
     // Show the log pick view
     let _result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
+        Message::ShowCommitSelect(CommitSelect::FixupCommit(FixupType::Fixup)),
     );
 
     // Verify we switched to log pick mode (not a popup)
@@ -80,7 +80,7 @@ fn test_commit_select_popup_confirm_returns_hash() {
     // Show the log pick view
     let _result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
+        Message::ShowCommitSelect(CommitSelect::FixupCommit(FixupType::Fixup)),
     );
 
     assert!(matches!(
@@ -130,7 +130,7 @@ fn test_commit_select_popup_navigation() {
     // Show the log pick view
     let _result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
+        Message::ShowCommitSelect(CommitSelect::FixupCommit(FixupType::Fixup)),
     );
 
     assert!(matches!(
@@ -169,7 +169,7 @@ fn test_commit_select_popup_confirm_picks_second_commit() {
 
     update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Squash)),
+        Message::ShowCommitSelect(CommitSelect::FixupCommit(FixupType::Squash)),
     );
 
     // Move to second commit (index 1)
@@ -207,7 +207,7 @@ fn test_commit_select_popup_escape_cancels() {
 
     update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
+        Message::ShowCommitSelect(CommitSelect::FixupCommit(FixupType::Fixup)),
     );
 
     assert!(matches!(model.view_mode, ViewMode::Log(_, true)));
@@ -238,7 +238,7 @@ fn test_rebase_elsewhere_opens_log_pick_all_references() {
 
     update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::RebaseElsewhere),
+        Message::ShowCommitSelect(CommitSelect::RebaseElsewhere),
     );
 
     assert!(

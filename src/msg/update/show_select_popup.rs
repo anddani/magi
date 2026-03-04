@@ -6,19 +6,18 @@ use crate::{
             BranchEntry, get_all_branches, get_branches, get_last_checked_out_branch,
             get_local_branches, get_remote_branches_for_upstream,
         },
-        log::get_log_entries,
         open_pr::has_any_remote,
         push::{get_current_branch, get_local_tags, get_remotes},
     },
     model::{
-        BranchSuggestion, Line, LineContent, Model, Toast, ToastStyle, ViewMode,
+        BranchSuggestion, LineContent, Model, Toast, ToastStyle,
         popup::{
             ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand, SelectContext,
             SelectPopupState,
         },
         suggestions_from_line,
     },
-    msg::{FixupType, LogType, Message, SelectPopup, StashCommand, update::commit::TOAST_DURATION},
+    msg::{Message, SelectPopup, StashCommand, update::commit::TOAST_DURATION},
 };
 
 pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
@@ -66,10 +65,6 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
         SelectPopup::StashApply => show_stash_select(model, StashOp::Apply),
         SelectPopup::StashPop => show_stash_select(model, StashOp::Pop),
         SelectPopup::StashDrop => show_stash_select(model, StashOp::Drop),
-
-        SelectPopup::FixupCommit(fixup_type) => show_fixup_commit(model, fixup_type),
-
-        SelectPopup::RebaseElsewhere => show_rebase_elsewhere(model),
 
         SelectPopup::OpenPr => show_open_pr(model, false),
         SelectPopup::OpenPrWithTarget => show_open_pr(model, true),
@@ -515,53 +510,6 @@ fn show_stash_select(model: &mut Model, op: StashOp) -> Option<Message> {
     None
 }
 
-// ── Fixup ─────────────────────────────────────────────────────────────────────
-
-fn show_fixup_commit(model: &mut Model, fixup_type: FixupType) -> Option<Message> {
-    if let Ok(false) = model.git_info.has_staged_changes() {
-        model.toast = Some(Toast {
-            message: "Nothing staged to fixup".to_string(),
-            style: ToastStyle::Warning,
-            expires_at: Instant::now() + TOAST_DURATION,
-        });
-        return Some(Message::DismissPopup);
-    }
-
-    match get_log_entries(&model.git_info.repository, LogType::Current) {
-        Ok(mut commits) => {
-            commits.retain(|entry| entry.is_commit());
-
-            if commits.is_empty() {
-                model.popup = Some(PopupContent::Error {
-                    message: "No commits found in current branch".to_string(),
-                });
-                None
-            } else {
-                let lines: Vec<Line> = commits
-                    .into_iter()
-                    .map(|entry| Line {
-                        content: LineContent::LogLine(entry),
-                        section: None,
-                    })
-                    .collect();
-                model.ui_model.lines = lines;
-                model.ui_model.cursor_position = 0;
-                model.ui_model.scroll_offset = 0;
-                model.view_mode = ViewMode::Log(LogType::Current, true);
-                model.popup = None;
-                model.select_context = Some(SelectContext::FixupCommit(fixup_type));
-                None
-            }
-        }
-        Err(err) => {
-            model.popup = Some(PopupContent::Error {
-                message: format!("Failed to get recent commits: {}", err),
-            });
-            None
-        }
-    }
-}
-
 // ── Open PR ───────────────────────────────────────────────────────────────────
 
 fn show_open_pr(model: &mut Model, with_target: bool) -> Option<Message> {
@@ -645,63 +593,6 @@ fn show_open_pr_target(model: &mut Model, branch: String) -> Option<Message> {
 }
 
 // ── Rebase ────────────────────────────────────────────────────────────────────
-
-fn show_rebase_elsewhere(model: &mut Model) -> Option<Message> {
-    let cursor_pos = model.ui_model.cursor_position;
-
-    // If cursor is on a commit line, suggest it and ask for confirmation
-    if let Some(line) = model.ui_model.lines.get(cursor_pos) {
-        let hash = match &line.content {
-            LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
-            LineContent::LogLine(entry) => entry.hash.clone(),
-            _ => None,
-        };
-
-        if let Some(hash) = hash {
-            model.popup = None;
-            model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
-                message: format!("Rebase onto {}?", hash),
-                on_confirm: ConfirmAction::RebaseElsewhere(hash),
-            }));
-            return None;
-        }
-    }
-
-    // Otherwise show the log view in picking mode
-    match get_log_entries(&model.git_info.repository, LogType::AllReferences) {
-        Ok(mut commits) => {
-            commits.retain(|entry| entry.is_commit());
-
-            if commits.is_empty() {
-                model.popup = Some(PopupContent::Error {
-                    message: "No commits found".to_string(),
-                });
-                None
-            } else {
-                let lines: Vec<Line> = commits
-                    .into_iter()
-                    .map(|entry| Line {
-                        content: LineContent::LogLine(entry),
-                        section: None,
-                    })
-                    .collect();
-                model.ui_model.lines = lines;
-                model.ui_model.cursor_position = 0;
-                model.ui_model.scroll_offset = 0;
-                model.view_mode = ViewMode::Log(LogType::AllReferences, true);
-                model.popup = None;
-                model.select_context = Some(SelectContext::RebaseElsewhere);
-                None
-            }
-        }
-        Err(err) => {
-            model.popup = Some(PopupContent::Error {
-                message: format!("Failed to get commits: {}", err),
-            });
-            None
-        }
-    }
-}
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 

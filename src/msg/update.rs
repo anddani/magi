@@ -49,6 +49,7 @@ mod select_move_down;
 mod select_move_up;
 mod selection;
 mod show_checkout_new_branch_input;
+mod show_commit_select;
 mod show_fetch_popup;
 mod show_log;
 mod show_pull_popup;
@@ -134,6 +135,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ConfirmDeleteBranch(branch) => confirm_delete_branch::update(model, branch),
         Message::OpenPr { branch, target } => open_pr::update(model, branch, target),
         Message::ShowSelectPopup(popup) => show_select_popup::update(model, popup),
+        Message::ShowCommitSelect(commit_select) => {
+            show_commit_select::update(model, commit_select)
+        }
         Message::EnterArgMode => enter_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),
