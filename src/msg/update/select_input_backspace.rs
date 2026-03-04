@@ -12,10 +12,6 @@ pub fn update(model: &mut Model) -> Option<Message> {
             state.input_text.pop();
             state.update_filter();
         }
-        Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) => {
-            state.input_text.pop();
-            state.update_filter();
-        }
         _ => {}
     }
     None

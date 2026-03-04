@@ -11,9 +11,6 @@ pub fn update(model: &mut Model) -> Option<Message> {
         Some(PopupContent::Command(PopupContentCommand::Select(state))) => {
             state.move_down();
         }
-        Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) => {
-            state.move_down();
-        }
         _ => {}
     }
     None

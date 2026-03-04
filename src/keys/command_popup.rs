@@ -38,6 +38,5 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Rebase(state) => rebase::keys(key, state),
         PopupContentCommand::Revert(state) => revert::keys(key, state),
         PopupContentCommand::Select(_) => select::keys(key),
-        PopupContentCommand::CommitSelect(_) => select::keys(key),
     }
 }

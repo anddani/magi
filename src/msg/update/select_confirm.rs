@@ -46,18 +46,6 @@ pub fn update(model: &mut Model) -> Option<Message> {
                 SelectResult::NoneSelected
             }
         }
-        Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) => {
-            if let Some(hash) = state.selected_commit_hash() {
-                // Use the selected commit hash
-                SelectResult::Selected(hash.to_string())
-            } else if !state.input_text.is_empty() {
-                // No matches, but user entered text - use the input text directly
-                // This allows entering arbitrary commit hashes
-                SelectResult::Selected(state.input_text.clone())
-            } else {
-                SelectResult::NoneSelected
-            }
-        }
         _ => return None,
     };
 
