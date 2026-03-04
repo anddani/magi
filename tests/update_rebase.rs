@@ -3,10 +3,9 @@ use std::fs;
 use magi::{
     git::{log::get_log_entries, rebase::rebase_in_progress, test_repo::TestRepo},
     model::{
-        LineContent, SectionType, ViewMode,
+        Line, LineContent, SectionType, ViewMode,
         popup::{
-            CommitSelectPopupState, ConfirmAction, PopupContent, PopupContentCommand,
-            RebasePopupState, SelectContext,
+            ConfirmAction, PopupContent, PopupContentCommand, RebasePopupState, SelectContext,
         },
     },
     msg::{CommitSelect, LogType, Message, RebaseCommand, SelectMessage, update::update},
@@ -318,10 +317,17 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     let expected_hash = commits[0].hash.as_ref().unwrap().clone();
-    let state = CommitSelectPopupState::new("Rebase elsewhere".to_string(), commits);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::CommitSelect(
-        state,
-    )));
+
+    // Set up model in log pick mode (new approach: no popup, log view)
+    model.ui_model.lines = commits
+        .into_iter()
+        .map(|entry| Line {
+            content: LineContent::LogLine(entry),
+            section: None,
+        })
+        .collect();
+    model.ui_model.cursor_position = 0;
+    model.view_mode = ViewMode::Log(LogType::AllReferences, true);
     model.select_context = Some(SelectContext::RebaseElsewhere);
 
     let result = update(&mut model, Message::Select(SelectMessage::Confirm));
@@ -332,7 +338,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
             expected_hash.clone()
         )))
     );
-    assert!(model.popup.is_none());
+    assert_eq!(model.view_mode, ViewMode::Status);
     assert!(model.select_context.is_none());
 }
 
