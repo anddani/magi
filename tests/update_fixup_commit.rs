@@ -1,8 +1,8 @@
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     model::{
-        Toast,
-        popup::{PopupContent, PopupContentCommand, SelectContext},
+        Toast, ViewMode,
+        popup::{PopupContent, SelectContext},
     },
     msg::{FixupType, LogType, Message, SelectPopup, update::update},
 };
@@ -42,7 +42,7 @@ fn test_show_fixup_commit_select_without_staged_changes_shows_toast() {
 }
 
 #[test]
-fn test_show_fixup_commit_select_shows_popup() {
+fn test_show_fixup_commit_select_shows_log_pick_view() {
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file1.txt", "content1")
@@ -67,10 +67,11 @@ fn test_show_fixup_commit_select_shows_popup() {
     );
 
     assert_eq!(result, None);
-    assert!(matches!(
-        model.popup,
-        Some(PopupContent::Command(PopupContentCommand::CommitSelect(_)))
-    ));
+    assert!(model.popup.is_none(), "No popup expected — using log view");
+    assert!(
+        matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
+        "Expected log pick view"
+    );
     assert_eq!(
         model.select_context,
         Some(SelectContext::FixupCommit(FixupType::Fixup))
@@ -193,7 +194,7 @@ fn test_show_squash_commit_select_without_staged_changes_shows_toast() {
 }
 
 #[test]
-fn test_show_squash_commit_select_shows_popup() {
+fn test_show_squash_commit_select_shows_log_pick_view() {
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file1.txt", "content1")
@@ -218,10 +219,11 @@ fn test_show_squash_commit_select_shows_popup() {
     );
 
     assert_eq!(result, None);
-    assert!(matches!(
-        model.popup,
-        Some(PopupContent::Command(PopupContentCommand::CommitSelect(_)))
-    ));
+    assert!(model.popup.is_none(), "No popup expected — using log view");
+    assert!(
+        matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
+        "Expected log pick view"
+    );
     assert_eq!(
         model.select_context,
         Some(SelectContext::FixupCommit(FixupType::Squash))

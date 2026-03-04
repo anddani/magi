@@ -206,7 +206,8 @@ pub fn view(model: &Model, frame: &mut Frame) {
     // Set title based on view mode
     let title = match model.view_mode {
         ViewMode::Status => "Magi",
-        ViewMode::Log(_) => "Log",
+        ViewMode::Log(_, false) => "Log",
+        ViewMode::Log(_, true) => "Pick commit",
     };
 
     let paragraph = Paragraph::new(text)

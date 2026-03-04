@@ -4,7 +4,7 @@ use crate::{
     model::Model,
     model::ViewMode,
     model::popup::{ConfirmAction, PopupContent, PopupContentCommand},
-    msg::{Message, RebaseCommand},
+    msg::{Message, RebaseCommand, SelectMessage},
 };
 
 mod command_popup;
@@ -129,12 +129,23 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         // Any other key cancels the pending 'g' and falls through to normal handling
     }
 
+    // Enter/Esc in log pick mode
+    if let ViewMode::Log(_, true) = model.view_mode {
+        match (key.modifiers, key.code) {
+            (_, KeyCode::Enter) => return Some(Message::Select(SelectMessage::Confirm)),
+            (_, KeyCode::Esc)
+            | (KeyModifiers::CONTROL, KeyCode::Char('g'))
+            | (KeyModifiers::CONTROL, KeyCode::Char('c')) => return Some(Message::ExitLogView),
+            _ => {}
+        }
+    }
+
     match (key.modifiers, key.code) {
         (KeyModifiers::CONTROL, KeyCode::Char('r')) => Some(Message::Refresh),
         (_, KeyCode::Char('?')) => Some(Message::ShowPopup(PopupContent::Help)),
         // 'q' exits log view when in log mode, otherwise quits the app
         (_, KeyCode::Char('q')) => match model.view_mode {
-            ViewMode::Log(_) => Some(Message::ExitLogView),
+            ViewMode::Log(_, _) => Some(Message::ExitLogView),
             ViewMode::Status => Some(Message::Quit),
         },
         (_, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
@@ -1351,7 +1362,7 @@ mod tests {
         use crate::msg::LogType;
 
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log(LogType::Current);
+        model.view_mode = ViewMode::Log(LogType::Current, false);
         model
     }
 
@@ -1408,6 +1419,80 @@ mod tests {
         let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::HalfPageUp));
+    }
+
+    // Log pick mode tests
+
+    fn create_log_pick_mode_model() -> Model {
+        use crate::model::ViewMode;
+        use crate::msg::LogType;
+
+        let mut model = create_test_model();
+        model.view_mode = ViewMode::Log(LogType::Current, true);
+        model
+    }
+
+    #[test]
+    fn test_enter_in_log_pick_mode_confirms_selection() {
+        let model = create_log_pick_mode_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Select(SelectMessage::Confirm)));
+    }
+
+    #[test]
+    fn test_esc_in_log_pick_mode_exits_log_view() {
+        let model = create_log_pick_mode_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitLogView));
+    }
+
+    #[test]
+    fn test_ctrl_g_in_log_pick_mode_exits_log_view() {
+        let model = create_log_pick_mode_model();
+
+        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('g'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitLogView));
+    }
+
+    #[test]
+    fn test_q_in_log_pick_mode_exits_log_view() {
+        let model = create_log_pick_mode_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitLogView));
+    }
+
+    #[test]
+    fn test_j_in_log_pick_mode_moves_down() {
+        let model = create_log_pick_mode_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('j'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::MoveDown));
+    }
+
+    #[test]
+    fn test_enter_in_browse_log_mode_does_nothing() {
+        let model = create_log_mode_model(); // picking = false
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let result = handle_key(key, &model);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_esc_in_browse_log_mode_does_nothing() {
+        let model = create_log_mode_model(); // picking = false
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, None);
     }
 
     // Discard tests

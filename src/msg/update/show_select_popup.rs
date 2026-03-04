@@ -11,10 +11,10 @@ use crate::{
         push::{get_current_branch, get_local_tags, get_remotes},
     },
     model::{
-        BranchSuggestion, LineContent, Model, Toast, ToastStyle,
+        BranchSuggestion, Line, LineContent, Model, Toast, ToastStyle, ViewMode,
         popup::{
-            CommitSelectPopupState, ConfirmAction, ConfirmPopupState, PopupContent,
-            PopupContentCommand, SelectContext, SelectPopupState,
+            ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand, SelectContext,
+            SelectPopupState,
         },
         suggestions_from_line,
     },
@@ -530,7 +530,6 @@ fn show_fixup_commit(model: &mut Model, fixup_type: FixupType) -> Option<Message
     match get_log_entries(&model.git_info.repository, LogType::Current) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
-            commits.truncate(50);
 
             if commits.is_empty() {
                 model.popup = Some(PopupContent::Error {
@@ -538,16 +537,18 @@ fn show_fixup_commit(model: &mut Model, fixup_type: FixupType) -> Option<Message
                 });
                 None
             } else {
-                let title = match fixup_type {
-                    FixupType::Fixup => "Fixup commit".to_string(),
-                    FixupType::Squash => "Squash commit".to_string(),
-                    FixupType::Alter => "Alter commit".to_string(),
-                    FixupType::Augment => "Augment commit".to_string(),
-                };
-                let state = CommitSelectPopupState::new(title, commits);
-                model.popup = Some(PopupContent::Command(PopupContentCommand::CommitSelect(
-                    state,
-                )));
+                let lines: Vec<Line> = commits
+                    .into_iter()
+                    .map(|entry| Line {
+                        content: LineContent::LogLine(entry),
+                        section: None,
+                    })
+                    .collect();
+                model.ui_model.lines = lines;
+                model.ui_model.cursor_position = 0;
+                model.ui_model.scroll_offset = 0;
+                model.view_mode = ViewMode::Log(LogType::Current, true);
+                model.popup = None;
                 model.select_context = Some(SelectContext::FixupCommit(fixup_type));
                 None
             }
@@ -666,11 +667,10 @@ fn show_rebase_elsewhere(model: &mut Model) -> Option<Message> {
         }
     }
 
-    // Otherwise show a commit select popup with all commits
+    // Otherwise show the log view in picking mode
     match get_log_entries(&model.git_info.repository, LogType::AllReferences) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
-            commits.truncate(100);
 
             if commits.is_empty() {
                 model.popup = Some(PopupContent::Error {
@@ -678,10 +678,18 @@ fn show_rebase_elsewhere(model: &mut Model) -> Option<Message> {
                 });
                 None
             } else {
-                let state = CommitSelectPopupState::new("Rebase elsewhere".to_string(), commits);
-                model.popup = Some(PopupContent::Command(PopupContentCommand::CommitSelect(
-                    state,
-                )));
+                let lines: Vec<Line> = commits
+                    .into_iter()
+                    .map(|entry| Line {
+                        content: LineContent::LogLine(entry),
+                        section: None,
+                    })
+                    .collect();
+                model.ui_model.lines = lines;
+                model.ui_model.cursor_position = 0;
+                model.ui_model.scroll_offset = 0;
+                model.view_mode = ViewMode::Log(LogType::AllReferences, true);
+                model.popup = None;
                 model.select_context = Some(SelectContext::RebaseElsewhere);
                 None
             }

@@ -3,7 +3,7 @@ use std::fs;
 use magi::{
     git::{log::get_log_entries, rebase::rebase_in_progress, test_repo::TestRepo},
     model::{
-        LineContent, SectionType,
+        LineContent, SectionType, ViewMode,
         popup::{
             CommitSelectPopupState, ConfirmAction, PopupContent, PopupContentCommand,
             RebasePopupState, SelectContext,
@@ -149,7 +149,7 @@ fn test_rebase_elsewhere_confirmation_message_contains_hash() {
 // ── RebaseElsewhere - cursor NOT on commit ────────────────────────────────────
 
 #[test]
-fn test_rebase_elsewhere_not_on_commit_shows_commit_select_popup() {
+fn test_rebase_elsewhere_not_on_commit_shows_log_pick_view() {
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file1.txt", "content1")
@@ -174,10 +174,11 @@ fn test_rebase_elsewhere_not_on_commit_shows_commit_select_popup() {
     );
 
     assert_eq!(result, None);
-    assert!(matches!(
-        &model.popup,
-        Some(PopupContent::Command(PopupContentCommand::CommitSelect(_)))
-    ));
+    assert!(model.popup.is_none(), "No popup expected — using log view");
+    assert!(
+        matches!(model.view_mode, ViewMode::Log(LogType::AllReferences, true)),
+        "Expected AllReferences log pick view"
+    );
     assert_eq!(model.select_context, Some(SelectContext::RebaseElsewhere));
 }
 

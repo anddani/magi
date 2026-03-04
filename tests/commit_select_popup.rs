@@ -1,6 +1,9 @@
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
-    model::popup::{CommitSelectPopupState, PopupContent, PopupContentCommand},
+    model::{
+        ViewMode,
+        popup::{CommitSelectPopupState, SelectContext},
+    },
     msg::{FixupType, LogType, Message, SelectMessage, SelectPopup, update::update},
 };
 
@@ -35,31 +38,33 @@ fn test_commit_select_popup_displays_log_entries() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    // Show the commit select popup
+    // Show the log pick view
     let _result = update(
         &mut model,
         Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
     );
 
-    // Verify popup is CommitSelect, not plain Select
-    assert!(matches!(
-        model.popup,
-        Some(PopupContent::Command(PopupContentCommand::CommitSelect(_)))
-    ));
+    // Verify we switched to log pick mode (not a popup)
+    assert!(
+        matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
+        "Expected log pick view, got {:?}",
+        model.view_mode
+    );
+    assert!(model.popup.is_none());
 
-    // Extract the state and verify it contains LogEntry objects
-    if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) = &model.popup {
-        assert!(state.all_commits.len() >= 2);
-        // Verify commits have proper structure (hash, message, etc.)
-        assert!(state.all_commits[0].hash.is_some());
-        assert!(state.all_commits[0].message.is_some());
+    // Verify lines contain log entries
+    assert!(model.ui_model.lines.len() >= 2);
+    // Verify entries have proper structure (hash, message, etc.)
+    if let magi::model::LineContent::LogLine(entry) = &model.ui_model.lines[0].content {
+        assert!(entry.hash.is_some());
+        assert!(entry.message.is_some());
     } else {
-        panic!("Expected CommitSelect popup");
+        panic!("Expected LogLine content");
     }
 }
 
 #[test]
-fn test_commit_select_popup_filters_by_hash() {
+fn test_commit_select_popup_confirm_returns_hash() {
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file1.txt", "content1")
@@ -68,103 +73,39 @@ fn test_commit_select_popup_filters_by_hash() {
 
     test_repo
         .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Second commit");
-
-    test_repo
-        .write_file_content("file3.txt", "content3")
-        .stage_files(&["file3.txt"]);
+        .stage_files(&["file2.txt"]);
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    // Show the commit select popup
+    // Show the log pick view
     let _result = update(
         &mut model,
         Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
     );
 
-    // Get initial commit count
-    let initial_count =
-        if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) = &model.popup
-        {
-            state.filtered_count()
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log(LogType::Current, true)
+    ));
+
+    // Get the expected hash from the cursor line (position 0)
+    let expected_hash =
+        if let magi::model::LineContent::LogLine(entry) = &model.ui_model.lines[0].content {
+            entry.hash.clone().unwrap()
         } else {
-            panic!("Expected CommitSelect popup");
+            panic!("Expected LogLine at cursor");
         };
 
-    // Get the first commit's hash prefix
-    let hash_prefix = if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) =
-        &model.popup
-    {
-        state.all_commits[0]
-            .hash
-            .as_ref()
-            .unwrap()
-            .chars()
-            .take(3)
-            .collect::<String>()
-    } else {
-        panic!("Expected CommitSelect popup");
-    };
+    // Confirm selection
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
 
-    // Input a few characters from the hash
-    for c in hash_prefix.chars() {
-        update(&mut model, Message::Select(SelectMessage::InputChar(c)));
-    }
-
-    // Verify filtering worked
-    if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) = &model.popup {
-        let filtered_count = state.filtered_count();
-        assert!(
-            filtered_count <= initial_count,
-            "Filter should reduce or maintain count"
-        );
-        assert!(filtered_count >= 1, "Filter should find at least one match");
-    } else {
-        panic!("Expected CommitSelect popup");
-    }
-}
-
-#[test]
-fn test_commit_select_popup_filters_by_message() {
-    let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("Add feature X");
-
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Fix bug Y");
-
-    test_repo
-        .write_file_content("file3.txt", "content3")
-        .stage_files(&["file3.txt"]);
-
-    let mut model = create_model_from_test_repo(&test_repo);
-
-    // Show the commit select popup
-    let _result = update(
-        &mut model,
-        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
+    // Verify view returned to status and correct message is returned
+    assert_eq!(model.view_mode, ViewMode::Status);
+    assert!(model.popup.is_none());
+    assert_eq!(
+        result,
+        Some(Message::FixupCommit(expected_hash, FixupType::Fixup))
     );
-
-    // Filter by "feature"
-    for c in "feature".chars() {
-        update(&mut model, Message::Select(SelectMessage::InputChar(c)));
-    }
-
-    // Verify filtering found the "Add feature X" commit
-    if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) = &model.popup {
-        assert_eq!(state.filtered_count(), 1);
-        assert_eq!(
-            state.selected_commit().unwrap().message.as_deref(),
-            Some("Add feature X")
-        );
-    } else {
-        panic!("Expected CommitSelect popup");
-    }
 }
 
 #[test]
@@ -186,40 +127,72 @@ fn test_commit_select_popup_navigation() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    // Show the commit select popup
+    // Show the log pick view
     let _result = update(
         &mut model,
         Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
     );
 
-    // Initially at first commit
-    if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) = &model.popup {
-        assert_eq!(state.selected_index, 0);
-    } else {
-        panic!("Expected CommitSelect popup");
-    }
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log(LogType::Current, true)
+    ));
+    assert_eq!(model.ui_model.cursor_position, 0);
 
-    // Move down
-    update(&mut model, Message::Select(SelectMessage::MoveDown));
+    // Move down — uses standard MoveDown message
+    update(&mut model, Message::MoveDown);
+    assert_eq!(model.ui_model.cursor_position, 1);
 
-    if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) = &model.popup {
-        assert_eq!(state.selected_index, 1);
-    } else {
-        panic!("Expected CommitSelect popup");
-    }
-
-    // Move up
-    update(&mut model, Message::Select(SelectMessage::MoveUp));
-
-    if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) = &model.popup {
-        assert_eq!(state.selected_index, 0);
-    } else {
-        panic!("Expected CommitSelect popup");
-    }
+    // Move up — uses standard MoveUp message
+    update(&mut model, Message::MoveUp);
+    assert_eq!(model.ui_model.cursor_position, 0);
 }
 
 #[test]
-fn test_commit_select_popup_confirm_returns_hash() {
+fn test_commit_select_popup_confirm_picks_second_commit() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    test_repo
+        .write_file_content("file2.txt", "content2")
+        .stage_files(&["file2.txt"])
+        .commit("Second commit");
+
+    test_repo
+        .write_file_content("file3.txt", "content3")
+        .stage_files(&["file3.txt"]);
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Squash)),
+    );
+
+    // Move to second commit (index 1)
+    update(&mut model, Message::MoveDown);
+    assert_eq!(model.ui_model.cursor_position, 1);
+
+    let expected_hash =
+        if let magi::model::LineContent::LogLine(entry) = &model.ui_model.lines[1].content {
+            entry.hash.clone().unwrap()
+        } else {
+            panic!("Expected LogLine at index 1");
+        };
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(model.view_mode, ViewMode::Status);
+    assert_eq!(
+        result,
+        Some(Message::FixupCommit(expected_hash, FixupType::Squash))
+    );
+}
+
+#[test]
+fn test_commit_select_popup_escape_cancels() {
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file1.txt", "content1")
@@ -232,30 +205,48 @@ fn test_commit_select_popup_confirm_returns_hash() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    // Show the commit select popup
-    let _result = update(
+    update(
         &mut model,
         Message::ShowSelectPopup(SelectPopup::FixupCommit(FixupType::Fixup)),
     );
 
-    // Get the expected hash
-    let expected_hash =
-        if let Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) = &model.popup
-        {
-            state.selected_commit_hash().unwrap().to_string()
-        } else {
-            panic!("Expected CommitSelect popup");
-        };
+    assert!(matches!(model.view_mode, ViewMode::Log(_, true)));
+    assert!(model.select_context.is_some());
 
-    // Confirm selection
-    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    // Escape via ExitLogView
+    update(&mut model, Message::ExitLogView);
 
-    // Verify popup is dismissed and correct message is returned
-    assert!(model.popup.is_none());
-    assert_eq!(
-        result,
-        Some(Message::FixupCommit(expected_hash, FixupType::Fixup))
+    assert_eq!(model.view_mode, ViewMode::Status);
+    // select_context should be cleared on cancel
+    assert!(model.select_context.is_none());
+}
+
+#[test]
+fn test_rebase_elsewhere_opens_log_pick_all_references() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    test_repo
+        .write_file_content("file2.txt", "content2")
+        .stage_files(&["file2.txt"])
+        .commit("Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::ShowSelectPopup(SelectPopup::RebaseElsewhere),
     );
+
+    assert!(
+        matches!(model.view_mode, ViewMode::Log(LogType::AllReferences, true)),
+        "Expected AllReferences log pick view"
+    );
+    assert!(model.popup.is_none());
+    assert_eq!(model.select_context, Some(SelectContext::RebaseElsewhere));
 }
 
 #[test]
