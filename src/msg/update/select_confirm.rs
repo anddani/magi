@@ -1,7 +1,7 @@
 use crate::{
     git::reset::has_uncommitted_changes,
     model::{
-        Model,
+        LineContent, Model, ViewMode,
         popup::{
             ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand, SelectContext,
             SelectResult,
@@ -13,6 +13,26 @@ use crate::{
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
+    // Handle log pick mode: Enter extracts hash from cursor line
+    if let ViewMode::Log(_, true) = model.view_mode {
+        let hash = model
+            .ui_model
+            .lines
+            .get(model.ui_model.cursor_position)
+            .and_then(|line| match &line.content {
+                LineContent::LogLine(entry) => entry.hash.as_deref(),
+                _ => None,
+            });
+        let result = match hash {
+            Some(h) => SelectResult::Selected(h.to_string()),
+            None => SelectResult::NoneSelected,
+        };
+        model.view_mode = ViewMode::Status;
+        model.select_result = Some(result.clone());
+        let context = model.select_context.take();
+        return route_result(context, result, model);
+    }
+
     let result = match &model.popup {
         Some(PopupContent::Command(PopupContentCommand::Select(state))) => {
             if let Some(item) = state.selected_item() {
@@ -21,18 +41,6 @@ pub fn update(model: &mut Model) -> Option<Message> {
             } else if !state.input_text.is_empty() {
                 // No matches, but user entered text - use the input text directly
                 // This allows entering arbitrary values like git hashes
-                SelectResult::Selected(state.input_text.clone())
-            } else {
-                SelectResult::NoneSelected
-            }
-        }
-        Some(PopupContent::Command(PopupContentCommand::CommitSelect(state))) => {
-            if let Some(hash) = state.selected_commit_hash() {
-                // Use the selected commit hash
-                SelectResult::Selected(hash.to_string())
-            } else if !state.input_text.is_empty() {
-                // No matches, but user entered text - use the input text directly
-                // This allows entering arbitrary commit hashes
                 SelectResult::Selected(state.input_text.clone())
             } else {
                 SelectResult::NoneSelected
@@ -49,6 +57,14 @@ pub fn update(model: &mut Model) -> Option<Message> {
 
     // Check context and return appropriate follow-up message
     let context = model.select_context.take();
+    route_result(context, result, model)
+}
+
+fn route_result(
+    context: Option<SelectContext>,
+    result: SelectResult,
+    model: &mut Model,
+) -> Option<Message> {
     match (context, result) {
         (Some(SelectContext::CheckoutBranch), SelectResult::Selected(branch)) => {
             Some(Message::CheckoutBranch(branch))
@@ -176,5 +192,167 @@ pub fn update(model: &mut Model) -> Option<Message> {
             None
         }
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Theme;
+    use crate::git::GitInfo;
+    use crate::git::test_repo::TestRepo;
+    use crate::model::log_view::LogEntry;
+    use crate::model::popup::SelectContext;
+    use crate::model::{Line, LineContent, RunningState, UiModel, ViewMode};
+    use crate::msg::{FixupType, LogType};
+
+    fn create_test_model() -> Model {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+        let git_info = GitInfo::new_from_path(repo_path).unwrap();
+        let workdir = repo_path.to_path_buf();
+        Model {
+            git_info,
+            workdir,
+            running_state: RunningState::Running,
+            ui_model: UiModel::default(),
+            theme: Theme::default(),
+            popup: None,
+            toast: None,
+            select_result: None,
+            select_context: None,
+            pty_state: None,
+            arg_mode: false,
+            pending_g: false,
+            arguments: None,
+            open_pr_branch: None,
+            view_mode: ViewMode::Status,
+            cursor_reposition_context: None,
+        }
+    }
+
+    fn make_log_line(hash: &str, message: &str) -> Line {
+        Line {
+            content: LineContent::LogLine(LogEntry {
+                hash: Some(hash.to_string()),
+                message: Some(message.to_string()),
+                author: None,
+                time: None,
+                refs: vec![],
+                graph: String::new(),
+            }),
+            section: None,
+        }
+    }
+
+    #[test]
+    fn test_log_pick_mode_extracts_hash_from_cursor() {
+        let mut model = create_test_model();
+        model.view_mode = ViewMode::Log(LogType::Current, true);
+        model.ui_model.lines = vec![
+            make_log_line("abc1234", "First commit"),
+            make_log_line("def5678", "Second commit"),
+        ];
+        model.ui_model.cursor_position = 0;
+        model.select_context = Some(SelectContext::FixupCommit(FixupType::Fixup));
+
+        let result = update(&mut model);
+
+        assert_eq!(
+            result,
+            Some(Message::FixupCommit(
+                "abc1234".to_string(),
+                FixupType::Fixup
+            ))
+        );
+        assert_eq!(model.view_mode, ViewMode::Status);
+        assert!(model.select_context.is_none());
+    }
+
+    #[test]
+    fn test_log_pick_mode_second_cursor_position() {
+        let mut model = create_test_model();
+        model.view_mode = ViewMode::Log(LogType::Current, true);
+        model.ui_model.lines = vec![
+            make_log_line("abc1234", "First commit"),
+            make_log_line("def5678", "Second commit"),
+        ];
+        model.ui_model.cursor_position = 1;
+        model.select_context = Some(SelectContext::FixupCommit(FixupType::Squash));
+
+        let result = update(&mut model);
+
+        assert_eq!(
+            result,
+            Some(Message::FixupCommit(
+                "def5678".to_string(),
+                FixupType::Squash
+            ))
+        );
+        assert_eq!(model.view_mode, ViewMode::Status);
+    }
+
+    #[test]
+    fn test_log_pick_mode_no_hash_returns_none() {
+        let mut model = create_test_model();
+        model.view_mode = ViewMode::Log(LogType::Current, true);
+        model.ui_model.lines = vec![Line {
+            content: LineContent::LogLine(LogEntry {
+                hash: None,
+                message: Some("Graph only line".to_string()),
+                author: None,
+                time: None,
+                refs: vec![],
+                graph: String::new(),
+            }),
+            section: None,
+        }];
+        model.ui_model.cursor_position = 0;
+        model.select_context = Some(SelectContext::RebaseElsewhere);
+
+        let result = update(&mut model);
+
+        // NoneSelected context → None message
+        assert_eq!(result, None);
+        assert_eq!(model.view_mode, ViewMode::Status);
+    }
+
+    #[test]
+    fn test_log_pick_mode_routes_rebase_elsewhere() {
+        use crate::msg::RebaseCommand;
+
+        let mut model = create_test_model();
+        model.view_mode = ViewMode::Log(LogType::AllReferences, true);
+        model.ui_model.lines = vec![make_log_line("deadbeef", "Some commit")];
+        model.ui_model.cursor_position = 0;
+        model.select_context = Some(SelectContext::RebaseElsewhere);
+
+        let result = update(&mut model);
+
+        assert_eq!(
+            result,
+            Some(Message::Rebase(RebaseCommand::Elsewhere(
+                "deadbeef".to_string()
+            )))
+        );
+        assert_eq!(model.view_mode, ViewMode::Status);
+    }
+
+    #[test]
+    fn test_browse_log_mode_does_not_trigger_pick() {
+        let mut model = create_test_model();
+        // picking = false → should fall through to popup check and return None (no popup)
+        model.view_mode = ViewMode::Log(LogType::Current, false);
+        model.ui_model.lines = vec![make_log_line("abc1234", "First commit")];
+        model.select_context = Some(SelectContext::FixupCommit(FixupType::Fixup));
+
+        let result = update(&mut model);
+
+        // No popup → returns None without changing state
+        assert_eq!(result, None);
+        // view_mode unchanged
+        assert_eq!(model.view_mode, ViewMode::Log(LogType::Current, false));
+        // select_context still set (not consumed)
+        assert!(model.select_context.is_some());
     }
 }

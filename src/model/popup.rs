@@ -232,7 +232,6 @@ pub enum PopupContentCommand {
     Rebase(RebasePopupState),
     Revert(RevertPopupState),
     Select(SelectPopupState),
-    CommitSelect(CommitSelectPopupState),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

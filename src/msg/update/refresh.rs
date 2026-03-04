@@ -7,7 +7,7 @@ use crate::{
 pub fn update(model: &mut Model) -> Option<Message> {
     match model.view_mode {
         ViewMode::Status => refresh_status(model),
-        ViewMode::Log(log_type) => refresh_log(model, log_type),
+        ViewMode::Log(log_type, _) => refresh_log(model, log_type),
     }
     None
 }

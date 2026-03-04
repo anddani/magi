@@ -189,6 +189,9 @@ pub enum Message {
     /// Show a select popup
     ShowSelectPopup(SelectPopup),
 
+    /// Show a commit select view (Log view)
+    ShowCommitSelect(CommitSelect),
+
     /// Open PR creation page in browser
     OpenPr {
         branch: String,
@@ -339,6 +342,20 @@ pub enum StashCommand {
     Drop(String),
 }
 
+/// Messages for commit select
+#[derive(PartialEq, Eq, Debug)]
+pub enum CommitSelect {
+    // Fixup-related
+    /// Show select popup to choose commit for fixup or squash
+    FixupCommit(FixupType),
+
+    // Rebase-related
+    /// Show select popup (or confirm) to pick a commit/ref to rebase onto
+    RebaseElsewhere,
+}
+// SelectPopup::FixupCommit(fixup_type) => show_fixup_commit(model, fixup_type),
+// SelectPopup::RebaseElsewhere => show_rebase_elsewhere(model),
+
 /// Messages for showing select popups
 #[derive(PartialEq, Eq, Debug)]
 pub enum SelectPopup {
@@ -389,14 +406,6 @@ pub enum SelectPopup {
     StashPop,
     /// Show drop stash popup, or immediately drop if cursor is on a stash entry
     StashDrop,
-
-    // Fixup-related
-    /// Show select popup to choose commit for fixup or squash
-    FixupCommit(FixupType),
-
-    // Rebase-related
-    /// Show select popup (or confirm) to pick a commit/ref to rebase onto
-    RebaseElsewhere,
 
     // Reset-related
     /// Show select popup to pick which local branch to reset

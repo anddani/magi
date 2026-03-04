@@ -3,13 +3,12 @@ use std::fs;
 use magi::{
     git::{log::get_log_entries, rebase::rebase_in_progress, test_repo::TestRepo},
     model::{
-        LineContent, SectionType,
+        Line, LineContent, SectionType, ViewMode,
         popup::{
-            CommitSelectPopupState, ConfirmAction, PopupContent, PopupContentCommand,
-            RebasePopupState, SelectContext,
+            ConfirmAction, PopupContent, PopupContentCommand, RebasePopupState, SelectContext,
         },
     },
-    msg::{LogType, Message, RebaseCommand, SelectMessage, SelectPopup, update::update},
+    msg::{CommitSelect, LogType, Message, RebaseCommand, SelectMessage, update::update},
 };
 
 mod utils;
@@ -87,7 +86,7 @@ fn test_rebase_elsewhere_on_commit_shows_confirmation() {
 
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::RebaseElsewhere),
+        Message::ShowCommitSelect(CommitSelect::RebaseElsewhere),
     );
 
     assert_eq!(result, None);
@@ -132,7 +131,7 @@ fn test_rebase_elsewhere_confirmation_message_contains_hash() {
 
     update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::RebaseElsewhere),
+        Message::ShowCommitSelect(CommitSelect::RebaseElsewhere),
     );
 
     if let Some(PopupContent::Confirm(state)) = &model.popup {
@@ -149,7 +148,7 @@ fn test_rebase_elsewhere_confirmation_message_contains_hash() {
 // ── RebaseElsewhere - cursor NOT on commit ────────────────────────────────────
 
 #[test]
-fn test_rebase_elsewhere_not_on_commit_shows_commit_select_popup() {
+fn test_rebase_elsewhere_not_on_commit_shows_log_pick_view() {
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file1.txt", "content1")
@@ -170,14 +169,15 @@ fn test_rebase_elsewhere_not_on_commit_shows_commit_select_popup() {
 
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::RebaseElsewhere),
+        Message::ShowCommitSelect(CommitSelect::RebaseElsewhere),
     );
 
     assert_eq!(result, None);
-    assert!(matches!(
-        &model.popup,
-        Some(PopupContent::Command(PopupContentCommand::CommitSelect(_)))
-    ));
+    assert!(model.popup.is_none(), "No popup expected — using log view");
+    assert!(
+        matches!(model.view_mode, ViewMode::Log(LogType::AllReferences, true)),
+        "Expected AllReferences log pick view"
+    );
     assert_eq!(model.select_context, Some(SelectContext::RebaseElsewhere));
 }
 
@@ -236,7 +236,7 @@ fn test_e_in_rebase_popup_shows_rebase_elsewhere() {
     let result = handle_key(key, &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::RebaseElsewhere))
+        Some(Message::ShowCommitSelect(CommitSelect::RebaseElsewhere))
     );
 }
 
@@ -317,10 +317,17 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     let expected_hash = commits[0].hash.as_ref().unwrap().clone();
-    let state = CommitSelectPopupState::new("Rebase elsewhere".to_string(), commits);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::CommitSelect(
-        state,
-    )));
+
+    // Set up model in log pick mode (new approach: no popup, log view)
+    model.ui_model.lines = commits
+        .into_iter()
+        .map(|entry| Line {
+            content: LineContent::LogLine(entry),
+            section: None,
+        })
+        .collect();
+    model.ui_model.cursor_position = 0;
+    model.view_mode = ViewMode::Log(LogType::AllReferences, true);
     model.select_context = Some(SelectContext::RebaseElsewhere);
 
     let result = update(&mut model, Message::Select(SelectMessage::Confirm));
@@ -331,7 +338,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
             expected_hash.clone()
         )))
     );
-    assert!(model.popup.is_none());
+    assert_eq!(model.view_mode, ViewMode::Status);
     assert!(model.select_context.is_none());
 }
 

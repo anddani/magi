@@ -22,7 +22,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             model.ui_model.scroll_offset = 0;
 
             // Switch to log view mode
-            model.view_mode = ViewMode::Log(log_type);
+            model.view_mode = ViewMode::Log(log_type, false);
 
             // Dismiss the log popup
             model.popup = None;

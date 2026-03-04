@@ -85,8 +85,9 @@ pub enum ViewMode {
     /// Default status view showing staged/unstaged changes, commits, etc.
     #[default]
     Status,
-    /// Log view showing git commit history with graph
-    Log(crate::msg::LogType),
+    /// Log view showing git commit history with graph.
+    /// The bool indicates whether the view is in "picking" mode (selecting a commit).
+    Log(crate::msg::LogType, bool),
 }
 
 impl InputMode {
