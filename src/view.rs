@@ -9,7 +9,7 @@ use crate::{
     model::{InputMode, Model, ViewMode},
     view::{
         render::{render_popup, render_toast},
-        util::{apply_selection_style, visible_scroll_offset},
+        util::{apply_search_highlight, apply_selection_style, visible_scroll_offset},
     },
 };
 
@@ -171,6 +171,16 @@ pub fn view(model: &Model, frame: &mut Frame) {
 
         let is_cursor_line = index == cursor_pos;
 
+        // Apply search match highlighting before selection style
+        if !model.ui_model.search_query.is_empty() {
+            let highlight_style = Style::default()
+                .bg(theme.search_match_bg)
+                .fg(theme.search_match_fg);
+            for text_line in &mut line_texts {
+                apply_search_highlight(text_line, &model.ui_model.search_query, highlight_style);
+            }
+        }
+
         if is_in_selected_section {
             apply_selection_style(
                 &mut line_texts,
@@ -210,13 +220,30 @@ pub fn view(model: &Model, frame: &mut Frame) {
         ViewMode::Log(_, true) => "Pick commit",
     };
 
+    // Build bottom border: mode pill + optional search query
+    let bottom_title = if model.ui_model.search_mode_active {
+        let search_span = Span::styled(
+            format!("/{}", model.ui_model.search_query),
+            Style::default().fg(theme.search_match_bg),
+        );
+        TextLine::from(vec![mode_pill, Span::raw(" "), search_span])
+    } else if !model.ui_model.search_query.is_empty() {
+        let search_span = Span::styled(
+            format!("/{}", model.ui_model.search_query),
+            Style::default().fg(ratatui::style::Color::DarkGray),
+        );
+        TextLine::from(vec![mode_pill, Span::raw(" "), search_span])
+    } else {
+        TextLine::from(mode_pill)
+    };
+
     let paragraph = Paragraph::new(text)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .title(title)
                 .title_top(TextLine::from(directory).right_aligned())
-                .title_bottom(TextLine::from(mode_pill)),
+                .title_bottom(bottom_title),
         )
         .scroll((scroll, 0));
 

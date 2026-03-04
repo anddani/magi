@@ -5,6 +5,107 @@ use ratatui::{
     text::{Line as TextLine, Span},
 };
 
+/// Apply search highlighting to a text line.
+///
+/// Finds all occurrences of `query` (case-sensitive, consecutive) in the concatenated
+/// span text and applies `highlight_style` to those characters, splitting spans as needed.
+pub fn apply_search_highlight(text_line: &mut TextLine, query: &str, highlight_style: Style) {
+    if query.is_empty() {
+        return;
+    }
+
+    // Collect spans as owned data
+    let original_spans: Vec<(String, Style)> = text_line
+        .spans
+        .iter()
+        .map(|s| (s.content.to_string(), s.style))
+        .collect();
+
+    // Build full text from all spans
+    let full_text: String = original_spans.iter().map(|(s, _)| s.as_str()).collect();
+
+    // Find all non-overlapping match byte ranges
+    let mut match_ranges: Vec<(usize, usize)> = Vec::new();
+    let qlen = query.len();
+    let mut search_from = 0usize;
+    while search_from + qlen <= full_text.len() {
+        if full_text[search_from..].starts_with(query) {
+            match_ranges.push((search_from, search_from + qlen));
+            search_from += qlen;
+        } else {
+            // Advance by one Unicode scalar value
+            let c = full_text[search_from..].chars().next().unwrap();
+            search_from += c.len_utf8();
+        }
+    }
+
+    if match_ranges.is_empty() {
+        return;
+    }
+
+    // Rebuild spans, splitting at match boundaries
+    let mut new_spans: Vec<Span> = Vec::new();
+    let mut byte_cursor: usize = 0;
+    let mut ri: usize = 0;
+
+    for (content, style) in &original_spans {
+        let span_start = byte_cursor;
+        let span_end = span_start + content.len();
+        let mut pos_in_span = 0usize;
+
+        while pos_in_span < content.len() {
+            // Skip any ranges that have already been fully processed
+            while ri < match_ranges.len() && match_ranges[ri].1 <= span_start + pos_in_span {
+                ri += 1;
+            }
+
+            if ri >= match_ranges.len() {
+                // No more matches — emit the rest of this span as-is
+                let rest = &content[pos_in_span..];
+                if !rest.is_empty() {
+                    new_spans.push(Span::styled(rest.to_string(), *style));
+                }
+                pos_in_span = content.len();
+            } else {
+                let (match_start, match_end) = match_ranges[ri];
+                let abs_pos = span_start + pos_in_span;
+
+                if match_start >= span_end {
+                    // Current match starts after this span — emit rest and move on
+                    let rest = &content[pos_in_span..];
+                    if !rest.is_empty() {
+                        new_spans.push(Span::styled(rest.to_string(), *style));
+                    }
+                    pos_in_span = content.len();
+                } else if match_start > abs_pos {
+                    // Emit the portion before the match
+                    let before_len = match_start - abs_pos;
+                    new_spans.push(Span::styled(
+                        content[pos_in_span..pos_in_span + before_len].to_string(),
+                        *style,
+                    ));
+                    pos_in_span += before_len;
+                } else {
+                    // We are at or inside match_start — emit highlighted portion
+                    let hl_span_end = (match_end - span_start).min(content.len());
+                    let hl_content = &content[pos_in_span..hl_span_end];
+                    if !hl_content.is_empty() {
+                        new_spans.push(Span::styled(hl_content.to_string(), highlight_style));
+                    }
+                    pos_in_span = hl_span_end;
+                    if span_start + pos_in_span >= match_end {
+                        ri += 1;
+                    }
+                }
+            }
+        }
+
+        byte_cursor = span_end;
+    }
+
+    text_line.spans = new_spans;
+}
+
 use crate::git::{GitRef, ReferenceType};
 use crate::model::{FileChange, FileStatus, LineContent, SectionType};
 use crate::{config::Theme, model::Line};
@@ -674,5 +775,95 @@ mod tests {
 
         // scroll_offset beyond line count should count all visible lines
         assert_eq!(visible_scroll_offset(&lines, 100, &collapsed), 7);
+    }
+
+    // apply_search_highlight tests
+
+    fn hl() -> Style {
+        Style::default().bg(Color::Yellow)
+    }
+
+    fn text_of(line: &TextLine) -> String {
+        line.spans.iter().map(|s| s.content.as_ref()).collect()
+    }
+
+    fn highlighted_ranges(line: &TextLine) -> Vec<(usize, usize)> {
+        let mut ranges = Vec::new();
+        let mut pos = 0usize;
+        for span in &line.spans {
+            let len = span.content.len();
+            if span.style.bg == Some(Color::Yellow) {
+                ranges.push((pos, pos + len));
+            }
+            pos += len;
+        }
+        ranges
+    }
+
+    #[test]
+    fn test_search_highlight_no_match() {
+        let mut line = TextLine::from("hello world");
+        apply_search_highlight(&mut line, "xyz", hl());
+        // Text unchanged, no highlights
+        assert_eq!(text_of(&line), "hello world");
+        assert!(highlighted_ranges(&line).is_empty());
+    }
+
+    #[test]
+    fn test_search_highlight_empty_query_noop() {
+        let mut line = TextLine::from("hello world");
+        apply_search_highlight(&mut line, "", hl());
+        assert_eq!(text_of(&line), "hello world");
+    }
+
+    #[test]
+    fn test_search_highlight_single_match() {
+        let mut line = TextLine::from("hello world");
+        apply_search_highlight(&mut line, "world", hl());
+        assert_eq!(text_of(&line), "hello world");
+        let ranges = highlighted_ranges(&line);
+        assert_eq!(ranges, vec![(6, 11)]);
+    }
+
+    #[test]
+    fn test_search_highlight_multiple_matches() {
+        let mut line = TextLine::from("abcabc");
+        apply_search_highlight(&mut line, "ab", hl());
+        assert_eq!(text_of(&line), "abcabc");
+        let ranges = highlighted_ranges(&line);
+        assert_eq!(ranges, vec![(0, 2), (3, 5)]);
+    }
+
+    #[test]
+    fn test_search_highlight_match_at_start() {
+        let mut line = TextLine::from("hello world");
+        apply_search_highlight(&mut line, "hello", hl());
+        assert_eq!(text_of(&line), "hello world");
+        let ranges = highlighted_ranges(&line);
+        assert_eq!(ranges, vec![(0, 5)]);
+    }
+
+    #[test]
+    fn test_search_highlight_across_spans() {
+        use ratatui::text::Span;
+        let mut line = TextLine::from(vec![
+            Span::raw("hel"),
+            Span::styled("lo w", Style::default().fg(Color::Green)),
+            Span::raw("orld"),
+        ]);
+        // "lo wo" spans the boundary between span 1 and span 2
+        apply_search_highlight(&mut line, "lo w", hl());
+        assert_eq!(text_of(&line), "hello world");
+        let ranges = highlighted_ranges(&line);
+        assert_eq!(ranges, vec![(3, 7)]);
+    }
+
+    #[test]
+    fn test_search_highlight_whole_line() {
+        let mut line = TextLine::from("abc");
+        apply_search_highlight(&mut line, "abc", hl());
+        assert_eq!(text_of(&line), "abc");
+        let ranges = highlighted_ranges(&line);
+        assert_eq!(ranges, vec![(0, 3)]);
     }
 }

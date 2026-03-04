@@ -1,6 +1,6 @@
 use crate::{
     model::Model,
-    msg::{InputMessage, Message, SelectMessage},
+    msg::{InputMessage, Message, SearchMessage, SelectMessage},
 };
 
 mod amend;
@@ -16,6 +16,7 @@ mod delete_branch;
 mod discard_selected;
 mod dismiss_popup;
 mod enter_arg_mode;
+mod enter_search_mode;
 mod enter_visual_mode;
 mod exit_arg_mode;
 mod exit_log_view;
@@ -42,6 +43,7 @@ mod reset_branch;
 mod revert;
 mod scroll_line_down;
 mod scroll_line_up;
+mod search;
 mod select_confirm;
 mod select_input_backspace;
 mod select_input_char;
@@ -156,6 +158,16 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Credentials(credentials_msg) => credentials_input::update(model, credentials_msg),
         Message::ShowLog(log_type) => show_log::update(model, log_type),
         Message::ExitLogView => exit_log_view::update(model),
+
+        Message::EnterSearchMode => enter_search_mode::update(model),
+        Message::Search(search_msg) => match search_msg {
+            SearchMessage::InputChar(c) => search::input_char(model, c),
+            SearchMessage::InputBackspace => search::input_backspace(model),
+            SearchMessage::Confirm => search::confirm(model),
+            SearchMessage::Next => search::next(model),
+            SearchMessage::Prev => search::prev(model),
+            SearchMessage::Cancel => search::cancel(model),
+        },
 
         Message::Fetch(fetch_command) => fetch::update(model, fetch_command),
         Message::Pull(pull_command) => pull::update(model, pull_command),
