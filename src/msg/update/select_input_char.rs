@@ -7,12 +7,9 @@ use crate::{
 };
 
 pub fn update(model: &mut Model, c: char) -> Option<Message> {
-    match &mut model.popup {
-        Some(PopupContent::Command(PopupContentCommand::Select(state))) => {
-            state.input_text.push(c);
-            state.update_filter();
-        }
-        _ => {}
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &mut model.popup {
+        state.input_text.push(c);
+        state.update_filter();
     }
     None
 }
