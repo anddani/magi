@@ -66,27 +66,32 @@ pub fn apply_search_highlight(text_line: &mut TextLine, query: &str, highlight_s
                     new_spans.push(Span::styled(rest.to_string(), *style));
                 }
                 pos_in_span = content.len();
-            } else {
-                let (match_start, match_end) = match_ranges[ri];
-                let abs_pos = span_start + pos_in_span;
+                continue;
+            }
 
-                if match_start >= span_end {
-                    // Current match starts after this span — emit rest and move on
+            let (match_start, match_end) = match_ranges[ri];
+            let abs_pos = span_start + pos_in_span;
+
+            match match_start {
+                // Current match starts after this span — emit rest and move on
+                start if start >= span_end => {
                     let rest = &content[pos_in_span..];
                     if !rest.is_empty() {
                         new_spans.push(Span::styled(rest.to_string(), *style));
                     }
                     pos_in_span = content.len();
-                } else if match_start > abs_pos {
-                    // Emit the portion before the match
+                }
+                // Emit the portion before the match
+                start if start > abs_pos => {
                     let before_len = match_start - abs_pos;
                     new_spans.push(Span::styled(
                         content[pos_in_span..pos_in_span + before_len].to_string(),
                         *style,
                     ));
                     pos_in_span += before_len;
-                } else {
-                    // We are at or inside match_start — emit highlighted portion
+                }
+                // We are at or inside match_start — emit highlighted portion
+                _ => {
                     let hl_span_end = (match_end - span_start).min(content.len());
                     let hl_content = &content[pos_in_span..hl_span_end];
                     if !hl_content.is_empty() {
