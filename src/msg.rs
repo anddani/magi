@@ -159,6 +159,10 @@ pub enum Message {
     ShowSpinoffBranchInput,
     /// Create a spin-off branch from current HEAD (and reset current branch to upstream merge-base)
     SpinoffBranch(String),
+    /// Show the input popup for the new spin-out branch name
+    ShowSpinoutBranchInput,
+    /// Create a spin-out branch from current HEAD (stays on current branch, resets it to upstream merge-base)
+    SpinoutBranch(String),
     /// Checkout the selected branch
     CheckoutBranch(String),
     /// Show the input popup for the new worktree path

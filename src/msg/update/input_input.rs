@@ -57,6 +57,7 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             new_name: input,
         }),
         InputContext::SpinoffBranch => Some(Message::SpinoffBranch(input)),
+        InputContext::SpinoutBranch => Some(Message::SpinoutBranch(input)),
         InputContext::WorktreePath { branch, checkout } => Some(Message::WorktreeCheckout {
             branch,
             path: input,

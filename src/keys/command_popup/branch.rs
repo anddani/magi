@@ -14,6 +14,7 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
             checkout: false,
         })),
         KeyCode::Char('s') => Some(Message::ShowSpinoffBranchInput),
+        KeyCode::Char('S') => Some(Message::ShowSpinoutBranchInput),
         KeyCode::Char('w') => Some(Message::ShowSelectPopup(SelectPopup::WorktreeCheckout)),
         KeyCode::Char('W') => Some(Message::ShowSelectPopup(SelectPopup::WorktreeCreate)),
         KeyCode::Char('m') => Some(Message::ShowSelectPopup(SelectPopup::RenameBranch)),
