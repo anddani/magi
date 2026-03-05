@@ -41,6 +41,10 @@ pub struct Theme {
     pub status_mode_visual_fg: Color,
     pub status_mode_search_bg: Color,
     pub status_mode_search_fg: Color,
+
+    // Search match highlight
+    pub search_match_bg: Color,
+    pub search_match_fg: Color,
 }
 
 impl Default for Theme {
@@ -78,6 +82,8 @@ impl Theme {
             status_mode_visual_fg: Color::Rgb(30, 30, 40),
             status_mode_search_bg: Color::Rgb(250, 215, 140), // Warm yellow
             status_mode_search_fg: Color::Rgb(30, 30, 40),
+            search_match_bg: Color::Rgb(250, 215, 140), // Warm yellow
+            search_match_fg: Color::Rgb(30, 30, 40),
         }
     }
 
@@ -109,6 +115,8 @@ impl Theme {
             status_mode_visual_fg: Color::Rgb(48, 52, 70),    // Surface0
             status_mode_search_bg: Color::Rgb(229, 200, 144), // Yellow
             status_mode_search_fg: Color::Rgb(48, 52, 70),    // Surface0
+            search_match_bg: Color::Rgb(229, 200, 144),       // Yellow
+            search_match_fg: Color::Rgb(48, 52, 70),          // Surface0
         }
     }
 
@@ -140,6 +148,8 @@ impl Theme {
             status_mode_visual_fg: Color::Rgb(30, 30, 46),    // Base
             status_mode_search_bg: Color::Rgb(249, 226, 175), // Yellow
             status_mode_search_fg: Color::Rgb(30, 30, 46),    // Base
+            search_match_bg: Color::Rgb(249, 226, 175),       // Yellow
+            search_match_fg: Color::Rgb(30, 30, 46),          // Base
         }
     }
 

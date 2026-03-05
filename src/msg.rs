@@ -215,6 +215,28 @@ pub enum Message {
     ShowLog(LogType),
     /// Exit log view and return to status view
     ExitLogView,
+
+    /// Enter search input mode (press '/')
+    EnterSearchMode,
+    /// Search messages (input, navigate, cancel)
+    Search(SearchMessage),
+}
+
+/// Messages for search mode
+#[derive(PartialEq, Eq, Debug)]
+pub enum SearchMessage {
+    /// Input a character into the search field
+    InputChar(char),
+    /// Delete last character from the search field
+    InputBackspace,
+    /// Confirm the search query (press Enter)
+    Confirm,
+    /// Go to next match
+    Next,
+    /// Go to previous match
+    Prev,
+    /// Cancel/clear the search
+    Cancel,
 }
 
 /// Messages for pull commands

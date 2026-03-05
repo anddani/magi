@@ -4,7 +4,7 @@ use crate::{
     model::Model,
     model::ViewMode,
     model::popup::{ConfirmAction, PopupContent, PopupContentCommand},
-    msg::{Message, RebaseCommand, SelectMessage},
+    msg::{Message, RebaseCommand, SearchMessage, SelectMessage},
 };
 
 mod command_popup;
@@ -129,6 +129,39 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         // Any other key cancels the pending 'g' and falls through to normal handling
     }
 
+    // Handle search input mode — route keystrokes to search handler
+    if model.ui_model.search_mode_active {
+        return match (key.modifiers, key.code) {
+            (_, KeyCode::Esc)
+            | (KeyModifiers::CONTROL, KeyCode::Char('g'))
+            | (KeyModifiers::CONTROL, KeyCode::Char('c')) => {
+                Some(Message::Search(SearchMessage::Cancel))
+            }
+            (_, KeyCode::Enter) => Some(Message::Search(SearchMessage::Confirm)),
+            (_, KeyCode::Backspace) => Some(Message::Search(SearchMessage::InputBackspace)),
+            // Allow navigation during typing
+            (KeyModifiers::CONTROL, KeyCode::Char('u')) => Some(Message::HalfPageUp),
+            (KeyModifiers::CONTROL, KeyCode::Char('d')) => Some(Message::HalfPageDown),
+            (KeyModifiers::CONTROL, KeyCode::Char('e')) => Some(Message::ScrollLineDown),
+            (KeyModifiers::CONTROL, KeyCode::Char('y')) => Some(Message::ScrollLineUp),
+            (_, KeyCode::Up) => Some(Message::MoveUp),
+            (_, KeyCode::Down) => Some(Message::MoveDown),
+            // All other chars go into the search field
+            (_, KeyCode::Char(c)) => Some(Message::Search(SearchMessage::InputChar(c))),
+            _ => None,
+        };
+    }
+
+    // Cancel active search with Esc (when not in search input mode)
+    if !model.ui_model.search_query.is_empty()
+        && matches!(
+            (key.modifiers, key.code),
+            (_, KeyCode::Esc) | (KeyModifiers::CONTROL, KeyCode::Char('g'))
+        )
+    {
+        return Some(Message::Search(SearchMessage::Cancel));
+    }
+
     // Enter/Esc in log pick mode
     if let ViewMode::Log(_, true) = model.view_mode {
         match (key.modifiers, key.code) {
@@ -153,6 +186,11 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (_, KeyCode::Char('S')) => Some(Message::StageAllModified),
         (_, KeyCode::Char('U')) => Some(Message::UnstageAll),
         (_, KeyCode::Char('x')) => Some(Message::DiscardSelected),
+
+        // Search
+        (KeyModifiers::NONE, KeyCode::Char('/')) => Some(Message::EnterSearchMode),
+        (KeyModifiers::NONE, KeyCode::Char('n')) => Some(Message::Search(SearchMessage::Next)),
+        (KeyModifiers::SHIFT, KeyCode::Char('N')) => Some(Message::Search(SearchMessage::Prev)),
 
         // Navigation
         (KeyModifiers::CONTROL, KeyCode::Char('u')) => Some(Message::HalfPageUp),
@@ -1564,5 +1602,122 @@ mod tests {
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    // Search mode tests
+
+    #[test]
+    fn test_slash_enters_search_mode() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('/'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::EnterSearchMode));
+    }
+
+    #[test]
+    fn test_search_mode_char_goes_to_search_input() {
+        use crate::msg::SearchMessage;
+
+        let mut model = create_test_model();
+        model.ui_model.search_mode_active = true;
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Search(SearchMessage::InputChar('a'))));
+    }
+
+    #[test]
+    fn test_search_mode_backspace_deletes() {
+        use crate::msg::SearchMessage;
+
+        let mut model = create_test_model();
+        model.ui_model.search_mode_active = true;
+        model.ui_model.search_query = "foo".to_string();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Backspace);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Search(SearchMessage::InputBackspace)));
+    }
+
+    #[test]
+    fn test_search_mode_enter_confirms() {
+        use crate::msg::SearchMessage;
+
+        let mut model = create_test_model();
+        model.ui_model.search_mode_active = true;
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Search(SearchMessage::Confirm)));
+    }
+
+    #[test]
+    fn test_search_mode_esc_cancels() {
+        use crate::msg::SearchMessage;
+
+        let mut model = create_test_model();
+        model.ui_model.search_mode_active = true;
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Search(SearchMessage::Cancel)));
+    }
+
+    #[test]
+    fn test_search_mode_navigation_still_works() {
+        let mut model = create_test_model();
+        model.ui_model.search_mode_active = true;
+
+        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('u'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::HalfPageUp));
+
+        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('d'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::HalfPageDown));
+    }
+
+    #[test]
+    fn test_n_triggers_search_next() {
+        use crate::msg::SearchMessage;
+
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('n'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Search(SearchMessage::Next)));
+    }
+
+    #[test]
+    fn test_shift_n_triggers_search_prev() {
+        use crate::msg::SearchMessage;
+
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('N'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Search(SearchMessage::Prev)));
+    }
+
+    #[test]
+    fn test_esc_with_active_search_cancels() {
+        use crate::msg::SearchMessage;
+
+        let mut model = create_test_model();
+        model.ui_model.search_query = "foo".to_string();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Search(SearchMessage::Cancel)));
+    }
+
+    #[test]
+    fn test_esc_without_active_search_does_nothing() {
+        let model = create_test_model();
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, None);
     }
 }
