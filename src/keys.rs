@@ -898,16 +898,13 @@ mod tests {
     // Input popup tests
 
     fn create_input_popup_model() -> Model {
-        use crate::model::popup::{InputContext, InputPopupState};
+        use crate::model::popup::InputContext;
 
         let mut model = create_test_model();
-        model.popup = Some(PopupContent::Input(InputPopupState::new(
-            "New branch name".to_string(),
-            InputContext::CreateNewBranch {
-                starting_point: "main".to_string(),
-                checkout: true,
-            },
-        )));
+        model.popup = Some(PopupContent::input_popup(InputContext::CreateNewBranch {
+            starting_point: "main".to_string(),
+            checkout: true,
+        }));
         model
     }
 

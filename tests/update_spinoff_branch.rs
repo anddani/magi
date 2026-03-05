@@ -71,9 +71,9 @@ fn test_show_spinoff_branch_input_has_expected_title() {
 
     if let Some(PopupContent::Input(state)) = &model.popup {
         assert!(
-            state.title.contains("spin-off"),
+            state.title().contains("spin-off"),
             "Title should mention spin-off, got: {}",
-            state.title
+            state.title()
         );
     } else {
         panic!("Expected Input popup");

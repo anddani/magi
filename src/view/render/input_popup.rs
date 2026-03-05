@@ -26,8 +26,9 @@ pub fn render(state: &InputPopupState, frame: &mut Frame, area: Rect, theme: &Th
     frame.render_widget(Clear, popup_area);
 
     // Draw border with title
+    let title = state.title();
     let block = Block::default()
-        .title(state.title.as_str())
+        .title(title.as_str())
         .borders(Borders::ALL)
         .border_style(Style::default().fg(theme.local_branch));
     frame.render_widget(block, popup_area);
