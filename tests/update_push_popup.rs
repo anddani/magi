@@ -19,6 +19,7 @@ fn create_push_popup_model() -> Model {
         PushPopupState {
             upstream: None,
             push_remote: None,
+            sole_remote: None,
         },
     )));
 

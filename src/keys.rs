@@ -454,6 +454,7 @@ mod tests {
             PushPopupState {
                 upstream: Some("origin/main".to_string()),
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -471,6 +472,7 @@ mod tests {
             PushPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -493,6 +495,7 @@ mod tests {
             PushPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -515,6 +518,7 @@ mod tests {
             PushPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -535,12 +539,82 @@ mod tests {
             PushPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_p_in_push_popup_with_push_remote_pushes_to_push_remote() {
+        use crate::model::popup::PushPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+            PushPopupState {
+                upstream: None,
+                push_remote: Some("origin".to_string()),
+                sole_remote: None,
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::Push(PushCommand::PushToPushRemote(
+                "origin".to_string()
+            )))
+        );
+    }
+
+    #[test]
+    fn test_p_in_push_popup_without_push_remote_shows_select() {
+        use crate::model::popup::PushPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+                sole_remote: None,
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ShowSelectPopup(
+                crate::msg::SelectPopup::PushPushRemote
+            ))
+        );
+    }
+
+    #[test]
+    fn test_p_in_push_popup_with_sole_remote_pushes_directly() {
+        use crate::model::popup::PushPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+            PushPopupState {
+                upstream: None,
+                push_remote: None,
+                sole_remote: Some("origin".to_string()),
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::Push(PushCommand::PushToPushRemote(
+                "origin".to_string()
+            )))
+        );
     }
 
     #[test]
@@ -552,6 +626,7 @@ mod tests {
             PushPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -570,6 +645,7 @@ mod tests {
             PushPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -591,6 +667,7 @@ mod tests {
             PushPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -608,6 +685,7 @@ mod tests {
             PushPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -904,6 +982,7 @@ mod tests {
             FetchPopupState {
                 upstream: Some("origin/main".to_string()),
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -921,6 +1000,7 @@ mod tests {
             FetchPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -943,6 +1023,7 @@ mod tests {
             FetchPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -960,6 +1041,7 @@ mod tests {
             FetchPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -977,6 +1059,7 @@ mod tests {
             FetchPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -995,6 +1078,7 @@ mod tests {
             FetchPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1016,6 +1100,7 @@ mod tests {
             FetchPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1037,6 +1122,7 @@ mod tests {
             FetchPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1057,6 +1143,7 @@ mod tests {
             FetchPopupState {
                 upstream: None,
                 push_remote: Some("origin".to_string()),
+                sole_remote: None,
             },
         )));
 
@@ -1079,6 +1166,7 @@ mod tests {
             FetchPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1089,6 +1177,29 @@ mod tests {
             Some(Message::ShowSelectPopup(
                 crate::msg::SelectPopup::FetchPushRemote
             ))
+        );
+    }
+
+    #[test]
+    fn test_p_in_fetch_popup_with_sole_remote_fetches_directly() {
+        use crate::model::popup::FetchPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(
+            FetchPopupState {
+                upstream: None,
+                push_remote: None,
+                sole_remote: Some("origin".to_string()),
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::Fetch(FetchCommand::FetchFromPushRemote(
+                "origin".to_string()
+            )))
         );
     }
 
@@ -1112,6 +1223,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: Some("origin".to_string()),
+                sole_remote: None,
             },
         )));
 
@@ -1134,6 +1246,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1148,6 +1261,29 @@ mod tests {
     }
 
     #[test]
+    fn test_p_in_pull_popup_with_sole_remote_pulls_directly() {
+        use crate::model::popup::PullPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Pull(
+            PullPopupState {
+                upstream: None,
+                push_remote: None,
+                sole_remote: Some("origin".to_string()),
+            },
+        )));
+
+        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::Pull(PullCommand::PullFromPushRemote(
+                "origin".to_string()
+            )))
+        );
+    }
+
+    #[test]
     fn test_u_in_pull_popup_with_upstream_pulls() {
         use crate::model::popup::PullPopupState;
 
@@ -1156,6 +1292,7 @@ mod tests {
             PullPopupState {
                 upstream: Some("origin/main".to_string()),
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1173,6 +1310,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1195,6 +1333,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1212,6 +1351,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1230,6 +1370,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1251,6 +1392,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1274,6 +1416,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1297,6 +1440,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 
@@ -1320,6 +1464,7 @@ mod tests {
             PullPopupState {
                 upstream: None,
                 push_remote: None,
+                sole_remote: None,
             },
         )));
 

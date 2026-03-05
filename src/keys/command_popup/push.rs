@@ -20,7 +20,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PushPopupState) -> Option<Mes
 
     match key.code {
         KeyCode::Char('p') => {
-            if let Some(remote) = &state.push_remote {
+            if let Some(remote) = state.push_remote.as_ref().or(state.sole_remote.as_ref()) {
                 Some(Message::Push(PushCommand::PushToPushRemote(remote.clone())))
             } else {
                 Some(Message::ShowSelectPopup(SelectPopup::PushPushRemote))
