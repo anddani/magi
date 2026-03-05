@@ -23,6 +23,7 @@ mod exit_log_view;
 mod exit_preview;
 mod exit_visual_mode;
 mod fetch;
+mod file_checkout;
 mod fixup_commit;
 mod input_input;
 mod navigation;
@@ -189,5 +190,6 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         } => worktree_checkout::update(model, branch, path, checkout),
         Message::ShowPreview => show_preview::update(model),
         Message::ExitPreview => exit_preview::update(model),
+        Message::FileCheckout { revision, file } => file_checkout::update(model, revision, file),
     }
 }

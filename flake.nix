@@ -147,6 +147,7 @@
             pkgs.perl
             toolchain
             pkgs.rust-analyzer
+            pkgs.imagemagick
           ];
         };
       }

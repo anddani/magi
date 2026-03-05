@@ -192,6 +192,11 @@ pub enum Message {
         branch: String,
         target: String,
     },
+    /// Checkout a single file from a given revision
+    FileCheckout {
+        revision: String,
+        file: String,
+    },
 
     /// Show a select popup
     ShowSelectPopup(SelectPopup),
@@ -470,6 +475,12 @@ pub enum SelectPopup {
     ResetBranchPick,
     /// Show select popup to pick a target to reset the given branch to
     ResetBranchTarget(String),
+
+    // File checkout-related
+    /// Show select popup to choose a revision to checkout a file from
+    FileCheckoutRevision,
+    /// Show select popup to choose a file to checkout from the given revision
+    FileCheckoutFile(String),
 
     // PR-related
     /// Show select popup to pick source branch for PR (opens to default target)

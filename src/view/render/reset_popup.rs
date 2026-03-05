@@ -17,10 +17,16 @@ pub fn content<'a>(theme: &Theme) -> CommandPopupContent<'a> {
 
     let reset_col = PopupColumn {
         title: Some("Reset"),
-        content: vec![Line::from(vec![
-            Span::styled(" b", key_style),
-            Span::styled("  branch", desc_style),
-        ])],
+        content: vec![
+            Line::from(vec![
+                Span::styled(" b", key_style),
+                Span::styled("  branch", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" f", key_style),
+                Span::styled("  file", desc_style),
+            ]),
+        ],
     };
 
     CommandPopupContent {
