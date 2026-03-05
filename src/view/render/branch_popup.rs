@@ -46,6 +46,10 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
                 Span::styled(" new branch", desc_style),
             ]),
             Line::from(vec![
+                Span::styled(" W", key_style),
+                Span::styled(" new worktree", desc_style),
+            ]),
+            Line::from(vec![
                 Span::styled(" o", key_style),
                 Span::styled(" new PR to default branch", desc_style),
             ]),

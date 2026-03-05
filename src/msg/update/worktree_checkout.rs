@@ -6,12 +6,13 @@ use crate::{
     msg::Message,
 };
 
-pub fn update(model: &mut Model, branch: String, path: String) -> Option<Message> {
+pub fn update(model: &mut Model, branch: String, path: String, checkout: bool) -> Option<Message> {
     match worktree_add(&model.workdir, &path, &branch) {
         Ok(WorktreeAddResult::Success) => {
-            // Resolve the worktree path (may be relative to workdir)
-            let worktree_path = resolve_path(&model.workdir, &path);
-            switch_to_worktree(model, worktree_path);
+            if checkout {
+                let worktree_path = resolve_path(&model.workdir, &path);
+                switch_to_worktree(model, worktree_path);
+            }
             Some(Message::Refresh)
         }
         Ok(WorktreeAddResult::Error(err)) => {

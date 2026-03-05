@@ -164,11 +164,15 @@ pub enum Message {
     /// Show the input popup for the new worktree path
     ShowWorktreePathInput {
         branch: String,
+        /// Whether to switch to the new worktree after creating it
+        checkout: bool,
     },
     /// Add a new worktree at the given path, checking out branch
     WorktreeCheckout {
         branch: String,
         path: String,
+        /// Whether to switch to the new worktree after creating it
+        checkout: bool,
     },
     /// Show confirmation popup before deleting the selected branch
     DeleteBranch(String),
@@ -425,8 +429,10 @@ pub enum SelectPopup {
     // Branch-related
     /// Show the checkout branch select popup
     CheckoutBranch,
-    /// Show branch/revision select to checkout in a new worktree
+    /// Show branch/revision select for a new worktree (switches to it after)
     WorktreeCheckout,
+    /// Show branch/revision select for a new worktree (stays in current worktree)
+    WorktreeCreate,
     /// Show the checkout local branch select popup (only local branches)
     CheckoutLocalBranch,
     /// Show the delete branch select popup
