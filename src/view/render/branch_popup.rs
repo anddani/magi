@@ -75,6 +75,10 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
                 Span::styled(" x", key_style),
                 Span::styled(" delete", desc_style),
             ]),
+            Line::from(vec![
+                Span::styled(" X", key_style),
+                Span::styled(" reset", desc_style),
+            ]),
         ],
     };
 

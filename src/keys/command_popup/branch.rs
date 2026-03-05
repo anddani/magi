@@ -19,6 +19,7 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
         KeyCode::Char('W') => Some(Message::ShowSelectPopup(SelectPopup::WorktreeCreate)),
         KeyCode::Char('m') => Some(Message::ShowSelectPopup(SelectPopup::RenameBranch)),
         KeyCode::Char('x') => Some(Message::ShowSelectPopup(SelectPopup::DeleteBranch)),
+        KeyCode::Char('X') => Some(Message::ShowSelectPopup(SelectPopup::ResetBranchPick)),
         KeyCode::Char('o') => Some(Message::ShowSelectPopup(SelectPopup::OpenPr)),
         KeyCode::Char('O') => Some(Message::ShowSelectPopup(SelectPopup::OpenPrWithTarget)),
         _ => None,
