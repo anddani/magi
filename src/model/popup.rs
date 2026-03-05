@@ -46,6 +46,8 @@ pub struct PushPopupState {
     pub upstream: Option<String>,
     /// The configured push remote name (branch.<name>.pushRemote), if set
     pub push_remote: Option<String>,
+    /// The sole remote name, if exactly one remote is configured
+    pub sole_remote: Option<String>,
 }
 
 /// State for the Fetch popup
@@ -55,6 +57,8 @@ pub struct FetchPopupState {
     pub upstream: Option<String>,
     /// The configured push remote name (branch.<name>.pushRemote), if set
     pub push_remote: Option<String>,
+    /// The sole remote name, if exactly one remote is configured
+    pub sole_remote: Option<String>,
 }
 
 /// State for the Pull popup
@@ -64,6 +68,8 @@ pub struct PullPopupState {
     pub upstream: Option<String>,
     /// The configured push remote name (branch.<name>.pushRemote), if set
     pub push_remote: Option<String>,
+    /// The sole remote name, if exactly one remote is configured
+    pub sole_remote: Option<String>,
 }
 
 /// Context for what action the input popup is performing

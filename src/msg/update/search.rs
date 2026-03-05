@@ -176,8 +176,7 @@ mod tests {
     use crate::git::GitInfo;
     use crate::git::test_repo::TestRepo;
     use crate::model::ViewMode;
-    use crate::model::{RunningState, SectionType, UiModel};
-    use std::collections::HashSet;
+    use crate::model::{RunningState, UiModel};
 
     fn make_line(text: &str) -> Line {
         Line {

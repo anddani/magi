@@ -27,7 +27,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
             }
         }
         KeyCode::Char('p') => {
-            if let Some(remote) = &state.push_remote {
+            if let Some(remote) = state.push_remote.as_ref().or(state.sole_remote.as_ref()) {
                 Some(Message::Fetch(FetchCommand::FetchFromPushRemote(
                     remote.clone(),
                 )))

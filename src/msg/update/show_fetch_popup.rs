@@ -1,5 +1,8 @@
 use crate::{
-    git::{config::get_push_remote, push::get_current_branch, push::get_upstream_branch},
+    git::{
+        config::get_push_remote,
+        push::{get_current_branch, get_remotes, get_upstream_branch},
+    },
     model::{
         Model,
         popup::{FetchPopupState, PopupContent, PopupContentCommand},
@@ -17,9 +20,17 @@ pub fn update(model: &mut Model) -> Option<Message> {
         .flatten()
         .and_then(|branch| get_push_remote(&model.git_info.repository, &branch));
 
+    let remotes = get_remotes(&model.git_info.repository);
+    let sole_remote = if remotes.len() == 1 {
+        remotes.into_iter().next()
+    } else {
+        None
+    };
+
     let state = FetchPopupState {
         upstream,
         push_remote,
+        sole_remote,
     };
 
     model.popup = Some(PopupContent::Command(PopupContentCommand::Fetch(state)));
