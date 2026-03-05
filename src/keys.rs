@@ -1,4 +1,8 @@
-use crossterm::event::{self, KeyCode, KeyModifiers};
+use crossterm::event::{
+    self,
+    KeyCode::{Backspace, Char, Down, Enter, Esc, Tab, Up},
+    KeyModifiers,
+};
 
 use crate::{
     model::{
@@ -11,6 +15,9 @@ use crate::{
 mod command_popup;
 mod credentials_popup;
 mod input_popup;
+
+const NONE: KeyModifiers = KeyModifiers::NONE;
+const CTRL: KeyModifiers = KeyModifiers::CONTROL;
 
 fn command_popup_keys(c: char) -> Option<Message> {
     match c {
@@ -41,14 +48,14 @@ fn command_popup_keys(c: char) -> Option<Message> {
 pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     if let Some(PopupContent::Error { .. }) = &model.popup {
         return match key.code {
-            KeyCode::Enter | KeyCode::Esc => Some(Message::DismissPopup),
+            Enter | Esc => Some(Message::DismissPopup),
             _ => None,
         };
     }
 
     if let Some(PopupContent::Confirm(state)) = &model.popup {
         return match (key.modifiers, key.code) {
-            (_, KeyCode::Char('y')) | (_, KeyCode::Enter) => {
+            (_, Char('y')) | (_, Enter) => {
                 let msg = match &state.on_confirm {
                     ConfirmAction::DeleteBranch(branch) => {
                         Message::ConfirmDeleteBranch(branch.clone())
@@ -72,10 +79,9 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                 };
                 Some(msg)
             }
-            (_, KeyCode::Char('n'))
-            | (_, KeyCode::Esc)
-            | (KeyModifiers::CONTROL, KeyCode::Char('c'))
-            | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
+            (_, Char('n')) | (_, Esc) | (CTRL, Char('c')) | (CTRL, Char('g')) => {
+                Some(Message::DismissPopup)
+            }
             _ => None,
         };
     }
@@ -95,10 +101,8 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     // Let commands from help popup open popups
     if model.popup == Some(PopupContent::Help) {
         return match (key.modifiers, key.code) {
-            (_, KeyCode::Esc)
-            | (_, KeyCode::Char('q'))
-            | (KeyModifiers::CONTROL, KeyCode::Char('g')) => Some(Message::DismissPopup),
-            (_, KeyCode::Char(c)) => command_popup_keys(c),
+            (_, Esc) | (_, Char('q')) | (CTRL, Char('g')) => Some(Message::DismissPopup),
+            (_, Char(c)) => command_popup_keys(c),
             _ => None,
         };
     }
@@ -106,13 +110,11 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     // Check for visual mode exit keys first (ESC and Ctrl-g)
     if model.ui_model.is_visual_mode() {
         match (key.modifiers, key.code) {
-            (KeyModifiers::NONE, KeyCode::Esc)
-            | (KeyModifiers::CONTROL, KeyCode::Char('g'))
-            | (KeyModifiers::CONTROL, KeyCode::Char('c')) => {
+            (NONE, Esc) | (CTRL, Char('g')) | (CTRL, Char('c')) => {
                 return Some(Message::ExitVisualMode);
             }
             // Disable ToggleSection in visual mode to prevent confusing selection behavior
-            (KeyModifiers::NONE, KeyCode::Tab) => {
+            (NONE, Tab) => {
                 return None;
             }
             _ => {}
@@ -121,10 +123,10 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
 
     // Handle pending 'g' for 'gg' (go to first line)
     if model.pending_g {
-        if key.modifiers == KeyModifiers::NONE && key.code == KeyCode::Char('g') {
+        if key.modifiers == NONE && key.code == Char('g') {
             return Some(Message::Navigation(NavigationAction::MoveToTop));
         }
-        if key.modifiers == KeyModifiers::NONE && key.code == KeyCode::Char('r') {
+        if key.modifiers == NONE && key.code == Char('r') {
             return Some(Message::Refresh);
         }
         // Any other key cancels the pending 'g' and falls through to normal handling
@@ -133,40 +135,27 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     // Handle search input mode — route keystrokes to search handler
     if model.ui_model.search_mode_active {
         return match (key.modifiers, key.code) {
-            (_, KeyCode::Esc)
-            | (KeyModifiers::CONTROL, KeyCode::Char('g'))
-            | (KeyModifiers::CONTROL, KeyCode::Char('c')) => {
+            (_, Esc) | (CTRL, Char('g')) | (CTRL, Char('c')) => {
                 Some(Message::Search(SearchMessage::Cancel))
             }
-            (_, KeyCode::Enter) => Some(Message::Search(SearchMessage::Confirm)),
-            (_, KeyCode::Backspace) => Some(Message::Search(SearchMessage::InputBackspace)),
+            (_, Enter) => Some(Message::Search(SearchMessage::Confirm)),
+            (_, Backspace) => Some(Message::Search(SearchMessage::InputBackspace)),
             // Allow navigation during typing
-            (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
-                Some(Message::Navigation(NavigationAction::HalfPageUp))
-            }
-            (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
-                Some(Message::Navigation(NavigationAction::HalfPageDown))
-            }
-            (KeyModifiers::CONTROL, KeyCode::Char('e')) => {
-                Some(Message::Navigation(NavigationAction::ScrollLineDown))
-            }
-            (KeyModifiers::CONTROL, KeyCode::Char('y')) => {
-                Some(Message::Navigation(NavigationAction::ScrollLineUp))
-            }
-            (_, KeyCode::Up) => Some(Message::Navigation(NavigationAction::MoveUp)),
-            (_, KeyCode::Down) => Some(Message::Navigation(NavigationAction::MoveDown)),
+            (CTRL, Char('u')) => Some(Message::Navigation(NavigationAction::HalfPageUp)),
+            (CTRL, Char('d')) => Some(Message::Navigation(NavigationAction::HalfPageDown)),
+            (CTRL, Char('e')) => Some(Message::Navigation(NavigationAction::ScrollLineDown)),
+            (CTRL, Char('y')) => Some(Message::Navigation(NavigationAction::ScrollLineUp)),
+            (_, Up) => Some(Message::Navigation(NavigationAction::MoveUp)),
+            (_, Down) => Some(Message::Navigation(NavigationAction::MoveDown)),
             // All other chars go into the search field
-            (_, KeyCode::Char(c)) => Some(Message::Search(SearchMessage::InputChar(c))),
+            (_, Char(c)) => Some(Message::Search(SearchMessage::InputChar(c))),
             _ => None,
         };
     }
 
     // Cancel active search with Esc (when not in search input mode)
     if !model.ui_model.search_query.is_empty()
-        && matches!(
-            (key.modifiers, key.code),
-            (_, KeyCode::Esc) | (KeyModifiers::CONTROL, KeyCode::Char('g'))
-        )
+        && matches!((key.modifiers, key.code), (_, Esc) | (CTRL, Char('g')))
     {
         return Some(Message::Search(SearchMessage::Cancel));
     }
@@ -174,60 +163,46 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     // Enter/Esc in log pick mode
     if let ViewMode::Log(_, true) = model.view_mode {
         match (key.modifiers, key.code) {
-            (_, KeyCode::Enter) => return Some(Message::Select(SelectMessage::Confirm)),
-            (_, KeyCode::Esc)
-            | (KeyModifiers::CONTROL, KeyCode::Char('g'))
-            | (KeyModifiers::CONTROL, KeyCode::Char('c')) => return Some(Message::ExitLogView),
+            (_, Enter) => return Some(Message::Select(SelectMessage::Confirm)),
+            (_, Esc) | (CTRL, Char('g')) | (CTRL, Char('c')) => {
+                return Some(Message::ExitLogView);
+            }
             _ => {}
         }
     }
 
     match (key.modifiers, key.code) {
         // Navigation
-        (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
-            Some(Message::Navigation(NavigationAction::HalfPageUp))
-        }
-        (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
-            Some(Message::Navigation(NavigationAction::HalfPageDown))
-        }
-        (KeyModifiers::CONTROL, KeyCode::Char('e')) => {
-            Some(Message::Navigation(NavigationAction::ScrollLineDown))
-        }
-        (KeyModifiers::CONTROL, KeyCode::Char('y')) => {
-            Some(Message::Navigation(NavigationAction::ScrollLineUp))
-        }
-        (_, KeyCode::Char('k') | KeyCode::Up) => {
-            Some(Message::Navigation(NavigationAction::MoveUp))
-        }
-        (_, KeyCode::Char('j') | KeyCode::Down) => {
-            Some(Message::Navigation(NavigationAction::MoveDown))
-        }
-        (_, KeyCode::Char('G')) => Some(Message::Navigation(NavigationAction::MoveToBottom)),
+        (CTRL, Char('u')) => Some(Message::Navigation(NavigationAction::HalfPageUp)),
+        (CTRL, Char('d')) => Some(Message::Navigation(NavigationAction::HalfPageDown)),
+        (CTRL, Char('e')) => Some(Message::Navigation(NavigationAction::ScrollLineDown)),
+        (CTRL, Char('y')) => Some(Message::Navigation(NavigationAction::ScrollLineUp)),
+        (_, Char('k') | Up) => Some(Message::Navigation(NavigationAction::MoveUp)),
+        (_, Char('j') | Down) => Some(Message::Navigation(NavigationAction::MoveDown)),
+        (_, Char('G')) => Some(Message::Navigation(NavigationAction::MoveToBottom)),
 
         // General actions
-        (KeyModifiers::CONTROL, KeyCode::Char('r')) => Some(Message::Refresh),
-        (KeyModifiers::NONE, KeyCode::Char('g')) => Some(Message::PendingG),
-        (_, KeyCode::Tab) => Some(Message::ToggleSection),
-        (_, KeyCode::Char('?') | KeyCode::Char('h')) => {
-            Some(Message::ShowPopup(PopupContent::Help))
-        }
-        (_, KeyCode::Char('q')) => match model.view_mode {
+        (CTRL, Char('r')) => Some(Message::Refresh),
+        (NONE, Char('g')) => Some(Message::PendingG),
+        (_, Tab) => Some(Message::ToggleSection),
+        (_, Char('?') | Char('h')) => Some(Message::ShowPopup(PopupContent::Help)),
+        (_, Char('q')) => match model.view_mode {
             ViewMode::Log(_, _) => Some(Message::ExitLogView),
             ViewMode::Status => Some(Message::Quit),
         },
-        (_, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
-        (_, KeyCode::Char('s')) => Some(Message::StageSelected),
-        (_, KeyCode::Char('S')) => Some(Message::StageAllModified),
-        (_, KeyCode::Char('u')) => Some(Message::UnstageSelected),
-        (_, KeyCode::Char('U')) => Some(Message::UnstageAll),
-        (_, KeyCode::Char('x')) => Some(Message::DiscardSelected),
+        (_, Char('V')) => Some(Message::EnterVisualMode),
+        (_, Char('s')) => Some(Message::StageSelected),
+        (_, Char('S')) => Some(Message::StageAllModified),
+        (_, Char('u')) => Some(Message::UnstageSelected),
+        (_, Char('U')) => Some(Message::UnstageAll),
+        (_, Char('x')) => Some(Message::DiscardSelected),
 
         // Search
-        (KeyModifiers::NONE, KeyCode::Char('/')) => Some(Message::EnterSearchMode),
-        (KeyModifiers::NONE, KeyCode::Char('n')) => Some(Message::Search(SearchMessage::Next)),
-        (KeyModifiers::SHIFT, KeyCode::Char('N')) => Some(Message::Search(SearchMessage::Prev)),
+        (NONE, Char('/')) => Some(Message::EnterSearchMode),
+        (NONE, Char('n')) => Some(Message::Search(SearchMessage::Next)),
+        (KeyModifiers::SHIFT, Char('N')) => Some(Message::Search(SearchMessage::Prev)),
 
-        (_, KeyCode::Char(c)) => command_popup_keys(c),
+        (_, Char(c)) => command_popup_keys(c),
         _ => None,
     }
 }
@@ -284,7 +259,7 @@ mod tests {
     #[test]
     fn test_shift_v_enters_visual_mode() {
         let model = create_test_model();
-        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('V'));
+        let key = create_key_event(KeyModifiers::SHIFT, Char('V'));
 
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::EnterVisualMode));
@@ -295,7 +270,7 @@ mod tests {
         let mut model = create_test_model();
         model.ui_model.visual_mode_anchor = Some(5); // Enter visual mode
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitVisualMode));
     }
@@ -305,7 +280,7 @@ mod tests {
         let mut model = create_test_model();
         model.ui_model.visual_mode_anchor = Some(5); // Enter visual mode
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('g'));
+        let key = create_key_event(CTRL, Char('g'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitVisualMode));
     }
@@ -313,7 +288,7 @@ mod tests {
     #[test]
     fn test_esc_does_nothing_when_not_in_visual_mode() {
         let model = create_test_model();
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
 
         let result = handle_key(key, &model);
         assert_eq!(result, None);
@@ -322,7 +297,7 @@ mod tests {
     #[test]
     fn test_ctrl_g_does_nothing_when_not_in_visual_mode() {
         let model = create_test_model();
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('g'));
+        let key = create_key_event(CTRL, Char('g'));
 
         let result = handle_key(key, &model);
         assert_eq!(result, None);
@@ -334,7 +309,7 @@ mod tests {
         model.ui_model.visual_mode_anchor = Some(5); // Enter visual mode
 
         // j should still work
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('j'));
+        let key = create_key_event(NONE, Char('j'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -342,7 +317,7 @@ mod tests {
         );
 
         // k should still work
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('k'));
+        let key = create_key_event(NONE, Char('k'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Navigation(NavigationAction::MoveUp)));
     }
@@ -352,7 +327,7 @@ mod tests {
         let mut model = create_test_model();
         model.ui_model.visual_mode_anchor = Some(5); // Enter visual mode
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Tab);
+        let key = create_key_event(NONE, KeyCode::Tab);
         let result = handle_key(key, &model);
         assert_eq!(result, None); // Tab should do nothing in visual mode
     }
@@ -361,7 +336,7 @@ mod tests {
     fn test_tab_works_when_not_in_visual_mode() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Tab);
+        let key = create_key_event(NONE, KeyCode::Tab);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ToggleSection));
     }
@@ -370,7 +345,7 @@ mod tests {
     fn test_question_mark_shows_help() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('?'));
+        let key = create_key_event(NONE, Char('?'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ShowPopup(PopupContent::Help)));
     }
@@ -382,7 +357,7 @@ mod tests {
             message: "Test error".to_string(),
         });
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('?'));
+        let key = create_key_event(NONE, Char('?'));
         let result = handle_key(key, &model);
         // When error popup is shown, only Enter/Esc should work
         assert_eq!(result, None);
@@ -393,7 +368,7 @@ mod tests {
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Help);
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -403,7 +378,7 @@ mod tests {
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Help);
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let key = create_key_event(NONE, Char('q'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -412,7 +387,7 @@ mod tests {
     fn test_c_shows_commit_popup() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('c'));
+        let key = create_key_event(NONE, Char('c'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -427,7 +402,7 @@ mod tests {
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('c'));
+        let key = create_key_event(NONE, Char('c'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Commit));
     }
@@ -437,7 +412,7 @@ mod tests {
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -447,7 +422,7 @@ mod tests {
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let key = create_key_event(NONE, Char('q'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -457,7 +432,7 @@ mod tests {
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Amend(vec![])));
     }
@@ -466,7 +441,7 @@ mod tests {
     fn test_shift_p_shows_push_popup() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('P'));
+        let key = create_key_event(KeyModifiers::SHIFT, Char('P'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ShowPushPopup));
     }
@@ -484,7 +459,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let key = create_key_event(NONE, Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Push(PushCommand::PushUpstream)));
     }
@@ -502,7 +477,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let key = create_key_event(NONE, Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -525,7 +500,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('t'));
+        let key = create_key_event(NONE, Char('t'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -548,7 +523,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('T'));
+        let key = create_key_event(KeyModifiers::SHIFT, Char('T'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -569,7 +544,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -587,7 +562,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -610,7 +585,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -633,7 +608,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -656,7 +631,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
+        let key = create_key_event(NONE, Char('-'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::EnterArgMode));
     }
@@ -675,7 +650,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
+        let key = create_key_event(NONE, Char('f'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -697,7 +672,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('x'));
+        let key = create_key_event(NONE, Char('x'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitArgMode));
     }
@@ -715,7 +690,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -739,7 +714,7 @@ mod tests {
     fn test_select_popup_esc_dismisses() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -748,7 +723,7 @@ mod tests {
     fn test_select_popup_ctrl_g_dismisses() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('g'));
+        let key = create_key_event(CTRL, Char('g'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -757,7 +732,7 @@ mod tests {
     fn test_select_popup_enter_confirms() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let key = create_key_event(NONE, KeyCode::Enter);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::Confirm)));
     }
@@ -766,7 +741,7 @@ mod tests {
     fn test_select_popup_char_input() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::InputChar('a'))));
     }
@@ -775,7 +750,7 @@ mod tests {
     fn test_select_popup_shift_char_input() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('A'));
+        let key = create_key_event(KeyModifiers::SHIFT, Char('A'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::InputChar('A'))));
     }
@@ -784,7 +759,7 @@ mod tests {
     fn test_select_popup_backspace() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Backspace);
+        let key = create_key_event(NONE, KeyCode::Backspace);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::InputBackspace)));
     }
@@ -793,7 +768,7 @@ mod tests {
     fn test_select_popup_up_arrow() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Up);
+        let key = create_key_event(NONE, KeyCode::Up);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::MoveUp)));
     }
@@ -802,7 +777,7 @@ mod tests {
     fn test_select_popup_down_arrow() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Down);
+        let key = create_key_event(NONE, KeyCode::Down);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::MoveDown)));
     }
@@ -811,7 +786,7 @@ mod tests {
     fn test_select_popup_ctrl_p_moves_up() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('p'));
+        let key = create_key_event(CTRL, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::MoveUp)));
     }
@@ -820,7 +795,7 @@ mod tests {
     fn test_select_popup_ctrl_n_moves_down() {
         let model = create_select_popup_model();
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('n'));
+        let key = create_key_event(CTRL, Char('n'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::MoveDown)));
     }
@@ -831,7 +806,7 @@ mod tests {
     fn test_b_shows_branch_popup() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
+        let key = create_key_event(NONE, Char('b'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -851,7 +826,7 @@ mod tests {
     fn test_m_in_branch_popup_shows_rename_select() {
         let model = create_branch_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('m'));
+        let key = create_key_event(NONE, Char('m'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -865,7 +840,7 @@ mod tests {
     fn test_esc_dismisses_branch_popup() {
         let model = create_branch_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -874,7 +849,7 @@ mod tests {
     fn test_q_dismisses_branch_popup() {
         let model = create_branch_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let key = create_key_event(NONE, Char('q'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -883,7 +858,7 @@ mod tests {
     fn test_b_in_branch_popup_shows_checkout_select() {
         let model = create_branch_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('b'));
+        let key = create_key_event(NONE, Char('b'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -897,7 +872,7 @@ mod tests {
     fn test_c_in_branch_popup_shows_checkout_new_branch_popup() {
         let model = create_branch_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('c'));
+        let key = create_key_event(NONE, Char('c'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -911,7 +886,7 @@ mod tests {
     fn test_l_in_branch_popup_shows_checkout_local_branch_popup() {
         let model = create_branch_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('l'));
+        let key = create_key_event(NONE, Char('l'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -938,7 +913,7 @@ mod tests {
     fn test_input_popup_esc_dismisses() {
         let model = create_input_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -947,7 +922,7 @@ mod tests {
     fn test_input_popup_ctrl_g_dismisses() {
         let model = create_input_popup_model();
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('g'));
+        let key = create_key_event(CTRL, Char('g'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -958,7 +933,7 @@ mod tests {
 
         let model = create_input_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Input(InputMessage::InputChar('a'))));
     }
@@ -969,7 +944,7 @@ mod tests {
 
         let model = create_input_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Backspace);
+        let key = create_key_event(NONE, KeyCode::Backspace);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Input(InputMessage::InputBackspace)));
     }
@@ -980,7 +955,7 @@ mod tests {
 
         let model = create_input_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let key = create_key_event(NONE, KeyCode::Enter);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Input(InputMessage::Confirm)));
     }
@@ -991,7 +966,7 @@ mod tests {
     fn test_f_shows_fetch_popup() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
+        let key = create_key_event(NONE, Char('f'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ShowFetchPopup));
     }
@@ -1009,7 +984,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let key = create_key_event(NONE, Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Fetch(FetchCommand::FetchUpstream)));
     }
@@ -1027,7 +1002,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let key = create_key_event(NONE, Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1050,7 +1025,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Fetch(FetchCommand::FetchAllRemotes)));
     }
@@ -1068,7 +1043,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -1086,7 +1061,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
+        let key = create_key_event(NONE, Char('-'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::EnterArgMode));
     }
@@ -1105,7 +1080,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1127,7 +1102,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('t'));
+        let key = create_key_event(NONE, Char('t'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1149,7 +1124,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('F'));
+        let key = create_key_event(KeyModifiers::SHIFT, Char('F'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1170,7 +1145,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1193,7 +1168,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1216,7 +1191,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1232,7 +1207,7 @@ mod tests {
     fn test_shift_f_shows_pull_popup() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('F'));
+        let key = create_key_event(KeyModifiers::SHIFT, Char('F'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ShowPullPopup));
     }
@@ -1250,7 +1225,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1273,7 +1248,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1296,7 +1271,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('p'));
+        let key = create_key_event(NONE, Char('p'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1319,7 +1294,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let key = create_key_event(NONE, Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Pull(PullCommand::PullUpstream)));
     }
@@ -1337,7 +1312,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('u'));
+        let key = create_key_event(NONE, Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1360,7 +1335,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -1378,7 +1353,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('-'));
+        let key = create_key_event(NONE, Char('-'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::EnterArgMode));
     }
@@ -1398,7 +1373,7 @@ mod tests {
         )));
 
         // 'r' is not a valid pull argument key, so it should exit arg mode
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('w'));
+        let key = create_key_event(NONE, Char('w'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitArgMode));
     }
@@ -1419,7 +1394,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('f'));
+        let key = create_key_event(NONE, Char('f'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1443,7 +1418,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('r'));
+        let key = create_key_event(NONE, Char('r'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1467,7 +1442,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1491,7 +1466,7 @@ mod tests {
             },
         )));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('F'));
+        let key = create_key_event(NONE, Char('F'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1505,7 +1480,7 @@ mod tests {
     fn test_l_shows_log_popup() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('l'));
+        let key = create_key_event(NONE, Char('l'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1527,7 +1502,7 @@ mod tests {
 
         let model = create_log_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('l'));
+        let key = create_key_event(NONE, Char('l'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ShowLog(LogType::Current)));
     }
@@ -1538,7 +1513,7 @@ mod tests {
 
         let model = create_log_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ShowLog(LogType::AllReferences)));
     }
@@ -1547,7 +1522,7 @@ mod tests {
     fn test_esc_dismisses_log_popup() {
         let model = create_log_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -1556,7 +1531,7 @@ mod tests {
     fn test_q_dismisses_log_popup() {
         let model = create_log_popup_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let key = create_key_event(NONE, Char('q'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -1576,7 +1551,7 @@ mod tests {
     fn test_q_in_log_mode_exits_log_view() {
         let model = create_log_mode_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let key = create_key_event(NONE, Char('q'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitLogView));
     }
@@ -1585,7 +1560,7 @@ mod tests {
     fn test_q_in_status_mode_quits() {
         let model = create_test_model(); // Default is Status mode
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let key = create_key_event(NONE, Char('q'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Quit));
     }
@@ -1595,7 +1570,7 @@ mod tests {
         // Navigation uses same messages in both modes
         let model = create_log_mode_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('j'));
+        let key = create_key_event(NONE, Char('j'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1607,7 +1582,7 @@ mod tests {
     fn test_k_in_log_mode_moves_up() {
         let model = create_log_mode_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('k'));
+        let key = create_key_event(NONE, Char('k'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Navigation(NavigationAction::MoveUp)));
     }
@@ -1616,7 +1591,7 @@ mod tests {
     fn test_ctrl_d_in_log_mode_half_page_down() {
         let model = create_log_mode_model();
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('d'));
+        let key = create_key_event(CTRL, Char('d'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1628,7 +1603,7 @@ mod tests {
     fn test_ctrl_u_in_log_mode_half_page_up() {
         let model = create_log_mode_model();
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('u'));
+        let key = create_key_event(CTRL, Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1651,7 +1626,7 @@ mod tests {
     fn test_enter_in_log_pick_mode_confirms_selection() {
         let model = create_log_pick_mode_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let key = create_key_event(NONE, KeyCode::Enter);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Select(SelectMessage::Confirm)));
     }
@@ -1660,7 +1635,7 @@ mod tests {
     fn test_esc_in_log_pick_mode_exits_log_view() {
         let model = create_log_pick_mode_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitLogView));
     }
@@ -1669,7 +1644,7 @@ mod tests {
     fn test_ctrl_g_in_log_pick_mode_exits_log_view() {
         let model = create_log_pick_mode_model();
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('g'));
+        let key = create_key_event(CTRL, Char('g'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitLogView));
     }
@@ -1678,7 +1653,7 @@ mod tests {
     fn test_q_in_log_pick_mode_exits_log_view() {
         let model = create_log_pick_mode_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('q'));
+        let key = create_key_event(NONE, Char('q'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitLogView));
     }
@@ -1687,7 +1662,7 @@ mod tests {
     fn test_j_in_log_pick_mode_moves_down() {
         let model = create_log_pick_mode_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('j'));
+        let key = create_key_event(NONE, Char('j'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1699,7 +1674,7 @@ mod tests {
     fn test_enter_in_browse_log_mode_does_nothing() {
         let model = create_log_mode_model(); // picking = false
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let key = create_key_event(NONE, KeyCode::Enter);
         let result = handle_key(key, &model);
         assert_eq!(result, None);
     }
@@ -1708,7 +1683,7 @@ mod tests {
     fn test_esc_in_browse_log_mode_does_nothing() {
         let model = create_log_mode_model(); // picking = false
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, None);
     }
@@ -1719,7 +1694,7 @@ mod tests {
     fn test_x_triggers_discard_selected() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('x'));
+        let key = create_key_event(NONE, Char('x'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DiscardSelected));
     }
@@ -1739,7 +1714,7 @@ mod tests {
             on_confirm: ConfirmAction::DiscardChanges(target.clone()),
         }));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('y'));
+        let key = create_key_event(NONE, Char('y'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ConfirmDiscard(target)));
     }
@@ -1759,7 +1734,7 @@ mod tests {
             on_confirm: ConfirmAction::DiscardChanges(target),
         }));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('n'));
+        let key = create_key_event(NONE, Char('n'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -1779,7 +1754,7 @@ mod tests {
             on_confirm: ConfirmAction::DiscardChanges(target),
         }));
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::DismissPopup));
     }
@@ -1790,7 +1765,7 @@ mod tests {
     fn test_slash_enters_search_mode() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('/'));
+        let key = create_key_event(NONE, Char('/'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::EnterSearchMode));
     }
@@ -1802,7 +1777,7 @@ mod tests {
         let mut model = create_test_model();
         model.ui_model.search_mode_active = true;
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('a'));
+        let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Search(SearchMessage::InputChar('a'))));
     }
@@ -1815,7 +1790,7 @@ mod tests {
         model.ui_model.search_mode_active = true;
         model.ui_model.search_query = "foo".to_string();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Backspace);
+        let key = create_key_event(NONE, KeyCode::Backspace);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Search(SearchMessage::InputBackspace)));
     }
@@ -1827,7 +1802,7 @@ mod tests {
         let mut model = create_test_model();
         model.ui_model.search_mode_active = true;
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Enter);
+        let key = create_key_event(NONE, KeyCode::Enter);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Search(SearchMessage::Confirm)));
     }
@@ -1839,7 +1814,7 @@ mod tests {
         let mut model = create_test_model();
         model.ui_model.search_mode_active = true;
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Search(SearchMessage::Cancel)));
     }
@@ -1849,14 +1824,14 @@ mod tests {
         let mut model = create_test_model();
         model.ui_model.search_mode_active = true;
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('u'));
+        let key = create_key_event(CTRL, Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
             Some(Message::Navigation(NavigationAction::HalfPageUp))
         );
 
-        let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('d'));
+        let key = create_key_event(CTRL, Char('d'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
@@ -1870,7 +1845,7 @@ mod tests {
 
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('n'));
+        let key = create_key_event(NONE, Char('n'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Search(SearchMessage::Next)));
     }
@@ -1881,7 +1856,7 @@ mod tests {
 
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::SHIFT, KeyCode::Char('N'));
+        let key = create_key_event(KeyModifiers::SHIFT, Char('N'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Search(SearchMessage::Prev)));
     }
@@ -1893,7 +1868,7 @@ mod tests {
         let mut model = create_test_model();
         model.ui_model.search_query = "foo".to_string();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::Search(SearchMessage::Cancel)));
     }
@@ -1902,7 +1877,7 @@ mod tests {
     fn test_esc_without_active_search_does_nothing() {
         let model = create_test_model();
 
-        let key = create_key_event(KeyModifiers::NONE, KeyCode::Esc);
+        let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, None);
     }
