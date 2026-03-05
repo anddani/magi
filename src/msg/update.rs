@@ -189,8 +189,10 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowWorktreePathInput { branch, checkout } => {
             show_input_popup::update(model, InputContext::WorktreePath { branch, checkout })
         }
-        Message::WorktreeCheckout { branch, path, checkout } => {
-            worktree_checkout::update(model, branch, path, checkout)
-        }
+        Message::WorktreeCheckout {
+            branch,
+            path,
+            checkout,
+        } => worktree_checkout::update(model, branch, path, checkout),
     }
 }

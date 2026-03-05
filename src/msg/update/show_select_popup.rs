@@ -324,7 +324,11 @@ fn show_worktree_add(model: &mut Model, checkout: bool) -> Option<Message> {
     }
 
     model.select_context = Some(SelectContext::WorktreeAdd { checkout });
-    let title = if checkout { "Worktree checkout" } else { "Worktree create" };
+    let title = if checkout {
+        "Worktree checkout"
+    } else {
+        "Worktree create"
+    };
     let state = SelectPopupState::new(title.to_string(), options);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
