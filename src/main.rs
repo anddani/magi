@@ -36,9 +36,12 @@ fn parse_args() -> Option<PathBuf> {
             Some(PathBuf::from(&arg[2..]))
         }
         arg => {
-            eprintln!("error: unknown option '{}'", arg);
-            print_help();
-            process::exit(1);
+            if arg.starts_with('-') {
+                eprintln!("error: unknown option '{}'", arg);
+                print_help();
+                process::exit(1);
+            }
+            Some(PathBuf::from(arg))
         }
     }
 }
@@ -47,7 +50,10 @@ fn print_help() {
     println!("magi - A Magit-inspired Git client");
     println!();
     println!("USAGE:");
-    println!("    magi [OPTIONS]");
+    println!("    magi [OPTIONS] [path]");
+    println!();
+    println!("ARGS:");
+    println!("    [path]        Run as if started in <path>");
     println!();
     println!("OPTIONS:");
     println!("    -C <path>     Run as if started in <path>");
