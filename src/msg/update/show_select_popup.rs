@@ -6,6 +6,7 @@ use crate::{
             BranchEntry, get_all_branches, get_branches, get_last_checked_out_branch,
             get_local_branches, get_remote_branches_for_upstream,
         },
+        file_checkout::get_tracked_files,
         open_pr::has_any_remote,
         push::{get_current_branch, get_local_tags, get_remotes},
         worktree::get_checked_out_branches,
@@ -75,6 +76,9 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
 
         SelectPopup::ResetBranchPick => show_reset_branch_pick(model),
         SelectPopup::ResetBranchTarget(branch) => show_reset_branch_target(model, branch),
+
+        SelectPopup::FileCheckoutRevision => show_file_checkout_revision(model),
+        SelectPopup::FileCheckoutFile(revision) => show_file_checkout_file(model, revision),
     }
 }
 
@@ -658,6 +662,109 @@ fn show_open_pr_target(model: &mut Model, branch: String) -> Option<Message> {
 }
 
 // ── Rebase ────────────────────────────────────────────────────────────────────
+
+// ── File checkout ──────────────────────────────────────────────────────────────
+
+/// Step 1: pick the revision to checkout a file from (local branches, remote branches, tags).
+/// The first suggestion from the cursor line is pre-selected if available.
+fn show_file_checkout_revision(model: &mut Model) -> Option<Message> {
+    let local_branches: Vec<String> = get_local_branches(&model.git_info.repository);
+
+    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
+        .into_iter()
+        .filter_map(|b| match b {
+            BranchEntry::Remote(name) => Some(name),
+            _ => None,
+        })
+        .collect();
+
+    let tags = get_local_tags(&model.git_info.repository);
+
+    let preferred = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| suggestions_from_line(line).into_iter().next());
+
+    let mut options: Vec<String> = Vec::new();
+
+    if let Some(ref preferred) = preferred {
+        options.push(preferred.name().to_string());
+    }
+
+    for b in &local_branches {
+        if preferred.as_ref().map(|p| p.name() != b).unwrap_or(true) {
+            options.push(b.clone());
+        }
+    }
+    for b in &remote_branches {
+        if preferred
+            .as_ref()
+            .map(|p| p.name() != b.as_str())
+            .unwrap_or(true)
+        {
+            options.push(b.clone());
+        }
+    }
+    for tag in &tags {
+        if preferred
+            .as_ref()
+            .map(|p| p.name() != tag.as_str())
+            .unwrap_or(true)
+        {
+            options.push(tag.clone());
+        }
+    }
+
+    if options.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No references found".to_string(),
+        });
+        return None;
+    }
+
+    model.select_context = Some(SelectContext::FileCheckoutRevision);
+    let state = SelectPopupState::new("Checkout file from revision".to_string(), options);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
+
+/// Step 2: pick the file to checkout from the given revision.
+/// Cursor file (UnstagedFile, StagedFile, UntrackedFile) is pre-selected if available.
+fn show_file_checkout_file(model: &mut Model, revision: String) -> Option<Message> {
+    let mut files = get_tracked_files(&model.git_info.repository);
+
+    if files.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No tracked files found".to_string(),
+        });
+        return None;
+    }
+
+    // Pre-select file under cursor if it's a file line
+    let cursor_file = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| match &line.content {
+            LineContent::UnstagedFile(fc) => Some(fc.path.clone()),
+            LineContent::StagedFile(fc) => Some(fc.path.clone()),
+            LineContent::UntrackedFile(path) => Some(path.clone()),
+            _ => None,
+        });
+
+    if let Some(ref path) = cursor_file
+        && let Some(idx) = files.iter().position(|f| f == path)
+    {
+        let file = files.remove(idx);
+        files.insert(0, file);
+    }
+
+    model.select_context = Some(SelectContext::FileCheckoutFile(revision));
+    let state = SelectPopupState::new("File to checkout".to_string(), files);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 

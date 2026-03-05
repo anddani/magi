@@ -64,6 +64,10 @@ pub enum SelectContext {
     ResetBranchTarget(String),
     /// Selecting a branch/revision for a new worktree (checkout=true switches to it)
     WorktreeAdd { checkout: bool },
+    /// Selecting a revision to checkout a file from
+    FileCheckoutRevision,
+    /// Selecting a file to checkout (holds the chosen revision)
+    FileCheckoutFile(String),
 }
 
 /// State for the select popup (fuzzy finder style)

@@ -128,6 +128,12 @@ fn route_result(
         (Some(SelectContext::ResetBranchPick), SelectResult::Selected(branch)) => Some(
             Message::ShowSelectPopup(SelectPopup::ResetBranchTarget(branch)),
         ),
+        (Some(SelectContext::FileCheckoutRevision), SelectResult::Selected(rev)) => {
+            Some(Message::ShowSelectPopup(SelectPopup::FileCheckoutFile(rev)))
+        }
+        (Some(SelectContext::FileCheckoutFile(revision)), SelectResult::Selected(file)) => {
+            Some(Message::FileCheckout { revision, file })
+        }
         (Some(SelectContext::ResetBranchTarget(branch)), SelectResult::Selected(target)) => {
             let current_branch = model.git_info.current_branch();
             if current_branch.as_deref() == Some(branch.as_str())
