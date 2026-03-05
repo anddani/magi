@@ -76,22 +76,8 @@ pub enum Message {
     Quit,
     /// Refresh the buffer
     Refresh,
-    /// Move one line up
-    MoveUp,
-    /// Move one line down
-    MoveDown,
-    /// Move half a page up
-    HalfPageUp,
-    /// Move half a page down
-    HalfPageDown,
-    /// Scroll viewport down by one line
-    ScrollLineDown,
-    /// Scroll viewport up by one line
-    ScrollLineUp,
-    /// Move cursor to the first visible line
-    MoveToTop,
-    /// Move cursor to the last visible line
-    MoveToBottom,
+    /// Navigate in the current buffer
+    Navigation(NavigationAction),
     /// First 'g' press — waiting for second 'g' to trigger MoveToTop
     PendingG,
     /// Toggle section expand/collapse
@@ -241,6 +227,26 @@ pub enum Message {
     EnterSearchMode,
     /// Search messages (input, navigate, cancel)
     Search(SearchMessage),
+}
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum NavigationAction {
+    /// Move one line up
+    MoveUp,
+    /// Move one line down
+    MoveDown,
+    /// Move half a page up
+    HalfPageUp,
+    /// Move half a page down
+    HalfPageDown,
+    /// Scroll viewport down by one line
+    ScrollLineDown,
+    /// Scroll viewport up by one line
+    ScrollLineUp,
+    /// Move cursor to the first visible line
+    MoveToTop,
+    /// Move cursor to the last visible line
+    MoveToBottom,
 }
 
 /// Messages for search mode

@@ -23,13 +23,8 @@ mod exit_log_view;
 mod exit_visual_mode;
 mod fetch;
 mod fixup_commit;
-mod half_page_down;
-mod half_page_up;
 mod input_input;
-mod move_down;
-mod move_to_bottom;
-mod move_to_top;
-mod move_up;
+mod navigation;
 mod open_pr;
 mod pending_g;
 mod pty_helper;
@@ -41,8 +36,6 @@ mod refresh;
 mod rename_branch;
 mod reset_branch;
 mod revert;
-mod scroll_line_down;
-mod scroll_line_up;
 mod search;
 mod select_confirm;
 mod select_input_backspace;
@@ -85,15 +78,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
     match msg {
         Message::Quit => quit::update(model),
         Message::Refresh => refresh::update(model),
-        Message::MoveUp => move_up::update(model),
-        Message::MoveDown => move_down::update(model),
         Message::ToggleSection => toggle_section::update(model),
-        Message::HalfPageUp => half_page_up::update(model),
-        Message::HalfPageDown => half_page_down::update(model),
-        Message::ScrollLineDown => scroll_line_down::update(model),
-        Message::ScrollLineUp => scroll_line_up::update(model),
-        Message::MoveToTop => move_to_top::update(model),
-        Message::MoveToBottom => move_to_bottom::update(model),
+        Message::Navigation(action) => navigation::update(model, action),
         Message::PendingG => pending_g::update(model),
         Message::Commit => commit::update(model),
         Message::Amend(extra_args) => amend::update(model, extra_args),

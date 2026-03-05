@@ -1,10 +1,11 @@
 use crossterm::event::{self, KeyCode, KeyModifiers};
 
 use crate::{
-    model::Model,
-    model::ViewMode,
-    model::popup::{ConfirmAction, PopupContent, PopupContentCommand},
-    msg::{Message, RebaseCommand, SearchMessage, SelectMessage},
+    model::{
+        Model, ViewMode,
+        popup::{ConfirmAction, PopupContent, PopupContentCommand},
+    },
+    msg::{Message, NavigationAction, RebaseCommand, SearchMessage, SelectMessage},
 };
 
 mod command_popup;
@@ -121,7 +122,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     // Handle pending 'g' for 'gg' (go to first line)
     if model.pending_g {
         if key.modifiers == KeyModifiers::NONE && key.code == KeyCode::Char('g') {
-            return Some(Message::MoveToTop);
+            return Some(Message::Navigation(NavigationAction::MoveToTop));
         }
         if key.modifiers == KeyModifiers::NONE && key.code == KeyCode::Char('r') {
             return Some(Message::Refresh);
@@ -140,12 +141,20 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
             (_, KeyCode::Enter) => Some(Message::Search(SearchMessage::Confirm)),
             (_, KeyCode::Backspace) => Some(Message::Search(SearchMessage::InputBackspace)),
             // Allow navigation during typing
-            (KeyModifiers::CONTROL, KeyCode::Char('u')) => Some(Message::HalfPageUp),
-            (KeyModifiers::CONTROL, KeyCode::Char('d')) => Some(Message::HalfPageDown),
-            (KeyModifiers::CONTROL, KeyCode::Char('e')) => Some(Message::ScrollLineDown),
-            (KeyModifiers::CONTROL, KeyCode::Char('y')) => Some(Message::ScrollLineUp),
-            (_, KeyCode::Up) => Some(Message::MoveUp),
-            (_, KeyCode::Down) => Some(Message::MoveDown),
+            (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
+                Some(Message::Navigation(NavigationAction::HalfPageUp))
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
+                Some(Message::Navigation(NavigationAction::HalfPageDown))
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('e')) => {
+                Some(Message::Navigation(NavigationAction::ScrollLineDown))
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('y')) => {
+                Some(Message::Navigation(NavigationAction::ScrollLineUp))
+            }
+            (_, KeyCode::Up) => Some(Message::Navigation(NavigationAction::MoveUp)),
+            (_, KeyCode::Down) => Some(Message::Navigation(NavigationAction::MoveDown)),
             // All other chars go into the search field
             (_, KeyCode::Char(c)) => Some(Message::Search(SearchMessage::InputChar(c))),
             _ => None,
@@ -174,9 +183,34 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     }
 
     match (key.modifiers, key.code) {
+        // Navigation
+        (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
+            Some(Message::Navigation(NavigationAction::HalfPageUp))
+        }
+        (KeyModifiers::CONTROL, KeyCode::Char('d')) => {
+            Some(Message::Navigation(NavigationAction::HalfPageDown))
+        }
+        (KeyModifiers::CONTROL, KeyCode::Char('e')) => {
+            Some(Message::Navigation(NavigationAction::ScrollLineDown))
+        }
+        (KeyModifiers::CONTROL, KeyCode::Char('y')) => {
+            Some(Message::Navigation(NavigationAction::ScrollLineUp))
+        }
+        (_, KeyCode::Char('k') | KeyCode::Up) => {
+            Some(Message::Navigation(NavigationAction::MoveUp))
+        }
+        (_, KeyCode::Char('j') | KeyCode::Down) => {
+            Some(Message::Navigation(NavigationAction::MoveDown))
+        }
+        (_, KeyCode::Char('G')) => Some(Message::Navigation(NavigationAction::MoveToBottom)),
+
+        // General actions
         (KeyModifiers::CONTROL, KeyCode::Char('r')) => Some(Message::Refresh),
-        (_, KeyCode::Char('?')) => Some(Message::ShowPopup(PopupContent::Help)),
-        // 'q' exits log view when in log mode, otherwise quits the app
+        (KeyModifiers::NONE, KeyCode::Char('g')) => Some(Message::PendingG),
+        (_, KeyCode::Tab) => Some(Message::ToggleSection),
+        (_, KeyCode::Char('?') | KeyCode::Char('h')) => {
+            Some(Message::ShowPopup(PopupContent::Help))
+        }
         (_, KeyCode::Char('q')) => match model.view_mode {
             ViewMode::Log(_, _) => Some(Message::ExitLogView),
             ViewMode::Status => Some(Message::Quit),
@@ -184,6 +218,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (_, KeyCode::Char('V')) => Some(Message::EnterVisualMode),
         (_, KeyCode::Char('s')) => Some(Message::StageSelected),
         (_, KeyCode::Char('S')) => Some(Message::StageAllModified),
+        (_, KeyCode::Char('u')) => Some(Message::UnstageSelected),
         (_, KeyCode::Char('U')) => Some(Message::UnstageAll),
         (_, KeyCode::Char('x')) => Some(Message::DiscardSelected),
 
@@ -191,18 +226,6 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (KeyModifiers::NONE, KeyCode::Char('/')) => Some(Message::EnterSearchMode),
         (KeyModifiers::NONE, KeyCode::Char('n')) => Some(Message::Search(SearchMessage::Next)),
         (KeyModifiers::SHIFT, KeyCode::Char('N')) => Some(Message::Search(SearchMessage::Prev)),
-
-        // Navigation
-        (KeyModifiers::CONTROL, KeyCode::Char('u')) => Some(Message::HalfPageUp),
-        (KeyModifiers::NONE, KeyCode::Char('u')) => Some(Message::UnstageSelected),
-        (KeyModifiers::CONTROL, KeyCode::Char('d')) => Some(Message::HalfPageDown),
-        (KeyModifiers::CONTROL, KeyCode::Char('e')) => Some(Message::ScrollLineDown),
-        (KeyModifiers::CONTROL, KeyCode::Char('y')) => Some(Message::ScrollLineUp),
-        (_, KeyCode::Char('k') | KeyCode::Up) => Some(Message::MoveUp),
-        (_, KeyCode::Char('j') | KeyCode::Down) => Some(Message::MoveDown),
-        (KeyModifiers::NONE, KeyCode::Char('g')) => Some(Message::PendingG),
-        (_, KeyCode::Char('G')) => Some(Message::MoveToBottom),
-        (_, KeyCode::Tab) => Some(Message::ToggleSection),
 
         (_, KeyCode::Char(c)) => command_popup_keys(c),
         _ => None,
@@ -219,7 +242,7 @@ mod tests {
     use crate::model::arguments::{FetchArgument, PushArgument};
     use crate::model::popup::PopupContentCommand;
     use crate::model::{RunningState, UiModel};
-    use crate::msg::{FetchCommand, PullCommand, PushCommand, SelectMessage};
+    use crate::msg::{FetchCommand, NavigationAction, PullCommand, PushCommand, SelectMessage};
     use crossterm::event::{KeyEvent, KeyEventKind, KeyEventState};
 
     fn create_key_event(modifiers: KeyModifiers, code: KeyCode) -> KeyEvent {
@@ -313,12 +336,15 @@ mod tests {
         // j should still work
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('j'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::MoveDown));
+        assert_eq!(
+            result,
+            Some(Message::Navigation(NavigationAction::MoveDown))
+        );
 
         // k should still work
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('k'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::MoveUp));
+        assert_eq!(result, Some(Message::Navigation(NavigationAction::MoveUp)));
     }
 
     #[test]
@@ -1571,7 +1597,10 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('j'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::MoveDown));
+        assert_eq!(
+            result,
+            Some(Message::Navigation(NavigationAction::MoveDown))
+        );
     }
 
     #[test]
@@ -1580,7 +1609,7 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('k'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::MoveUp));
+        assert_eq!(result, Some(Message::Navigation(NavigationAction::MoveUp)));
     }
 
     #[test]
@@ -1589,7 +1618,10 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('d'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::HalfPageDown));
+        assert_eq!(
+            result,
+            Some(Message::Navigation(NavigationAction::HalfPageDown))
+        );
     }
 
     #[test]
@@ -1598,7 +1630,10 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('u'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::HalfPageUp));
+        assert_eq!(
+            result,
+            Some(Message::Navigation(NavigationAction::HalfPageUp))
+        );
     }
 
     // Log pick mode tests
@@ -1654,7 +1689,10 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::NONE, KeyCode::Char('j'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::MoveDown));
+        assert_eq!(
+            result,
+            Some(Message::Navigation(NavigationAction::MoveDown))
+        );
     }
 
     #[test]
@@ -1813,11 +1851,17 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('u'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::HalfPageUp));
+        assert_eq!(
+            result,
+            Some(Message::Navigation(NavigationAction::HalfPageUp))
+        );
 
         let key = create_key_event(KeyModifiers::CONTROL, KeyCode::Char('d'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::HalfPageDown));
+        assert_eq!(
+            result,
+            Some(Message::Navigation(NavigationAction::HalfPageDown))
+        );
     }
 
     #[test]
