@@ -1,5 +1,5 @@
 use crate::{
-    model::Model,
+    model::{InputContext, Model},
     msg::{InputMessage, Message, SearchMessage, SelectMessage},
 };
 
@@ -53,16 +53,14 @@ mod selection;
 mod show_checkout_new_branch_input;
 mod show_commit_select;
 mod show_fetch_popup;
+mod show_input_popup;
 mod show_log;
 mod show_pull_popup;
 mod show_push_popup;
 mod show_rebase_popup;
-mod show_rename_branch_input;
 mod show_reset_popup;
 mod show_revert_popup;
 mod show_select_popup;
-mod show_spinoff_branch_input;
-mod show_stash_input;
 mod spinoff_branch;
 mod stage_all_modified;
 mod stage_selected;
@@ -101,7 +99,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             fixup_commit::update(model, commit_hash, fixup_type)
         }
         Message::DismissPopup => dismiss_popup::update(model),
-        Message::ShowStashInput(stash_type) => show_stash_input::update(model, stash_type),
+        Message::ShowStashInput(stash_type) => {
+            show_input_popup::update(model, InputContext::Stash(stash_type))
+        }
         Message::StageAllModified => stage_all_modified::update(model),
         Message::StageSelected => stage_selected::update(model),
         Message::UnstageSelected => unstage_selected::update(model),
@@ -120,7 +120,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowFetchPopup => show_fetch_popup::update(model),
         Message::ShowPullPopup => show_pull_popup::update(model),
         Message::ShowRenameBranchInput(old_name) => {
-            show_rename_branch_input::update(model, old_name)
+            show_input_popup::update(model, InputContext::RenameBranch { old_name })
         }
         Message::RenameBranch { old_name, new_name } => {
             rename_branch::update(model, old_name, new_name)
@@ -181,7 +181,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Revert(revert_command) => revert::update(model, revert_command),
         Message::ShowResetPopup => show_reset_popup::update(model),
         Message::ResetBranch { branch, target } => reset_branch::update(model, branch, target),
-        Message::ShowSpinoffBranchInput => show_spinoff_branch_input::update(model),
+        Message::ShowSpinoffBranchInput => {
+            show_input_popup::update(model, InputContext::SpinoffBranch)
+        }
         Message::SpinoffBranch(branch_name) => spinoff_branch::update(model, branch_name),
     }
 }

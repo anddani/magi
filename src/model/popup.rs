@@ -96,8 +96,6 @@ pub enum InputContext {
 /// State for text input popups (e.g., new branch name)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InputPopupState {
-    /// Title displayed in the popup
-    pub title: String,
     /// The text the user has entered so far
     pub input_text: String,
     /// Context for what action to perform when input is confirmed
@@ -106,11 +104,21 @@ pub struct InputPopupState {
 
 impl InputPopupState {
     /// Create a new input popup state
-    pub fn new(title: String, context: InputContext) -> Self {
+    pub fn new(context: InputContext) -> Self {
         Self {
-            title,
             input_text: String::new(),
             context,
+        }
+    }
+
+    pub fn title(&self) -> String {
+        match &self.context {
+            InputContext::CreateNewBranch { .. } => "Name for new branch".to_string(),
+            InputContext::RenameBranch { old_name } => {
+                format!("Rename branch '{}' to:", old_name)
+            }
+            InputContext::Stash(stash_type) => stash_type.title().to_string(),
+            InputContext::SpinoffBranch => "Name for new spin-off branch".to_string(),
         }
     }
 }
@@ -256,4 +264,10 @@ pub enum PopupContent {
     Confirm(ConfirmPopupState),
     /// Text input popup for entering arbitrary text (e.g., branch name)
     Input(InputPopupState),
+}
+
+impl PopupContent {
+    pub fn input_popup(context: InputContext) -> Self {
+        Self::Input(InputPopupState::new(context))
+    }
 }

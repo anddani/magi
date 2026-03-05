@@ -38,13 +38,10 @@ pub fn update(model: &mut Model, starting_point: String, checkout: bool) -> Opti
     };
 
     // Show the input popup for the new branch name
-    let mut state = InputPopupState::new(
-        "Name for new branch".to_string(),
-        InputContext::CreateNewBranch {
-            starting_point,
-            checkout,
-        },
-    );
+    let mut state = InputPopupState::new(InputContext::CreateNewBranch {
+        starting_point,
+        checkout,
+    });
 
     // Pre-fill with suggested name if available
     if let Some(name) = suggested_name {

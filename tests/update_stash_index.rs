@@ -19,7 +19,7 @@ fn test_show_stash_index_input_opens_input_popup() {
     assert!(matches!(
         model.popup,
         Some(PopupContent::Input(ref state))
-            if state.title == "Stash index message"
+            if state.title() == "Stash index message"
             && matches!(state.context, InputContext::Stash(StashType::Index))
     ));
 }
