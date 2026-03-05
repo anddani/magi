@@ -69,6 +69,7 @@ mod toggle_argument;
 mod toggle_section;
 mod unstage_all;
 mod unstage_selected;
+mod worktree_checkout;
 
 /// Processes a [`Message`], modifying the passed model.
 ///
@@ -185,5 +186,11 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             show_input_popup::update(model, InputContext::SpinoffBranch)
         }
         Message::SpinoffBranch(branch_name) => spinoff_branch::update(model, branch_name),
+        Message::ShowWorktreePathInput { branch } => {
+            show_input_popup::update(model, InputContext::WorktreePath { branch })
+        }
+        Message::WorktreeCheckout { branch, path } => {
+            worktree_checkout::update(model, branch, path)
+        }
     }
 }

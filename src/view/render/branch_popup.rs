@@ -31,6 +31,10 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
                 Span::styled(" s", key_style),
                 Span::styled(" new spin-off", desc_style),
             ]),
+            Line::from(vec![
+                Span::styled(" w", key_style),
+                Span::styled(" new worktree", desc_style),
+            ]),
         ],
     };
 

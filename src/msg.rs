@@ -161,6 +161,15 @@ pub enum Message {
     SpinoffBranch(String),
     /// Checkout the selected branch
     CheckoutBranch(String),
+    /// Show the input popup for the new worktree path
+    ShowWorktreePathInput {
+        branch: String,
+    },
+    /// Add a new worktree at the given path, checking out branch
+    WorktreeCheckout {
+        branch: String,
+        path: String,
+    },
     /// Show confirmation popup before deleting the selected branch
     DeleteBranch(String),
     /// Actually delete the branch after user confirmation
@@ -416,6 +425,8 @@ pub enum SelectPopup {
     // Branch-related
     /// Show the checkout branch select popup
     CheckoutBranch,
+    /// Show branch/revision select to checkout in a new worktree
+    WorktreeCheckout,
     /// Show the checkout local branch select popup (only local branches)
     CheckoutLocalBranch,
     /// Show the delete branch select popup
