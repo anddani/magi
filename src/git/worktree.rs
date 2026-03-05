@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::Path;
 use std::process::Stdio;
 
@@ -8,6 +9,25 @@ use crate::errors::MagiResult;
 pub enum WorktreeAddResult {
     Success,
     Error(String),
+}
+
+/// Returns the set of local branch names currently checked out in any worktree.
+/// These cannot be checked out again without `--detach`.
+pub fn get_checked_out_branches<P: AsRef<Path>>(repo_path: P) -> HashSet<String> {
+    let output = git_cmd(&repo_path, &["worktree", "list", "--porcelain"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output();
+
+    let Ok(output) = output else {
+        return HashSet::new();
+    };
+
+    let text = String::from_utf8_lossy(&output.stdout);
+    text.lines()
+        .filter_map(|line| line.strip_prefix("branch refs/heads/"))
+        .map(|branch| branch.to_string())
+        .collect()
 }
 
 /// Add a new worktree at `path` checking out `branch`.
@@ -66,6 +86,32 @@ mod tests {
 
         // Verify the worktree was created
         assert!(std::path::Path::new(&worktree_path_str).exists());
+    }
+
+    #[test]
+    fn test_get_checked_out_branches_includes_current_branch() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        // main is checked out after TestRepo::new()
+        let checked_out = get_checked_out_branches(repo_path);
+        assert!(
+            checked_out.contains("main"),
+            "Expected 'main' to be in checked-out branches, got: {checked_out:?}"
+        );
+    }
+
+    #[test]
+    fn test_get_checked_out_branches_excludes_non_checked_out() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        crate::git::git_cmd(repo_path, &["branch", "other-branch"])
+            .output()
+            .unwrap();
+
+        let checked_out = get_checked_out_branches(repo_path);
+        assert!(!checked_out.contains("other-branch"));
     }
 
     #[test]

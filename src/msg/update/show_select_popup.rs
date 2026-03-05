@@ -8,6 +8,7 @@ use crate::{
         },
         open_pr::has_any_remote,
         push::{get_current_branch, get_local_tags, get_remotes},
+        worktree::get_checked_out_branches,
     },
     model::{
         BranchSuggestion, LineContent, Model, Toast, ToastStyle,
@@ -271,14 +272,22 @@ fn show_checkout_branch(model: &mut Model, local_only: bool) -> Option<Message> 
 }
 
 fn show_worktree_checkout(model: &mut Model) -> Option<Message> {
-    let branches = get_branches(&model.git_info.repository);
+    let checked_out = get_checked_out_branches(&model.workdir);
+    let branches: Vec<String> = get_branches(&model.git_info.repository)
+        .into_iter()
+        .filter(|b| !checked_out.contains(b.as_str()))
+        .collect();
     let tags = get_local_tags(&model.git_info.repository);
 
     let preferred = model
         .ui_model
         .lines
         .get(model.ui_model.cursor_position)
-        .and_then(|line| suggestions_from_line(line).into_iter().next());
+        .and_then(|line| {
+            suggestions_from_line(line)
+                .into_iter()
+                .find(|s| !checked_out.contains(s.name()))
+        });
 
     let mut options: Vec<String> = Vec::new();
 
