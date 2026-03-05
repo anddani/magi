@@ -62,6 +62,7 @@ mod show_reset_popup;
 mod show_revert_popup;
 mod show_select_popup;
 mod spinoff_branch;
+mod spinout_branch;
 mod stage_all_modified;
 mod stage_selected;
 mod stash;
@@ -186,6 +187,10 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             show_input_popup::update(model, InputContext::SpinoffBranch)
         }
         Message::SpinoffBranch(branch_name) => spinoff_branch::update(model, branch_name),
+        Message::ShowSpinoutBranchInput => {
+            show_input_popup::update(model, InputContext::SpinoutBranch)
+        }
+        Message::SpinoutBranch(branch_name) => spinout_branch::update(model, branch_name),
         Message::ShowWorktreePathInput { branch, checkout } => {
             show_input_popup::update(model, InputContext::WorktreePath { branch, checkout })
         }

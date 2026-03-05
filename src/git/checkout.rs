@@ -310,6 +310,178 @@ pub fn spinoff_branch<P: AsRef<Path>>(
     Ok(SpinoffResult::Success)
 }
 
+/// Result of a spinout branch operation
+pub enum SpinoutResult {
+    Success,
+    Error(String),
+}
+
+/// Create a new branch from the current HEAD (spin-out), then reset the current branch
+/// to the last commit it shares with its upstream (if any). Unlike spin-off, you remain
+/// on the current branch after the operation.
+///
+/// If there are uncommitted changes, falls back to spin-off behavior (checks out the new
+/// branch) because resetting the working tree would destroy uncommitted work.
+pub fn spinout_branch<P: AsRef<Path>>(
+    repo_path: P,
+    new_branch_name: &str,
+) -> MagiResult<SpinoutResult> {
+    let repo_path = repo_path.as_ref();
+
+    // 1. Get current branch name
+    let current_output = git_cmd(repo_path, &["symbolic-ref", "--short", "HEAD"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+
+    if !current_output.status.success() {
+        return Ok(SpinoutResult::Error(
+            "Not on a branch (detached HEAD)".to_string(),
+        ));
+    }
+    let current_branch = String::from_utf8_lossy(&current_output.stdout)
+        .trim()
+        .to_string();
+
+    // 2. Check for uncommitted changes (staged or unstaged)
+    let status_output = git_cmd(repo_path, &["status", "--porcelain"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+    let has_uncommitted_changes =
+        status_output.status.success() && !status_output.stdout.is_empty();
+
+    // 3. Get upstream tracking branch
+    let upstream_output = git_cmd(
+        repo_path,
+        &[
+            "rev-parse",
+            "--abbrev-ref",
+            &format!("{}@{{upstream}}", current_branch),
+        ],
+    )
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .output()?;
+
+    let upstream = if upstream_output.status.success() {
+        let name = String::from_utf8_lossy(&upstream_output.stdout)
+            .trim()
+            .to_string();
+        if name.is_empty() { None } else { Some(name) }
+    } else {
+        None
+    };
+
+    if has_uncommitted_changes {
+        // Fall back to spinoff behavior: checkout the new branch, update-ref old branch
+        let checkout_output = git_cmd(repo_path, &["checkout", "-b", new_branch_name])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()?;
+
+        if !checkout_output.status.success() {
+            let stderr = String::from_utf8_lossy(&checkout_output.stderr)
+                .trim()
+                .to_string();
+            return Ok(SpinoutResult::Error(if stderr.is_empty() {
+                "Failed to create branch".to_string()
+            } else {
+                stderr
+            }));
+        }
+
+        if let Some(upstream_name) = upstream {
+            let merge_base_output =
+                git_cmd(repo_path, &["merge-base", &current_branch, &upstream_name])
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output()?;
+
+            if merge_base_output.status.success() {
+                let merge_base = String::from_utf8_lossy(&merge_base_output.stdout)
+                    .trim()
+                    .to_string();
+
+                let old_head_output = git_cmd(
+                    repo_path,
+                    &["rev-parse", &format!("refs/heads/{}", current_branch)],
+                )
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .output()?;
+
+                if old_head_output.status.success() {
+                    let old_head = String::from_utf8_lossy(&old_head_output.stdout)
+                        .trim()
+                        .to_string();
+                    if merge_base != old_head {
+                        let ref_name = format!("refs/heads/{}", current_branch);
+                        let reset_msg = format!("reset: moving to {}", merge_base);
+                        git_cmd(
+                            repo_path,
+                            &["update-ref", "-m", &reset_msg, &ref_name, &merge_base],
+                        )
+                        .stdout(Stdio::piped())
+                        .stderr(Stdio::piped())
+                        .output()?;
+                    }
+                }
+            }
+        }
+    } else {
+        // Spinout behavior: create branch without checking out, reset current branch
+        let branch_output = git_cmd(repo_path, &["branch", new_branch_name])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()?;
+
+        if !branch_output.status.success() {
+            let stderr = String::from_utf8_lossy(&branch_output.stderr)
+                .trim()
+                .to_string();
+            return Ok(SpinoutResult::Error(if stderr.is_empty() {
+                "Failed to create branch".to_string()
+            } else {
+                stderr
+            }));
+        }
+
+        if let Some(upstream_name) = upstream {
+            let merge_base_output =
+                git_cmd(repo_path, &["merge-base", &current_branch, &upstream_name])
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output()?;
+
+            if merge_base_output.status.success() {
+                let merge_base = String::from_utf8_lossy(&merge_base_output.stdout)
+                    .trim()
+                    .to_string();
+
+                let head_output = git_cmd(repo_path, &["rev-parse", "HEAD"])
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output()?;
+
+                if head_output.status.success() {
+                    let head = String::from_utf8_lossy(&head_output.stdout)
+                        .trim()
+                        .to_string();
+                    if merge_base != head {
+                        git_cmd(repo_path, &["reset", "--hard", &merge_base])
+                            .stdout(Stdio::piped())
+                            .stderr(Stdio::piped())
+                            .output()?;
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(SpinoutResult::Success)
+}
+
 /// Result of a rename branch operation
 pub enum RenameBranchResult {
     Success,
