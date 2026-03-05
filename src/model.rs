@@ -55,8 +55,8 @@ pub struct Model {
     pub cursor_reposition_context: Option<cursor_context::CursorContext>,
     /// The view mode to return to when exiting Preview
     pub preview_return_mode: Option<ViewMode>,
-    /// The cursor position to restore when exiting Preview
-    pub preview_return_cursor: usize,
+    /// The UiModel to restore when exiting Preview
+    pub preview_return_ui_model: Option<UiModel>,
 }
 
 #[derive(Debug, Clone)]

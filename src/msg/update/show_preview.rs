@@ -20,7 +20,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
     }
 
     model.preview_return_mode = Some(model.view_mode);
-    model.preview_return_cursor = model.ui_model.cursor_position;
+    model.preview_return_ui_model = Some(model.ui_model.clone());
     model.ui_model.lines = preview_lines;
     model.ui_model.cursor_position = 0;
     model.ui_model.scroll_offset = 0;

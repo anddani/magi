@@ -41,7 +41,10 @@ fn test_show_preview_on_commit_line_enters_preview_mode() {
         "Expected PreviewLine entries"
     );
     assert_eq!(model.ui_model.cursor_position, 0);
-    assert_eq!(model.preview_return_cursor, commit_pos);
+    assert_eq!(
+        model.preview_return_ui_model.unwrap().cursor_position,
+        commit_pos
+    );
 }
 
 // ── ShowPreview on a Stash line ───────────────────────────────────────────────

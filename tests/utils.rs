@@ -43,7 +43,7 @@ pub fn create_test_model() -> Model {
         view_mode: ViewMode::Status,
         cursor_reposition_context: None,
         preview_return_mode: None,
-        preview_return_cursor: 0,
+        preview_return_ui_model: None,
     }
 }
 
