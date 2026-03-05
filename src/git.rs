@@ -48,6 +48,7 @@ pub mod test_repo;
 pub mod unpulled_commits;
 pub mod unstaged_changes;
 pub mod untracked_files;
+pub mod worktree;
 
 pub struct GitInfo {
     pub repository: Repository,

@@ -58,6 +58,7 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
 
         SelectPopup::CheckoutBranch => show_checkout_branch(model, false),
         SelectPopup::CheckoutLocalBranch => show_checkout_branch(model, true),
+        SelectPopup::WorktreeCheckout => show_worktree_checkout(model),
         SelectPopup::DeleteBranch => show_delete_branch(model),
         SelectPopup::RenameBranch => show_rename_branch(model),
         SelectPopup::CreateNewBranch { checkout } => show_new_branch_base(model, checkout),
@@ -265,6 +266,55 @@ fn show_checkout_branch(model: &mut Model, local_only: bool) -> Option<Message> 
         "Checkout"
     };
     let state = SelectPopupState::new(title.to_string(), branches);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
+
+fn show_worktree_checkout(model: &mut Model) -> Option<Message> {
+    let branches = get_branches(&model.git_info.repository);
+    let tags = get_local_tags(&model.git_info.repository);
+
+    let preferred = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| suggestions_from_line(line).into_iter().next());
+
+    let mut options: Vec<String> = Vec::new();
+
+    if let Some(ref preferred) = preferred {
+        options.push(preferred.name().to_string());
+    }
+
+    for branch in &branches {
+        if preferred
+            .as_ref()
+            .map(|p| p.name() != branch.as_str())
+            .unwrap_or(true)
+        {
+            options.push(branch.clone());
+        }
+    }
+
+    for tag in &tags {
+        if preferred
+            .as_ref()
+            .map(|p| p.name() != tag.as_str())
+            .unwrap_or(true)
+        {
+            options.push(tag.clone());
+        }
+    }
+
+    if options.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No branches or tags found".to_string(),
+        });
+        return None;
+    }
+
+    model.select_context = Some(SelectContext::WorktreeCheckout);
+    let state = SelectPopupState::new("Worktree checkout".to_string(), options);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }

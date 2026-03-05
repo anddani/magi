@@ -62,6 +62,8 @@ pub enum SelectContext {
     ResetBranchPick,
     /// Selecting a target to reset the given branch to (holds branch name)
     ResetBranchTarget(String),
+    /// Selecting a branch/revision to check out into a new worktree
+    WorktreeCheckout,
 }
 
 /// State for the select popup (fuzzy finder style)

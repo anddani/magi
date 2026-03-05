@@ -57,6 +57,10 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             new_name: input,
         }),
         InputContext::SpinoffBranch => Some(Message::SpinoffBranch(input)),
+        InputContext::WorktreePath { branch } => Some(Message::WorktreeCheckout {
+            branch,
+            path: input,
+        }),
         InputContext::Stash(_) => unreachable!(),
     }
 }
