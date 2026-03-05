@@ -73,15 +73,7 @@ Here are a few features that the aforementioned applications lack:
 - [x] Configurable color themes
 - [ ] Commands
     - [ ] Apply
-    - [ ] Branch
-        - [x] Checkout branch/revision
-        - [x] Checkout local branch
-        - [x] Checkout new branch
-        - [ ] Checkout spin-off branch
-        - [ ] Checkout new worktree
-        - [x] Create new branch
-        - [ ] Create new spin-out branch
-        - [ ] Create new worktree
+    - [x] Branch
     - [ ] Bisect
     - [ ] Commit
         - [x] Commit
@@ -96,8 +88,6 @@ Here are a few features that the aforementioned applications lack:
         - [ ] Instant fixup
         - [ ] Instant squash
     - [ ] Clone
-    - [ ] Diff
-    - [ ] Diff (change)
     - [ ] Fetch
         - [x] Fetch all remotes
         - [x] Prune deleted branches
@@ -108,8 +98,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Rebase local commits
         - [x] Autostash
         - [x] Force
-    - [ ] Help
-    - [ ] Jump to section
+    - [x] Help
     - [ ] Log
         - [x] Local
         - [ ] Other
@@ -121,7 +110,6 @@ Here are a few features that the aforementioned applications lack:
         - [ ] Other reflog
         - [ ] HEAD reflog
         - [ ] Shortlog
-    - [ ] Log (change)
     - [ ] Merge
     - [ ] Remote
     - [ ] Submodule
