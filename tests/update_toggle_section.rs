@@ -7,7 +7,7 @@ use magi::{
         DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model, PopupContent,
         RunningState, SectionType, UiModel, ViewMode,
     },
-    msg::{Message, update::update},
+    msg::{Message, NavigationAction, update::update},
 };
 
 use crate::utils::{
@@ -217,7 +217,10 @@ fn test_half_page_down_with_collapsed_sections() {
     // half_page = 5, but only 2 visible lines after cursor
     // Cursor should land on line 12 (file2), the last visible line after cursor
 
-    update(&mut model, Message::HalfPageDown);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::HalfPageDown),
+    );
 
     // Cursor must be on a visible line
     assert!(
@@ -258,7 +261,10 @@ fn test_half_page_up_with_collapsed_sections() {
     // Visible lines are: 0 (header), 1 (file1), 12 (file2)
     // half_page = 5, but only 2 visible lines before cursor
 
-    update(&mut model, Message::HalfPageUp);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::HalfPageUp),
+    );
 
     // Cursor must be on a visible line
     assert!(

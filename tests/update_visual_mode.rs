@@ -1,4 +1,4 @@
-use magi::msg::{Message, update::update};
+use magi::msg::{Message, NavigationAction, update::update};
 
 use crate::utils::create_test_model_with_lines;
 
@@ -102,12 +102,12 @@ fn test_move_down_in_visual_mode_expands_selection() {
     assert_eq!(model.ui_model.visual_selection_range(), Some((3, 3)));
 
     // Move down
-    update(&mut model, Message::MoveDown);
+    update(&mut model, Message::Navigation(NavigationAction::MoveDown));
     assert_eq!(model.ui_model.cursor_position, 4);
     assert_eq!(model.ui_model.visual_selection_range(), Some((3, 4)));
 
     // Move down again
-    update(&mut model, Message::MoveDown);
+    update(&mut model, Message::Navigation(NavigationAction::MoveDown));
     assert_eq!(model.ui_model.cursor_position, 5);
     assert_eq!(model.ui_model.visual_selection_range(), Some((3, 5)));
 }
@@ -122,12 +122,12 @@ fn test_move_up_in_visual_mode_expands_selection() {
     assert_eq!(model.ui_model.visual_selection_range(), Some((7, 7)));
 
     // Move up
-    update(&mut model, Message::MoveUp);
+    update(&mut model, Message::Navigation(NavigationAction::MoveUp));
     assert_eq!(model.ui_model.cursor_position, 6);
     assert_eq!(model.ui_model.visual_selection_range(), Some((6, 7)));
 
     // Move up again
-    update(&mut model, Message::MoveUp);
+    update(&mut model, Message::Navigation(NavigationAction::MoveUp));
     assert_eq!(model.ui_model.cursor_position, 5);
     assert_eq!(model.ui_model.visual_selection_range(), Some((5, 7)));
 }
@@ -143,10 +143,13 @@ fn test_visual_mode_survives_cursor_movement() {
     let anchor = model.ui_model.visual_mode_anchor;
 
     // Move cursor around
-    update(&mut model, Message::MoveDown);
-    update(&mut model, Message::MoveDown);
-    update(&mut model, Message::HalfPageDown);
-    update(&mut model, Message::MoveUp);
+    update(&mut model, Message::Navigation(NavigationAction::MoveDown));
+    update(&mut model, Message::Navigation(NavigationAction::MoveDown));
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::HalfPageDown),
+    );
+    update(&mut model, Message::Navigation(NavigationAction::MoveUp));
 
     // Visual mode should still be active with same anchor
     assert!(model.ui_model.is_visual_mode());

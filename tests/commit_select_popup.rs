@@ -4,7 +4,9 @@ use magi::{
         ViewMode,
         popup::{CommitSelectPopupState, SelectContext},
     },
-    msg::{CommitSelect, FixupType, LogType, Message, SelectMessage, update::update},
+    msg::{
+        CommitSelect, FixupType, LogType, Message, NavigationAction, SelectMessage, update::update,
+    },
 };
 
 mod utils;
@@ -140,11 +142,11 @@ fn test_commit_select_popup_navigation() {
     assert_eq!(model.ui_model.cursor_position, 0);
 
     // Move down — uses standard MoveDown message
-    update(&mut model, Message::MoveDown);
+    update(&mut model, Message::Navigation(NavigationAction::MoveDown));
     assert_eq!(model.ui_model.cursor_position, 1);
 
     // Move up — uses standard MoveUp message
-    update(&mut model, Message::MoveUp);
+    update(&mut model, Message::Navigation(NavigationAction::MoveUp));
     assert_eq!(model.ui_model.cursor_position, 0);
 }
 
@@ -173,7 +175,7 @@ fn test_commit_select_popup_confirm_picks_second_commit() {
     );
 
     // Move to second commit (index 1)
-    update(&mut model, Message::MoveDown);
+    update(&mut model, Message::Navigation(NavigationAction::MoveDown));
     assert_eq!(model.ui_model.cursor_position, 1);
 
     let expected_hash =

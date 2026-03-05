@@ -263,10 +263,11 @@ pub enum PopupContentCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContent {
-    Error {
-        message: String,
-    },
+    /// Shows an error popup
+    Error { message: String },
+    /// Shows the help popup
     Help,
+    /// Shows a command popup
     Command(PopupContentCommand),
     /// Credential input popup for password/passphrase/etc.
     Credential(CredentialPopupState),

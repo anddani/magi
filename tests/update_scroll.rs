@@ -1,6 +1,6 @@
 use magi::{
     model::SectionType,
-    msg::{Message, update::update},
+    msg::{Message, NavigationAction, update::update},
 };
 
 use crate::utils::{create_section_lines, create_test_model_with_lines, create_two_file_lines};
@@ -12,12 +12,18 @@ fn test_scroll_line_down() {
     let mut model = create_test_model_with_lines(20);
 
     // Scroll down once
-    update(&mut model, Message::ScrollLineDown);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineDown),
+    );
     assert_eq!(model.ui_model.scroll_offset, 1);
     assert_eq!(model.ui_model.cursor_position, 1); // Cursor moves with viewport
 
     // Scroll down again
-    update(&mut model, Message::ScrollLineDown);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineDown),
+    );
     assert_eq!(model.ui_model.scroll_offset, 2);
     assert_eq!(model.ui_model.cursor_position, 2);
 }
@@ -29,13 +35,19 @@ fn test_scroll_line_up() {
     model.ui_model.scroll_offset = 10;
 
     // Scroll up once
-    update(&mut model, Message::ScrollLineUp);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineUp),
+    );
     assert_eq!(model.ui_model.scroll_offset, 9);
     assert_eq!(model.ui_model.cursor_position, 15); // Cursor stays in place
 
     // Scroll up more times until cursor would leave viewport
     for _ in 0..6 {
-        update(&mut model, Message::ScrollLineUp);
+        update(
+            &mut model,
+            Message::Navigation(NavigationAction::ScrollLineUp),
+        );
     }
     // scroll_offset should be 3, cursor should move to bottom of viewport
     assert_eq!(model.ui_model.scroll_offset, 3);
@@ -49,7 +61,10 @@ fn test_scroll_line_down_cursor_follows_top() {
     model.ui_model.viewport_height = 5;
 
     // Cursor at top of viewport, scroll down - cursor should follow
-    update(&mut model, Message::ScrollLineDown);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineDown),
+    );
     assert_eq!(model.ui_model.scroll_offset, 1);
     assert_eq!(model.ui_model.cursor_position, 1);
 }
@@ -62,7 +77,10 @@ fn test_scroll_line_up_cursor_follows_bottom() {
     model.ui_model.viewport_height = 5;
 
     // Cursor at bottom of viewport, scroll up - cursor should stay in viewport
-    update(&mut model, Message::ScrollLineUp);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineUp),
+    );
     assert_eq!(model.ui_model.scroll_offset, 9);
     assert_eq!(model.ui_model.cursor_position, 13); // Follows bottom of viewport
 }
@@ -74,10 +92,22 @@ fn test_scroll_line_down_at_end() {
     model.ui_model.scroll_offset = 5; // Already scrolled down
 
     // Try to scroll past end
-    update(&mut model, Message::ScrollLineDown);
-    update(&mut model, Message::ScrollLineDown);
-    update(&mut model, Message::ScrollLineDown);
-    update(&mut model, Message::ScrollLineDown);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineDown),
+    );
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineDown),
+    );
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineDown),
+    );
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineDown),
+    );
     // Should stop at max_pos (9) since viewport can't go beyond content
     assert!(model.ui_model.scroll_offset <= 9);
 }
@@ -87,7 +117,10 @@ fn test_scroll_line_up_at_start() {
     let mut model = create_test_model_with_lines(20);
 
     // Try to scroll up at top - should have no effect
-    update(&mut model, Message::ScrollLineUp);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineUp),
+    );
     assert_eq!(model.ui_model.scroll_offset, 0);
     assert_eq!(model.ui_model.cursor_position, 0);
 }
@@ -104,7 +137,10 @@ fn test_scroll_line_down_with_collapsed_sections() {
         .insert(SectionType::UntrackedFiles);
 
     // Scroll down should skip hidden lines
-    update(&mut model, Message::ScrollLineDown);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineDown),
+    );
     // Should land on line 3 (empty line) which is the next visible line
     assert_eq!(model.ui_model.scroll_offset, 3);
     assert_eq!(model.ui_model.cursor_position, 3);
@@ -121,11 +157,17 @@ fn test_scroll_with_zero_viewport() {
     let original_scroll = model.ui_model.scroll_offset;
     let original_cursor = model.ui_model.cursor_position;
 
-    update(&mut model, Message::ScrollLineDown);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineDown),
+    );
     assert_eq!(model.ui_model.scroll_offset, original_scroll);
     assert_eq!(model.ui_model.cursor_position, original_cursor);
 
-    update(&mut model, Message::ScrollLineUp);
+    update(
+        &mut model,
+        Message::Navigation(NavigationAction::ScrollLineUp),
+    );
     assert_eq!(model.ui_model.scroll_offset, original_scroll);
     assert_eq!(model.ui_model.cursor_position, original_cursor);
 }
@@ -147,7 +189,7 @@ fn test_scroll_with_collapsed_file_does_not_over_scroll() {
         });
 
     // Move down should go to the second file header (line 23)
-    update(&mut model, Message::MoveDown);
+    update(&mut model, Message::Navigation(NavigationAction::MoveDown));
     assert_eq!(model.ui_model.cursor_position, 23);
 
     // With viewport_height=10, and only 3 visible lines before cursor
