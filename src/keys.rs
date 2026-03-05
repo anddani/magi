@@ -6,7 +6,7 @@ use crossterm::event::{
 
 use crate::{
     model::{
-        Model, ViewMode,
+        LineContent, Model, ViewMode,
         popup::{ConfirmAction, PopupContent, PopupContentCommand},
     },
     msg::{Message, NavigationAction, RebaseCommand, SearchMessage, SelectMessage},
@@ -160,6 +160,35 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         return Some(Message::Search(SearchMessage::Cancel));
     }
 
+    // Exit preview mode with q, Esc, or Ctrl-g
+    if model.view_mode == ViewMode::Preview {
+        match (key.modifiers, key.code) {
+            (_, Char('q')) | (_, Esc) | (CTRL, Char('g')) | (CTRL, Char('c')) => {
+                return Some(Message::ExitPreview);
+            }
+            _ => {}
+        }
+    }
+
+    // Enter to preview commit/stash (Status or Log browse mode)
+    if matches!(model.view_mode, ViewMode::Status | ViewMode::Log(_, false)) && key.code == Enter {
+        let cursor_content = model
+            .ui_model
+            .lines
+            .get(model.ui_model.cursor_position)
+            .map(|l| &l.content);
+        let is_previewable = matches!(
+            cursor_content,
+            Some(LineContent::Commit(_)) | Some(LineContent::Stash(_))
+        ) || matches!(
+            cursor_content,
+            Some(LineContent::LogLine(e)) if e.hash.is_some()
+        );
+        if is_previewable {
+            return Some(Message::ShowPreview);
+        }
+    }
+
     // Enter/Esc in log pick mode
     if let ViewMode::Log(_, true) = model.view_mode {
         match (key.modifiers, key.code) {
@@ -189,6 +218,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (_, Char('q')) => match model.view_mode {
             ViewMode::Log(_, _) => Some(Message::ExitLogView),
             ViewMode::Status => Some(Message::Quit),
+            ViewMode::Preview => Some(Message::ExitPreview),
         },
         (_, Char('V')) => Some(Message::EnterVisualMode),
         (_, Char('s')) => Some(Message::StageSelected),
@@ -253,6 +283,8 @@ mod tests {
             open_pr_branch: None,
             view_mode: ViewMode::Status,
             cursor_reposition_context: None,
+            preview_return_mode: None,
+            preview_return_ui_model: None,
         }
     }
 
@@ -1880,5 +1912,129 @@ mod tests {
         let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
         assert_eq!(result, None);
+    }
+
+    // Preview mode tests
+
+    fn create_preview_model() -> Model {
+        use crate::model::{PreviewLineType, ViewMode};
+
+        let mut model = create_test_model();
+        model.view_mode = ViewMode::Preview;
+        model.ui_model.lines = vec![crate::model::Line {
+            content: crate::model::LineContent::PreviewLine {
+                content: "commit abc123".to_string(),
+                line_type: PreviewLineType::Header,
+            },
+            section: None,
+        }];
+        model
+    }
+
+    #[test]
+    fn test_q_in_preview_mode_exits_preview() {
+        let model = create_preview_model();
+
+        let key = create_key_event(NONE, Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitPreview));
+    }
+
+    #[test]
+    fn test_esc_in_preview_mode_exits_preview() {
+        let model = create_preview_model();
+
+        let key = create_key_event(NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitPreview));
+    }
+
+    #[test]
+    fn test_ctrl_g_in_preview_mode_exits_preview() {
+        let model = create_preview_model();
+
+        let key = create_key_event(CTRL, Char('g'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitPreview));
+    }
+
+    #[test]
+    fn test_enter_on_commit_line_in_status_shows_preview() {
+        let mut model = create_test_model();
+
+        // Put a commit line at cursor position
+        model.ui_model.lines = vec![crate::model::Line {
+            content: crate::model::LineContent::Commit(crate::git::CommitInfo {
+                hash: "abc1234".to_string(),
+                refs: vec![],
+                message: "Test commit".to_string(),
+            }),
+            section: None,
+        }];
+        model.ui_model.cursor_position = 0;
+
+        let key = create_key_event(NONE, KeyCode::Enter);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowPreview));
+    }
+
+    #[test]
+    fn test_enter_on_empty_line_does_not_show_preview() {
+        let mut model = create_test_model();
+        model.ui_model.lines = vec![crate::model::Line {
+            content: crate::model::LineContent::EmptyLine,
+            section: None,
+        }];
+        model.ui_model.cursor_position = 0;
+
+        let key = create_key_event(NONE, KeyCode::Enter);
+        let result = handle_key(key, &model);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_enter_on_stash_line_shows_preview() {
+        use crate::model::ViewMode;
+
+        let mut model = create_test_model();
+        model.view_mode = ViewMode::Status;
+        model.ui_model.lines = vec![crate::model::Line {
+            content: crate::model::LineContent::Stash(crate::git::StashEntry {
+                index: 0,
+                message: "WIP on main: abc1234 test".to_string(),
+            }),
+            section: None,
+        }];
+        model.ui_model.cursor_position = 0;
+
+        let key = create_key_event(NONE, KeyCode::Enter);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowPreview));
+    }
+
+    #[test]
+    fn test_enter_on_log_line_with_hash_shows_preview() {
+        use crate::model::ViewMode;
+        use crate::model::log_view::LogEntry;
+        use crate::msg::LogType;
+
+        let mut model = create_test_model();
+        model.view_mode = ViewMode::Log(LogType::Current, false);
+        model.ui_model.lines = vec![crate::model::Line {
+            content: crate::model::LineContent::LogLine(LogEntry::new(
+                "* ".to_string(),
+                Some("abc1234".to_string()),
+                vec![],
+                Some("Author".to_string()),
+                Some("1 hour ago".to_string()),
+                Some("Test commit".to_string()),
+            )),
+            section: None,
+        }];
+        model.ui_model.cursor_position = 0;
+
+        let key = create_key_event(NONE, KeyCode::Enter);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowPreview));
     }
 }

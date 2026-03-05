@@ -9,6 +9,8 @@ use magi::{
 mod utils;
 use utils::create_model_from_test_repo;
 
+use crate::utils::create_test_model;
+
 fn key(code: KeyCode) -> KeyEvent {
     KeyEvent {
         code,
@@ -268,27 +270,10 @@ fn test_spinoff_with_upstream_resets_old_branch() {
     // Create model from local repo
     let git_info = magi::git::GitInfo::new_from_path(local_path).unwrap();
     let lines = git_info.get_lines().unwrap();
-    let mut model = magi::model::Model {
-        git_info,
-        workdir: local_path.to_path_buf(),
-        running_state: magi::model::RunningState::Running,
-        ui_model: magi::model::UiModel {
-            lines,
-            ..Default::default()
-        },
-        theme: magi::config::Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-        arg_mode: false,
-        pending_g: false,
-        arguments: None,
-        open_pr_branch: None,
-        view_mode: magi::model::ViewMode::Status,
-        cursor_reposition_context: None,
-    };
+    let mut model = create_test_model();
+    model.workdir = local_path.to_path_buf();
+    model.git_info = git_info;
+    model.ui_model.lines = lines;
 
     // Perform spinoff
     let result = update(&mut model, Message::SpinoffBranch("feature".to_string()));

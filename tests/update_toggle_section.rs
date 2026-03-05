@@ -1,11 +1,10 @@
 use std::{collections::HashSet, fs};
 
 use magi::{
-    config::Theme,
-    git::{GitInfo, test_repo::TestRepo},
+    git::test_repo::TestRepo,
     model::{
-        DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model, PopupContent,
-        RunningState, SectionType, UiModel, ViewMode,
+        DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, PopupContent,
+        SectionType,
     },
     msg::{Message, NavigationAction, update::update},
 };
@@ -446,39 +445,8 @@ fn test_expanded_state_preserved_when_staging() {
     let file_path = repo_path.join("test.txt");
     fs::write(&file_path, "modified content").unwrap();
 
-    // Create GitInfo from test repo
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    let lines = git_info.get_lines().unwrap();
-
-    // Don't collapse the file - leave it expanded
-    let collapsed_sections = HashSet::new();
-
-    let workdir = repo_path.to_path_buf();
-    let mut model = Model {
-        git_info,
-        workdir,
-        running_state: RunningState::Running,
-        ui_model: UiModel {
-            lines,
-            cursor_position: 0,
-            scroll_offset: 0,
-            viewport_height: 20,
-            collapsed_sections,
-            ..Default::default()
-        },
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-        arg_mode: false,
-        pending_g: false,
-        arguments: None,
-        open_pr_branch: None,
-        view_mode: ViewMode::Status,
-        cursor_reposition_context: None,
-    };
+    let mut model = create_test_model();
+    model.ui_model.viewport_height = 20;
 
     // Stage all modified files
     let follow_up = update(&mut model, Message::StageAllModified);

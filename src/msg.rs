@@ -227,6 +227,11 @@ pub enum Message {
     EnterSearchMode,
     /// Search messages (input, navigate, cancel)
     Search(SearchMessage),
+
+    /// Enter preview mode for the commit/stash under cursor
+    ShowPreview,
+    /// Exit preview mode and return to previous view
+    ExitPreview,
 }
 
 #[derive(PartialEq, Eq, Debug)]

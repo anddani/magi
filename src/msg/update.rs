@@ -20,6 +20,7 @@ mod enter_search_mode;
 mod enter_visual_mode;
 mod exit_arg_mode;
 mod exit_log_view;
+mod exit_preview;
 mod exit_visual_mode;
 mod fetch;
 mod fixup_commit;
@@ -48,6 +49,7 @@ mod show_commit_select;
 mod show_fetch_popup;
 mod show_input_popup;
 mod show_log;
+mod show_preview;
 mod show_pull_popup;
 mod show_push_popup;
 mod show_rebase_popup;
@@ -185,5 +187,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             path,
             checkout,
         } => worktree_checkout::update(model, branch, path, checkout),
+        Message::ShowPreview => show_preview::update(model),
+        Message::ExitPreview => exit_preview::update(model),
     }
 }

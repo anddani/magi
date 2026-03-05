@@ -1,7 +1,5 @@
-use magi::config::Theme;
-use magi::git::GitInfo;
 use magi::git::test_repo::TestRepo;
-use magi::model::{Model, RunningState, SectionType, UiModel, ViewMode};
+use magi::model::{RunningState, SectionType};
 use magi::msg::Message;
 use magi::msg::update::update;
 use magi::msg::util::visible_lines_between;
@@ -9,38 +7,13 @@ use std::collections::HashSet;
 
 mod utils;
 
-use crate::utils::{create_section_lines, create_test_model};
+use crate::utils::{create_model_from_test_repo, create_section_lines, create_test_model};
 
 #[test]
 fn test_refresh_message() {
-    // This test needs the TestRepo to stay alive since Refresh reads from the git repo
+    // TestRepo must stay alive so the workdir exists when Refresh reads from git
     let test_repo = TestRepo::new();
-    let repo_path = test_repo.repo.workdir().unwrap();
-    let git_info = GitInfo::new_from_path(repo_path).unwrap();
-    let lines = git_info.get_lines().unwrap();
-
-    let workdir = repo_path.to_path_buf();
-    let mut model = Model {
-        git_info,
-        workdir,
-        running_state: RunningState::Running,
-        ui_model: UiModel {
-            lines,
-            ..Default::default()
-        },
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-        arg_mode: false,
-        pending_g: false,
-        arguments: None,
-        open_pr_branch: None,
-        view_mode: ViewMode::Status,
-        cursor_reposition_context: None,
-    };
+    let mut model = create_model_from_test_repo(&test_repo);
 
     // Clear the lines to simulate outdated state
     model.ui_model.lines.clear();
