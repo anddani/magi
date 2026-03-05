@@ -122,8 +122,8 @@ fn route_result(
         (Some(SelectContext::RebaseElsewhere), SelectResult::Selected(commit)) => {
             Some(Message::Rebase(RebaseCommand::Elsewhere(commit)))
         }
-        (Some(SelectContext::WorktreeCheckout), SelectResult::Selected(branch)) => {
-            Some(Message::ShowWorktreePathInput { branch })
+        (Some(SelectContext::WorktreeAdd { checkout }), SelectResult::Selected(branch)) => {
+            Some(Message::ShowWorktreePathInput { branch, checkout })
         }
         (Some(SelectContext::ResetBranchPick), SelectResult::Selected(branch)) => Some(
             Message::ShowSelectPopup(SelectPopup::ResetBranchTarget(branch)),

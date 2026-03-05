@@ -91,10 +91,12 @@ pub enum InputContext {
     Stash(StashType),
     /// Creating a new spin-off branch from the current HEAD
     SpinoffBranch,
-    /// Entering the directory path for a new worktree checkout
+    /// Entering the directory path for a new worktree
     WorktreePath {
         /// The branch or revision to check out in the new worktree
         branch: String,
+        /// Whether to switch to the new worktree after creating it
+        checkout: bool,
     },
 }
 
@@ -124,7 +126,7 @@ impl InputPopupState {
             }
             InputContext::Stash(stash_type) => stash_type.title().to_string(),
             InputContext::SpinoffBranch => "Name for new spin-off branch".to_string(),
-            InputContext::WorktreePath { branch } => format!("Worktree path for '{branch}'"),
+            InputContext::WorktreePath { branch, .. } => format!("Worktree path for '{branch}'"),
         }
     }
 }

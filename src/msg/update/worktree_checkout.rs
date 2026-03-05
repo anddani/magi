@@ -1,17 +1,21 @@
 use std::path::PathBuf;
 
 use crate::{
-    git::{GitInfo, worktree::{WorktreeAddResult, worktree_add}},
+    git::{
+        GitInfo,
+        worktree::{WorktreeAddResult, worktree_add},
+    },
     model::{Model, popup::PopupContent},
     msg::Message,
 };
 
-pub fn update(model: &mut Model, branch: String, path: String) -> Option<Message> {
+pub fn update(model: &mut Model, branch: String, path: String, checkout: bool) -> Option<Message> {
     match worktree_add(&model.workdir, &path, &branch) {
         Ok(WorktreeAddResult::Success) => {
-            // Resolve the worktree path (may be relative to workdir)
-            let worktree_path = resolve_path(&model.workdir, &path);
-            switch_to_worktree(model, worktree_path);
+            if checkout {
+                let worktree_path = resolve_path(&model.workdir, &path);
+                switch_to_worktree(model, worktree_path);
+            }
             Some(Message::Refresh)
         }
         Ok(WorktreeAddResult::Error(err)) => {
@@ -29,11 +33,7 @@ pub fn update(model: &mut Model, branch: String, path: String) -> Option<Message
 
 fn resolve_path(workdir: &std::path::Path, path: &str) -> PathBuf {
     let p = PathBuf::from(path);
-    if p.is_absolute() {
-        p
-    } else {
-        workdir.join(p)
-    }
+    if p.is_absolute() { p } else { workdir.join(p) }
 }
 
 fn switch_to_worktree(model: &mut Model, path: PathBuf) {

@@ -59,7 +59,8 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
 
         SelectPopup::CheckoutBranch => show_checkout_branch(model, false),
         SelectPopup::CheckoutLocalBranch => show_checkout_branch(model, true),
-        SelectPopup::WorktreeCheckout => show_worktree_checkout(model),
+        SelectPopup::WorktreeCheckout => show_worktree_add(model, true),
+        SelectPopup::WorktreeCreate => show_worktree_add(model, false),
         SelectPopup::DeleteBranch => show_delete_branch(model),
         SelectPopup::RenameBranch => show_rename_branch(model),
         SelectPopup::CreateNewBranch { checkout } => show_new_branch_base(model, checkout),
@@ -271,7 +272,7 @@ fn show_checkout_branch(model: &mut Model, local_only: bool) -> Option<Message> 
     None
 }
 
-fn show_worktree_checkout(model: &mut Model) -> Option<Message> {
+fn show_worktree_add(model: &mut Model, checkout: bool) -> Option<Message> {
     let checked_out = get_checked_out_branches(&model.workdir);
     let branches: Vec<String> = get_branches(&model.git_info.repository)
         .into_iter()
@@ -322,8 +323,13 @@ fn show_worktree_checkout(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    model.select_context = Some(SelectContext::WorktreeCheckout);
-    let state = SelectPopupState::new("Worktree checkout".to_string(), options);
+    model.select_context = Some(SelectContext::WorktreeAdd { checkout });
+    let title = if checkout {
+        "Worktree checkout"
+    } else {
+        "Worktree create"
+    };
+    let state = SelectPopupState::new(title.to_string(), options);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }

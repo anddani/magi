@@ -186,11 +186,13 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             show_input_popup::update(model, InputContext::SpinoffBranch)
         }
         Message::SpinoffBranch(branch_name) => spinoff_branch::update(model, branch_name),
-        Message::ShowWorktreePathInput { branch } => {
-            show_input_popup::update(model, InputContext::WorktreePath { branch })
+        Message::ShowWorktreePathInput { branch, checkout } => {
+            show_input_popup::update(model, InputContext::WorktreePath { branch, checkout })
         }
-        Message::WorktreeCheckout { branch, path } => {
-            worktree_checkout::update(model, branch, path)
-        }
+        Message::WorktreeCheckout {
+            branch,
+            path,
+            checkout,
+        } => worktree_checkout::update(model, branch, path, checkout),
     }
 }
