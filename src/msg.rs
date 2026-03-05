@@ -155,6 +155,10 @@ pub enum Message {
         branch_name: String,
         checkout: bool,
     },
+    /// Show the input popup for the new spin-off branch name
+    ShowSpinoffBranchInput,
+    /// Create a spin-off branch from current HEAD (and reset current branch to upstream merge-base)
+    SpinoffBranch(String),
     /// Checkout the selected branch
     CheckoutBranch(String),
     /// Show confirmation popup before deleting the selected branch

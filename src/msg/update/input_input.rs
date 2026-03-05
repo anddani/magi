@@ -56,6 +56,7 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             old_name,
             new_name: input,
         }),
+        InputContext::SpinoffBranch => Some(Message::SpinoffBranch(input)),
         InputContext::Stash(_) => unreachable!(),
     }
 }

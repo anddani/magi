@@ -61,7 +61,9 @@ mod show_rename_branch_input;
 mod show_reset_popup;
 mod show_revert_popup;
 mod show_select_popup;
+mod show_spinoff_branch_input;
 mod show_stash_input;
+mod spinoff_branch;
 mod stage_all_modified;
 mod stage_selected;
 mod stash;
@@ -179,5 +181,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Revert(revert_command) => revert::update(model, revert_command),
         Message::ShowResetPopup => show_reset_popup::update(model),
         Message::ResetBranch { branch, target } => reset_branch::update(model, branch, target),
+        Message::ShowSpinoffBranchInput => show_spinoff_branch_input::update(model),
+        Message::SpinoffBranch(branch_name) => spinoff_branch::update(model, branch_name),
     }
 }
