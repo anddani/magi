@@ -226,7 +226,7 @@ fn test_exit_preview_returns_to_log() {
 
     // Exit preview
     let result = update(&mut model, Message::ExitPreview);
-    assert_eq!(result, None);
+    assert_eq!(result, Some(Message::Refresh));
     assert!(matches!(model.view_mode, ViewMode::Log(_, false)));
     // Cursor should be restored
     assert_eq!(model.ui_model.cursor_position, saved_cursor);
