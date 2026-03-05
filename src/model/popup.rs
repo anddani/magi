@@ -89,6 +89,8 @@ pub enum InputContext {
     },
     /// Stash push input — carries which kind of stash to create
     Stash(StashType),
+    /// Creating a new spin-off branch from the current HEAD
+    SpinoffBranch,
 }
 
 /// State for text input popups (e.g., new branch name)
