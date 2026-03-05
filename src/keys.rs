@@ -218,7 +218,7 @@ mod tests {
     use crate::model::popup::PopupContentCommand;
     use crate::model::{RunningState, UiModel};
     use crate::msg::{FetchCommand, NavigationAction, PullCommand, PushCommand, SelectMessage};
-    use crossterm::event::{KeyEvent, KeyEventKind, KeyEventState};
+    use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState};
 
     fn create_key_event(modifiers: KeyModifiers, code: KeyCode) -> KeyEvent {
         KeyEvent {
