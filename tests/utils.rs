@@ -42,6 +42,8 @@ pub fn create_test_model() -> Model {
         open_pr_branch: None,
         view_mode: ViewMode::Status,
         cursor_reposition_context: None,
+        preview_return_mode: None,
+        preview_return_cursor: 0,
     }
 }
 
@@ -166,6 +168,8 @@ pub fn create_model_from_test_repo(test_repo: &TestRepo) -> Model {
         open_pr_branch: None,
         view_mode: ViewMode::Status,
         cursor_reposition_context: None,
+        preview_return_mode: None,
+        preview_return_cursor: 0,
     }
 }
 

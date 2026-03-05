@@ -288,6 +288,8 @@ fn test_spinoff_with_upstream_resets_old_branch() {
         open_pr_branch: None,
         view_mode: magi::model::ViewMode::Status,
         cursor_reposition_context: None,
+        preview_return_mode: None,
+        preview_return_cursor: 0,
     };
 
     // Perform spinoff

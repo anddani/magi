@@ -53,6 +53,10 @@ pub struct Model {
     pub view_mode: ViewMode,
     /// Cursor context for smart repositioning after refresh (consumed by refresh)
     pub cursor_reposition_context: Option<cursor_context::CursorContext>,
+    /// The view mode to return to when exiting Preview
+    pub preview_return_mode: Option<ViewMode>,
+    /// The cursor position to restore when exiting Preview
+    pub preview_return_cursor: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -79,6 +83,23 @@ pub enum InputMode {
     Search,
 }
 
+/// Describes the type of a line in commit/stash preview (git show output).
+#[derive(Debug, Clone, PartialEq)]
+pub enum PreviewLineType {
+    /// Commit metadata: hash line, Author, Date, message
+    Header,
+    /// diff --git, ---, +++, index, new file, deleted file, etc.
+    DiffFileHeader,
+    /// @@ ... @@ lines
+    HunkHeader,
+    /// + lines
+    Addition,
+    /// - lines
+    Deletion,
+    /// Unchanged context lines (space-prefixed in diff output)
+    Context,
+}
+
 /// The current view mode of the application
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ViewMode {
@@ -88,6 +109,8 @@ pub enum ViewMode {
     /// Log view showing git commit history with graph.
     /// The bool indicates whether the view is in "picking" mode (selecting a commit).
     Log(crate::msg::LogType, bool),
+    /// Preview mode showing diff/show output for a commit or stash.
+    Preview,
 }
 
 impl InputMode {
@@ -172,6 +195,11 @@ pub enum LineContent {
     LogLine(LogEntry),
     /// A stash entry in the stash stack
     Stash(StashEntry),
+    /// A line in commit/stash preview (git show output)
+    PreviewLine {
+        content: String,
+        line_type: PreviewLineType,
+    },
     /// An entry in the "Reverting" sequencer section
     RevertingEntry {
         hash: String,

@@ -22,6 +22,7 @@ mod head_ref;
 mod latest_tag;
 mod log_line;
 mod merge_ref;
+mod preview_line;
 mod push_ref;
 mod rebasing_entry;
 mod render;
@@ -167,6 +168,9 @@ pub fn view(model: &Model, frame: &mut Frame) {
                 message,
                 is_current,
             } => rebasing_entry::get_lines(hash, message, *is_current, theme),
+            crate::model::LineContent::PreviewLine { content, line_type } => {
+                preview_line::get_lines(content, line_type, theme)
+            }
         };
 
         let is_cursor_line = index == cursor_pos;
@@ -208,8 +212,13 @@ pub fn view(model: &Model, frame: &mut Frame) {
         InputMode::Visual => (theme.status_mode_visual_bg, theme.status_mode_visual_fg),
         InputMode::Search => (theme.status_mode_search_bg, theme.status_mode_search_fg),
     };
+    let mode_label = if model.view_mode == ViewMode::Preview {
+        "PREVIEW"
+    } else {
+        mode.display_name()
+    };
     let mode_pill = Span::styled(
-        format!(" {} ", mode.display_name()),
+        format!(" {} ", mode_label),
         Style::default().bg(mode_bg).fg(mode_fg),
     );
 
@@ -218,6 +227,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
         ViewMode::Status => "Magi",
         ViewMode::Log(_, false) => "Log",
         ViewMode::Log(_, true) => "Pick commit",
+        ViewMode::Preview => "Preview",
     };
 
     // Build bottom border: mode pill + optional search query
