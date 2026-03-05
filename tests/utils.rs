@@ -144,33 +144,13 @@ pub fn create_model_from_test_repo(test_repo: &TestRepo) -> Model {
         .filter(|section| section.default_collapsed())
         .collect();
 
-    Model {
-        git_info,
-        workdir,
-        running_state: RunningState::Running,
-        ui_model: UiModel {
-            lines,
-            cursor_position: 0,
-            scroll_offset: 0,
-            viewport_height: 40,
-            collapsed_sections,
-            ..Default::default()
-        },
-        theme: Theme::default(),
-        popup: None,
-        toast: None,
-        select_result: None,
-        select_context: None,
-        pty_state: None,
-        arg_mode: false,
-        pending_g: false,
-        arguments: None,
-        open_pr_branch: None,
-        view_mode: ViewMode::Status,
-        cursor_reposition_context: None,
-        preview_return_mode: None,
-        preview_return_cursor: 0,
-    }
+    let mut model = create_test_model();
+    model.git_info = git_info;
+    model.workdir = workdir;
+    model.ui_model.lines = lines;
+    model.ui_model.viewport_height = 40;
+    model.ui_model.collapsed_sections = collapsed_sections;
+    model
 }
 
 /// Create lines simulating two files with many diff lines each

@@ -1960,33 +1960,7 @@ mod tests {
 
     #[test]
     fn test_enter_on_commit_line_in_status_shows_preview() {
-        use crate::git::test_repo::TestRepo;
-        use crate::model::ViewMode;
-
-        let test_repo = TestRepo::new();
-        let repo_path = test_repo.repo.workdir().unwrap();
-        let git_info = crate::git::GitInfo::new_from_path(repo_path).unwrap();
-        let workdir = repo_path.to_path_buf();
-        let mut model = Model {
-            git_info,
-            workdir,
-            running_state: crate::model::RunningState::Running,
-            ui_model: crate::model::UiModel::default(),
-            theme: crate::config::Theme::default(),
-            popup: None,
-            toast: None,
-            select_result: None,
-            select_context: None,
-            pty_state: None,
-            arg_mode: false,
-            pending_g: false,
-            arguments: None,
-            open_pr_branch: None,
-            view_mode: ViewMode::Status,
-            cursor_reposition_context: None,
-            preview_return_mode: None,
-            preview_return_cursor: 0,
-        };
+        let mut model = create_test_model();
 
         // Put a commit line at cursor position
         model.ui_model.lines = vec![crate::model::Line {
