@@ -105,9 +105,15 @@ pub fn content<'a>(
         })
         .collect();
 
+    let elsewhere = vec![
+        Span::styled(" e", cmd_key_style),
+        Span::styled(" elsewhere", cmd_desc_style),
+    ];
+
     let mut commands: Vec<Line> = vec![
         Line::from(push_remote_description),
         Line::from(upstream_description),
+        Line::from(elsewhere),
     ];
 
     let mut content: Vec<Line> = vec![];

@@ -29,6 +29,9 @@ pub fn update(model: &mut Model, pull_command: PullCommand) -> Option<Message> {
         PullCommand::PullFromUpstream(upstream) => {
             pull_from_up_stream_setting(model, upstream, extra_args)
         }
+        PullCommand::PullFromElsewhere(upstream) => {
+            pull_from_elsewhere(model, upstream, extra_args)
+        }
     }
 }
 
@@ -90,6 +93,26 @@ fn pull_from_upstream(model: &mut Model, extra_args: Vec<String>) -> Option<Mess
     let mut args = vec!["pull".to_string(), "-v".to_string(), remote];
 
     // Add branch if specified
+    if !branch.is_empty() {
+        args.push(branch);
+    }
+
+    args.extend(extra_args);
+
+    execute_pty_command(model, args, format!("Pull from {}", upstream))
+}
+
+/// Pull from a remote branch (e.g. "origin/main") without modifying any git config.
+/// Runs `git pull -v <remote> <branch>`.
+fn pull_from_elsewhere(
+    model: &mut Model,
+    upstream: String,
+    extra_args: Vec<String>,
+) -> Option<Message> {
+    let (remote, branch) = parse_remote_branch(&upstream);
+
+    let mut args = vec!["pull".to_string(), "-v".to_string(), remote];
+
     if !branch.is_empty() {
         args.push(branch);
     }

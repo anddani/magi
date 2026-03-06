@@ -349,6 +349,8 @@ pub enum PullCommand {
     PullFromUpstream(String),
     /// Pull from upstream
     PullUpstream,
+    /// Pull from a remote branch without modifying any git config (elsewhere)
+    PullFromElsewhere(String),
 }
 
 /// Messages for push commands
@@ -491,6 +493,8 @@ pub enum SelectPopup {
     PullUpstream,
     /// Show select popup to choose push remote for pull
     PullPushRemote,
+    /// Show select popup to choose an arbitrary remote branch to pull from (elsewhere)
+    PullElsewhere,
 
     // Branch-related
     /// Show the checkout branch select popup

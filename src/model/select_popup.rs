@@ -44,6 +44,8 @@ pub enum SelectContext {
     FixupCommit(crate::msg::FixupType),
     /// Selecting a push remote to pull from (sets branch.<name>.pushRemote)
     PullPushRemote,
+    /// Selecting a remote branch to pull from without changing any config (elsewhere)
+    PullElsewhere,
     /// Selecting a push remote to push to (sets branch.<name>.pushRemote)
     PushPushRemote,
     /// Selecting a push remote to fetch from (sets branch.<name>.pushRemote)
