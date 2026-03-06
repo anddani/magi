@@ -20,21 +20,27 @@ pub fn content<'a>(theme: &Theme) -> CommandPopupContent<'a> {
         content: vec![
             Line::from(vec![
                 Span::styled(" b", key_style),
-                Span::styled("  branch", desc_style),
+                Span::styled(" branch", desc_style),
             ]),
             Line::from(vec![
                 Span::styled(" f", key_style),
-                Span::styled("  file", desc_style),
+                Span::styled(" file", desc_style),
             ]),
         ],
     };
 
     let reset_this_col = PopupColumn {
         title: Some("Reset this"),
-        content: vec![Line::from(vec![
-            Span::styled(" m", key_style),
-            Span::styled("  mixed    (HEAD and index)", desc_style),
-        ])],
+        content: vec![
+            Line::from(vec![
+                Span::styled(" m", key_style),
+                Span::styled(" mixed    (HEAD and index)", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" s", key_style),
+                Span::styled(" soft     (HEAD only)", desc_style),
+            ]),
+        ],
     };
 
     CommandPopupContent {
