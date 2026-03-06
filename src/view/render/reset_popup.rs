@@ -40,6 +40,10 @@ pub fn content<'a>(theme: &Theme) -> CommandPopupContent<'a> {
                 Span::styled(" s", key_style),
                 Span::styled(" soft     (HEAD only)", desc_style),
             ]),
+            Line::from(vec![
+                Span::styled(" h", key_style),
+                Span::styled(" hard     (HEAD, index and worktree)", desc_style),
+            ]),
         ],
     };
 
