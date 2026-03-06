@@ -117,25 +117,9 @@ jobs:
             ${{ env.BUILD_NAME }}.tar.gz
             ${{ env.BUILD_NAME }}.tar.gz.sha256
 
-  release:
-    name: Create Release
-    needs: [build-linux, build-darwin]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/*
-          generate_release_notes: true
-
   update-homebrew:
     name: Update Homebrew formula
-    needs: release
+    needs: [build-linux, build-darwin]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -178,3 +162,19 @@ jobs:
           git add Formula/magi.rb
           git commit -m "Bump magi to ${GITHUB_REF_NAME#v}"
           git push
+
+  release:
+    name: Create Release
+    needs: [build-linux, build-darwin, update-homebrew]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
