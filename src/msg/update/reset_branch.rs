@@ -3,15 +3,20 @@ use std::process::Stdio;
 use crate::{
     git::git_cmd,
     model::{Model, popup::PopupContent},
-    msg::Message,
+    msg::{Message, ResetMode},
 };
 
-pub fn update(model: &mut Model, branch: String, target: String) -> Option<Message> {
+pub fn update(
+    model: &mut Model,
+    branch: String,
+    target: String,
+    mode: ResetMode,
+) -> Option<Message> {
     let current_branch = model.git_info.current_branch();
 
     let output = if current_branch.as_deref() == Some(branch.as_str()) {
-        // Reset the current branch in the working tree
-        git_cmd(&model.workdir, &["reset", "--hard", &target])
+        // Reset the current branch using the requested mode
+        git_cmd(&model.workdir, &["reset", mode.flag(), &target])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()

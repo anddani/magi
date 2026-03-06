@@ -171,7 +171,11 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowRevertPopup => show_revert_popup::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),
         Message::ShowResetPopup => show_reset_popup::update(model),
-        Message::ResetBranch { branch, target } => reset_branch::update(model, branch, target),
+        Message::ResetBranch {
+            branch,
+            target,
+            mode,
+        } => reset_branch::update(model, branch, target, mode),
         Message::ShowSpinoffBranchInput => {
             show_input_popup::update(model, InputContext::SpinoffBranch)
         }

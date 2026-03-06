@@ -8,7 +8,8 @@ use crate::{
         },
     },
     msg::{
-        FetchCommand, Message, PullCommand, PushCommand, RebaseCommand, SelectPopup, StashCommand,
+        FetchCommand, Message, PullCommand, PushCommand, RebaseCommand, ResetMode, SelectPopup,
+        StashCommand,
     },
 };
 
@@ -141,12 +142,28 @@ fn route_result(
             {
                 model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
                     message: "Uncommitted changes will be lost. Proceed?".to_string(),
-                    on_confirm: ConfirmAction::ResetBranch { branch, target },
+                    on_confirm: ConfirmAction::ResetBranch {
+                        branch,
+                        target,
+                        mode: ResetMode::Hard,
+                    },
                 }));
                 None
             } else {
-                Some(Message::ResetBranch { branch, target })
+                Some(Message::ResetBranch {
+                    branch,
+                    target,
+                    mode: ResetMode::Hard,
+                })
             }
+        }
+        (Some(SelectContext::Reset(mode)), SelectResult::Selected(target)) => {
+            let branch = model.git_info.current_branch().unwrap_or_default();
+            Some(Message::ResetBranch {
+                branch,
+                target,
+                mode,
+            })
         }
         (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))

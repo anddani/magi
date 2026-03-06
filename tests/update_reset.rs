@@ -6,7 +6,7 @@ use magi::{
         LineContent,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand},
     },
-    msg::{Message, SelectPopup, update::update},
+    msg::{Message, ResetMode, SelectPopup, update::update},
 };
 
 mod utils;
@@ -249,6 +249,7 @@ fn test_reset_non_current_branch_to_target() {
         Message::ResetBranch {
             branch: "other-branch".to_string(),
             target: initial_hash.clone(),
+            mode: ResetMode::Hard,
         },
     );
 
@@ -302,6 +303,7 @@ fn test_reset_current_branch_to_earlier_commit() {
         Message::ResetBranch {
             branch: current.clone(),
             target: initial_hash.clone(),
+            mode: ResetMode::Hard,
         },
     );
 
@@ -369,6 +371,7 @@ fn test_reset_current_branch_with_uncommitted_shows_confirmation() {
             ConfirmAction::ResetBranch {
                 branch: current.clone(),
                 target: initial_hash.clone(),
+                mode: ResetMode::Hard,
             }
         );
     } else {
@@ -423,6 +426,7 @@ fn test_reset_current_branch_clean_no_confirmation() {
         Some(Message::ResetBranch {
             branch: current,
             target: initial_hash,
+            mode: ResetMode::Hard,
         })
     );
 }
@@ -443,6 +447,7 @@ fn test_y_in_reset_confirm_popup_triggers_reset() {
         on_confirm: ConfirmAction::ResetBranch {
             branch: "main".to_string(),
             target: "abc1234".to_string(),
+            mode: ResetMode::Hard,
         },
     }));
 
@@ -452,6 +457,7 @@ fn test_y_in_reset_confirm_popup_triggers_reset() {
         Some(Message::ResetBranch {
             branch: "main".to_string(),
             target: "abc1234".to_string(),
+            mode: ResetMode::Hard,
         })
     );
 }
@@ -470,6 +476,7 @@ fn test_n_in_reset_confirm_popup_dismisses() {
         on_confirm: ConfirmAction::ResetBranch {
             branch: "main".to_string(),
             target: "abc1234".to_string(),
+            mode: ResetMode::Hard,
         },
     }));
 
@@ -636,4 +643,155 @@ fn test_reset_branch_target_cursor_on_branch_ref_prioritizes_branch_over_hash() 
             // No refs to reset to (only 1 branch and it's excluded) — acceptable
         }
     }
+}
+
+// ── 'm' key: mixed reset ───────────────────────────────────────────────────────
+
+#[test]
+fn test_m_in_reset_popup_shows_select_popup() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "content")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Reset));
+
+    let result = handle_key(key(KeyCode::Char('m')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(SelectPopup::Reset(
+            ResetMode::Mixed
+        )))
+    );
+}
+
+#[test]
+fn test_reset_mixed_shows_refs_select_popup() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "initial")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    // Create a second branch so there's at least one ref to show
+    {
+        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+        let head = repo.head().unwrap().peel_to_commit().unwrap();
+        repo.branch("other-branch", &head, false).unwrap();
+    }
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let result = update(
+        &mut model,
+        Message::ShowSelectPopup(SelectPopup::Reset(ResetMode::Mixed)),
+    );
+
+    assert_eq!(result, None);
+    assert!(matches!(
+        &model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Select(state)))
+            if !state.all_options.is_empty()
+    ));
+    assert_eq!(
+        model.select_context,
+        Some(magi::model::popup::SelectContext::Reset(ResetMode::Mixed))
+    );
+}
+
+#[test]
+fn test_reset_mixed_dispatches_reset_branch_with_mixed_mode() {
+    use magi::model::popup::SelectContext;
+
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "initial")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    let initial_hash = {
+        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+        repo.head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id()
+            .to_string()
+    };
+
+    test_repo
+        .write_file_content("file.txt", "second")
+        .stage_files(&["file.txt"])
+        .commit("Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let current = model.git_info.current_branch().unwrap();
+
+    // Simulate the select popup returning a target
+    model.select_context = Some(SelectContext::Reset(ResetMode::Mixed));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        magi::model::popup::SelectPopupState::new(
+            "Mixed reset to".to_string(),
+            vec![initial_hash.clone()],
+        ),
+    )));
+
+    let result = update(
+        &mut model,
+        Message::Select(magi::msg::SelectMessage::Confirm),
+    );
+
+    // Should dispatch ResetBranch with Mixed mode (no confirmation needed)
+    assert_eq!(
+        result,
+        Some(Message::ResetBranch {
+            branch: current,
+            target: initial_hash,
+            mode: ResetMode::Mixed,
+        })
+    );
+}
+
+#[test]
+fn test_reset_mixed_actually_resets_index_but_keeps_working_tree() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "initial")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    let initial_hash = {
+        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+        repo.head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id()
+            .to_string()
+    };
+
+    test_repo
+        .write_file_content("file.txt", "second")
+        .stage_files(&["file.txt"])
+        .commit("Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let current = model.git_info.current_branch().unwrap();
+
+    let result = update(
+        &mut model,
+        Message::ResetBranch {
+            branch: current,
+            target: initial_hash.clone(),
+            mode: ResetMode::Mixed,
+        },
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+
+    // HEAD should now point at initial commit
+    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+    let head_commit = repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head_commit.id().to_string(), initial_hash);
 }

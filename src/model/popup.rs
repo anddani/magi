@@ -27,7 +27,11 @@ pub enum ConfirmAction {
     /// Rebase the current branch onto the given target ref/commit
     RebaseElsewhere(String),
     /// Reset a branch to a target ref/commit
-    ResetBranch { branch: String, target: String },
+    ResetBranch {
+        branch: String,
+        target: String,
+        mode: crate::msg::ResetMode,
+    },
 }
 
 /// State for the credential input popup.

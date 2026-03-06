@@ -29,10 +29,18 @@ pub fn content<'a>(theme: &Theme) -> CommandPopupContent<'a> {
         ],
     };
 
+    let reset_this_col = PopupColumn {
+        title: Some("Reset this"),
+        content: vec![Line::from(vec![
+            Span::styled(" m", key_style),
+            Span::styled("  mixed    (HEAD and index)", desc_style),
+        ])],
+    };
+
     CommandPopupContent {
         title: "Reset",
         rows: vec![PopupRow {
-            columns: vec![reset_col],
+            columns: vec![reset_col, reset_this_col],
         }],
     }
 }
