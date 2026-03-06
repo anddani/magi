@@ -42,7 +42,16 @@ pub enum ResetMode {
 }
 
 impl ResetMode {
-    /// The corresponding git flag (e.g. `"--mixed"`)
+    /// Name of reset mode
+    pub fn name(self) -> &'static str {
+        match self {
+            ResetMode::Mixed => "Mixed",
+            ResetMode::Hard => "Hard",
+            ResetMode::Soft => "Soft",
+        }
+    }
+
+    /// The corresponding git flag
     pub fn flag(self) -> &'static str {
         match self {
             ResetMode::Mixed => "--mixed",

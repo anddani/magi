@@ -13,6 +13,9 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
         KeyCode::Char('s') => Some(Message::ShowSelectPopup(SelectPopup::Reset(
             ResetMode::Soft,
         ))),
+        KeyCode::Char('h') => Some(Message::ShowSelectPopup(SelectPopup::Reset(
+            ResetMode::Hard,
+        ))),
         _ => None,
     }
 }

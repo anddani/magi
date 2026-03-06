@@ -943,7 +943,7 @@ fn show_reset_ref_picker(model: &mut Model, reset_mode: ResetMode) -> Option<Mes
     }
 
     model.select_context = Some(SelectContext::Reset(reset_mode));
-    let state = SelectPopupState::new("Mixed reset to".to_string(), options);
+    let state = SelectPopupState::new(format!("{} reset to", reset_mode.name()), options);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }
