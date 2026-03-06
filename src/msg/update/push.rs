@@ -25,6 +25,7 @@ pub fn update(model: &mut Model, push_command: PushCommand) -> Option<Message> {
         PushCommand::PushToPushRemote(remote) => push_to_push_remote(model, remote, extra_args),
         PushCommand::PushAllTags(remote) => push_all_tags(model, remote, extra_args),
         PushCommand::PushTag(tag) => push_tag(model, tag, extra_args),
+        PushCommand::PushElsewhere(upstream) => push_to_elsewhere(model, upstream, extra_args),
     }
 }
 
@@ -103,6 +104,21 @@ fn push_all_tags(model: &mut Model, remote: String, extra_args: Vec<String>) -> 
     let mut args = vec![remote, "--tags".to_string()];
     args.extend(extra_args);
     execute_push(model, args, "Push tags".to_string())
+}
+
+fn push_to_elsewhere(
+    model: &mut Model,
+    upstream: String,
+    extra_args: Vec<String>,
+) -> Option<Message> {
+    let (remote, branch) = parse_remote_branch(&upstream);
+    let mut args = if branch.is_empty() {
+        vec![remote]
+    } else {
+        vec![remote, format!("HEAD:{}", branch)]
+    };
+    args.extend(extra_args);
+    execute_push(model, args, format!("Push to {}", upstream))
 }
 
 fn push_tag(model: &mut Model, tag: String, extra_args: Vec<String>) -> Option<Message> {

@@ -366,6 +366,8 @@ pub enum PushCommand {
     PushAllTags(String),
     /// Push a single tag to origin
     PushTag(String),
+    /// Push to a remote branch without modifying any git config (elsewhere)
+    PushElsewhere(String),
 }
 
 /// Messages for rebase commands
@@ -487,6 +489,8 @@ pub enum SelectPopup {
     PushAllTags,
     /// Show select popup to choose a tag to push
     PushTag,
+    /// Show select popup to choose an arbitrary remote branch to push to (elsewhere)
+    PushElsewhere,
 
     // Pull-related
     /// Show select popup to choose upstream for pull

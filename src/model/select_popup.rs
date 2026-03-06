@@ -46,6 +46,8 @@ pub enum SelectContext {
     PullPushRemote,
     /// Selecting a remote branch to pull from without changing any config (elsewhere)
     PullElsewhere,
+    /// Selecting a remote branch to push to without changing any config (elsewhere)
+    PushElsewhere,
     /// Selecting a push remote to push to (sets branch.<name>.pushRemote)
     PushPushRemote,
     /// Selecting a push remote to fetch from (sets branch.<name>.pushRemote)
