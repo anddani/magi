@@ -168,6 +168,9 @@ fn route_result(
         (Some(SelectContext::ResetIndex), SelectResult::Selected(target)) => {
             Some(Message::ResetIndex { target })
         }
+        (Some(SelectContext::ResetWorktree), SelectResult::Selected(target)) => {
+            Some(Message::ResetWorktree { target })
+        }
         (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))
         }

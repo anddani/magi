@@ -17,6 +17,7 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
             ResetMode::Hard,
         ))),
         KeyCode::Char('i') => Some(Message::ShowSelectPopup(SelectPopup::ResetIndex)),
+        KeyCode::Char('w') => Some(Message::ShowSelectPopup(SelectPopup::ResetWorktree)),
         _ => None,
     }
 }
