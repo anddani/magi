@@ -5,6 +5,27 @@ use ratatui::{
     text::{Line as TextLine, Span},
 };
 
+const TAB_WIDTH: usize = 4;
+
+/// Expand tab characters to spaces, aligning to tab stops starting at `initial_col`.
+pub fn expand_tabs(s: &str, initial_col: usize) -> String {
+    let mut result = String::new();
+    let mut col = initial_col;
+    for ch in s.chars() {
+        if ch == '\t' {
+            let spaces = TAB_WIDTH - (col % TAB_WIDTH);
+            for _ in 0..spaces {
+                result.push(' ');
+            }
+            col += spaces;
+        } else {
+            result.push(ch);
+            col += 1;
+        }
+    }
+    result
+}
+
 /// Apply search highlighting to a text line.
 ///
 /// Finds all occurrences of `query` (case-sensitive, consecutive) in the concatenated
