@@ -165,6 +165,9 @@ fn route_result(
                 mode,
             })
         }
+        (Some(SelectContext::ResetIndex), SelectResult::Selected(target)) => {
+            Some(Message::ResetIndex { target })
+        }
         (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))
         }

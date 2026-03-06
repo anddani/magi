@@ -51,6 +51,10 @@ pub fn content<'a>(theme: &Theme) -> CommandPopupContent<'a> {
                     desc_style,
                 ),
             ]),
+            Line::from(vec![
+                Span::styled(" i", key_style),
+                Span::styled(" index    (only)", desc_style),
+            ]),
         ],
     };
 

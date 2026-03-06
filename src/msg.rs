@@ -228,6 +228,11 @@ pub enum Message {
         target: String,
         mode: ResetMode,
     },
+    /// Reset the index to match a given tree-ish without touching HEAD or the working tree
+    /// (equivalent to `git reset <target> -- .`)
+    ResetIndex {
+        target: String,
+    },
     /// Checkout a single file from a given revision
     FileCheckout {
         revision: String,
@@ -513,6 +518,8 @@ pub enum SelectPopup {
     ResetBranchTarget(String),
     /// Show select popup to pick a target for a mixed reset of HEAD
     Reset(ResetMode),
+    /// Show select popup to pick a target for an index-only reset
+    ResetIndex,
 
     // File checkout-related
     /// Show select popup to choose a revision to checkout a file from

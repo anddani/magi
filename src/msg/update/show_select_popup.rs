@@ -77,6 +77,7 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
         SelectPopup::ResetBranchPick => show_reset_branch_pick(model),
         SelectPopup::ResetBranchTarget(branch) => show_reset_branch_target(model, branch),
         SelectPopup::Reset(reset_mode) => show_reset_ref_picker(model, reset_mode),
+        SelectPopup::ResetIndex => show_reset_index_picker(model),
 
         SelectPopup::FileCheckoutRevision => show_file_checkout_revision(model),
         SelectPopup::FileCheckoutFile(revision) => show_file_checkout_file(model, revision),
@@ -944,6 +945,71 @@ fn show_reset_ref_picker(model: &mut Model, reset_mode: ResetMode) -> Option<Mes
 
     model.select_context = Some(SelectContext::Reset(reset_mode));
     let state = SelectPopupState::new(format!("{} reset to", reset_mode.name()), options);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
+
+/// Pick a target tree-ish for an index-only reset (`git reset <target> -- .`).
+/// Includes local branches, remote branches, and tags.
+/// Prioritises the first suggestion from the cursor line.
+fn show_reset_index_picker(model: &mut Model) -> Option<Message> {
+    let local_branches = get_local_branches(&model.git_info.repository);
+
+    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
+        .into_iter()
+        .filter_map(|b| match b {
+            BranchEntry::Remote(name) => Some(name),
+            _ => None,
+        })
+        .collect();
+
+    let tags = get_local_tags(&model.git_info.repository);
+
+    let preferred = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| suggestions_from_line(line).into_iter().next());
+
+    let mut options: Vec<String> = Vec::new();
+
+    if let Some(ref preferred) = preferred {
+        options.push(preferred.name().to_string());
+    }
+
+    for b in &local_branches {
+        if preferred.as_ref().map(|p| p.name() != b).unwrap_or(true) {
+            options.push(b.clone());
+        }
+    }
+    for b in &remote_branches {
+        if preferred
+            .as_ref()
+            .map(|p| p.name() != b.as_str())
+            .unwrap_or(true)
+        {
+            options.push(b.clone());
+        }
+    }
+    for tag in &tags {
+        if preferred
+            .as_ref()
+            .map(|p| p.name() != tag.as_str())
+            .unwrap_or(true)
+        {
+            options.push(tag.clone());
+        }
+    }
+
+    if options.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No references found".to_string(),
+        });
+        return None;
+    }
+
+    model.select_context = Some(SelectContext::ResetIndex);
+    let state = SelectPopupState::new("Reset index to".to_string(), options);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }
