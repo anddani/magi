@@ -30,6 +30,25 @@ pub enum LogType {
     AllBranches,
 }
 
+/// Mode for `git reset` — controls how far the reset goes
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum ResetMode {
+    /// Reset HEAD and index, keep working tree (`git reset --mixed`)
+    Mixed,
+    /// Reset HEAD, index, and working tree (`git reset --hard`)
+    Hard,
+}
+
+impl ResetMode {
+    /// The corresponding git flag (e.g. `"--mixed"`)
+    pub fn flag(self) -> &'static str {
+        match self {
+            ResetMode::Mixed => "--mixed",
+            ResetMode::Hard => "--hard",
+        }
+    }
+}
+
 /// Source of changes to discard
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiscardSource {
@@ -187,10 +206,11 @@ pub enum Message {
 
     /// Show reset popup
     ShowResetPopup,
-    /// Reset a branch to a target ref/commit
+    /// Reset a branch to a target ref/commit using the given mode
     ResetBranch {
         branch: String,
         target: String,
+        mode: ResetMode,
     },
     /// Checkout a single file from a given revision
     FileCheckout {
@@ -475,6 +495,8 @@ pub enum SelectPopup {
     ResetBranchPick,
     /// Show select popup to pick a target to reset the given branch to
     ResetBranchTarget(String),
+    /// Show select popup to pick a target for a mixed reset of HEAD
+    Reset(ResetMode),
 
     // File checkout-related
     /// Show select popup to choose a revision to checkout a file from

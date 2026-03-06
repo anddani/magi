@@ -1,3 +1,5 @@
+use crate::msg::ResetMode;
+
 /// Result returned when select popup closes
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SelectResult {
@@ -62,6 +64,8 @@ pub enum SelectContext {
     ResetBranchPick,
     /// Selecting a target to reset the given branch to (holds branch name)
     ResetBranchTarget(String),
+    /// Selecting a target to reset HEAD to
+    Reset(ResetMode),
     /// Selecting a branch/revision for a new worktree (checkout=true switches to it)
     WorktreeAdd { checkout: bool },
     /// Selecting a revision to checkout a file from

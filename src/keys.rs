@@ -72,9 +72,14 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     ConfirmAction::RebaseElsewhere(target) => {
                         Message::Rebase(RebaseCommand::Elsewhere(target.clone()))
                     }
-                    ConfirmAction::ResetBranch { branch, target } => Message::ResetBranch {
+                    ConfirmAction::ResetBranch {
+                        branch,
+                        target,
+                        mode,
+                    } => Message::ResetBranch {
                         branch: branch.clone(),
                         target: target.clone(),
+                        mode: *mode,
                     },
                 };
                 Some(msg)
