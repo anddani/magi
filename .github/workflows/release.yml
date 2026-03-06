@@ -132,3 +132,49 @@ jobs:
         with:
           files: artifacts/*
           generate_release_notes: true
+
+  update-homebrew:
+    name: Update Homebrew formula
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Clone tap
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: gh repo clone anddani/homebrew-magi
+
+      - name: Update formula
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          SHA_DARWIN_ARM=$(cat "artifacts/magi-${TAG}-aarch64-apple-darwin.tar.gz.sha256")
+          SHA_DARWIN_X86=$(cat "artifacts/magi-${TAG}-x86_64-apple-darwin.tar.gz.sha256")
+          SHA_LINUX_ARM=$(cat "artifacts/magi-${TAG}-aarch64-unknown-linux-gnu.tar.gz.sha256")
+          SHA_LINUX_X86=$(cat "artifacts/magi-${TAG}-x86_64-unknown-linux-gnu.tar.gz.sha256")
+          echo "darwin-aarch64: $SHA_DARWIN_ARM"
+          echo "darwin-x86: $SHA_DARWIN_X86"
+          echo "linux-aarch64: $SHA_LINUX_ARM"
+          echo "linux-x86: $SHA_LINUX_X86"
+
+          FORMULA="homebrew-magi/Formula/magi.rb"
+          sed -i "s/version \"[^\"]*\"/version \"${VERSION}\"/" "$FORMULA"
+          sed -i "/aarch64-apple-darwin/{n; s/sha256 \"[^\"]*\"/sha256 \"${SHA_DARWIN_ARM}\"/}" "$FORMULA"
+          sed -i "/x86_64-apple-darwin/{n; s/sha256 \"[^\"]*\"/sha256 \"${SHA_DARWIN_X86}\"/}" "$FORMULA"
+          sed -i "/aarch64-unknown-linux/{n; s/sha256 \"[^\"]*\"/sha256 \"${SHA_LINUX_ARM}\"/}" "$FORMULA"
+          sed -i "/x86_64-unknown-linux/{n; s/sha256 \"[^\"]*\"/sha256 \"${SHA_LINUX_X86}\"/}" "$FORMULA"
+
+      - name: Commit and push
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          cd homebrew-magi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/magi.rb
+          git commit -m "Bump magi to ${GITHUB_REF_NAME#v}"
+          git push
