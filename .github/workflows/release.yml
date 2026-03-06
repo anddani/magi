@@ -9,8 +9,24 @@ permissions:
   contents: write
 
 jobs:
+  check-version:
+    name: Verify Cargo.toml version matches tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version
+        run: |
+          CARGO_VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$CARGO_VERSION" != "$TAG_VERSION" ]; then
+            echo "ERROR: Cargo.toml version ($CARGO_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "OK: version $CARGO_VERSION matches tag"
+
   build-linux:
     name: Build ${{ matrix.build }}
+    needs: check-version
     runs-on: ubuntu-latest
     env:
       BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
@@ -60,6 +76,7 @@ jobs:
 
   build-darwin:
     name: Build ${{ matrix.build }}
+    needs: check-version
     runs-on: ${{ matrix.os }}
     env:
       BUILD_NAME: "magi-${{ github.ref_name }}-${{ matrix.target }}"
