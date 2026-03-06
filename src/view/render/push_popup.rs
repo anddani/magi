@@ -149,7 +149,16 @@ pub fn content<'a>(
 
     content.push(Line::from(""));
 
-    let mut push_commands: Vec<Line> = vec![Line::from(push_single_tag), Line::from(push_tags)];
+    let other_branch = vec![
+        Span::styled(" o", cmd_key_style),
+        Span::styled(" other branch", cmd_desc_style),
+    ];
+
+    let mut push_commands: Vec<Line> = vec![
+        Line::from(other_branch),
+        Line::from(push_single_tag),
+        Line::from(push_tags),
+    ];
     content.push(column_title("Push", theme));
     content.append(&mut push_commands);
 

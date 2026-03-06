@@ -56,6 +56,12 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
         SelectPopup::PushElsewhere => {
             show_upstream_select(model, "Push to", SelectContext::PushElsewhere)
         }
+        SelectPopup::PushOtherBranchPick => show_push_other_branch_pick(model),
+        SelectPopup::PushOtherBranchTarget(local) => show_upstream_select(
+            model,
+            "Push to",
+            SelectContext::PushOtherBranchTarget(local),
+        ),
         SelectPopup::PushAllTags => {
             show_remote_select(model, "Push tags to", SelectContext::PushAllTags)
         }
@@ -1082,6 +1088,25 @@ fn show_reset_worktree_picker(model: &mut Model) -> Option<Message> {
 
     model.select_context = Some(SelectContext::ResetWorktree);
     let state = SelectPopupState::new("Reset worktree to".to_string(), options);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
+
+// ── Push other branch ──────────────────────────────────────────────────────────
+
+/// Step 1: pick which local branch to push.
+fn show_push_other_branch_pick(model: &mut Model) -> Option<Message> {
+    let branches = get_local_branches(&model.git_info.repository);
+
+    if branches.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No local branches found".to_string(),
+        });
+        return None;
+    }
+
+    model.select_context = Some(SelectContext::PushOtherBranchPick);
+    let state = SelectPopupState::new("Push branch".to_string(), branches);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }

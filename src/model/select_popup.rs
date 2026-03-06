@@ -80,6 +80,10 @@ pub enum SelectContext {
     FileCheckoutRevision,
     /// Selecting a file to checkout (holds the chosen revision)
     FileCheckoutFile(String),
+    /// Selecting a local branch to push (step 1 of 2)
+    PushOtherBranchPick,
+    /// Selecting a remote branch to push to; holds the chosen local branch (step 2 of 2)
+    PushOtherBranchTarget(String),
 }
 
 /// State for the select popup (fuzzy finder style)

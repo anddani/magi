@@ -180,6 +180,15 @@ fn route_result(
         (Some(SelectContext::PushElsewhere), SelectResult::Selected(upstream)) => {
             Some(Message::Push(PushCommand::PushElsewhere(upstream)))
         }
+        (Some(SelectContext::PushOtherBranchPick), SelectResult::Selected(branch)) => Some(
+            Message::ShowSelectPopup(SelectPopup::PushOtherBranchTarget(branch)),
+        ),
+        (Some(SelectContext::PushOtherBranchTarget(local)), SelectResult::Selected(remote)) => {
+            Some(Message::Push(PushCommand::PushOtherBranch {
+                local,
+                remote,
+            }))
+        }
         (Some(SelectContext::PushPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Push(PushCommand::PushToPushRemote(remote)))
         }
