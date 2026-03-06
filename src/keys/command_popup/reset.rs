@@ -10,6 +10,9 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
         KeyCode::Char('m') => Some(Message::ShowSelectPopup(SelectPopup::Reset(
             ResetMode::Mixed,
         ))),
+        KeyCode::Char('s') => Some(Message::ShowSelectPopup(SelectPopup::Reset(
+            ResetMode::Soft,
+        ))),
         _ => None,
     }
 }

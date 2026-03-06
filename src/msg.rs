@@ -37,6 +37,8 @@ pub enum ResetMode {
     Mixed,
     /// Reset HEAD, index, and working tree (`git reset --hard`)
     Hard,
+    /// Reset HEAD only (`git reset --soft`)
+    Soft,
 }
 
 impl ResetMode {
@@ -45,6 +47,7 @@ impl ResetMode {
         match self {
             ResetMode::Mixed => "--mixed",
             ResetMode::Hard => "--hard",
+            ResetMode::Soft => "--soft",
         }
     }
 }
