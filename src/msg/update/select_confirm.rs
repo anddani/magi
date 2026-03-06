@@ -177,6 +177,9 @@ fn route_result(
         (Some(SelectContext::PullElsewhere), SelectResult::Selected(upstream)) => {
             Some(Message::Pull(PullCommand::PullFromElsewhere(upstream)))
         }
+        (Some(SelectContext::PushElsewhere), SelectResult::Selected(upstream)) => {
+            Some(Message::Push(PushCommand::PushElsewhere(upstream)))
+        }
         (Some(SelectContext::PushPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Push(PushCommand::PushToPushRemote(remote)))
         }

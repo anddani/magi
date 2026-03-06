@@ -134,9 +134,15 @@ pub fn content<'a>(
         }
         None => column_title("Pull into", theme),
     };
+    let elsewhere = vec![
+        Span::styled(" e", cmd_key_style),
+        Span::styled(" elsewhere", cmd_desc_style),
+    ];
+
     let mut push_to_commands: Vec<Line> = vec![
         Line::from(push_remote_description),
         Line::from(upstream_description),
+        Line::from(elsewhere),
     ];
     content.push(push_to_title);
     content.append(&mut push_to_commands);

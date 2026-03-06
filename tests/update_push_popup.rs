@@ -1,10 +1,12 @@
 use std::collections::HashSet;
 
+use magi::model::Model;
 use magi::model::arguments::{Argument, Arguments, PushArgument};
-use magi::model::popup::{PopupContentCommand, PushPopupState};
-use magi::model::{Model, PopupContent};
-use magi::msg::Message;
+use magi::model::popup::{
+    PopupContent, PopupContentCommand, PushPopupState, SelectContext, SelectPopupState,
+};
 use magi::msg::update::update;
+use magi::msg::{Message, PushCommand, SelectPopup};
 
 use crate::utils::create_test_model;
 
@@ -102,4 +104,62 @@ fn test_push_toggle_force_with_lease_disables() {
         _ => panic!("Expected PushArguments"),
     }
     assert!(!model.arg_mode); // Should exit arg mode after toggle
+}
+
+// ── ShowSelectPopup::PushElsewhere shows select popup ─────────────────────────
+
+#[test]
+fn test_push_elsewhere_key_shows_select_popup() {
+    use crate::utils::create_model_from_test_repo;
+    use magi::git::test_repo::TestRepo;
+
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "content")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // No remotes → should show an error popup (no remote branches to select)
+    let result = update(
+        &mut model,
+        Message::ShowSelectPopup(SelectPopup::PushElsewhere),
+    );
+
+    assert_eq!(result, None);
+    assert!(matches!(model.popup, Some(PopupContent::Error { .. })));
+}
+
+// ── SelectContext::PushElsewhere routes to PushElsewhere message ──────────────
+
+#[test]
+fn test_push_elsewhere_select_routes_to_push_message() {
+    use magi::msg::SelectMessage;
+
+    let mut model = create_test_model();
+
+    // Simulate the state after the user has been shown the remote-branch picker
+    // and "origin/main" is the selected item.
+    model.select_context = Some(SelectContext::PushElsewhere);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Push to".to_string(),
+            vec!["origin/main".to_string(), "origin/dev".to_string()],
+        ),
+    )));
+
+    // Confirm the selection (first item "origin/main" is selected by default)
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::Push(PushCommand::PushElsewhere(
+            "origin/main".to_string()
+        )))
+    );
+
+    // Popup should be dismissed and context consumed
+    assert!(model.popup.is_none());
+    assert!(model.select_context.is_none());
 }

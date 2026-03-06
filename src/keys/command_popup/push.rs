@@ -33,6 +33,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PushPopupState) -> Option<Mes
                 Some(Message::ShowSelectPopup(SelectPopup::PushUpstream))
             }
         }
+        KeyCode::Char('e') => Some(Message::ShowSelectPopup(SelectPopup::PushElsewhere)),
         KeyCode::Char('t') => Some(Message::ShowSelectPopup(SelectPopup::PushAllTags)),
         KeyCode::Char('T') => Some(Message::ShowSelectPopup(SelectPopup::PushTag)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),

@@ -53,6 +53,9 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
         SelectPopup::PullElsewhere => {
             show_upstream_select(model, "Pull from", SelectContext::PullElsewhere)
         }
+        SelectPopup::PushElsewhere => {
+            show_upstream_select(model, "Push to", SelectContext::PushElsewhere)
+        }
         SelectPopup::PushAllTags => {
             show_remote_select(model, "Push tags to", SelectContext::PushAllTags)
         }
