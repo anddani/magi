@@ -246,6 +246,8 @@ pub enum Message {
 
     /// Show a select popup
     ShowSelectPopup(SelectPopup),
+    /// Show the input popup for entering refspec(s) to push to the given remote
+    ShowPushRefspecInput(String),
 
     /// Show a commit select view (Log view)
     ShowCommitSelect(CommitSelect),
@@ -370,6 +372,8 @@ pub enum PushCommand {
     PushElsewhere(String),
     /// Push a specific local branch to a remote branch without changing any config
     PushOtherBranch { local: String, remote: String },
+    /// Push explicit refspecs to a remote without changing any config
+    PushRefspecs { remote: String, refspecs: String },
 }
 
 /// Messages for rebase commands
@@ -497,6 +501,8 @@ pub enum SelectPopup {
     PushOtherBranchPick,
     /// Show select popup to pick a remote branch; holds the chosen local branch (step 2 of 2)
     PushOtherBranchTarget(String),
+    /// Show select popup to pick a remote for explicit refspec push
+    PushRefspecRemotePick,
 
     // Pull-related
     /// Show select popup to choose upstream for pull

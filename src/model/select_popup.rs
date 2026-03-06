@@ -84,6 +84,8 @@ pub enum SelectContext {
     PushOtherBranchPick,
     /// Selecting a remote branch to push to; holds the chosen local branch (step 2 of 2)
     PushOtherBranchTarget(String),
+    /// Selecting a remote to push explicit refspecs to
+    PushRefspecRemotePick,
 }
 
 /// State for the select popup (fuzzy finder style)

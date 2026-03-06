@@ -189,6 +189,9 @@ fn route_result(
                 remote,
             }))
         }
+        (Some(SelectContext::PushRefspecRemotePick), SelectResult::Selected(remote)) => {
+            Some(Message::ShowPushRefspecInput(remote))
+        }
         (Some(SelectContext::PushPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Push(PushCommand::PushToPushRemote(remote)))
         }

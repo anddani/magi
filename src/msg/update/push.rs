@@ -29,6 +29,9 @@ pub fn update(model: &mut Model, push_command: PushCommand) -> Option<Message> {
         PushCommand::PushOtherBranch { local, remote } => {
             push_other_branch(model, local, remote, extra_args)
         }
+        PushCommand::PushRefspecs { remote, refspecs } => {
+            push_refspecs(model, remote, refspecs, extra_args)
+        }
     }
 }
 
@@ -122,6 +125,23 @@ fn push_to_elsewhere(
     };
     args.extend(extra_args);
     execute_push(model, args, format!("Push to {}", upstream))
+}
+
+fn push_refspecs(
+    model: &mut Model,
+    remote: String,
+    refspecs: String,
+    extra_args: Vec<String>,
+) -> Option<Message> {
+    let mut args: Vec<String> = vec![remote.clone()];
+    for spec in refspecs.split(',') {
+        let spec = spec.trim();
+        if !spec.is_empty() {
+            args.push(spec.to_string());
+        }
+    }
+    args.extend(extra_args);
+    execute_push(model, args, format!("Push refspecs to {}", remote))
 }
 
 fn push_other_branch(

@@ -3,7 +3,7 @@ use crate::{
         Model,
         popup::{InputContext, PopupContent},
     },
-    msg::{Message, StashCommand},
+    msg::{Message, PushCommand, StashCommand},
 };
 
 /// Handle a character input in the input popup
@@ -63,6 +63,10 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             path: input,
             checkout,
         }),
+        InputContext::PushRefspec { remote } => Some(Message::Push(PushCommand::PushRefspecs {
+            remote,
+            refspecs: input,
+        })),
         InputContext::Stash(_) => unreachable!(),
     }
 }
