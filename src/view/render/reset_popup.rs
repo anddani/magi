@@ -44,6 +44,13 @@ pub fn content<'a>(theme: &Theme) -> CommandPopupContent<'a> {
                 Span::styled(" h", key_style),
                 Span::styled(" hard     (HEAD, index and worktree)", desc_style),
             ]),
+            Line::from(vec![
+                Span::styled(" k", key_style),
+                Span::styled(
+                    " keep     (HEAD and index, keeping uncommitted)",
+                    desc_style,
+                ),
+            ]),
         ],
     };
 
