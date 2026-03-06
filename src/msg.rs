@@ -39,6 +39,8 @@ pub enum ResetMode {
     Hard,
     /// Reset HEAD only (`git reset --soft`)
     Soft,
+    /// Reset HEAD and index, keeping uncommitted (`git reset --keep`)
+    Keep,
 }
 
 impl ResetMode {
@@ -48,6 +50,7 @@ impl ResetMode {
             ResetMode::Mixed => "Mixed",
             ResetMode::Hard => "Hard",
             ResetMode::Soft => "Soft",
+            ResetMode::Keep => "Keep",
         }
     }
 
@@ -57,6 +60,7 @@ impl ResetMode {
             ResetMode::Mixed => "--mixed",
             ResetMode::Hard => "--hard",
             ResetMode::Soft => "--soft",
+            ResetMode::Keep => "--keep",
         }
     }
 }
