@@ -68,6 +68,8 @@ pub enum SelectContext {
     Reset(ResetMode),
     /// Selecting a target for an index-only reset
     ResetIndex,
+    /// Selecting a target for a worktree-only reset
+    ResetWorktree,
     /// Selecting a branch/revision for a new worktree (checkout=true switches to it)
     WorktreeAdd { checkout: bool },
     /// Selecting a revision to checkout a file from

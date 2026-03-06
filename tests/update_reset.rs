@@ -8,6 +8,7 @@ use magi::{
     },
     msg::{Message, ResetMode, SelectMessage, SelectPopup, update::update},
 };
+use std::fs;
 
 mod utils;
 use utils::create_model_from_test_repo;
@@ -960,5 +961,179 @@ fn test_reset_index_only_unstages_does_not_move_head() {
     assert!(
         statuses.iter().any(|s| s.status().is_wt_modified()),
         "Working tree change should remain after index-only reset"
+    );
+}
+
+// ── 'w' key: worktree-only reset ───────────────────────────────────────────────
+
+#[test]
+fn test_w_in_reset_popup_shows_select_popup() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "content")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Reset));
+
+    let result = handle_key(key(KeyCode::Char('w')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(SelectPopup::ResetWorktree))
+    );
+}
+
+#[test]
+fn test_reset_worktree_shows_refs_select_popup() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "initial")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    // Create a second branch so there's at least one ref to show
+    {
+        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+        let head = repo.head().unwrap().peel_to_commit().unwrap();
+        repo.branch("other-branch", &head, false).unwrap();
+    }
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let result = update(
+        &mut model,
+        Message::ShowSelectPopup(SelectPopup::ResetWorktree),
+    );
+
+    assert_eq!(result, None);
+    assert!(matches!(
+        &model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Select(state)))
+            if !state.all_options.is_empty() && state.title == "Reset worktree to"
+    ));
+    assert_eq!(
+        model.select_context,
+        Some(magi::model::popup::SelectContext::ResetWorktree)
+    );
+}
+
+#[test]
+fn test_reset_worktree_select_confirm_dispatches_message() {
+    use magi::model::popup::SelectContext;
+
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "initial")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    let initial_hash = {
+        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+        repo.head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id()
+            .to_string()
+    };
+
+    test_repo
+        .write_file_content("file.txt", "second")
+        .stage_files(&["file.txt"])
+        .commit("Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    model.select_context = Some(SelectContext::ResetWorktree);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        magi::model::popup::SelectPopupState::new(
+            "Reset worktree to".to_string(),
+            vec![initial_hash.clone()],
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::ResetWorktree {
+            target: initial_hash,
+        })
+    );
+}
+
+#[test]
+fn test_reset_worktree_only_updates_worktree_not_head_or_index() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file.txt", "initial")
+        .stage_files(&["file.txt"])
+        .commit("Initial commit");
+
+    let head_hash = {
+        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+        repo.head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id()
+            .to_string()
+    };
+
+    // Stage a change (index differs from HEAD)
+    test_repo
+        .write_file_content("file.txt", "staged change")
+        .stage_files(&["file.txt"]);
+
+    // Also write a different change to the working tree (not staged)
+    test_repo.write_file_content("file.txt", "worktree change");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Verify index still has the staged change before reset
+    {
+        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+        let statuses = repo.statuses(None).unwrap();
+        assert!(
+            statuses.iter().any(|s| s.status().is_index_modified()),
+            "Expected staged changes before reset"
+        );
+    }
+
+    // Reset the worktree to HEAD — working tree should match HEAD,
+    // but index should still have the staged change and HEAD must not move.
+    let result = update(
+        &mut model,
+        Message::ResetWorktree {
+            target: head_hash.clone(),
+        },
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+
+    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+
+    // HEAD must not have moved
+    let head_commit = repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(
+        head_commit.id().to_string(),
+        head_hash,
+        "HEAD should not move on worktree-only reset"
+    );
+
+    // Index should still have the staged change (unchanged by worktree reset)
+    let statuses = repo.statuses(None).unwrap();
+    assert!(
+        statuses.iter().any(|s| s.status().is_index_modified()),
+        "Staged changes should remain after worktree-only reset"
+    );
+
+    // Working tree should now match the index (staged version), not HEAD
+    // After `git checkout HEAD -- .`, the working tree matches HEAD ("initial"),
+    // which means the file no longer has the "worktree change".
+    let file_content = fs::read_to_string(test_repo.repo_path().join("file.txt")).unwrap();
+    assert_eq!(
+        file_content, "initial",
+        "Working tree should match HEAD after worktree reset"
     );
 }
