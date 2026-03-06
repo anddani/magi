@@ -368,6 +368,8 @@ pub enum PushCommand {
     PushTag(String),
     /// Push to a remote branch without modifying any git config (elsewhere)
     PushElsewhere(String),
+    /// Push a specific local branch to a remote branch without changing any config
+    PushOtherBranch { local: String, remote: String },
 }
 
 /// Messages for rebase commands
@@ -491,6 +493,10 @@ pub enum SelectPopup {
     PushTag,
     /// Show select popup to choose an arbitrary remote branch to push to (elsewhere)
     PushElsewhere,
+    /// Show select popup to pick a local branch to push (step 1 of 2)
+    PushOtherBranchPick,
+    /// Show select popup to pick a remote branch; holds the chosen local branch (step 2 of 2)
+    PushOtherBranchTarget(String),
 
     // Pull-related
     /// Show select popup to choose upstream for pull
