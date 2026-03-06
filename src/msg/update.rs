@@ -37,6 +37,7 @@ mod rebase;
 mod refresh;
 mod rename_branch;
 mod reset_branch;
+mod reset_index;
 mod revert;
 mod search;
 mod select_confirm;
@@ -176,6 +177,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             target,
             mode,
         } => reset_branch::update(model, branch, target, mode),
+        Message::ResetIndex { target } => reset_index::update(model, target),
         Message::ShowSpinoffBranchInput => {
             show_input_popup::update(model, InputContext::SpinoffBranch)
         }
