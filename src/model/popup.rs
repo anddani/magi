@@ -104,6 +104,11 @@ pub enum InputContext {
         /// Whether to switch to the new worktree after creating it
         checkout: bool,
     },
+    /// Entering refspec(s) to push to a remote (comma-separated)
+    PushRefspec {
+        /// The remote to push to
+        remote: String,
+    },
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -134,6 +139,9 @@ impl InputPopupState {
             InputContext::SpinoffBranch => "Name for new spin-off branch".to_string(),
             InputContext::SpinoutBranch => "Name for new spin-out branch".to_string(),
             InputContext::WorktreePath { branch, .. } => format!("Worktree path for '{branch}'"),
+            InputContext::PushRefspec { remote } => {
+                format!("Push refspec(s) to '{}' (comma-separated)", remote)
+            }
         }
     }
 }

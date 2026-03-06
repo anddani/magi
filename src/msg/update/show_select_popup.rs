@@ -62,6 +62,11 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
             "Push to",
             SelectContext::PushOtherBranchTarget(local),
         ),
+        SelectPopup::PushRefspecRemotePick => show_remote_select(
+            model,
+            "Push to remote",
+            SelectContext::PushRefspecRemotePick,
+        ),
         SelectPopup::PushAllTags => {
             show_remote_select(model, "Push tags to", SelectContext::PushAllTags)
         }

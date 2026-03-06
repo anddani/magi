@@ -154,8 +154,14 @@ pub fn content<'a>(
         Span::styled(" other branch", cmd_desc_style),
     ];
 
+    let explicit_refspec = vec![
+        Span::styled(" r", cmd_key_style),
+        Span::styled(" explicit refspec", cmd_desc_style),
+    ];
+
     let mut push_commands: Vec<Line> = vec![
         Line::from(other_branch),
+        Line::from(explicit_refspec),
         Line::from(push_single_tag),
         Line::from(push_tags),
     ];

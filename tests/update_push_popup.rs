@@ -230,3 +230,77 @@ fn test_push_other_branch_target_routes_to_push_message() {
     assert!(model.popup.is_none());
     assert!(model.select_context.is_none());
 }
+
+// ── PushRefspecRemotePick routes to ShowPushRefspecInput ──────────────────────
+
+#[test]
+fn test_push_refspec_remote_pick_routes_to_input() {
+    use magi::msg::SelectMessage;
+
+    let mut model = create_test_model();
+
+    model.select_context = Some(SelectContext::PushRefspecRemotePick);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Push to remote".to_string(),
+            vec!["origin".to_string(), "upstream".to_string()],
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::ShowPushRefspecInput("origin".to_string()))
+    );
+    assert!(model.popup.is_none());
+    assert!(model.select_context.is_none());
+}
+
+// ── ShowPushRefspecInput opens an input popup ─────────────────────────────────
+
+#[test]
+fn test_show_push_refspec_input_opens_popup() {
+    use magi::model::popup::InputContext;
+
+    let mut model = create_test_model();
+
+    let result = update(
+        &mut model,
+        Message::ShowPushRefspecInput("origin".to_string()),
+    );
+
+    assert_eq!(result, None);
+    assert!(matches!(
+        model.popup,
+        Some(PopupContent::Input(ref s))
+            if matches!(&s.context, InputContext::PushRefspec { remote } if remote == "origin")
+    ));
+}
+
+// ── Confirming refspec input dispatches Push(PushRefspecs) ───────────────────
+
+#[test]
+fn test_push_refspec_input_confirm_dispatches_push() {
+    use magi::model::popup::{InputContext, InputPopupState};
+    use magi::msg::InputMessage;
+
+    let mut model = create_test_model();
+    model.popup = Some(PopupContent::Input(InputPopupState {
+        input_text: "HEAD:refs/heads/main".to_string(),
+        context: InputContext::PushRefspec {
+            remote: "origin".to_string(),
+        },
+    }));
+
+    let result = update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::Push(PushCommand::PushRefspecs {
+            remote: "origin".to_string(),
+            refspecs: "HEAD:refs/heads/main".to_string(),
+        }))
+    );
+    assert!(model.popup.is_none());
+}
