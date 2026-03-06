@@ -5,6 +5,7 @@ use ratatui::{
 
 use crate::config::Theme;
 use crate::model::PreviewLineType;
+use crate::view::util::expand_tabs;
 
 pub fn get_lines(
     content: &str,
@@ -19,5 +20,6 @@ pub fn get_lines(
         PreviewLineType::Deletion => Style::default().fg(theme.diff_deletion),
         PreviewLineType::Context => Style::default().fg(theme.diff_context),
     };
-    vec![TextLine::from(Span::styled(content.to_string(), style))]
+    let content = expand_tabs(content, 0);
+    vec![TextLine::from(Span::styled(content, style))]
 }

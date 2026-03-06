@@ -5,27 +5,7 @@ use ratatui::{
 
 use crate::config::Theme;
 use crate::model::{DiffLine, DiffLineType};
-
-const TAB_WIDTH: usize = 4;
-
-/// Expand tab characters to spaces, aligning to tab stops starting at `initial_col`.
-fn expand_tabs(s: &str, initial_col: usize) -> String {
-    let mut result = String::new();
-    let mut col = initial_col;
-    for ch in s.chars() {
-        if ch == '\t' {
-            let spaces = TAB_WIDTH - (col % TAB_WIDTH);
-            for _ in 0..spaces {
-                result.push(' ');
-            }
-            col += spaces;
-        } else {
-            result.push(ch);
-            col += 1;
-        }
-    }
-    result
-}
+use crate::view::util::expand_tabs;
 
 /// Generate the view lines for a diff line
 pub fn get_lines(diff_line: &DiffLine, theme: &Theme) -> Vec<TextLine<'static>> {
