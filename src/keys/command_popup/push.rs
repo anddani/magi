@@ -35,6 +35,13 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PushPopupState) -> Option<Mes
         }
         KeyCode::Char('e') => Some(Message::ShowSelectPopup(SelectPopup::PushElsewhere)),
         KeyCode::Char('o') => Some(Message::ShowSelectPopup(SelectPopup::PushOtherBranchPick)),
+        KeyCode::Char('m') => {
+            if let Some(remote) = state.sole_remote.as_ref().or(state.push_remote.as_ref()) {
+                Some(Message::Push(PushCommand::PushMatching(remote.clone())))
+            } else {
+                Some(Message::ShowSelectPopup(SelectPopup::PushMatching))
+            }
+        }
         KeyCode::Char('r') => Some(Message::ShowSelectPopup(SelectPopup::PushRefspecRemotePick)),
         KeyCode::Char('t') => Some(Message::ShowSelectPopup(SelectPopup::PushAllTags)),
         KeyCode::Char('T') => Some(Message::ShowSelectPopup(SelectPopup::PushTag)),

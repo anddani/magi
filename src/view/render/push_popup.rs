@@ -159,8 +159,14 @@ pub fn content<'a>(
         Span::styled(" explicit refspec", cmd_desc_style),
     ];
 
+    let matching_branches = vec![
+        Span::styled(" m", cmd_key_style),
+        Span::styled(" matching branches", cmd_desc_style),
+    ];
+
     let mut push_commands: Vec<Line> = vec![
         Line::from(other_branch),
+        Line::from(matching_branches),
         Line::from(explicit_refspec),
         Line::from(push_single_tag),
         Line::from(push_tags),

@@ -278,6 +278,79 @@ fn test_show_push_refspec_input_opens_popup() {
     ));
 }
 
+// ── PushMatching dispatches directly when sole_remote is set ─────────────────
+
+#[test]
+fn test_push_matching_with_sole_remote_dispatches_directly() {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use magi::keys::handle_key;
+
+    let mut model = create_push_popup_model();
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Push(
+        PushPopupState {
+            upstream: None,
+            push_remote: None,
+            sole_remote: Some("origin".to_string()),
+        },
+    )));
+
+    let key = KeyEvent::new(KeyCode::Char('m'), KeyModifiers::NONE);
+    let result = handle_key(key, &model);
+
+    assert_eq!(
+        result,
+        Some(Message::Push(PushCommand::PushMatching(
+            "origin".to_string()
+        )))
+    );
+}
+
+// ── PushMatching shows select popup when no remote is configured ──────────────
+
+#[test]
+fn test_push_matching_without_remote_shows_select_popup() {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use magi::keys::handle_key;
+
+    let model = create_push_popup_model(); // sole_remote = None, push_remote = None
+
+    let key = KeyEvent::new(KeyCode::Char('m'), KeyModifiers::NONE);
+    let result = handle_key(key, &model);
+
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(SelectPopup::PushMatching))
+    );
+}
+
+// ── SelectContext::PushMatching routes to Push(PushMatching) ──────────────────
+
+#[test]
+fn test_push_matching_select_routes_to_push_message() {
+    use magi::msg::SelectMessage;
+
+    let mut model = create_test_model();
+
+    model.select_context = Some(SelectContext::PushMatching);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Push matching branches to".to_string(),
+            vec!["origin".to_string(), "upstream".to_string()],
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::Push(PushCommand::PushMatching(
+            "origin".to_string()
+        )))
+    );
+    assert!(model.popup.is_none());
+    assert!(model.select_context.is_none());
+}
+
 // ── Confirming refspec input dispatches Push(PushRefspecs) ───────────────────
 
 #[test]
