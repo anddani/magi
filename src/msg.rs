@@ -374,6 +374,8 @@ pub enum PushCommand {
     PushOtherBranch { local: String, remote: String },
     /// Push explicit refspecs to a remote without changing any config
     PushRefspecs { remote: String, refspecs: String },
+    /// Push matching branches (same-named on remote) using refspec `:`
+    PushMatching(String),
 }
 
 /// Messages for rebase commands
@@ -503,6 +505,8 @@ pub enum SelectPopup {
     PushOtherBranchTarget(String),
     /// Show select popup to pick a remote for explicit refspec push
     PushRefspecRemotePick,
+    /// Show select popup to choose a remote for pushing matching branches
+    PushMatching,
 
     // Pull-related
     /// Show select popup to choose upstream for pull

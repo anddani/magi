@@ -32,6 +32,7 @@ pub fn update(model: &mut Model, push_command: PushCommand) -> Option<Message> {
         PushCommand::PushRefspecs { remote, refspecs } => {
             push_refspecs(model, remote, refspecs, extra_args)
         }
+        PushCommand::PushMatching(remote) => push_matching(model, remote, extra_args),
     }
 }
 
@@ -158,6 +159,12 @@ fn push_other_branch(
     };
     args.extend(extra_args);
     execute_push(model, args, format!("Push {} to {}", local, remote))
+}
+
+fn push_matching(model: &mut Model, remote: String, extra_args: Vec<String>) -> Option<Message> {
+    let mut args = vec![remote.clone(), ":".to_string()];
+    args.extend(extra_args);
+    execute_push(model, args, format!("Push matching branches to {}", remote))
 }
 
 fn push_tag(model: &mut Model, tag: String, extra_args: Vec<String>) -> Option<Message> {
