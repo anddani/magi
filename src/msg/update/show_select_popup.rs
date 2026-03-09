@@ -1112,9 +1112,10 @@ fn show_reset_worktree_picker(model: &mut Model) -> Option<Message> {
 // ── Merge ─────────────────────────────────────────────────────────────────────
 
 /// Shows a select popup for choosing a branch to merge into the current branch.
+/// The branch under the cursor (if any) is pre-selected.
 fn show_merge_elsewhere(model: &mut Model) -> Option<Message> {
     let current_branch = model.git_info.current_branch();
-    let branches: Vec<String> = get_branches(&model.git_info.repository)
+    let mut branches: Vec<String> = get_branches(&model.git_info.repository)
         .into_iter()
         .filter(|b| current_branch.as_deref() != Some(b.as_str()))
         .collect();
@@ -1124,6 +1125,27 @@ fn show_merge_elsewhere(model: &mut Model) -> Option<Message> {
             message: "No branches found".to_string(),
         });
         return None;
+    }
+
+    let preferred = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| {
+            suggestions_from_line(line).into_iter().find(|s| match s {
+                BranchSuggestion::LocalBranch(name) | BranchSuggestion::RemoteBranch(name) => {
+                    current_branch.as_deref() != Some(name.as_str())
+                }
+                BranchSuggestion::Revision(_) => false,
+            })
+        });
+
+    if let Some(ref preferred) = preferred {
+        let name = preferred.name();
+        if let Some(idx) = branches.iter().position(|b| b == name) {
+            let branch = branches.remove(idx);
+            branches.insert(0, branch);
+        }
     }
 
     model.select_context = Some(SelectContext::MergeElsewhere);
