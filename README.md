@@ -34,8 +34,8 @@ brew install magi
 # Nix
 nix-env -iA nixpkgs.magi
 
-# Arch Linux
-pacman -S magi
+# Arch Linux (AUR)
+yay -S magi
     
 ```
 
