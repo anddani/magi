@@ -38,6 +38,7 @@ fn command_popup_keys(c: char) -> Option<Message> {
         ))),
         'r' => Some(Message::ShowRebasePopup),
         '_' => Some(Message::ShowRevertPopup),
+        'A' => Some(Message::ShowApplyPopup),
         'm' => Some(Message::ShowMergePopup),
         't' => Some(Message::ShowTagPopup),
         'O' => Some(Message::ShowResetPopup),

@@ -15,6 +15,7 @@ use crate::{
 
 mod util;
 
+mod cherry_picking_entry;
 mod commit;
 mod diff_hunk;
 mod diff_line;
@@ -168,6 +169,11 @@ pub fn view(model: &Model, frame: &mut Frame) {
                 message,
                 is_current,
             } => rebasing_entry::get_lines(hash, message, *is_current, theme),
+            crate::model::LineContent::CherryPickingEntry {
+                hash,
+                message,
+                is_current,
+            } => cherry_picking_entry::get_lines(hash, message, *is_current, theme),
             crate::model::LineContent::PreviewLine { content, line_type } => {
                 preview_line::get_lines(content, line_type, theme)
             }

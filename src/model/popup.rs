@@ -277,6 +277,13 @@ pub struct RevertPopupState {
     pub selected_commits: Vec<String>,
 }
 
+/// State for the Apply (cherry-pick) popup
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ApplyPopupState {
+    /// Whether a cherry-pick sequence is currently in progress (conflict stopped)
+    pub in_progress: bool,
+}
+
 /// State for the Merge popup
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MergePopupState {
@@ -297,6 +304,7 @@ pub enum PopupContentCommand {
     Rebase(RebasePopupState),
     Revert(RevertPopupState),
     Merge(MergePopupState),
+    Apply(ApplyPopupState),
     Tag,
     Select(SelectPopupState),
 }

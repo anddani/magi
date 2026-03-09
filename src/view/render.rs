@@ -14,6 +14,7 @@ use crate::{
     view::render::popup_content::CommandPopupContent,
 };
 
+mod apply_popup;
 mod branch_popup;
 mod commit_popup;
 mod credential_popup;
@@ -107,6 +108,7 @@ pub fn render_popup(
                 PopupContentCommand::Rebase(state) => rebase_popup::content(theme, model, state),
                 PopupContentCommand::Revert(state) => revert_popup::content(theme, model, state),
                 PopupContentCommand::Merge(state) => merge_popup::content(theme, model, state),
+                PopupContentCommand::Apply(state) => apply_popup::content(theme, model, state),
                 PopupContentCommand::Tag => tag_popup::content(theme, model),
 
                 // Select popup uses custom rendering, not the column layout

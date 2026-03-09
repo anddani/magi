@@ -2,6 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::{model::popup::PopupContentCommand, msg::Message};
 
+mod apply;
 mod branch;
 mod commit;
 mod fetch;
@@ -40,6 +41,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Rebase(state) => rebase::keys(key, state),
         PopupContentCommand::Revert(state) => revert::keys(key, state),
         PopupContentCommand::Merge(state) => merge::keys(key, state),
+        PopupContentCommand::Apply(state) => apply::keys(key, state),
         PopupContentCommand::Tag => tag::keys(key),
         PopupContentCommand::Select(_) => select::keys(key),
     }

@@ -4,6 +4,7 @@ use crate::{
 };
 
 mod amend;
+mod apply;
 mod checkout_branch;
 mod checkout_new_branch;
 mod commit;
@@ -52,6 +53,7 @@ mod select_input_char;
 mod select_move_down;
 mod select_move_up;
 mod selection;
+mod show_apply_popup;
 mod show_checkout_new_branch_input;
 mod show_commit_select;
 mod show_fetch_popup;
@@ -186,6 +188,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Rebase(rebase_command) => rebase::update(model, rebase_command),
         Message::ShowRevertPopup => show_revert_popup::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),
+        Message::ShowApplyPopup => show_apply_popup::update(model),
+        Message::Apply(apply_command) => apply::update(model, apply_command),
         Message::ShowMergePopup => show_merge_popup::update(model),
         Message::ShowTagPopup => show_tag_popup::update(model),
         Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),
