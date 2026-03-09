@@ -222,6 +222,8 @@ pub enum Message {
 
     /// Show merge popup
     ShowMergePopup,
+    /// Show tag popup
+    ShowTagPopup,
     /// Execute a merge command
     Merge(MergeCommand),
 

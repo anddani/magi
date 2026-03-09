@@ -62,6 +62,7 @@ mod show_rebase_popup;
 mod show_reset_popup;
 mod show_revert_popup;
 mod show_select_popup;
+mod show_tag_popup;
 mod spinoff_branch;
 mod spinout_branch;
 mod stage_all_modified;
@@ -182,6 +183,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowRevertPopup => show_revert_popup::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),
         Message::ShowMergePopup => show_merge_popup::update(model),
+        Message::ShowTagPopup => show_tag_popup::update(model),
         Message::Merge(merge_command) => merge::update(model, merge_command),
         Message::ShowResetPopup => show_reset_popup::update(model),
         Message::ResetBranch {

@@ -14,6 +14,7 @@ mod reset;
 mod revert;
 mod select;
 mod stash;
+mod tag;
 
 pub fn handle_command_popup_key(
     key: KeyEvent,
@@ -39,6 +40,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Rebase(state) => rebase::keys(key, state),
         PopupContentCommand::Revert(state) => revert::keys(key, state),
         PopupContentCommand::Merge(state) => merge::keys(key, state),
+        PopupContentCommand::Tag(state) => tag::keys(key, state),
         PopupContentCommand::Select(_) => select::keys(key),
     }
 }
