@@ -1,23 +1,14 @@
-use ratatui::{
-    style::{Modifier, Style},
-    text::{Line, Span},
-};
-
 use super::popup_content::CommandPopupContent;
+
 use crate::{
     config::Theme,
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::{column_title, command_description},
+        util::command_description,
     },
 };
 
 pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-
     let command_popup_col = PopupColumn {
         title: Some("Commands".into()),
         content: vec![
