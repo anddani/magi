@@ -1,6 +1,12 @@
+use std::time::Instant;
+
 use crate::{
-    model::Model,
-    msg::{MergeCommand, Message, update::pty_helper::execute_pty_command},
+    git::{commit::CommitResult, merge},
+    model::{Model, PopupContent, Toast, ToastStyle},
+    msg::{
+        MergeCommand, Message,
+        update::{commit::TOAST_DURATION, pty_helper::execute_pty_command},
+    },
 };
 
 pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
@@ -22,11 +28,25 @@ fn merge_branch(model: &mut Model, branch: String) -> Option<Message> {
 
 fn continue_merge(model: &mut Model) -> Option<Message> {
     model.popup = None;
-    execute_pty_command(
-        model,
-        vec!["merge".to_string(), "--continue".to_string()],
-        "Merge".to_string(),
-    )
+    match merge::run_merge_continue_with_editor(&model.workdir) {
+        Ok(CommitResult { success, message }) => {
+            model.toast = Some(Toast {
+                message,
+                style: if success {
+                    ToastStyle::Success
+                } else {
+                    ToastStyle::Warning
+                },
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
 }
 
 fn abort_merge(model: &mut Model) -> Option<Message> {

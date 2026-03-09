@@ -35,6 +35,7 @@ pub mod discard;
 pub mod file_checkout;
 pub mod info;
 pub mod log;
+pub mod merge;
 pub mod open_pr;
 pub mod preview;
 pub mod pty_command;
