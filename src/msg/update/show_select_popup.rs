@@ -111,6 +111,8 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
         SelectPopup::FileCheckoutFile(revision) => show_file_checkout_file(model, revision),
 
         SelectPopup::MergeElsewhere => show_merge_elsewhere(model),
+
+        SelectPopup::CreateTagTarget(tag_name) => show_tag_target_select(model, tag_name),
     }
 }
 
@@ -1150,6 +1152,71 @@ fn show_merge_elsewhere(model: &mut Model) -> Option<Message> {
 
     model.select_context = Some(SelectContext::MergeElsewhere);
     let state = SelectPopupState::new("Merge branch".to_string(), branches);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
+
+// ── Tag ───────────────────────────────────────────────────────────────────────
+
+/// Shows a select popup for choosing a ref/commit to tag.
+/// Uses the same cursor-suggestion logic as `show_new_branch_base`.
+fn show_tag_target_select(model: &mut Model, tag_name: String) -> Option<Message> {
+    let branches = get_branches(&model.git_info.repository);
+    let tags = get_local_tags(&model.git_info.repository);
+
+    let mut options: Vec<String> = Vec::new();
+
+    let preferred = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| {
+            let suggestions = suggestions_from_line(line);
+            suggestions.into_iter().next()
+        })
+        .or_else(|| {
+            model
+                .git_info
+                .current_branch()
+                .map(|b| BranchSuggestion::LocalBranch(b.to_string()))
+        });
+
+    if let Some(ref preferred) = preferred {
+        options.push(preferred.name().to_string());
+    }
+
+    for branch in branches {
+        if preferred
+            .as_ref()
+            .map(|p| p.name() != branch)
+            .unwrap_or(true)
+        {
+            options.push(branch);
+        }
+    }
+
+    for tag in tags {
+        if preferred
+            .as_ref()
+            .map(|p| match p {
+                BranchSuggestion::Revision(rev) => rev != &tag,
+                _ => p.name() != tag,
+            })
+            .unwrap_or(true)
+        {
+            options.push(tag);
+        }
+    }
+
+    if options.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No references found".to_string(),
+        });
+        return None;
+    }
+
+    model.select_context = Some(SelectContext::CreateTagTarget(tag_name));
+    let state = SelectPopupState::new("Create tag at".to_string(), options);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }

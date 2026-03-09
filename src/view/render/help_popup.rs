@@ -37,8 +37,16 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             Span::styled("Log", desc_style),
         ]),
         Line::from(vec![
+            Span::styled("  m       ", key_style),
+            Span::styled("Merge", desc_style),
+        ]),
+        Line::from(vec![
             Span::styled("  P       ", key_style),
             Span::styled("Push", desc_style),
+        ]),
+        Line::from(vec![
+            Span::styled("  t       ", key_style),
+            Span::styled("Tag", desc_style),
         ]),
         Line::from(vec![
             Span::styled("  z       ", key_style),

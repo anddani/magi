@@ -94,6 +94,8 @@ pub enum SelectContext {
     ReviseCommit,
     /// Selecting a branch to merge into the current branch
     MergeElsewhere,
+    /// Selecting a ref/commit to tag (carries tag name)
+    CreateTagTarget(String),
 }
 
 /// State for the select popup (fuzzy finder style)

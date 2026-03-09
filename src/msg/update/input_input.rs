@@ -3,7 +3,7 @@ use crate::{
         Model,
         popup::{InputContext, PopupContent},
     },
-    msg::{FetchCommand, Message, PushCommand, StashCommand},
+    msg::{FetchCommand, Message, PushCommand, SelectPopup, StashCommand},
 };
 
 /// Handle a character input in the input popup
@@ -73,6 +73,9 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
                 refspecs: input,
             }))
         }
+        InputContext::CreateTag => Some(Message::ShowSelectPopup(SelectPopup::CreateTagTarget(
+            input,
+        ))),
         InputContext::Stash(_) => unreachable!(),
     }
 }

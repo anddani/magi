@@ -30,6 +30,7 @@ mod reset_popup;
 mod revert_popup;
 mod select_popup;
 mod stash_popup;
+mod tag_popup;
 mod util;
 
 /// Calculate a centered rectangle within the given area
@@ -106,6 +107,7 @@ pub fn render_popup(
                 PopupContentCommand::Rebase(state) => rebase_popup::content(theme, state),
                 PopupContentCommand::Revert(state) => revert_popup::content(theme, state),
                 PopupContentCommand::Merge(state) => merge_popup::content(theme, state),
+                PopupContentCommand::Tag(state) => tag_popup::content(theme, state),
 
                 // Select popup uses custom rendering, not the column layout
                 PopupContentCommand::Select(state) => {
