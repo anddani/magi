@@ -284,10 +284,6 @@ pub struct MergePopupState {
     pub in_progress: bool,
 }
 
-/// State for the Tag popup
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TagPopupState {}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContentCommand {
     Commit,
@@ -301,7 +297,7 @@ pub enum PopupContentCommand {
     Rebase(RebasePopupState),
     Revert(RevertPopupState),
     Merge(MergePopupState),
-    Tag(TagPopupState),
+    Tag,
     Select(SelectPopupState),
 }
 

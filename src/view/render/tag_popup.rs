@@ -1,16 +1,8 @@
 use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
 
-use crate::{
-    config::Theme,
-    model::{Model, popup::TagPopupState},
-    view::render::util::command_description,
-};
+use crate::{config::Theme, model::Model, view::render::util::command_description};
 
-pub fn content<'a>(
-    theme: &Theme,
-    model: &Model,
-    _state: &'a TagPopupState,
-) -> CommandPopupContent<'a> {
+pub fn content<'a>(theme: &Theme, model: &Model) -> CommandPopupContent<'a> {
     let create_col = PopupColumn {
         title: Some("Create".into()),
         content: vec![command_description(theme, model.arg_mode, "t", "tag")],
