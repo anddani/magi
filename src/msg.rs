@@ -220,6 +220,11 @@ pub enum Message {
     /// Execute a revert command
     Revert(RevertCommand),
 
+    /// Show merge popup
+    ShowMergePopup,
+    /// Execute a merge command
+    Merge(MergeCommand),
+
     /// Show reset popup
     ShowResetPopup,
     /// Reset a branch to a target ref/commit using the given mode
@@ -398,6 +403,17 @@ pub enum RebaseCommand {
     Abort,
 }
 
+/// Messages for merge commands
+#[derive(PartialEq, Eq, Debug)]
+pub enum MergeCommand {
+    /// Merge the given branch into the current branch
+    Branch(String),
+    /// Continue after resolving conflicts
+    Continue,
+    /// Abort the merge sequence
+    Abort,
+}
+
 /// Messages for revert commands
 #[derive(PartialEq, Eq, Debug)]
 pub enum RevertCommand {
@@ -566,6 +582,10 @@ pub enum SelectPopup {
     ResetIndex,
     /// Show select popup to pick a target for a worktree-only reset
     ResetWorktree,
+
+    // Merge-related
+    /// Show select popup to choose a branch to merge into current branch
+    MergeElsewhere,
 
     // File checkout-related
     /// Show select popup to choose a revision to checkout a file from

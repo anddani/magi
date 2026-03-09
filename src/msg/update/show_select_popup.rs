@@ -109,6 +109,8 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
 
         SelectPopup::FileCheckoutRevision => show_file_checkout_revision(model),
         SelectPopup::FileCheckoutFile(revision) => show_file_checkout_file(model, revision),
+
+        SelectPopup::MergeElsewhere => show_merge_elsewhere(model),
     }
 }
 
@@ -1103,6 +1105,29 @@ fn show_reset_worktree_picker(model: &mut Model) -> Option<Message> {
 
     model.select_context = Some(SelectContext::ResetWorktree);
     let state = SelectPopupState::new("Reset worktree to".to_string(), options);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
+
+// ── Merge ─────────────────────────────────────────────────────────────────────
+
+/// Shows a select popup for choosing a branch to merge into the current branch.
+fn show_merge_elsewhere(model: &mut Model) -> Option<Message> {
+    let current_branch = model.git_info.current_branch();
+    let branches: Vec<String> = get_branches(&model.git_info.repository)
+        .into_iter()
+        .filter(|b| current_branch.as_deref() != Some(b.as_str()))
+        .collect();
+
+    if branches.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No branches found".to_string(),
+        });
+        return None;
+    }
+
+    model.select_context = Some(SelectContext::MergeElsewhere);
+    let state = SelectPopupState::new("Merge branch".to_string(), branches);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }

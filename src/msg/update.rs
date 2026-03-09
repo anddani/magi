@@ -26,6 +26,7 @@ mod fetch;
 mod file_checkout;
 mod fixup_commit;
 mod input_input;
+mod merge;
 mod navigation;
 mod open_pr;
 mod pending_g;
@@ -53,6 +54,7 @@ mod show_commit_select;
 mod show_fetch_popup;
 mod show_input_popup;
 mod show_log;
+mod show_merge_popup;
 mod show_preview;
 mod show_pull_popup;
 mod show_push_popup;
@@ -179,6 +181,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Rebase(rebase_command) => rebase::update(model, rebase_command),
         Message::ShowRevertPopup => show_revert_popup::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),
+        Message::ShowMergePopup => show_merge_popup::update(model),
+        Message::Merge(merge_command) => merge::update(model, merge_command),
         Message::ShowResetPopup => show_reset_popup::update(model),
         Message::ResetBranch {
             branch,

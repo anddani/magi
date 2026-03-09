@@ -21,6 +21,7 @@ mod fetch_popup;
 mod help_popup;
 mod input_popup;
 mod log_popup;
+mod merge_popup;
 mod popup_content;
 mod pull_popup;
 mod push_popup;
@@ -104,6 +105,7 @@ pub fn render_popup(
                 PopupContentCommand::Reset => reset_popup::content(theme),
                 PopupContentCommand::Rebase(state) => rebase_popup::content(theme, state),
                 PopupContentCommand::Revert(state) => revert_popup::content(theme, state),
+                PopupContentCommand::Merge(state) => merge_popup::content(theme, state),
 
                 // Select popup uses custom rendering, not the column layout
                 PopupContentCommand::Select(state) => {

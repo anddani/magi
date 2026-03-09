@@ -6,6 +6,7 @@ mod branch;
 mod commit;
 mod fetch;
 mod log;
+mod merge;
 mod pull;
 mod push;
 mod rebase;
@@ -37,6 +38,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Reset => reset::keys(key),
         PopupContentCommand::Rebase(state) => rebase::keys(key, state),
         PopupContentCommand::Revert(state) => revert::keys(key, state),
+        PopupContentCommand::Merge(state) => merge::keys(key, state),
         PopupContentCommand::Select(_) => select::keys(key),
     }
 }
