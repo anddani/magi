@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use ratatui::{
     style::{Modifier, Style},
     text::{Line, Span},
@@ -8,11 +6,8 @@ use ratatui::{
 use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
 use crate::{
     config::Theme,
-    model::{
-        Model,
-        arguments::{Arguments::StashArguments, StashArgument},
-    },
-    view::render::util::argument_line,
+    model::{Model, arguments::StashArgument},
+    view::render::util::argument_lines,
 };
 
 pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
@@ -21,26 +16,11 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
 
-    let selected_args: HashSet<StashArgument> =
-        if let Some(StashArguments(ref args)) = model.arguments {
-            args.clone()
-        } else {
-            HashSet::new()
-        };
-
-    let arguments: Vec<Line> = StashArgument::all()
-        .iter()
-        .map(|arg| {
-            argument_line(
-                theme,
-                arg.key(),
-                arg.description(),
-                arg.flag(),
-                model.arg_mode,
-                selected_args.contains(arg),
-            )
-        })
-        .collect();
+    let arguments: Vec<Line<'_>> = argument_lines::<StashArgument>(
+        theme,
+        model.arg_mode,
+        model.arguments.as_ref().and_then(|a| a.stash()),
+    );
 
     let arguments_col = PopupColumn {
         title: Some("Arguments".into()),

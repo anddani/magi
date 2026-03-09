@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
@@ -8,14 +6,10 @@ use ratatui::{
 use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
-    model::{
-        Model,
-        arguments::{Arguments::FetchArguments, FetchArgument},
-        popup::FetchPopupState,
-    },
+    model::{Model, arguments::FetchArgument, popup::FetchPopupState},
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::argument_line,
+        util::argument_lines,
     },
 };
 
@@ -42,26 +36,11 @@ pub fn content<'a>(
         desc_style
     };
 
-    let selected_args: HashSet<FetchArgument> =
-        if let Some(FetchArguments(ref args)) = model.arguments {
-            args.clone()
-        } else {
-            HashSet::new()
-        };
-
-    let arguments: Vec<Line> = FetchArgument::all()
-        .iter()
-        .map(|arg| {
-            argument_line(
-                theme,
-                arg.key(),
-                arg.description(),
-                arg.flag(),
-                model.arg_mode,
-                selected_args.contains(arg),
-            )
-        })
-        .collect();
+    let arguments: Vec<Line<'_>> = argument_lines::<FetchArgument>(
+        theme,
+        model.arg_mode,
+        model.arguments.as_ref().and_then(|a| a.fetch()),
+    );
 
     let arguments_col = PopupColumn {
         title: Some("Arguments".into()),

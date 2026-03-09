@@ -1,100 +1,62 @@
 use std::collections::HashSet;
+use std::hash::Hash;
 
 use crate::{
     model::{
         Model,
-        arguments::{
-            Argument, Arguments, CommitArgument, FetchArgument, PullArgument, PushArgument,
-            StashArgument,
-        },
+        arguments::{Argument, Arguments},
     },
     msg::Message,
 };
 
 pub fn update(model: &mut Model, argument: Argument) -> Option<Message> {
     match argument {
-        Argument::Commit(push_arg) => toggle_commit_argument(model, push_arg),
-        Argument::Push(push_arg) => toggle_push_argument(model, push_arg),
-        Argument::Fetch(fetch_arg) => toggle_fetch_argument(model, fetch_arg),
-        Argument::Stash(fetch_arg) => toggle_stash_argument(model, fetch_arg),
-        Argument::Pull(pull_arg) => toggle_pull_argument(model, pull_arg),
+        Argument::Commit(arg) => toggle_set(
+            &mut model.arguments,
+            arg,
+            |a| a.commit_mut(),
+            Arguments::CommitArguments,
+        ),
+        Argument::Push(arg) => toggle_set(
+            &mut model.arguments,
+            arg,
+            |a| a.push_mut(),
+            Arguments::PushArguments,
+        ),
+        Argument::Fetch(arg) => toggle_set(
+            &mut model.arguments,
+            arg,
+            |a| a.fetch_mut(),
+            Arguments::FetchArguments,
+        ),
+        Argument::Stash(arg) => toggle_set(
+            &mut model.arguments,
+            arg,
+            |a| a.stash_mut(),
+            Arguments::StashArguments,
+        ),
+        Argument::Pull(arg) => toggle_set(
+            &mut model.arguments,
+            arg,
+            |a| a.pull_mut(),
+            Arguments::PullArguments,
+        ),
     }
-    // Exit arg mode after toggling
     model.arg_mode = false;
     None
 }
 
-fn toggle_commit_argument(model: &mut Model, argument: CommitArgument) {
-    match &mut model.arguments {
-        Some(Arguments::CommitArguments(set)) => {
-            if !set.remove(&argument) {
-                set.insert(argument);
-            }
+fn toggle_set<A: Eq + Hash>(
+    current: &mut Option<Arguments>,
+    arg: A,
+    get_mut: impl FnOnce(&mut Arguments) -> Option<&mut HashSet<A>>,
+    make: impl FnOnce(HashSet<A>) -> Arguments,
+) {
+    if let Some(set) = current.as_mut().and_then(get_mut) {
+        if !set.remove(&arg) {
+            set.insert(arg);
         }
-        _ => {
-            let mut set = HashSet::new();
-            set.insert(argument);
-            model.arguments = Some(Arguments::CommitArguments(set));
-        }
-    }
-}
-
-fn toggle_push_argument(model: &mut Model, argument: PushArgument) {
-    match &mut model.arguments {
-        Some(Arguments::PushArguments(set)) => {
-            if !set.remove(&argument) {
-                set.insert(argument);
-            }
-        }
-        _ => {
-            let mut set = HashSet::new();
-            set.insert(argument);
-            model.arguments = Some(Arguments::PushArguments(set));
-        }
-    }
-}
-
-fn toggle_fetch_argument(model: &mut Model, argument: FetchArgument) {
-    match &mut model.arguments {
-        Some(Arguments::FetchArguments(set)) => {
-            if !set.remove(&argument) {
-                set.insert(argument);
-            }
-        }
-        _ => {
-            let mut set = HashSet::new();
-            set.insert(argument);
-            model.arguments = Some(Arguments::FetchArguments(set));
-        }
-    }
-}
-
-fn toggle_stash_argument(model: &mut Model, argument: StashArgument) {
-    match &mut model.arguments {
-        Some(Arguments::StashArguments(set)) => {
-            if !set.remove(&argument) {
-                set.insert(argument);
-            }
-        }
-        _ => {
-            let mut set = HashSet::new();
-            set.insert(argument);
-            model.arguments = Some(Arguments::StashArguments(set));
-        }
-    }
-}
-
-fn toggle_pull_argument(model: &mut Model, argument: PullArgument) {
-    match &mut model.arguments {
-        Some(Arguments::PullArguments(set)) => {
-            if !set.remove(&argument) {
-                set.insert(argument);
-            }
-        }
-        _ => {
-            let mut set = HashSet::new();
-            set.insert(argument);
-            model.arguments = Some(Arguments::PullArguments(set));
-        }
+    } else {
+        *current = Some(make([arg].into_iter().collect()));
     }
 }

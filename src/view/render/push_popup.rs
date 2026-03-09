@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
@@ -8,16 +6,11 @@ use ratatui::{
 use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
-    model::Model,
-    view::render::{popup_content::PopupColumnTitle, util::argument_line},
-};
-use crate::{
-    model::arguments::{Arguments::PushArguments, PushArgument},
-    view::render::util::column_title,
-};
-use crate::{
-    model::popup::PushPopupState,
-    view::render::popup_content::{PopupColumn, PopupRow},
+    model::{Model, arguments::PushArgument, popup::PushPopupState},
+    view::render::{
+        popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
+        util::{argument_lines, column_title},
+    },
 };
 
 pub fn content<'a>(
@@ -60,26 +53,11 @@ pub fn content<'a>(
         None => column_title("Push to", theme),
     };
 
-    let selected_args: HashSet<PushArgument> =
-        if let Some(PushArguments(ref args)) = model.arguments {
-            args.clone()
-        } else {
-            HashSet::new()
-        };
-
-    let arguments: Vec<Line> = PushArgument::all()
-        .iter()
-        .map(|arg| {
-            argument_line(
-                theme,
-                arg.key(),
-                arg.description(),
-                arg.flag(),
-                model.arg_mode,
-                selected_args.contains(arg),
-            )
-        })
-        .collect();
+    let arguments: Vec<Line<'_>> = argument_lines::<PushArgument>(
+        theme,
+        model.arg_mode,
+        model.arguments.as_ref().and_then(|a| a.push()),
+    );
 
     let arguments_col = PopupColumn {
         title: Some("Arguments".into()),

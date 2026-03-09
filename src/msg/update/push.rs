@@ -3,7 +3,11 @@ use crate::{
         config::set_push_remote,
         push::{get_current_branch, get_upstream_branch, parse_remote_branch},
     },
-    model::{Model, arguments::Arguments::PushArguments, popup::PopupContent},
+    model::{
+        Model,
+        arguments::{Arguments::PushArguments, PopupArgument},
+        popup::PopupContent,
+    },
     msg::{Message, PushCommand, update::pty_helper::execute_pty_command},
 };
 
