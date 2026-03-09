@@ -310,7 +310,7 @@ pub fn apply_selection_style(
 ) {
     let sel_style = selection_style(selection_bg);
     for text_line in line_texts {
-        let line_width: usize = text_line.spans.iter().map(|s| s.content.len()).sum();
+        let line_width: usize = text_line.width();
         let padding = content_width.saturating_sub(line_width);
         let mut spans: Vec<Span> = text_line.spans.clone();
         if padding > 0 {
