@@ -88,6 +88,8 @@ pub enum SelectContext {
     PushRefspecRemotePick,
     /// Selecting a remote to push matching branches to
     PushMatching,
+    /// Selecting a remote to fetch explicit refspecs from
+    FetchRefspecRemotePick,
 }
 
 /// State for the select popup (fuzzy finder style)

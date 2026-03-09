@@ -3,7 +3,7 @@ use crate::{
         Model,
         popup::{InputContext, PopupContent},
     },
-    msg::{Message, PushCommand, StashCommand},
+    msg::{FetchCommand, Message, PushCommand, StashCommand},
 };
 
 /// Handle a character input in the input popup
@@ -67,6 +67,12 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             remote,
             refspecs: input,
         })),
+        InputContext::FetchRefspec { remote } => {
+            Some(Message::Fetch(FetchCommand::FetchRefspecs {
+                remote,
+                refspecs: input,
+            }))
+        }
         InputContext::Stash(_) => unreachable!(),
     }
 }

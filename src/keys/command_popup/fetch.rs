@@ -39,6 +39,9 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
         KeyCode::Char('e') => Some(Message::ShowSelectPopup(SelectPopup::FetchElsewhere)),
         KeyCode::Char('o') => Some(Message::ShowSelectPopup(SelectPopup::FetchAnotherBranch)),
         KeyCode::Char('m') => Some(Message::Fetch(FetchCommand::FetchModules)),
+        KeyCode::Char('r') => Some(Message::ShowSelectPopup(
+            SelectPopup::FetchRefspecRemotePick,
+        )),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

@@ -67,6 +67,11 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
             "Push to remote",
             SelectContext::PushRefspecRemotePick,
         ),
+        SelectPopup::FetchRefspecRemotePick => show_remote_select(
+            model,
+            "Fetch from remote",
+            SelectContext::FetchRefspecRemotePick,
+        ),
         SelectPopup::PushMatching => show_remote_select(
             model,
             "Push matching branches to",

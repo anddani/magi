@@ -32,6 +32,9 @@ pub fn update(model: &mut Model, fetch_command: FetchCommand) -> Option<Message>
         }
         FetchCommand::FetchAllRemotes => fetch_from_all_remotes(model, extra_args),
         FetchCommand::FetchModules => fetch_submodules(model, extra_args),
+        FetchCommand::FetchRefspecs { remote, refspecs } => {
+            fetch_refspecs(model, remote, refspecs, extra_args)
+        }
     }
 }
 
@@ -125,6 +128,23 @@ fn fetch_from_all_remotes(model: &mut Model, extra_args: Vec<String>) -> Option<
     args.extend(extra_args);
 
     execute_pty_command(model, args, "Fetch all".to_string())
+}
+
+fn fetch_refspecs(
+    model: &mut Model,
+    remote: String,
+    refspecs: String,
+    extra_args: Vec<String>,
+) -> Option<Message> {
+    let mut args: Vec<String> = vec!["fetch".to_string(), "-v".to_string(), remote.clone()];
+    for spec in refspecs.split(',') {
+        let spec = spec.trim();
+        if !spec.is_empty() {
+            args.push(spec.to_string());
+        }
+    }
+    args.extend(extra_args);
+    execute_pty_command(model, args, format!("Fetch refspecs from {}", remote))
 }
 
 fn fetch_submodules(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {

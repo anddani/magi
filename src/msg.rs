@@ -248,6 +248,8 @@ pub enum Message {
     ShowSelectPopup(SelectPopup),
     /// Show the input popup for entering refspec(s) to push to the given remote
     ShowPushRefspecInput(String),
+    /// Show the input popup for entering refspec(s) to fetch from the given remote
+    ShowFetchRefspecInput(String),
 
     /// Show a commit select view (Log view)
     ShowCommitSelect(CommitSelect),
@@ -340,6 +342,8 @@ pub enum FetchCommand {
     // TODO: Rename to FetchSubmodules
     /// Fetch all populated submodules (git fetch --recurse-submodules)
     FetchModules,
+    /// Fetch explicit refspecs from a remote without changing any config
+    FetchRefspecs { remote: String, refspecs: String },
 }
 
 /// Messages for pull commands
@@ -487,6 +491,10 @@ pub enum SelectPopup {
     FetchAnotherBranchBranch(String),
     /// Show select popup to choose push remote for fetch
     FetchPushRemote,
+
+    // Fetch-related (continued)
+    /// Show select popup to pick a remote for explicit refspec fetch
+    FetchRefspecRemotePick,
 
     // Push-related
     /// Show select popup to choose upstream for push
