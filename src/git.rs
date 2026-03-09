@@ -26,6 +26,7 @@ pub fn read_commit_message(workdir: &Path, hash: &str) -> Option<String> {
 }
 
 pub mod checkout;
+pub mod cherry_pick;
 pub mod commit;
 mod commit_utils;
 pub mod config;

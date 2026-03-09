@@ -220,6 +220,11 @@ pub enum Message {
     /// Execute a revert command
     Revert(RevertCommand),
 
+    /// Show apply (cherry-pick) popup
+    ShowApplyPopup,
+    /// Execute an apply command
+    Apply(ApplyCommand),
+
     /// Show merge popup
     ShowMergePopup,
     /// Show tag popup
@@ -434,6 +439,19 @@ pub enum MergeCommand {
     /// Continue after resolving conflicts
     Continue,
     /// Abort the merge sequence
+    Abort,
+}
+
+/// Messages for apply (cherry-pick) commands
+#[derive(PartialEq, Eq, Debug)]
+pub enum ApplyCommand {
+    /// Cherry-pick the given commit hashes
+    Pick(Vec<String>),
+    /// Continue after resolving conflicts
+    Continue,
+    /// Skip the current conflicting commit
+    Skip,
+    /// Abort the cherry-pick sequence
     Abort,
 }
 
