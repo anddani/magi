@@ -64,7 +64,7 @@ pub fn content<'a>(
         .collect();
 
     let arguments_col = PopupColumn {
-        title: Some("Arguments"),
+        title: Some("Arguments".into()),
         content: arguments,
     };
 
@@ -124,7 +124,7 @@ pub fn content<'a>(
     ]);
 
     let fetch_from_col = PopupColumn {
-        title: Some("Fetch from"),
+        title: Some("Fetch from".into()),
         content: vec![
             push_remote_line,
             upstream_line,
@@ -134,7 +134,7 @@ pub fn content<'a>(
     };
 
     let fetch_col = PopupColumn {
-        title: Some("Fetch"),
+        title: Some("Fetch".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" o", cmd_key_style),

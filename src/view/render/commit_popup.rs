@@ -46,12 +46,12 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         .collect();
 
     let arguments_col = PopupColumn {
-        title: Some("Arguments"),
+        title: Some("Arguments".into()),
         content: arguments,
     };
 
     let create_col = PopupColumn {
-        title: Some("Create"),
+        title: Some("Create".into()),
         content: vec![Line::from(vec![
             Span::styled(" c", key_style),
             Span::styled(" Commit", desc_style),
@@ -59,7 +59,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     };
 
     let edit_head_col = PopupColumn {
-        title: Some("Edit HEAD"),
+        title: Some("Edit HEAD".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" e", key_style),
@@ -79,7 +79,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     };
 
     let edit_col = PopupColumn {
-        title: Some("Edit"),
+        title: Some("Edit".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" f", key_style),
