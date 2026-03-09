@@ -256,6 +256,9 @@ fn route_result(
         (Some(SelectContext::CreateTagTarget(name)), SelectResult::Selected(target)) => {
             Some(Message::CreateTag { name, target })
         }
+        (Some(SelectContext::DeleteTag), SelectResult::Selected(tag)) => {
+            Some(Message::DeleteTag(tag))
+        }
         _ => None,
     }
 }

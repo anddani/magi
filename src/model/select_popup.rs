@@ -96,6 +96,8 @@ pub enum SelectContext {
     MergeElsewhere,
     /// Selecting a ref/commit to tag (carries tag name)
     CreateTagTarget(String),
+    /// Selecting an existing tag to delete
+    DeleteTag,
 }
 
 /// State for the select popup (fuzzy finder style)

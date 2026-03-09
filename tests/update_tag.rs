@@ -222,3 +222,108 @@ fn test_create_tag_creates_tag() {
         "Tag 'v1.0.0' should exist in the repository"
     );
 }
+
+// ── Delete tag flow ────────────────────────────────────────────────────────────
+
+#[test]
+fn test_x_in_tag_popup_shows_delete_tag_select() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag(
+        TagPopupState {},
+    )));
+
+    let result = handle_key(key(KeyCode::Char('x')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(SelectPopup::DeleteTag))
+    );
+}
+
+#[test]
+fn test_delete_tag_select_shows_existing_tags() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // Create a tag so the list is non-empty
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    let result = update(&mut model, Message::ShowSelectPopup(SelectPopup::DeleteTag));
+
+    assert_eq!(result, None);
+    assert!(
+        matches!(
+            &model.popup,
+            Some(PopupContent::Command(PopupContentCommand::Select(state)))
+                if state.all_options.contains(&"v1.0.0".to_string())
+        ),
+        "Expected Select popup listing 'v1.0.0'"
+    );
+    assert_eq!(model.select_context, Some(SelectContext::DeleteTag));
+}
+
+#[test]
+fn test_delete_tag_select_empty_repo_shows_error() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // No tags created — should show an error popup
+
+    let result = update(&mut model, Message::ShowSelectPopup(SelectPopup::DeleteTag));
+
+    assert_eq!(result, None);
+    assert!(
+        matches!(&model.popup, Some(PopupContent::Error { .. })),
+        "Expected Error popup when no tags exist"
+    );
+}
+
+#[test]
+fn test_delete_tag_removes_tag() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .write_file_content("file1.txt", "content1")
+        .stage_files(&["file1.txt"])
+        .commit("First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // Create then delete
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    let result = update(&mut model, Message::DeleteTag("v1.0.0".to_string()));
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(model.popup.is_none());
+
+    let tags = model.git_info.repository.tag_names(None).unwrap();
+    let tag_list: Vec<&str> = tags.iter().flatten().collect();
+    assert!(
+        !tag_list.contains(&"v1.0.0"),
+        "Tag 'v1.0.0' should have been deleted"
+    );
+}
