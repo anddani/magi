@@ -92,6 +92,8 @@ pub enum SelectContext {
     FetchRefspecRemotePick,
     /// Selecting a commit to revise (reword)
     ReviseCommit,
+    /// Selecting a branch to merge into the current branch
+    MergeElsewhere,
 }
 
 /// State for the select popup (fuzzy finder style)

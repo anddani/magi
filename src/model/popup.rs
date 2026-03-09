@@ -268,6 +268,13 @@ pub struct RevertPopupState {
     pub selected_commits: Vec<String>,
 }
 
+/// State for the Merge popup
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MergePopupState {
+    /// Whether a merge sequence is currently in progress (conflict stopped)
+    pub in_progress: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContentCommand {
     Commit,
@@ -280,6 +287,7 @@ pub enum PopupContentCommand {
     Reset,
     Rebase(RebasePopupState),
     Revert(RevertPopupState),
+    Merge(MergePopupState),
     Select(SelectPopupState),
 }
 

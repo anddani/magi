@@ -8,8 +8,8 @@ use crate::{
         },
     },
     msg::{
-        FetchCommand, Message, PullCommand, PushCommand, RebaseCommand, ResetMode, SelectPopup,
-        StashCommand,
+        FetchCommand, MergeCommand, Message, PullCommand, PushCommand, RebaseCommand, ResetMode,
+        SelectPopup, StashCommand,
     },
 };
 
@@ -249,6 +249,9 @@ fn route_result(
                 on_confirm: ConfirmAction::DropStash(stash_ref),
             }));
             None
+        }
+        (Some(SelectContext::MergeElsewhere), SelectResult::Selected(branch)) => {
+            Some(Message::Merge(MergeCommand::Branch(branch)))
         }
         _ => None,
     }
