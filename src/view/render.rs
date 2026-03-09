@@ -183,20 +183,35 @@ fn render_confirm_popup(
     let title = "Confirm";
     let border_color = theme.section_header;
 
-    let content_width = message.len().max(title.len()) + 4;
+    let message_lines: Vec<&str> = message.lines().collect();
+    let line_count = message_lines.len();
+
+    let hint = "y/Enter to confirm, n/Esc to cancel";
+    let max_line_width = message_lines
+        .iter()
+        .map(|line| line.len())
+        .max()
+        .unwrap_or(0);
+    let content_width = max_line_width.max(hint.len()).max(title.len()) + 4;
     let popup_width = (content_width as u16).clamp(30, area.width.saturating_sub(4));
-    let popup_height = 3; // border + message + border
+    let popup_height = (line_count + 4) as u16; // border + content lines + empty line + hint + border
 
     let popup_area = centered_rect(popup_width, popup_height, area);
 
     frame.render_widget(Clear, popup_area);
+    let mut popup_text: Vec<TextLine> = message_lines.into_iter().map(TextLine::from).collect();
+    popup_text.push(TextLine::from(""));
+    popup_text.push(TextLine::from(Span::styled(
+        hint,
+        Style::default().fg(Color::DarkGray),
+    )));
 
     let popup_block = Block::default()
         .title(title)
         .borders(Borders::ALL)
         .border_style(Style::default().fg(border_color));
 
-    let popup_paragraph = Paragraph::new(TextLine::from(message)).block(popup_block);
+    let popup_paragraph = Paragraph::new(popup_text).block(popup_block);
 
     frame.render_widget(popup_paragraph, popup_area);
 }

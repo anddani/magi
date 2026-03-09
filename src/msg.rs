@@ -233,6 +233,18 @@ pub enum Message {
     },
     /// Delete an existing tag by name
     DeleteTag(String),
+    /// Show confirmation popup for tag prune after computing local/remote diff
+    ShowPruneTagsConfirm {
+        remote: String,
+    },
+    /// Delete local-only tags and push deletions for remote-only tags
+    PruneTags {
+        /// Tags to delete locally (`git tag -d`)
+        local_tags: Vec<String>,
+        /// Tags to delete from the remote (`git push <remote> :tag`)
+        remote_tags: Vec<String>,
+        remote: String,
+    },
     /// Execute a merge command
     Merge(MergeCommand),
 
@@ -603,6 +615,8 @@ pub enum SelectPopup {
     CreateTagTarget(String),
     /// Show select popup to choose an existing tag to delete
     DeleteTag,
+    /// Show select popup to choose a remote for tag pruning
+    PruneTagsRemotePick,
 
     // File checkout-related
     /// Show select popup to choose a revision to checkout a file from

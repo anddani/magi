@@ -115,6 +115,8 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
 
         SelectPopup::CreateTagTarget(tag_name) => show_tag_target_select(model, tag_name),
         SelectPopup::DeleteTag => show_delete_tag(model),
+
+        SelectPopup::PruneTagsRemotePick => show_prune_tags_remote_pick(model),
     }
 }
 
@@ -1221,6 +1223,31 @@ fn show_tag_target_select(model: &mut Model, tag_name: String) -> Option<Message
     let state = SelectPopupState::new("Create tag at".to_string(), options);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
+}
+
+/// Shows a remote select popup for tag pruning.
+/// If only one remote is configured, skips directly to `ShowPruneTagsConfirm`.
+fn show_prune_tags_remote_pick(model: &mut Model) -> Option<Message> {
+    let remotes = get_remotes(&model.git_info.repository);
+
+    if remotes.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No remotes configured".to_string(),
+        });
+        return None;
+    }
+
+    if remotes.len() == 1 {
+        return Some(Message::ShowPruneTagsConfirm {
+            remote: remotes.into_iter().next().unwrap(),
+        });
+    }
+
+    show_remote_select(
+        model,
+        "Prune tags against",
+        SelectContext::PruneTagsRemotePick,
+    )
 }
 
 /// Shows a select popup for choosing an existing local tag to delete.

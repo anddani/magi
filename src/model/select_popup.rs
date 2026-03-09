@@ -98,6 +98,8 @@ pub enum SelectContext {
     CreateTagTarget(String),
     /// Selecting an existing tag to delete
     DeleteTag,
+    /// Selecting a remote to prune tags against
+    PruneTagsRemotePick,
 }
 
 /// State for the select popup (fuzzy finder style)
