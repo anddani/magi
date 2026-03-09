@@ -214,6 +214,13 @@ pub enum LineContent {
         /// true = the commit currently stopped on (conflict), false = pending in todo
         is_current: bool,
     },
+    /// An entry in the "Cherry Picking" sequencer section
+    CherryPickingEntry {
+        hash: String,
+        message: String,
+        /// true = the commit currently stopped on (CHERRY_PICK_HEAD), false = pending in sequencer
+        is_current: bool,
+    },
 }
 
 /// A suggestion derived from the line under the cursor.
@@ -394,6 +401,8 @@ pub enum SectionType {
     Reverting,
     /// The "Rebasing" sequencer section
     Rebasing,
+    /// The "Cherry Picking" sequencer section
+    CherryPicking,
 }
 
 impl SectionType {
@@ -418,6 +427,7 @@ impl SectionType {
             SectionType::Stashes => None,
             SectionType::Reverting => None,
             SectionType::Rebasing => None,
+            SectionType::CherryPicking => None,
         }
     }
 

@@ -39,6 +39,7 @@ fn line_searchable_text(line: &Line) -> String {
         LineContent::Stash(se) => se.message.clone(),
         LineContent::RevertingEntry { hash, message, .. } => format!("{} {}", hash, message),
         LineContent::RebasingEntry { hash, message, .. } => format!("{} {}", hash, message),
+        LineContent::CherryPickingEntry { hash, message, .. } => format!("{} {}", hash, message),
         LineContent::PreviewLine { content, .. } => content.clone(),
     }
 }

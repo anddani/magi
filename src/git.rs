@@ -94,6 +94,7 @@ impl GitInfo {
         let info_lines = info::get_lines(&self.repository)?;
         let rebasing_lines = rebase::get_rebasing_lines(workdir)?;
         let reverting_lines = revert::get_reverting_lines(workdir)?;
+        let cherry_picking_lines = cherry_pick::get_cherry_picking_lines(workdir)?;
         let untracked_files = untracked_files::get_lines(&self.repository)?;
         let unstaged_changes = unstaged_changes::get_lines(&self.repository)?;
         let staged_changes = staged_changes::get_lines(&self.repository)?;
@@ -105,6 +106,7 @@ impl GitInfo {
             info_lines,
             rebasing_lines,
             reverting_lines,
+            cherry_picking_lines,
             untracked_files,
             unstaged_changes,
             staged_changes,

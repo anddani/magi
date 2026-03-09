@@ -1,6 +1,12 @@
 use std::fs;
 use std::path::Path;
 
+use super::read_commit_message;
+use crate::{
+    errors::MagiResult,
+    model::{LineContent, SectionType},
+};
+
 /// Returns true if a cherry-pick sequence is currently in progress.
 /// Checks for CHERRY_PICK_HEAD (stopped on conflict) or sequencer/todo starting with "pick".
 pub fn cherry_pick_in_progress(workdir: &Path) -> bool {
@@ -22,6 +28,79 @@ pub fn cherry_pick_in_progress(workdir: &Path) -> bool {
     }
 
     false
+}
+
+/// Returns model lines for the "Cherry Picking" section.
+/// Returns an empty vec if no cherry-pick is in progress.
+pub fn get_cherry_picking_lines(workdir: &Path) -> MagiResult<Vec<crate::model::Line>> {
+    if !cherry_pick_in_progress(workdir) {
+        return Ok(vec![]);
+    }
+
+    let git_dir = workdir.join(".git");
+    let mut lines = Vec::new();
+
+    // Section header
+    lines.push(crate::model::Line {
+        content: LineContent::SectionHeader {
+            title: "Cherry Picking".to_string(),
+            count: None,
+        },
+        section: Some(SectionType::CherryPicking),
+    });
+
+    // Current stopped commit from CHERRY_PICK_HEAD
+    let cherry_pick_head_path = git_dir.join("CHERRY_PICK_HEAD");
+    if let Ok(hash_raw) = fs::read_to_string(&cherry_pick_head_path) {
+        let hash = hash_raw.trim().to_string();
+        if !hash.is_empty() {
+            let short_hash: String = hash.chars().take(7).collect();
+            let message = read_commit_message(workdir, &hash).unwrap_or_default();
+            lines.push(crate::model::Line {
+                content: LineContent::CherryPickingEntry {
+                    hash: short_hash,
+                    message,
+                    is_current: true,
+                },
+                section: Some(SectionType::CherryPicking),
+            });
+        }
+    }
+
+    // Pending commits from sequencer/todo
+    let todo_path = git_dir.join("sequencer").join("todo");
+    if let Ok(content) = fs::read_to_string(&todo_path) {
+        for line in content.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            // Format: "pick <full-hash> # <message>"
+            if let Some(rest) = line.strip_prefix("pick ") {
+                let parts: Vec<&str> = rest.splitn(2, " # ").collect();
+                let short_hash: String = parts[0].trim().chars().take(7).collect();
+                let message = parts
+                    .get(1)
+                    .map(|s| s.trim().to_string())
+                    .unwrap_or_default();
+                lines.push(crate::model::Line {
+                    content: LineContent::CherryPickingEntry {
+                        hash: short_hash,
+                        message,
+                        is_current: false,
+                    },
+                    section: Some(SectionType::CherryPicking),
+                });
+            }
+        }
+    }
+
+    // Only return the section if we have at least one entry besides the header
+    if lines.len() <= 1 {
+        return Ok(vec![]);
+    }
+
+    Ok(lines)
 }
 
 #[cfg(test)]
