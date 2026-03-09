@@ -9,18 +9,27 @@ use crate::{
 };
 
 pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
-    let command_popup_col = PopupColumn {
+    let command_popup_col_1 = PopupColumn {
         title: Some("Commands".into()),
         content: vec![
             command_description(theme, false, "b", "branch"),
             command_description(theme, false, "c", "commit"),
             command_description(theme, false, "f", "fetch"),
-            command_description(theme, false, "F", "pull"),
             command_description(theme, false, "l", "log"),
             command_description(theme, false, "m", "merge"),
+            command_description(theme, false, "F", "pull"),
             command_description(theme, false, "p", "push"),
-            command_description(theme, false, "t", "tag"),
+        ],
+    };
+
+    let command_popup_col_2 = PopupColumn {
+        title: Some("".into()),
+        content: vec![
+            command_description(theme, false, "O", "rebase"),
+            command_description(theme, false, "O", "reset"),
+            command_description(theme, false, "_", "revert"),
             command_description(theme, false, "z", "stash"),
+            command_description(theme, false, "t", "tag"),
         ],
     };
 
@@ -62,7 +71,20 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     CommandPopupContent {
         title: "Help",
         rows: vec![PopupRow {
-            columns: vec![command_popup_col, applying_changes_col, general_col],
+            columns: vec![
+                command_popup_col_1,
+                command_popup_col_2,
+                PopupColumn {
+                    title: Some("    ".into()),
+                    content: vec![],
+                },
+                applying_changes_col,
+                PopupColumn {
+                    title: Some("    ".into()),
+                    content: vec![],
+                },
+                general_col,
+            ],
         }],
     }
 }
