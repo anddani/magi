@@ -1,7 +1,4 @@
-use ratatui::{
-    style::{Modifier, Style},
-    text::{Line, Span},
-};
+use ratatui::text::Line;
 
 use super::popup_content::CommandPopupContent;
 use crate::{
@@ -9,16 +6,11 @@ use crate::{
     model::{Model, arguments::CommitArgument},
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::argument_lines,
+        util::{argument_lines, command_description},
     },
 };
 
 pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-
     let arguments: Vec<Line<'_>> = argument_lines::<CommitArgument>(
         theme,
         model.arg_mode,
@@ -32,55 +24,28 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
 
     let create_col = PopupColumn {
         title: Some("Create".into()),
-        content: vec![Line::from(vec![
-            Span::styled(" c", key_style),
-            Span::styled(" Commit", desc_style),
-        ])],
+        content: vec![command_description(theme, model.arg_mode, "c", "commit")],
     };
 
     let edit_head_col = PopupColumn {
         title: Some("Edit HEAD".into()),
         content: vec![
-            Line::from(vec![
-                Span::styled(" e", key_style),
-                Span::styled(" Extend", desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "e", "extend"),
             Line::from(""),
-            Line::from(vec![
-                Span::styled(" a", key_style),
-                Span::styled(" Amend", desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "a", "amend"),
             Line::from(""),
-            Line::from(vec![
-                Span::styled(" w", key_style),
-                Span::styled(" Reword", desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "w", "reword"),
         ],
     };
 
     let edit_col = PopupColumn {
         title: Some("Edit".into()),
         content: vec![
-            Line::from(vec![
-                Span::styled(" f", key_style),
-                Span::styled(" Fixup", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" s", key_style),
-                Span::styled(" Squash", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" A", key_style),
-                Span::styled(" Alter", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" n", key_style),
-                Span::styled(" Augment", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" W", key_style),
-                Span::styled(" Revise", desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "f", "fixup"),
+            command_description(theme, model.arg_mode, "s", "squash"),
+            command_description(theme, model.arg_mode, "A", "alter"),
+            command_description(theme, model.arg_mode, "n", "augment"),
+            command_description(theme, model.arg_mode, "W", "revise"),
         ],
     };
 

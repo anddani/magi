@@ -1,7 +1,4 @@
-use ratatui::{
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-};
+use ratatui::text::Line;
 
 use super::popup_content::CommandPopupContent;
 use crate::{
@@ -9,7 +6,9 @@ use crate::{
     model::{Model, arguments::FetchArgument, popup::FetchPopupState},
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::argument_lines,
+        util::{
+            argument_lines, command_description, push_remote_description, upstream_description,
+        },
     },
 };
 
@@ -18,24 +17,6 @@ pub fn content<'a>(
     model: &Model,
     state: &FetchPopupState,
 ) -> CommandPopupContent<'a> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-    let faded_style = Style::default().fg(Color::DarkGray);
-
-    // When in arg_mode, fade the command text
-    let cmd_key_style = if model.arg_mode {
-        faded_style
-    } else {
-        key_style
-    };
-    let cmd_desc_style = if model.arg_mode {
-        faded_style
-    } else {
-        desc_style
-    };
-
     let arguments: Vec<Line<'_>> = argument_lines::<FetchArgument>(
         theme,
         model.arg_mode,
@@ -47,86 +28,22 @@ pub fn content<'a>(
         content: arguments,
     };
 
-    let push_remote_line = {
-        let current_branch = model.git_info.current_branch().unwrap_or_default();
-        match &state.push_remote {
-            Some(remote) => {
-                let remote_style = if model.arg_mode {
-                    faded_style
-                } else {
-                    Style::default().fg(theme.remote_branch)
-                };
-                Line::from(vec![
-                    Span::styled(" p", cmd_key_style),
-                    Span::styled(" ", cmd_desc_style),
-                    Span::styled(format!("{}/{}", remote, current_branch), remote_style),
-                ])
-            }
-            None => Line::from(vec![
-                Span::styled(" p", cmd_key_style),
-                Span::styled(" ${push-remote}, setting that", cmd_desc_style),
-            ]),
-        }
-    };
-
-    let upstream_line = match &state.upstream {
-        Some(upstream) => {
-            // Upstream is set - show in remote branch color (or faded if in arg_mode)
-            let upstream_style = if model.arg_mode {
-                faded_style
-            } else {
-                Style::default().fg(theme.remote_branch)
-            };
-            Line::from(vec![
-                Span::styled(" u", cmd_key_style),
-                Span::styled(" ", cmd_desc_style),
-                Span::styled(upstream.clone(), upstream_style),
-            ])
-        }
-        None => {
-            // No upstream - show suggestion with ", setting it"
-            Line::from(vec![
-                Span::styled(" u", cmd_key_style),
-                Span::styled(" ${upstream}, setting it", cmd_desc_style),
-            ])
-        }
-    };
-
-    let elsewhere_line = Line::from(vec![
-        Span::styled(" e", cmd_key_style),
-        Span::styled(" elsewhere", cmd_desc_style),
-    ]);
-
-    let all_remotes_line = Line::from(vec![
-        Span::styled(" a", cmd_key_style),
-        Span::styled(" all remotes", cmd_desc_style),
-    ]);
-
     let fetch_from_col = PopupColumn {
         title: Some("Fetch from".into()),
         content: vec![
-            push_remote_line,
-            upstream_line,
-            elsewhere_line,
-            all_remotes_line,
+            push_remote_description(model, theme, &state.push_remote),
+            upstream_description(theme, model.arg_mode, &state.upstream),
+            command_description(theme, model.arg_mode, "e", "elsewhere"),
+            command_description(theme, model.arg_mode, "a", "all remotes"),
         ],
     };
 
     let fetch_col = PopupColumn {
         title: Some("Fetch".into()),
         content: vec![
-            Line::from(vec![
-                Span::styled(" o", cmd_key_style),
-                Span::styled(" another branch", cmd_desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" r", cmd_key_style),
-                Span::styled(" explicit refspec", cmd_desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" m", cmd_key_style),
-                Span::styled(" submodules", cmd_desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "o", "another branch"),
+            command_description(theme, model.arg_mode, "r", "explicit refspec"),
+            command_description(theme, model.arg_mode, "m", "submodules"),
         ],
     };
 

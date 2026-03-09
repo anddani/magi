@@ -1,21 +1,14 @@
-use ratatui::{
-    style::{Modifier, Style},
-    text::{Line, Span},
-};
+use ratatui::text::Line;
 
 use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
+
 use crate::{
     config::Theme,
     model::{Model, arguments::StashArgument},
-    view::render::util::argument_lines,
+    view::render::util::{argument_lines, command_description},
 };
 
 pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-
     let arguments: Vec<Line<'_>> = argument_lines::<StashArgument>(
         theme,
         model.arg_mode,
@@ -30,36 +23,18 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     let stash = PopupColumn {
         title: Some("Stash".into()),
         content: vec![
-            Line::from(vec![
-                Span::styled(" z", key_style),
-                Span::styled(" both", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" i", key_style),
-                Span::styled(" index", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" w", key_style),
-                Span::styled(" worktree", desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "z", "both"),
+            command_description(theme, model.arg_mode, "i", "index"),
+            command_description(theme, model.arg_mode, "w", "worktree"),
         ],
     };
 
     let use_col = PopupColumn {
         title: Some("Use".into()),
         content: vec![
-            Line::from(vec![
-                Span::styled(" a", key_style),
-                Span::styled(" Apply", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" p", key_style),
-                Span::styled(" Pop", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" k", key_style),
-                Span::styled(" Drop", desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "a", "apply"),
+            command_description(theme, model.arg_mode, "p", "pop"),
+            command_description(theme, model.arg_mode, "k", "drop"),
         ],
     };
 

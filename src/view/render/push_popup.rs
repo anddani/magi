@@ -1,5 +1,5 @@
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
 };
 
@@ -9,7 +9,10 @@ use crate::{
     model::{Model, arguments::PushArgument, popup::PushPopupState},
     view::render::{
         popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
-        util::{argument_lines, column_title},
+        util::{
+            argument_lines, column_title, command_description, push_remote_description,
+            upstream_description,
+        },
     },
 };
 
@@ -18,24 +21,6 @@ pub fn content<'a>(
     model: &Model,
     state: &PushPopupState,
 ) -> CommandPopupContent<'a> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-    let faded_style = Style::default().fg(Color::DarkGray);
-
-    // When in arg_mode, fade the command text
-    let cmd_key_style = if model.arg_mode {
-        faded_style
-    } else {
-        key_style
-    };
-    let cmd_desc_style = if model.arg_mode {
-        faded_style
-    } else {
-        desc_style
-    };
-
     let push_to_title = match model.git_info.current_branch() {
         Some(branch) => {
             let column_title_style = Style::default()
@@ -64,78 +49,21 @@ pub fn content<'a>(
         content: arguments,
     };
 
-    let push_remote_description = {
-        let current_branch = model.git_info.current_branch().unwrap_or_default();
-        match &state.push_remote {
-            Some(remote) => {
-                let remote_style = if model.arg_mode {
-                    faded_style
-                } else {
-                    Style::default().fg(theme.remote_branch)
-                };
-                Line::from(vec![
-                    Span::styled(" p", cmd_key_style),
-                    Span::styled(" ", cmd_desc_style),
-                    Span::styled(format!("{}/{}", remote, current_branch), remote_style),
-                ])
-            }
-            None => Line::from(vec![
-                Span::styled(" p", cmd_key_style),
-                Span::styled(" ${push-remote}, setting that", cmd_desc_style),
-            ]),
-        }
-    };
-
-    let upstream_description = match &state.upstream {
-        Some(upstream) => {
-            // Upstream is set - show in remote branch color (or faded if in arg_mode)
-            let upstream_style = if model.arg_mode {
-                faded_style
-            } else {
-                Style::default().fg(theme.remote_branch)
-            };
-            Line::from(vec![
-                Span::styled(" u", cmd_key_style),
-                Span::styled(" ", cmd_desc_style),
-                Span::styled(upstream.clone(), upstream_style),
-            ])
-        }
-        None => {
-            // No upstream - show suggestion with ", setting it"
-            Line::from(vec![
-                Span::styled(" u", cmd_key_style),
-                Span::styled(" ${upstream}, setting it", cmd_desc_style),
-            ])
-        }
-    };
-
     let push_to_col = PopupColumn {
         title: Some(PopupColumnTitle::Styled(push_to_title)),
         content: vec![
-            push_remote_description,
-            upstream_description,
-            Line::from(vec![
-                Span::styled(" e", cmd_key_style),
-                Span::styled(" elsewhere", cmd_desc_style),
-            ]),
+            push_remote_description(model, theme, &state.push_remote),
+            upstream_description(theme, model.arg_mode, &state.upstream),
+            command_description(theme, model.arg_mode, "e", "elsewhere"),
         ],
     };
 
     let push_1_col = PopupColumn {
         title: Some(PopupColumnTitle::Raw("Push")),
         content: vec![
-            Line::from(vec![
-                Span::styled(" o", cmd_key_style),
-                Span::styled(" other branch", cmd_desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" r", cmd_key_style),
-                Span::styled(" explicit refspec", cmd_desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" m", cmd_key_style),
-                Span::styled(" matching branches", cmd_desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "o", "other branch"),
+            command_description(theme, model.arg_mode, "r", "explicit refspec"),
+            command_description(theme, model.arg_mode, "m", "matching branches"),
         ],
     };
 
@@ -143,19 +71,13 @@ pub fn content<'a>(
         title: None,
         content: vec![
             Line::from(""),
-            Line::from(vec![
-                Span::styled(" T", cmd_key_style),
-                Span::styled(" Push a tag", cmd_desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" t", cmd_key_style),
-                Span::styled(" Push all tags", cmd_desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "T", "push a tag"),
+            command_description(theme, model.arg_mode, "t", "push all tags"),
         ],
     };
 
     CommandPopupContent {
-        title: "Reset",
+        title: "Push",
         rows: vec![
             PopupRow {
                 columns: vec![arguments_col],

@@ -100,14 +100,14 @@ pub fn render_popup(
                 PopupContentCommand::Fetch(state) => fetch_popup::content(theme, model, state),
                 PopupContentCommand::Pull(state) => pull_popup::content(theme, model, state),
                 PopupContentCommand::Branch => branch_popup::content(theme),
-                PopupContentCommand::Log => log_popup::content(theme),
+                PopupContentCommand::Log => log_popup::content(theme, model),
                 PopupContentCommand::Stash => stash_popup::content(theme, model),
 
-                PopupContentCommand::Reset => reset_popup::content(theme),
-                PopupContentCommand::Rebase(state) => rebase_popup::content(theme, state),
-                PopupContentCommand::Revert(state) => revert_popup::content(theme, state),
-                PopupContentCommand::Merge(state) => merge_popup::content(theme, state),
-                PopupContentCommand::Tag(state) => tag_popup::content(theme, state),
+                PopupContentCommand::Reset => reset_popup::content(theme, model),
+                PopupContentCommand::Rebase(state) => rebase_popup::content(theme, model, state),
+                PopupContentCommand::Revert(state) => revert_popup::content(theme, model, state),
+                PopupContentCommand::Merge(state) => merge_popup::content(theme, model, state),
+                PopupContentCommand::Tag(state) => tag_popup::content(theme, model, state),
 
                 // Select popup uses custom rendering, not the column layout
                 PopupContentCommand::Select(state) => {
