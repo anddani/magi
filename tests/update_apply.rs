@@ -3,7 +3,7 @@ use magi::{
     git::{cherry_pick::cherry_pick_in_progress, test_repo::TestRepo},
     keys::handle_key,
     model::popup::{ApplyPopupState, PopupContent, PopupContentCommand},
-    msg::{ApplyCommand, CommitSelect, Message, update::update},
+    msg::{ApplyCommand, Message, SelectPopup, update::update},
 };
 use std::fs;
 
@@ -84,7 +84,7 @@ fn test_shift_a_in_apply_popup_triggers_apply_pick_log_select() {
     let result = handle_key(shift_key(KeyCode::Char('A')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowCommitSelect(CommitSelect::ApplyPick))
+        Some(Message::ShowSelectPopup(SelectPopup::ApplyPick))
     );
 }
 

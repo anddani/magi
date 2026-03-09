@@ -74,9 +74,7 @@ fn test_cherry_pick_head_produces_current_entry() {
     assert_eq!(lines.len(), 2);
     match &lines[1].content {
         LineContent::CherryPickingEntry {
-            hash,
-            is_current,
-            ..
+            hash, is_current, ..
         } => {
             assert_eq!(hash, "abc1234");
             assert!(*is_current, "The CHERRY_PICK_HEAD entry must be is_current");
@@ -152,11 +150,7 @@ fn test_cherry_pick_head_and_todo_produces_both_entries() {
 
     let sequencer = gd.join("sequencer");
     fs::create_dir_all(&sequencer).unwrap();
-    fs::write(
-        sequencer.join("todo"),
-        "pick deadbeef # Pending commit\n",
-    )
-    .unwrap();
+    fs::write(sequencer.join("todo"), "pick deadbeef # Pending commit\n").unwrap();
 
     let lines = get_cherry_picking_lines(&wd).unwrap();
 

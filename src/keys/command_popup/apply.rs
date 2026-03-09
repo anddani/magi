@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     model::popup::ApplyPopupState,
-    msg::{ApplyCommand, CommitSelect, Message},
+    msg::{ApplyCommand, Message, SelectPopup},
 };
 
 pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
@@ -18,7 +18,7 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
 
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
-        KeyCode::Char('A') => Some(Message::ShowCommitSelect(CommitSelect::ApplyPick)),
+        KeyCode::Char('A') => Some(Message::ShowSelectPopup(SelectPopup::ApplyPick)),
         _ => None,
     }
 }

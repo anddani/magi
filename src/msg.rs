@@ -537,10 +537,6 @@ pub enum CommitSelect {
     // Revise-related
     /// Show select popup (or confirm) to pick a commit to revise (reword)
     ReviseCommit,
-
-    // Apply-related
-    /// Show log picker to choose a commit to cherry-pick onto the current branch
-    ApplyPick,
 }
 // SelectPopup::FixupCommit(fixup_type) => show_fixup_commit(model, fixup_type),
 // SelectPopup::RebaseElsewhere => show_rebase_elsewhere(model),
@@ -631,6 +627,10 @@ pub enum SelectPopup {
     // Merge-related
     /// Show select popup to choose a branch to merge into current branch
     MergeElsewhere,
+
+    // Apply (cherry-pick) related
+    /// Show select popup to choose a commit/ref to cherry-pick onto the current branch
+    ApplyPick,
 
     // Tag-related
     /// Show select popup to choose a ref/commit to tag (carries tag name)
