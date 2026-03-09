@@ -1,13 +1,12 @@
 use crate::{
     model::{
         Model,
-        popup::{PopupContent, PopupContentCommand, TagPopupState},
+        popup::{PopupContent, PopupContentCommand},
     },
     msg::Message,
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    let state = TagPopupState {};
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag(state)));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
     None
 }

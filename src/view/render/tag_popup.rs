@@ -1,36 +1,18 @@
-use ratatui::{
-    style::{Modifier, Style},
-    text::{Line, Span},
-};
-
 use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
-use crate::{config::Theme, model::popup::TagPopupState};
 
-pub fn content<'a>(theme: &Theme, _state: &'a TagPopupState) -> CommandPopupContent<'a> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
+use crate::{config::Theme, model::Model, view::render::util::command_description};
 
+pub fn content<'a>(theme: &Theme, model: &Model) -> CommandPopupContent<'a> {
     let create_col = PopupColumn {
         title: Some("Create".into()),
-        content: vec![Line::from(vec![
-            Span::styled(" t", key_style),
-            Span::styled(" tag", desc_style),
-        ])],
+        content: vec![command_description(theme, model.arg_mode, "t", "tag")],
     };
 
     let do_col = PopupColumn {
         title: Some("Do".into()),
         content: vec![
-            Line::from(vec![
-                Span::styled(" x", key_style),
-                Span::styled(" delete", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" p", key_style),
-                Span::styled(" prune", desc_style),
-            ]),
+            command_description(theme, model.arg_mode, "x", "delete"),
+            command_description(theme, model.arg_mode, "p", "prune"),
         ],
     };
 

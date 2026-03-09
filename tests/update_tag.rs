@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifi
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
-    model::popup::{ConfirmAction, InputContext, PopupContent, PopupContentCommand, TagPopupState},
+    model::popup::{ConfirmAction, InputContext, PopupContent, PopupContentCommand},
     model::select_popup::SelectContext,
     msg::{Message, SelectPopup, update::update},
 };
@@ -53,9 +53,7 @@ fn test_show_tag_popup_sets_state() {
     assert!(
         matches!(
             &model.popup,
-            Some(PopupContent::Command(PopupContentCommand::Tag(
-                TagPopupState {}
-            )))
+            Some(PopupContent::Command(PopupContentCommand::Tag))
         ),
         "Expected Tag popup"
     );
@@ -72,9 +70,7 @@ fn test_q_in_tag_popup_dismisses() {
         .commit("First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag(
-        TagPopupState {},
-    )));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
 
     let result = handle_key(key(KeyCode::Char('q')), &model);
     assert_eq!(result, Some(Message::DismissPopup));
@@ -89,9 +85,7 @@ fn test_esc_in_tag_popup_dismisses() {
         .commit("First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag(
-        TagPopupState {},
-    )));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
 
     let result = handle_key(key(KeyCode::Esc), &model);
     assert_eq!(result, Some(Message::DismissPopup));
@@ -108,9 +102,7 @@ fn test_t_in_tag_popup_shows_create_tag_input() {
         .commit("First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag(
-        TagPopupState {},
-    )));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
 
     let result = handle_key(key(KeyCode::Char('t')), &model);
     assert_eq!(result, Some(Message::ShowCreateTagInput));
@@ -234,9 +226,7 @@ fn test_x_in_tag_popup_shows_delete_tag_select() {
         .commit("First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag(
-        TagPopupState {},
-    )));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
 
     let result = handle_key(key(KeyCode::Char('x')), &model);
     assert_eq!(
@@ -339,9 +329,7 @@ fn test_p_in_tag_popup_shows_prune_remote_select() {
         .commit("First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag(
-        TagPopupState {},
-    )));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
 
     let result = handle_key(key(KeyCode::Char('p')), &model);
     assert_eq!(

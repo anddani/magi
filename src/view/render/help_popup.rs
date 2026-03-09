@@ -1,136 +1,68 @@
-use ratatui::{
-    style::{Modifier, Style},
-    text::{Line, Span},
+use super::popup_content::CommandPopupContent;
+
+use crate::{
+    config::Theme,
+    view::render::{
+        popup_content::{PopupColumn, PopupRow},
+        util::command_description,
+    },
 };
 
-use super::popup_content::CommandPopupContent;
-use crate::config::Theme;
-
 pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-    let section_style = Style::default()
-        .fg(theme.section_header)
-        .add_modifier(Modifier::BOLD);
+    let command_popup_col = PopupColumn {
+        title: Some("Commands".into()),
+        content: vec![
+            command_description(theme, false, "b", "branch"),
+            command_description(theme, false, "c", "commit"),
+            command_description(theme, false, "f", "fetch"),
+            command_description(theme, false, "F", "pull"),
+            command_description(theme, false, "l", "log"),
+            command_description(theme, false, "m", "merge"),
+            command_description(theme, false, "p", "push"),
+            command_description(theme, false, "t", "tag"),
+            command_description(theme, false, "z", "stash"),
+        ],
+    };
 
-    let commands: Vec<Line> = vec![
-        Line::from(vec![
-            Span::styled("  b       ", key_style),
-            Span::styled("Branch", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  c       ", key_style),
-            Span::styled("Commit", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  f       ", key_style),
-            Span::styled("Fetch", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  F       ", key_style),
-            Span::styled("Pull", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  l       ", key_style),
-            Span::styled("Log", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  m       ", key_style),
-            Span::styled("Merge", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  P       ", key_style),
-            Span::styled("Push", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  t       ", key_style),
-            Span::styled("Tag", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  z       ", key_style),
-            Span::styled("Stash", desc_style),
-        ]),
-        Line::from(""),
-        // General section
-        Line::from(Span::styled("Applying changes", section_style)),
-        Line::from(vec![
-            Span::styled("  s       ", key_style),
-            Span::styled("Stage", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  S       ", key_style),
-            Span::styled("Stage all", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  u       ", key_style),
-            Span::styled("Unstage", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  U       ", key_style),
-            Span::styled("Unstage all", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  x       ", key_style),
-            Span::styled("Discard", desc_style),
-        ]),
-    ];
+    let applying_changes_col = PopupColumn {
+        title: Some("Applying changes".into()),
+        content: vec![
+            command_description(theme, false, "s", "stage"),
+            command_description(theme, false, "S", "stage all"),
+            command_description(theme, false, "u", "unstage"),
+            command_description(theme, false, "U", "unstage all"),
+            command_description(theme, false, "x", "discard"),
+        ],
+    };
 
-    let general: Vec<Line> = vec![
-        Line::from(vec![
-            Span::styled("  q       ", key_style),
-            Span::styled("Quit", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  Ctrl-r  ", key_style),
-            Span::styled("Refresh", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  ?       ", key_style),
-            Span::styled("Show this help", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  j/Down  ", key_style),
-            Span::styled("Move down", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  k/Up    ", key_style),
-            Span::styled("Move up", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  Ctrl-d  ", key_style),
-            Span::styled("Half page down", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  Ctrl-u  ", key_style),
-            Span::styled("Half page up", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  gg      ", key_style),
-            Span::styled("Go to first line", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  G       ", key_style),
-            Span::styled("Go to last line", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  Ctrl-e  ", key_style),
-            Span::styled("Scroll line down", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  Ctrl-y  ", key_style),
-            Span::styled("Scroll line up", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  Tab     ", key_style),
-            Span::styled("Toggle section collapse/expand", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled("  V       ", key_style),
-            Span::styled("Enter visual selection mode", desc_style),
-        ]),
-    ];
+    let general_col = PopupColumn {
+        title: Some("General".into()),
+        content: vec![
+            command_description(theme, false, "q", "        quit"),
+            command_description(theme, false, "Ctrl+r/gr", "refresh"),
+            command_description(theme, false, "?/h", "      show this help"),
+            command_description(theme, false, "j/Down", "   move down"),
+            command_description(theme, false, "k/Up", "     move up"),
+            command_description(theme, false, "Ctrl+d", "   half page down"),
+            command_description(theme, false, "Ctrl+u", "   half page up"),
+            command_description(theme, false, "gg", "       go to first line"),
+            command_description(theme, false, "G", "        go to last line"),
+            command_description(theme, false, "Ctrl+e", "   scroll one line down"),
+            command_description(theme, false, "Ctrl+y", "   scroll one line up"),
+            command_description(
+                theme,
+                false,
+                "Tab",
+                "      toggle section collapsed/expanded",
+            ),
+            command_description(theme, false, "V", "        enter visual selection mode"),
+        ],
+    };
 
-    CommandPopupContent::two_columns("Help", "Commands", commands, "General", general)
+    CommandPopupContent {
+        title: "Help",
+        rows: vec![PopupRow {
+            columns: vec![command_popup_col, applying_changes_col, general_col],
+        }],
+    }
 }

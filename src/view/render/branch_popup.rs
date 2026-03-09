@@ -1,84 +1,35 @@
-use ratatui::{
-    style::{Modifier, Style},
-    text::{Line, Span},
-};
-
 use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
-use crate::config::Theme;
+use crate::{config::Theme, view::render::util::command_description};
 
 pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-
     let checkout = PopupColumn {
         title: Some("Checkout".into()),
         content: vec![
-            Line::from(vec![
-                Span::styled(" b", key_style),
-                Span::styled(" branch/revision", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" l", key_style),
-                Span::styled(" local branch", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" c", key_style),
-                Span::styled(" new branch", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" s", key_style),
-                Span::styled(" new spin-off", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" w", key_style),
-                Span::styled(" new worktree", desc_style),
-            ]),
+            command_description(theme, false, "b", "branch/revision"),
+            command_description(theme, false, "l", "local branch"),
+            command_description(theme, false, "c", "new branch"),
+            command_description(theme, false, "s", "new spin-off"),
+            command_description(theme, false, "w", "new worktree"),
         ],
     };
 
     let create = PopupColumn {
         title: Some("Create".into()),
         content: vec![
-            Line::from(vec![
-                Span::styled(" n", key_style),
-                Span::styled(" new branch", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" S", key_style),
-                Span::styled(" new spin-out", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" W", key_style),
-                Span::styled(" new worktree", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" o", key_style),
-                Span::styled(" new PR to default branch", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" O", key_style),
-                Span::styled(" new PR to...", desc_style),
-            ]),
+            command_description(theme, false, "n", "new branch"),
+            command_description(theme, false, "S", "new spin-out"),
+            command_description(theme, false, "W", "new worktree"),
+            command_description(theme, false, "o", "new PR to default branch"),
+            command_description(theme, false, "O", "new PR to..."),
         ],
     };
 
     let do_col = PopupColumn {
         title: Some("Do".into()),
         content: vec![
-            Line::from(vec![
-                Span::styled(" m", key_style),
-                Span::styled(" rename", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" x", key_style),
-                Span::styled(" delete", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" X", key_style),
-                Span::styled(" reset", desc_style),
-            ]),
+            command_description(theme, false, "m", "rename"),
+            command_description(theme, false, "x", "delete"),
+            command_description(theme, false, "X", "reset"),
         ],
     };
 

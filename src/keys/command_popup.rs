@@ -40,7 +40,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Rebase(state) => rebase::keys(key, state),
         PopupContentCommand::Revert(state) => revert::keys(key, state),
         PopupContentCommand::Merge(state) => merge::keys(key, state),
-        PopupContentCommand::Tag(state) => tag::keys(key, state),
+        PopupContentCommand::Tag => tag::keys(key),
         PopupContentCommand::Select(_) => select::keys(key),
     }
 }

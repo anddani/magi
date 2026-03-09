@@ -1,35 +1,29 @@
-use ratatui::{
-    style::{Modifier, Style},
-    text::{Line, Span},
+use super::popup_content::CommandPopupContent;
+
+use crate::{
+    config::Theme,
+    model::Model,
+    view::render::{
+        popup_content::{PopupColumn, PopupRow},
+        util::command_description,
+    },
 };
 
-use super::popup_content::CommandPopupContent;
-use crate::config::Theme;
+pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
+    let log_col = PopupColumn {
+        title: Some("Log".into()),
+        content: vec![
+            command_description(theme, model.arg_mode, "l", "current"),
+            command_description(theme, model.arg_mode, "L", "local branches"),
+            command_description(theme, model.arg_mode, "b", "all branches"),
+            command_description(theme, model.arg_mode, "a", "all references"),
+        ],
+    };
 
-pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-
-    let commands: Vec<Line> = vec![
-        Line::from(vec![
-            Span::styled(" l", key_style),
-            Span::styled(" current", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled(" L", key_style),
-            Span::styled(" local branches", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled(" b", key_style),
-            Span::styled(" all branches", desc_style),
-        ]),
-        Line::from(vec![
-            Span::styled(" a", key_style),
-            Span::styled(" all references", desc_style),
-        ]),
-    ];
-
-    CommandPopupContent::single_column("Log", commands)
+    CommandPopupContent {
+        title: "Log",
+        rows: vec![PopupRow {
+            columns: vec![log_col],
+        }],
+    }
 }

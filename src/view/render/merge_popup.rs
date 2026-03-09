@@ -1,42 +1,41 @@
-use ratatui::{
-    style::{Modifier, Style},
-    text::{Line, Span},
+use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
+
+use crate::{
+    config::Theme,
+    model::{Model, popup::MergePopupState},
+    view::render::util::command_description,
 };
 
-use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
-use crate::{config::Theme, model::popup::MergePopupState};
-
-pub fn content<'a>(theme: &Theme, state: &'a MergePopupState) -> CommandPopupContent<'a> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-
+pub fn content<'a>(
+    theme: &Theme,
+    model: &Model,
+    state: &'a MergePopupState,
+) -> CommandPopupContent<'a> {
     if state.in_progress {
         // Merge is paused on a conflict — show Continue / Abort
-        let key_lines = vec![
-            Line::from(vec![
-                Span::styled(" m", key_style),
-                Span::styled("  Continue", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" a", key_style),
-                Span::styled("  Abort", desc_style),
-            ]),
-        ];
-        CommandPopupContent::single_column("Merging", key_lines)
-    } else {
-        CommandPopupContent {
-            title: "Merge",
+        return CommandPopupContent {
+            title: "Merging",
             rows: vec![PopupRow {
                 columns: vec![PopupColumn {
-                    title: Some("Actions".into()),
-                    content: vec![Line::from(vec![
-                        Span::styled(" m", key_style),
-                        Span::styled("  Merge", desc_style),
-                    ])],
+                    title: None,
+                    content: vec![
+                        command_description(theme, model.arg_mode, "m", "continue"),
+                        command_description(theme, model.arg_mode, "m", "abort"),
+                    ],
                 }],
             }],
-        }
+        };
+    }
+
+    let actions_col = PopupColumn {
+        title: Some("Actions".into()),
+        content: vec![command_description(theme, model.arg_mode, "m", "merge")],
+    };
+
+    CommandPopupContent {
+        title: "Merge",
+        rows: vec![PopupRow {
+            columns: vec![actions_col],
+        }],
     }
 }

@@ -1,5 +1,5 @@
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
 };
 
@@ -7,7 +7,13 @@ use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
     model::{Model, arguments::PullArgument, popup::PullPopupState},
-    view::render::util::{argument_lines, column_title},
+    view::render::{
+        popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
+        util::{
+            argument_lines, column_title, command_description, push_remote_description,
+            upstream_description,
+        },
+    },
 };
 
 pub fn content<'a>(
@@ -15,91 +21,16 @@ pub fn content<'a>(
     model: &Model,
     state: &PullPopupState,
 ) -> CommandPopupContent<'a> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
-    let desc_style = Style::default();
-    let faded_style = Style::default().fg(Color::DarkGray);
-
-    // When in arg_mode, fade the command text
-    let cmd_key_style = if model.arg_mode {
-        faded_style
-    } else {
-        key_style
-    };
-    let cmd_desc_style = if model.arg_mode {
-        faded_style
-    } else {
-        desc_style
-    };
-
-    let push_remote_description = {
-        let current_branch = model.git_info.current_branch().unwrap_or_default();
-        match &state.push_remote {
-            Some(remote) => {
-                let remote_style = if model.arg_mode {
-                    faded_style
-                } else {
-                    Style::default().fg(theme.remote_branch)
-                };
-                vec![
-                    Span::styled(" p", cmd_key_style),
-                    Span::styled(" ", cmd_desc_style),
-                    Span::styled(format!("{}/{}", remote, current_branch), remote_style),
-                ]
-            }
-            None => vec![
-                Span::styled(" p", cmd_key_style),
-                Span::styled(" ${push-remote}, setting that", cmd_desc_style),
-            ],
-        }
-    };
-
-    let upstream_description = match &state.upstream {
-        Some(upstream) => {
-            // Upstream is set - show in remote branch color (or faded if in arg_mode)
-            let upstream_style = if model.arg_mode {
-                faded_style
-            } else {
-                Style::default().fg(theme.remote_branch)
-            };
-            vec![
-                Span::styled(" u", cmd_key_style),
-                Span::styled(" ", cmd_desc_style),
-                Span::styled(upstream.clone(), upstream_style),
-            ]
-        }
-        None => {
-            // No upstream - show suggestion with ", setting it"
-            vec![
-                Span::styled(" u", cmd_key_style),
-                Span::styled(" ${upstream}, setting it", cmd_desc_style),
-            ]
-        }
-    };
-
-    let mut arguments: Vec<Line<'_>> = argument_lines::<PullArgument>(
+    let arguments: Vec<Line<'_>> = argument_lines::<PullArgument>(
         theme,
         model.arg_mode,
         model.arguments.as_ref().and_then(|a| a.pull()),
     );
 
-    let elsewhere = vec![
-        Span::styled(" e", cmd_key_style),
-        Span::styled(" elsewhere", cmd_desc_style),
-    ];
-
-    let mut commands: Vec<Line> = vec![
-        Line::from(push_remote_description),
-        Line::from(upstream_description),
-        Line::from(elsewhere),
-    ];
-
-    let mut content: Vec<Line> = vec![];
-    content.push(column_title("Arguments", theme));
-    content.append(&mut arguments);
-
-    content.push(Line::from(""));
+    let arguments_col = PopupColumn {
+        title: Some("Arguments".into()),
+        content: arguments,
+    };
 
     let pull_into_title = match model.git_info.current_branch() {
         Some(branch) => {
@@ -117,8 +48,25 @@ pub fn content<'a>(
         }
         None => column_title("Pull into", theme),
     };
-    content.push(pull_into_title);
-    content.append(&mut commands);
 
-    CommandPopupContent::single_column("Pull", content)
+    let pull_into_col = PopupColumn {
+        title: Some(PopupColumnTitle::Styled(pull_into_title)),
+        content: vec![
+            push_remote_description(model, theme, &state.push_remote),
+            upstream_description(theme, model.arg_mode, &state.upstream),
+            command_description(theme, model.arg_mode, "e", "elsewhere"),
+        ],
+    };
+
+    CommandPopupContent {
+        title: "Pull",
+        rows: vec![
+            PopupRow {
+                columns: vec![arguments_col],
+            },
+            PopupRow {
+                columns: vec![pull_into_col],
+            },
+        ],
+    }
 }

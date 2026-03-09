@@ -4,47 +4,56 @@ use ratatui::{
 };
 
 use super::popup_content::CommandPopupContent;
-use crate::{config::Theme, model::popup::RebasePopupState};
+use crate::{
+    config::Theme,
+    model::{Model, popup::RebasePopupState},
+    view::render::{
+        popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
+        util::command_description,
+    },
+};
 
-pub fn content<'a>(theme: &Theme, state: &'a RebasePopupState) -> CommandPopupContent<'a> {
-    let key_style = Style::default()
-        .fg(theme.local_branch)
-        .add_modifier(Modifier::BOLD);
+pub fn content<'a>(
+    theme: &Theme,
+    model: &Model,
+    state: &'a RebasePopupState,
+) -> CommandPopupContent<'a> {
     let section_style = Style::default()
         .fg(theme.section_header)
         .add_modifier(Modifier::BOLD);
     let branch_style = Style::default().fg(theme.local_branch);
-    let desc_style = Style::default();
 
     if state.in_progress {
         // Rebase sequence paused on a conflict — show Continue / Skip / Abort
-        let key_lines = vec![
-            Line::from(vec![
-                Span::styled(" r", key_style),
-                Span::styled("  Continue", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" s", key_style),
-                Span::styled("  Skip", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled(" a", key_style),
-                Span::styled("  Abort", desc_style),
-            ]),
-        ];
-        CommandPopupContent::single_column("Rebasing", key_lines)
-    } else {
-        let title_line = Line::from(vec![
-            Span::styled("Rebase ", section_style),
-            Span::styled(state.branch.as_str(), branch_style),
-            Span::styled(" onto", section_style),
-        ]);
+        return CommandPopupContent {
+            title: "Rebasing",
+            rows: vec![PopupRow {
+                columns: vec![PopupColumn {
+                    title: None,
+                    content: vec![
+                        command_description(theme, model.arg_mode, "r", "continue"),
+                        command_description(theme, model.arg_mode, "s", "skip"),
+                        command_description(theme, model.arg_mode, "a", "abort"),
+                    ],
+                }],
+            }],
+        };
+    }
 
-        let key_line = Line::from(vec![
-            Span::styled(" e", key_style),
-            Span::styled("  elsewhere", desc_style),
-        ]);
+    let rebase_onto_title = Line::from(vec![
+        Span::styled("Rebase ", section_style),
+        Span::styled(state.branch.as_str(), branch_style),
+        Span::styled(" onto", section_style),
+    ]);
+    let rebase_onto_col = PopupColumn {
+        title: Some(PopupColumnTitle::Styled(rebase_onto_title)),
+        content: vec![command_description(theme, model.arg_mode, "e", "elsewhere")],
+    };
 
-        CommandPopupContent::single_column("Rebase", vec![title_line, key_line])
+    CommandPopupContent {
+        title: "Rebase",
+        rows: vec![PopupRow {
+            columns: vec![rebase_onto_col],
+        }],
     }
 }

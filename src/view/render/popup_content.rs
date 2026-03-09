@@ -74,44 +74,6 @@ pub struct CommandPopupContent<'a> {
 }
 
 impl<'a> CommandPopupContent<'a> {
-    /// Create a single-column popup
-    pub fn single_column(title: &'a str, content: Vec<Line<'a>>) -> Self {
-        Self {
-            title,
-            rows: vec![PopupRow {
-                columns: vec![PopupColumn {
-                    title: None,
-                    content,
-                }],
-            }],
-        }
-    }
-
-    /// Create a two-column popup
-    pub fn two_columns(
-        title: &'a str,
-        left_title: &'a str,
-        left_content: Vec<Line<'a>>,
-        right_title: &'a str,
-        right_content: Vec<Line<'a>>,
-    ) -> Self {
-        Self {
-            title,
-            rows: vec![PopupRow {
-                columns: vec![
-                    PopupColumn {
-                        title: Some(left_title.into()),
-                        content: left_content,
-                    },
-                    PopupColumn {
-                        title: Some(right_title.into()),
-                        content: right_content,
-                    },
-                ],
-            }],
-        }
-    }
-
     /// Total content height (sum of every row's height plus 1-unit gaps between rows)
     pub fn total_content_height(&self) -> usize {
         let rows_height: usize = self.rows.iter().map(|row| row.height()).sum();
