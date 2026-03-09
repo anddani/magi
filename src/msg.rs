@@ -287,6 +287,9 @@ pub enum Message {
     ShowPreview,
     /// Exit preview mode and return to previous view
     ExitPreview,
+
+    /// Revise (reword) a specific commit via `git commit --fixup=reword:<hash> --edit`
+    ReviseCommit(String),
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -473,6 +476,10 @@ pub enum CommitSelect {
     // Rebase-related
     /// Show select popup (or confirm) to pick a commit/ref to rebase onto
     RebaseElsewhere,
+
+    // Revise-related
+    /// Show select popup (or confirm) to pick a commit to revise (reword)
+    ReviseCommit,
 }
 // SelectPopup::FixupCommit(fixup_type) => show_fixup_commit(model, fixup_type),
 // SelectPopup::RebaseElsewhere => show_rebase_elsewhere(model),

@@ -32,6 +32,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('n') => Some(Message::ShowCommitSelect(CommitSelect::FixupCommit(
             FixupType::Augment,
         ))),
+        KeyCode::Char('W') => Some(Message::ShowCommitSelect(CommitSelect::ReviseCommit)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

@@ -26,6 +26,8 @@ pub enum ConfirmAction {
     DropStash(String),
     /// Rebase the current branch onto the given target ref/commit
     RebaseElsewhere(String),
+    /// Revise (reword) a commit via `git commit --fixup=reword:<hash> --edit`
+    ReviseCommit(String),
     /// Reset a branch to a target ref/commit
     ResetBranch {
         branch: String,

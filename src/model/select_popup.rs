@@ -90,6 +90,8 @@ pub enum SelectContext {
     PushMatching,
     /// Selecting a remote to fetch explicit refspecs from
     FetchRefspecRemotePick,
+    /// Selecting a commit to revise (reword)
+    ReviseCommit,
 }
 
 /// State for the select popup (fuzzy finder style)

@@ -77,6 +77,10 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
                 Span::styled(" n", key_style),
                 Span::styled(" Augment", desc_style),
             ]),
+            Line::from(vec![
+                Span::styled(" W", key_style),
+                Span::styled(" Revise", desc_style),
+            ]),
         ],
     };
 
