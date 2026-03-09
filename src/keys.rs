@@ -84,6 +84,15 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                         target: target.clone(),
                         mode: *mode,
                     },
+                    ConfirmAction::PruneTags {
+                        local_tags,
+                        remote_tags,
+                        remote,
+                    } => Message::PruneTags {
+                        local_tags: local_tags.clone(),
+                        remote_tags: remote_tags.clone(),
+                        remote: remote.clone(),
+                    },
                 };
                 Some(msg)
             }

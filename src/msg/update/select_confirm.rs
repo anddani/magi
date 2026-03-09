@@ -259,6 +259,9 @@ fn route_result(
         (Some(SelectContext::DeleteTag), SelectResult::Selected(tag)) => {
             Some(Message::DeleteTag(tag))
         }
+        (Some(SelectContext::PruneTagsRemotePick), SelectResult::Selected(remote)) => {
+            Some(Message::ShowPruneTagsConfirm { remote })
+        }
         _ => None,
     }
 }

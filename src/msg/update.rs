@@ -32,6 +32,7 @@ mod merge;
 mod navigation;
 mod open_pr;
 mod pending_g;
+mod prune_tags;
 mod pty_helper;
 mod pull;
 mod push;
@@ -58,6 +59,7 @@ mod show_input_popup;
 mod show_log;
 mod show_merge_popup;
 mod show_preview;
+mod show_prune_tags_confirm;
 mod show_pull_popup;
 mod show_push_popup;
 mod show_rebase_popup;
@@ -189,6 +191,12 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),
         Message::CreateTag { name, target } => create_tag::update(model, name, target),
         Message::DeleteTag(name) => delete_tag::update(model, name),
+        Message::ShowPruneTagsConfirm { remote } => show_prune_tags_confirm::update(model, remote),
+        Message::PruneTags {
+            local_tags,
+            remote_tags,
+            remote,
+        } => prune_tags::update(model, local_tags, remote_tags, remote),
         Message::Merge(merge_command) => merge::update(model, merge_command),
         Message::ShowResetPopup => show_reset_popup::update(model),
         Message::ResetBranch {

@@ -6,6 +6,34 @@ use git2::Repository;
 use super::git_cmd;
 use crate::errors::MagiResult;
 
+/// Fetches the list of tags on the given remote using `git ls-remote --tags`.
+/// Returns `None` if the command fails (e.g., network error or bad remote name).
+/// Peeled refs (ending with `^{}`) are filtered out.
+pub fn get_remote_tags<P: AsRef<Path>>(workdir: P, remote: &str) -> Option<Vec<String>> {
+    let output = git_cmd(&workdir, &["ls-remote", "--tags", remote])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let tags = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| {
+            let (_, ref_name) = line.split_once('\t')?;
+            if ref_name.ends_with("^{}") {
+                return None;
+            }
+            ref_name.strip_prefix("refs/tags/").map(|s| s.to_string())
+        })
+        .collect();
+
+    Some(tags)
+}
+
 /// Gets the list of local tags.
 /// Returns an empty vec if no tags exist.
 pub fn get_local_tags(repo: &Repository) -> Vec<String> {

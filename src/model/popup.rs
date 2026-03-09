@@ -34,6 +34,12 @@ pub enum ConfirmAction {
         target: String,
         mode: crate::msg::ResetMode,
     },
+    /// Prune tags: delete local-only tags and push-delete remote-only tags
+    PruneTags {
+        local_tags: Vec<String>,
+        remote_tags: Vec<String>,
+        remote: String,
+    },
 }
 
 /// State for the credential input popup.

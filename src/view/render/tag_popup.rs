@@ -22,10 +22,16 @@ pub fn content<'a>(theme: &Theme, _state: &'a TagPopupState) -> CommandPopupCont
 
     let do_col = PopupColumn {
         title: Some("Do".into()),
-        content: vec![Line::from(vec![
-            Span::styled(" x", key_style),
-            Span::styled(" delete", desc_style),
-        ])],
+        content: vec![
+            Line::from(vec![
+                Span::styled(" x", key_style),
+                Span::styled(" delete", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled(" p", key_style),
+                Span::styled(" prune", desc_style),
+            ]),
+        ],
     };
 
     CommandPopupContent {
