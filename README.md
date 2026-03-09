@@ -75,18 +75,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Apply
     - [x] Branch
     - [ ] Bisect
-    - [ ] Commit
-        - [x] Commit
-        - [x] Amend
-        - [x] Reword
-        - [x] Extend
-        - [x] Fixup
-        - [x] Squash
-        - [x] Alter
-        - [x] Augment
-        - [ ] Revise
-        - [ ] Instant fixup
-        - [ ] Instant squash
+    - [x] Commit
     - [ ] Clone
     - [x] Fetch
     - [x] Pull
