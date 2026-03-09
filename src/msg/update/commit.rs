@@ -3,7 +3,8 @@ use std::time::{Duration, Instant};
 use crate::{
     git::commit::{self, CommitResult},
     model::{
-        Model, Toast, ToastStyle, arguments::Arguments::CommitArguments, arguments::CommitArgument,
+        Model, Toast, ToastStyle,
+        arguments::{Arguments::CommitArguments, CommitArgument, PopupArgument},
         popup::PopupContent,
     },
     msg::Message,

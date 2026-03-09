@@ -5,7 +5,7 @@ use crate::{
     },
     model::{
         Model,
-        arguments::Arguments::PullArguments,
+        arguments::{Arguments::PullArguments, PopupArgument},
         popup::{PopupContent, PopupContentCommand},
     },
     msg::{Message, PullCommand},

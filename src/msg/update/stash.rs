@@ -1,4 +1,4 @@
-use crate::model::arguments::Arguments::StashArguments;
+use crate::model::arguments::{Arguments::StashArguments, PopupArgument};
 use crate::{
     model::Model,
     msg::{Message, StashCommand, StashType, update::pty_helper::execute_pty_command},

@@ -2,7 +2,11 @@ use std::time::Instant;
 
 use crate::{
     git::commit::{self, CommitResult},
-    model::{Model, Toast, ToastStyle, arguments::Arguments::CommitArguments, popup::PopupContent},
+    model::{
+        Model, Toast, ToastStyle,
+        arguments::{Arguments::CommitArguments, PopupArgument},
+        popup::PopupContent,
+    },
     msg::Message,
 };
 

@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
@@ -8,12 +6,8 @@ use ratatui::{
 use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
-    model::{
-        Model,
-        arguments::{Arguments::PullArguments, PullArgument},
-        popup::PullPopupState,
-    },
-    view::render::util::{argument_line, column_title},
+    model::{Model, arguments::PullArgument, popup::PullPopupState},
+    view::render::util::{argument_lines, column_title},
 };
 
 pub fn content<'a>(
@@ -84,26 +78,11 @@ pub fn content<'a>(
         }
     };
 
-    let selected_args: HashSet<PullArgument> =
-        if let Some(PullArguments(ref args)) = model.arguments {
-            args.clone()
-        } else {
-            HashSet::new()
-        };
-
-    let mut arguments: Vec<Line> = PullArgument::all()
-        .iter()
-        .map(|arg| {
-            argument_line(
-                theme,
-                arg.key(),
-                arg.description(),
-                arg.flag(),
-                model.arg_mode,
-                selected_args.contains(arg),
-            )
-        })
-        .collect();
+    let mut arguments: Vec<Line<'_>> = argument_lines::<PullArgument>(
+        theme,
+        model.arg_mode,
+        model.arguments.as_ref().and_then(|a| a.pull()),
+    );
 
     let elsewhere = vec![
         Span::styled(" e", cmd_key_style),

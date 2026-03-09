@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, hash::Hash};
 
 pub enum Arguments {
     CommitArguments(HashSet<CommitArgument>),
@@ -17,6 +17,55 @@ pub enum Argument {
     Stash(StashArgument),
 }
 
+pub trait PopupArgument: Sized + Eq + Hash {
+    fn all() -> Vec<Self>;
+    fn key(&self) -> char;
+    fn description(&self) -> &'static str;
+    fn flag(&self) -> &'static str;
+}
+
+impl Arguments {
+    pub fn commit(&self) -> Option<&HashSet<CommitArgument>> {
+        if let Arguments::CommitArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn fetch(&self) -> Option<&HashSet<FetchArgument>> {
+        if let Arguments::FetchArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn push(&self) -> Option<&HashSet<PushArgument>> {
+        if let Arguments::PushArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn pull(&self) -> Option<&HashSet<PullArgument>> {
+        if let Arguments::PullArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn stash(&self) -> Option<&HashSet<StashArgument>> {
+        if let Arguments::StashArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum CommitArgument {
     StageAll,
@@ -27,7 +76,13 @@ pub enum CommitArgument {
 }
 
 impl CommitArgument {
-    pub fn all() -> Vec<CommitArgument> {
+    pub fn from_key(key: char) -> Option<CommitArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for CommitArgument {
+    fn all() -> Vec<CommitArgument> {
         vec![
             CommitArgument::StageAll,
             CommitArgument::AllowEmpty,
@@ -37,7 +92,7 @@ impl CommitArgument {
         ]
     }
 
-    pub fn key(&self) -> char {
+    fn key(&self) -> char {
         match self {
             CommitArgument::StageAll => 'a',
             CommitArgument::AllowEmpty => 'e',
@@ -47,11 +102,7 @@ impl CommitArgument {
         }
     }
 
-    pub fn from_key(key: char) -> Option<CommitArgument> {
-        Self::all().into_iter().find(|arg| arg.key() == key)
-    }
-
-    pub fn description(&self) -> &'static str {
+    fn description(&self) -> &'static str {
         match self {
             CommitArgument::StageAll => "Stage all modified and deleted files",
             CommitArgument::AllowEmpty => "Allow empty commit",
@@ -61,7 +112,7 @@ impl CommitArgument {
         }
     }
 
-    pub fn flag(&self) -> &'static str {
+    fn flag(&self) -> &'static str {
         match self {
             CommitArgument::StageAll => "--all",
             CommitArgument::AllowEmpty => "--allow-empty",
@@ -80,7 +131,13 @@ pub enum FetchArgument {
 }
 
 impl FetchArgument {
-    pub fn all() -> Vec<FetchArgument> {
+    pub fn from_key(key: char) -> Option<FetchArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for FetchArgument {
+    fn all() -> Vec<FetchArgument> {
         vec![
             FetchArgument::Prune,
             FetchArgument::Tags,
@@ -88,7 +145,7 @@ impl FetchArgument {
         ]
     }
 
-    pub fn key(&self) -> char {
+    fn key(&self) -> char {
         match self {
             FetchArgument::Prune => 'p',
             FetchArgument::Tags => 't',
@@ -96,11 +153,7 @@ impl FetchArgument {
         }
     }
 
-    pub fn from_key(key: char) -> Option<FetchArgument> {
-        Self::all().into_iter().find(|arg| arg.key() == key)
-    }
-
-    pub fn description(&self) -> &'static str {
+    fn description(&self) -> &'static str {
         match self {
             FetchArgument::Prune => "Prune deleted branches",
             FetchArgument::Tags => "Fetch all tags",
@@ -108,7 +161,7 @@ impl FetchArgument {
         }
     }
 
-    pub fn flag(&self) -> &'static str {
+    fn flag(&self) -> &'static str {
         match self {
             FetchArgument::Prune => "--prune",
             FetchArgument::Tags => "--tags",
@@ -129,8 +182,13 @@ pub enum PushArgument {
 }
 
 impl PushArgument {
-    /// Returns all possible push arguments
-    pub fn all() -> Vec<PushArgument> {
+    pub fn from_key(key: char) -> Option<PushArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for PushArgument {
+    fn all() -> Vec<PushArgument> {
         vec![
             PushArgument::ForceWithLease,
             PushArgument::Force,
@@ -142,7 +200,7 @@ impl PushArgument {
         ]
     }
 
-    pub fn key(&self) -> char {
+    fn key(&self) -> char {
         match self {
             PushArgument::ForceWithLease => 'f',
             PushArgument::Force => 'F',
@@ -154,11 +212,7 @@ impl PushArgument {
         }
     }
 
-    pub fn from_key(key: char) -> Option<PushArgument> {
-        Self::all().into_iter().find(|arg| arg.key() == key)
-    }
-
-    pub fn description(&self) -> &'static str {
+    fn description(&self) -> &'static str {
         match self {
             PushArgument::ForceWithLease => "Force with lease",
             PushArgument::Force => "Force",
@@ -170,7 +224,7 @@ impl PushArgument {
         }
     }
 
-    pub fn flag(&self) -> &'static str {
+    fn flag(&self) -> &'static str {
         match self {
             PushArgument::ForceWithLease => "--force-with-lease",
             PushArgument::Force => "--force",
@@ -192,7 +246,13 @@ pub enum PullArgument {
 }
 
 impl PullArgument {
-    pub fn all() -> Vec<PullArgument> {
+    pub fn from_key(key: char) -> Option<PullArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for PullArgument {
+    fn all() -> Vec<PullArgument> {
         vec![
             PullArgument::FfOnly,
             PullArgument::Rebase,
@@ -201,7 +261,7 @@ impl PullArgument {
         ]
     }
 
-    pub fn key(&self) -> char {
+    fn key(&self) -> char {
         match self {
             PullArgument::FfOnly => 'f',
             PullArgument::Rebase => 'r',
@@ -210,11 +270,7 @@ impl PullArgument {
         }
     }
 
-    pub fn from_key(key: char) -> Option<PullArgument> {
-        Self::all().into_iter().find(|arg| arg.key() == key)
-    }
-
-    pub fn description(&self) -> &'static str {
+    fn description(&self) -> &'static str {
         match self {
             PullArgument::FfOnly => "Fast-forward only",
             PullArgument::Rebase => "Rebase local commits",
@@ -223,7 +279,7 @@ impl PullArgument {
         }
     }
 
-    pub fn flag(&self) -> &'static str {
+    fn flag(&self) -> &'static str {
         match self {
             PullArgument::FfOnly => "--ff-only",
             PullArgument::Rebase => "--rebase",
@@ -240,29 +296,31 @@ pub enum StashArgument {
 }
 
 impl StashArgument {
-    pub fn all() -> Vec<StashArgument> {
+    pub fn from_key(key: char) -> Option<StashArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for StashArgument {
+    fn all() -> Vec<StashArgument> {
         vec![StashArgument::IncludeUntracked, StashArgument::All]
     }
 
-    pub fn key(&self) -> char {
+    fn key(&self) -> char {
         match self {
             StashArgument::IncludeUntracked => 'u',
             StashArgument::All => 'a',
         }
     }
 
-    pub fn from_key(key: char) -> Option<StashArgument> {
-        Self::all().into_iter().find(|arg| arg.key() == key)
-    }
-
-    pub fn description(&self) -> &'static str {
+    fn description(&self) -> &'static str {
         match self {
             StashArgument::IncludeUntracked => "Also save untracked files",
             StashArgument::All => "Also save untracked and ignored files",
         }
     }
 
-    pub fn flag(&self) -> &'static str {
+    fn flag(&self) -> &'static str {
         match self {
             StashArgument::IncludeUntracked => "--include-untracked",
             StashArgument::All => "--all",

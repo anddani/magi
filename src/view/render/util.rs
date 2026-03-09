@@ -1,9 +1,33 @@
+use std::collections::HashSet;
+
 use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
 };
 
-use crate::config::Theme;
+use crate::{config::Theme, model::arguments::PopupArgument};
+
+pub fn argument_lines<'a, A: PopupArgument>(
+    theme: &Theme,
+    arg_mode: bool,
+    selected: Option<&HashSet<A>>,
+) -> Vec<Line<'a>> {
+    let empty = HashSet::new();
+    let selected = selected.unwrap_or(&empty);
+    A::all()
+        .iter()
+        .map(|arg| {
+            argument_line(
+                theme,
+                arg.key(),
+                arg.description(),
+                arg.flag(),
+                arg_mode,
+                selected.contains(arg),
+            )
+        })
+        .collect()
+}
 
 pub fn column_title<'a>(title: &'a str, theme: &Theme) -> Line<'a> {
     let column_title_style = Style::default()
