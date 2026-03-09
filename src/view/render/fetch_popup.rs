@@ -120,6 +120,10 @@ pub fn content<'a>(
                 Span::styled(" another branch", cmd_desc_style),
             ]),
             Line::from(vec![
+                Span::styled(" r", cmd_key_style),
+                Span::styled(" explicit refspec", cmd_desc_style),
+            ]),
+            Line::from(vec![
                 Span::styled(" m", cmd_key_style),
                 Span::styled(" submodules", cmd_desc_style),
             ]),

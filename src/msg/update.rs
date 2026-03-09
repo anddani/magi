@@ -118,6 +118,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowPushRefspecInput(remote) => {
             show_input_popup::update(model, InputContext::PushRefspec { remote })
         }
+        Message::ShowFetchRefspecInput(remote) => {
+            show_input_popup::update(model, InputContext::FetchRefspec { remote })
+        }
         Message::RenameBranch { old_name, new_name } => {
             rename_branch::update(model, old_name, new_name)
         }

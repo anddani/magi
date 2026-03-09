@@ -109,6 +109,11 @@ pub enum InputContext {
         /// The remote to push to
         remote: String,
     },
+    /// Entering refspec(s) to fetch from a remote (comma-separated)
+    FetchRefspec {
+        /// The remote to fetch from
+        remote: String,
+    },
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -141,6 +146,9 @@ impl InputPopupState {
             InputContext::WorktreePath { branch, .. } => format!("Worktree path for '{branch}'"),
             InputContext::PushRefspec { remote } => {
                 format!("Push refspec(s) to '{}' (comma-separated)", remote)
+            }
+            InputContext::FetchRefspec { remote } => {
+                format!("Fetch refspec(s) from '{}' (comma-separated)", remote)
             }
         }
     }

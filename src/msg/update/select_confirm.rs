@@ -192,6 +192,9 @@ fn route_result(
         (Some(SelectContext::PushRefspecRemotePick), SelectResult::Selected(remote)) => {
             Some(Message::ShowPushRefspecInput(remote))
         }
+        (Some(SelectContext::FetchRefspecRemotePick), SelectResult::Selected(remote)) => {
+            Some(Message::ShowFetchRefspecInput(remote))
+        }
         (Some(SelectContext::PushMatching), SelectResult::Selected(remote)) => {
             Some(Message::Push(PushCommand::PushMatching(remote)))
         }
