@@ -253,6 +253,9 @@ fn route_result(
         (Some(SelectContext::MergeElsewhere), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Branch(branch)))
         }
+        (Some(SelectContext::CreateTagTarget(name)), SelectResult::Selected(target)) => {
+            Some(Message::CreateTag { name, target })
+        }
         _ => None,
     }
 }

@@ -116,6 +116,8 @@ pub enum InputContext {
         /// The remote to fetch from
         remote: String,
     },
+    /// Creating a new tag (name input; target picked next)
+    CreateTag,
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -152,6 +154,7 @@ impl InputPopupState {
             InputContext::FetchRefspec { remote } => {
                 format!("Fetch refspec(s) from '{}' (comma-separated)", remote)
             }
+            InputContext::CreateTag => "Tag name".to_string(),
         }
     }
 }

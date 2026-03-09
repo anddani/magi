@@ -11,6 +11,7 @@ mod confirm_delete_branch;
 mod confirm_discard;
 mod confirm_drop_stash;
 mod confirm_pop_stash;
+mod create_tag;
 mod credentials_input;
 mod delete_branch;
 mod discard_selected;
@@ -184,6 +185,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Revert(revert_command) => revert::update(model, revert_command),
         Message::ShowMergePopup => show_merge_popup::update(model),
         Message::ShowTagPopup => show_tag_popup::update(model),
+        Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),
+        Message::CreateTag { name, target } => create_tag::update(model, name, target),
         Message::Merge(merge_command) => merge::update(model, merge_command),
         Message::ShowResetPopup => show_reset_popup::update(model),
         Message::ResetBranch {

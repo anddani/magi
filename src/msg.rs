@@ -224,6 +224,13 @@ pub enum Message {
     ShowMergePopup,
     /// Show tag popup
     ShowTagPopup,
+    /// Show the input popup for entering a new tag name
+    ShowCreateTagInput,
+    /// Create a new tag pointing at the given target ref/commit
+    CreateTag {
+        name: String,
+        target: String,
+    },
     /// Execute a merge command
     Merge(MergeCommand),
 
@@ -588,6 +595,10 @@ pub enum SelectPopup {
     // Merge-related
     /// Show select popup to choose a branch to merge into current branch
     MergeElsewhere,
+
+    // Tag-related
+    /// Show select popup to choose a ref/commit to tag (carries tag name)
+    CreateTagTarget(String),
 
     // File checkout-related
     /// Show select popup to choose a revision to checkout a file from
