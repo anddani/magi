@@ -88,11 +88,7 @@ Here are a few features that the aforementioned applications lack:
         - [ ] Instant fixup
         - [ ] Instant squash
     - [ ] Clone
-    - [ ] Fetch
-        - [x] Fetch all remotes
-        - [x] Prune deleted branches
-        - [x] Fetch all tags
-        - [x] Force
+    - [x] Fetch
     - [x] Pull
     - [x] Help
     - [ ] Log
@@ -110,14 +106,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Remote
     - [ ] Submodule
     - [ ] Subtree
-    - [ ] Push
-        - [x] Force with lease
-        - [x] Force
-        - [x] Disable hooks
-        - [x] Dry run
-        - [x] Set upstream
-        - [x] Include all tags
-        - [x] Include related annotated tags
+    - [x] Push
     - [ ] Rebase
     - [ ] Tag
     - [ ] Note
