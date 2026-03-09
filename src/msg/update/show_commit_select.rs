@@ -14,6 +14,7 @@ pub fn update(model: &mut Model, commit_select: CommitSelect) -> Option<Message>
         CommitSelect::FixupCommit(fixup_type) => show_select_fixup_commit(model, fixup_type),
         CommitSelect::RebaseElsewhere => show_select_rebase_elsewhere_commit(model),
         CommitSelect::ReviseCommit => show_select_revise_commit(model),
+        CommitSelect::ApplyPick => show_select_apply_pick(model),
     }
 }
 
@@ -60,6 +61,10 @@ pub fn show_select_rebase_elsewhere_commit(model: &mut Model) -> Option<Message>
         LogType::AllReferences,
         SelectContext::RebaseElsewhere,
     )
+}
+
+pub fn show_select_apply_pick(model: &mut Model) -> Option<Message> {
+    show_log_select(model, LogType::AllReferences, SelectContext::ApplyPick)
 }
 
 pub fn show_select_revise_commit(model: &mut Model) -> Option<Message> {

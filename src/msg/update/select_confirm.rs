@@ -8,8 +8,8 @@ use crate::{
         },
     },
     msg::{
-        FetchCommand, MergeCommand, Message, PullCommand, PushCommand, RebaseCommand, ResetMode,
-        SelectPopup, StashCommand,
+        ApplyCommand, FetchCommand, MergeCommand, Message, PullCommand, PushCommand, RebaseCommand,
+        ResetMode, SelectPopup, StashCommand,
     },
 };
 
@@ -252,6 +252,9 @@ fn route_result(
         }
         (Some(SelectContext::MergeElsewhere), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Branch(branch)))
+        }
+        (Some(SelectContext::ApplyPick), SelectResult::Selected(hash)) => {
+            Some(Message::Apply(ApplyCommand::Pick(vec![hash])))
         }
         (Some(SelectContext::CreateTagTarget(name)), SelectResult::Selected(target)) => {
             Some(Message::CreateTag { name, target })

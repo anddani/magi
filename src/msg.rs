@@ -537,6 +537,10 @@ pub enum CommitSelect {
     // Revise-related
     /// Show select popup (or confirm) to pick a commit to revise (reword)
     ReviseCommit,
+
+    // Apply-related
+    /// Show log picker to choose a commit to cherry-pick onto the current branch
+    ApplyPick,
 }
 // SelectPopup::FixupCommit(fixup_type) => show_fixup_commit(model, fixup_type),
 // SelectPopup::RebaseElsewhere => show_rebase_elsewhere(model),
