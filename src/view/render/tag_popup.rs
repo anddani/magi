@@ -12,7 +12,7 @@ pub fn content<'a>(theme: &Theme, _state: &'a TagPopupState) -> CommandPopupCont
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
 
-    let create = PopupColumn {
+    let create_col = PopupColumn {
         title: Some("Create".into()),
         content: vec![Line::from(vec![
             Span::styled(" t", key_style),
@@ -31,7 +31,7 @@ pub fn content<'a>(theme: &Theme, _state: &'a TagPopupState) -> CommandPopupCont
     CommandPopupContent {
         title: "Tag",
         rows: vec![PopupRow {
-            columns: vec![create, do_col],
+            columns: vec![create_col, do_col],
         }],
     }
 }
