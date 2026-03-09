@@ -2,6 +2,7 @@ use std::time::Instant;
 
 use crate::{
     git::{
+        CommitRefType,
         checkout::{
             BranchEntry, get_all_branches, get_branches, get_last_checked_out_branch,
             get_local_branches, get_remote_branches_for_upstream,
@@ -113,6 +114,7 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
         SelectPopup::MergeElsewhere => show_merge_elsewhere(model),
 
         SelectPopup::CreateTagTarget(tag_name) => show_tag_target_select(model, tag_name),
+        SelectPopup::DeleteTag => show_delete_tag(model),
     }
 }
 
@@ -1217,6 +1219,50 @@ fn show_tag_target_select(model: &mut Model, tag_name: String) -> Option<Message
 
     model.select_context = Some(SelectContext::CreateTagTarget(tag_name));
     let state = SelectPopupState::new("Create tag at".to_string(), options);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
+
+/// Shows a select popup for choosing an existing local tag to delete.
+/// Pre-selects the tag under the cursor (from a Commit or LogLine ref with Tag type).
+fn show_delete_tag(model: &mut Model) -> Option<Message> {
+    let mut tags = get_local_tags(&model.git_info.repository);
+
+    if tags.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No tags found".to_string(),
+        });
+        return None;
+    }
+
+    // Prefer a tag from the cursor line (CommitRefType::Tag in refs)
+    let preferred_tag = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| match &line.content {
+            LineContent::Commit(commit_info) => commit_info
+                .refs
+                .iter()
+                .find(|r| r.ref_type == CommitRefType::Tag)
+                .map(|r| r.name.clone()),
+            LineContent::LogLine(entry) => entry
+                .refs
+                .iter()
+                .find(|r| r.ref_type == CommitRefType::Tag)
+                .map(|r| r.name.clone()),
+            _ => None,
+        });
+
+    if let Some(ref tag) = preferred_tag
+        && let Some(idx) = tags.iter().position(|t| t == tag)
+    {
+        let t = tags.remove(idx);
+        tags.insert(0, t);
+    }
+
+    model.select_context = Some(SelectContext::DeleteTag);
+    let state = SelectPopupState::new("Delete tag".to_string(), tags);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }

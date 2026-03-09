@@ -231,6 +231,8 @@ pub enum Message {
         name: String,
         target: String,
     },
+    /// Delete an existing tag by name
+    DeleteTag(String),
     /// Execute a merge command
     Merge(MergeCommand),
 
@@ -599,6 +601,8 @@ pub enum SelectPopup {
     // Tag-related
     /// Show select popup to choose a ref/commit to tag (carries tag name)
     CreateTagTarget(String),
+    /// Show select popup to choose an existing tag to delete
+    DeleteTag,
 
     // File checkout-related
     /// Show select popup to choose a revision to checkout a file from
