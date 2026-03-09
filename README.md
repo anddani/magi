@@ -93,11 +93,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Prune deleted branches
         - [x] Fetch all tags
         - [x] Force
-    - [ ] Pull
-        - [x] Fast forward only
-        - [x] Rebase local commits
-        - [x] Autostash
-        - [x] Force
+    - [x] Pull
     - [x] Help
     - [ ] Log
         - [x] Local
@@ -128,7 +124,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Revert
     - [ ] Apply patches
     - [ ] Format patches
-    - [ ] Reset
+    - [x] Reset
     - [ ] Show refs
     - [ ] Stash
     - [ ] Worktree
