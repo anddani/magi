@@ -109,6 +109,26 @@ pub fn run_augment_commit<P: AsRef<Path>>(
     get_commit_result(repo_path, status, "Augment")
 }
 
+/// Runs `git commit --fixup=reword:<commit_hash> --edit` to revise a commit message.
+/// Opens the user's configured editor to author the revised commit message.
+/// Unlike other fixup types, this does NOT require staged changes.
+pub fn run_revise_commit<P: AsRef<Path>>(
+    repo_path: P,
+    commit_hash: String,
+) -> MagiResult<CommitResult> {
+    let status = git_cmd(
+        &repo_path,
+        &[
+            "commit",
+            &format!("--fixup=reword:{}", commit_hash),
+            "--edit",
+        ],
+    )
+    .status()?;
+
+    get_commit_result(repo_path, status, "Revise")
+}
+
 /// Runs `git commit --fixup=amend:<commit_hash> --edit` to create an alter commit.
 /// Opens the user's configured editor to author the final commit message.
 pub fn run_alter_commit<P: AsRef<Path>>(

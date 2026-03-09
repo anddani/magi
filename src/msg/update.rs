@@ -40,6 +40,7 @@ mod reset_branch;
 mod reset_index;
 mod reset_worktree;
 mod revert;
+mod revise_commit;
 mod search;
 mod select_confirm;
 mod select_input_backspace;
@@ -205,5 +206,6 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowPreview => show_preview::update(model),
         Message::ExitPreview => exit_preview::update(model),
         Message::FileCheckout { revision, file } => file_checkout::update(model, revision, file),
+        Message::ReviseCommit(hash) => revise_commit::update(model, hash),
     }
 }
