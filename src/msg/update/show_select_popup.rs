@@ -1136,16 +1136,16 @@ fn show_merge_elsewhere(model: &mut Model) -> Option<Message> {
                 BranchSuggestion::LocalBranch(name) | BranchSuggestion::RemoteBranch(name) => {
                     current_branch.as_deref() != Some(name.as_str())
                 }
-                BranchSuggestion::Revision(_) => false,
+                BranchSuggestion::Revision(_) => true,
             })
         });
 
     if let Some(ref preferred) = preferred {
         let name = preferred.name();
         if let Some(idx) = branches.iter().position(|b| b == name) {
-            let branch = branches.remove(idx);
-            branches.insert(0, branch);
+            branches.remove(idx);
         }
+        branches.insert(0, name.to_string());
     }
 
     model.select_context = Some(SelectContext::MergeElsewhere);
