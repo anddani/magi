@@ -43,12 +43,12 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         .collect();
 
     let arguments_col = PopupColumn {
-        title: Some("Arguments"),
+        title: Some("Arguments".into()),
         content: arguments,
     };
 
     let stash = PopupColumn {
-        title: Some("Stash"),
+        title: Some("Stash".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" z", key_style),
@@ -66,7 +66,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     };
 
     let use_col = PopupColumn {
-        title: Some("Use"),
+        title: Some("Use".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" a", key_style),

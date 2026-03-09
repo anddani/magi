@@ -16,7 +16,7 @@ pub fn content<'a>(theme: &Theme) -> CommandPopupContent<'a> {
     let desc_style = Style::default();
 
     let reset_col = PopupColumn {
-        title: Some("Reset"),
+        title: Some("Reset".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" b", key_style),
@@ -30,7 +30,7 @@ pub fn content<'a>(theme: &Theme) -> CommandPopupContent<'a> {
     };
 
     let reset_this_col = PopupColumn {
-        title: Some("Reset this"),
+        title: Some("Reset this".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" m", key_style),

@@ -13,7 +13,7 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     let desc_style = Style::default();
 
     let checkout = PopupColumn {
-        title: Some("Checkout"),
+        title: Some("Checkout".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" b", key_style),
@@ -39,7 +39,7 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     };
 
     let create = PopupColumn {
-        title: Some("Create"),
+        title: Some("Create".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" n", key_style),
@@ -65,7 +65,7 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     };
 
     let do_col = PopupColumn {
-        title: Some("Do"),
+        title: Some("Do".into()),
         content: vec![
             Line::from(vec![
                 Span::styled(" m", key_style),

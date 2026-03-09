@@ -3,9 +3,29 @@ use ratatui::text::Line;
 /// A column in a command popup row
 pub struct PopupColumn<'a> {
     /// Optional column header (displayed in bold)
-    pub title: Option<&'a str>,
+    pub title: Option<PopupColumnTitle<'a>>,
     /// The content lines for this column
     pub content: Vec<Line<'a>>,
+}
+
+pub enum PopupColumnTitle<'a> {
+    Raw(&'a str),
+    Styled(Line<'a>),
+}
+
+impl<'a> From<&'a str> for PopupColumnTitle<'a> {
+    fn from(value: &'a str) -> Self {
+        PopupColumnTitle::Raw(value)
+    }
+}
+
+impl PopupColumnTitle<'_> {
+    pub fn len(&self) -> usize {
+        match self {
+            PopupColumnTitle::Raw(s) => s.len(),
+            PopupColumnTitle::Styled(line) => line.width(),
+        }
+    }
 }
 
 impl<'a> PopupColumn<'a> {
@@ -17,7 +37,7 @@ impl<'a> PopupColumn<'a> {
 
     /// Width in terminal columns (max of title length and widest content line)
     pub fn width(&self) -> usize {
-        let title_width = self.title.map(|t| t.len()).unwrap_or(0);
+        let title_width = self.title.as_ref().map(|t| t.len()).unwrap_or(0);
         let content_width = self
             .content
             .iter()
@@ -80,11 +100,11 @@ impl<'a> CommandPopupContent<'a> {
             rows: vec![PopupRow {
                 columns: vec![
                     PopupColumn {
-                        title: Some(left_title),
+                        title: Some(left_title.into()),
                         content: left_content,
                     },
                     PopupColumn {
-                        title: Some(right_title),
+                        title: Some(right_title.into()),
                         content: right_content,
                     },
                 ],

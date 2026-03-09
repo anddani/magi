@@ -260,8 +260,15 @@ fn render_command_popup(
         for (col_idx, column) in row.columns.iter().enumerate() {
             let mut column_content: Vec<TextLine> = Vec::new();
 
-            if let Some(title) = column.title {
-                column_content.push(TextLine::from(Span::styled(title, column_title_style)));
+            if let Some(title) = &column.title {
+                match title {
+                    popup_content::PopupColumnTitle::Raw(s) => {
+                        column_content.push(TextLine::from(Span::styled(*s, column_title_style)));
+                    }
+                    popup_content::PopupColumnTitle::Styled(line) => {
+                        column_content.push(line.clone());
+                    }
+                }
             }
 
             column_content.extend(column.content.clone());
