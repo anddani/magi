@@ -64,6 +64,46 @@ impl Arguments {
             None
         }
     }
+
+    pub fn commit_mut(&mut self) -> Option<&mut HashSet<CommitArgument>> {
+        if let Arguments::CommitArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn fetch_mut(&mut self) -> Option<&mut HashSet<FetchArgument>> {
+        if let Arguments::FetchArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn push_mut(&mut self) -> Option<&mut HashSet<PushArgument>> {
+        if let Arguments::PushArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn pull_mut(&mut self) -> Option<&mut HashSet<PullArgument>> {
+        if let Arguments::PullArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn stash_mut(&mut self) -> Option<&mut HashSet<StashArgument>> {
+        if let Arguments::StashArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
