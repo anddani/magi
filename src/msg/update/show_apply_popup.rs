@@ -41,9 +41,11 @@ fn collect_selected_commits(model: &Model) -> Vec<String> {
         let range = &model.ui_model.lines[start..=end];
         let commits: Vec<String> = range.iter().filter_map(hash_from_line).collect();
 
-        // Only accept if ALL lines in the selection are commits
+        // Only accept if ALL lines in the selection are commits.
+        // Reverse so commits are oldest-first: the UI displays newest at the top
+        // (lower index), but `git cherry-pick` must receive them oldest-first.
         if commits.len() == range.len() {
-            commits
+            commits.into_iter().rev().collect()
         } else {
             vec![]
         }
