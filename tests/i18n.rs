@@ -48,14 +48,14 @@ fn test_english_section_headers() {
 fn test_swedish_section_headers() {
     let s = i18n::swedish();
     assert_eq!(s.section_untracked_files, "Ospårade filer");
-    assert_eq!(s.section_unstaged_changes, "Ej iscensatta ändringar");
-    assert_eq!(s.section_staged_changes, "Iscensatta ändringar");
-    assert_eq!(s.section_recent_commits, "Senaste incheckningar");
-    assert_eq!(s.section_stashes, "Tillfälliga ändringar");
-    assert_eq!(s.section_rebasing, "Ombaserar");
+    assert_eq!(s.section_unstaged_changes, "Ej klarmarkerade ändringar");
+    assert_eq!(s.section_staged_changes, "Klarmarkerade ändringar");
+    assert_eq!(s.section_recent_commits, "Senaste förbindelser");
+    assert_eq!(s.section_stashes, "Gömda ändringar");
+    assert_eq!(s.section_rebasing, "Ympar");
     assert_eq!(s.section_reverting, "Återgår");
-    assert_eq!(s.section_cherry_picking, "Plockar");
-    assert_eq!(s.section_unpulled_from_prefix, "Ej hämtade från ");
+    assert_eq!(s.section_cherry_picking, "Plockar russin");
+    assert_eq!(s.section_unpulled_from_prefix, "Ej ryckta från ");
 }
 
 #[test]
@@ -84,11 +84,11 @@ fn test_english_popup_titles() {
 #[test]
 fn test_swedish_popup_titles() {
     let s = i18n::swedish();
-    assert_eq!(s.popup_branch, "Gren");
-    assert_eq!(s.popup_commit, "Incheckning");
-    assert_eq!(s.popup_push, "Skicka");
-    assert_eq!(s.popup_pull, "Hämta");
-    assert_eq!(s.popup_fetch, "Hämta ned");
+    assert_eq!(s.popup_branch, "Grena");
+    assert_eq!(s.popup_commit, "Förbinda");
+    assert_eq!(s.popup_push, "Knuffa");
+    assert_eq!(s.popup_pull, "Rycka");
+    assert_eq!(s.popup_fetch, "Hämta");
     assert_eq!(s.popup_merge, "Sammanfoga");
     assert_eq!(s.popup_merging, "Sammanfogar");
     assert_eq!(s.popup_error, "Fel");
@@ -158,9 +158,9 @@ fn test_english_input_titles() {
 #[test]
 fn test_swedish_input_titles() {
     let s = i18n::swedish();
-    assert_eq!(s.input_new_branch, "Namn för ny gren");
-    assert_eq!(s.input_tag_name, "Taggnamn");
-    assert_eq!(s.input_stash_message, "Göm meddelande");
+    assert_eq!(s.input_new_branch, "Namnge ny gren");
+    assert_eq!(s.input_tag_name, "Namnge märke");
+    assert_eq!(s.input_stash_message, "Namnge gömställe");
 }
 
 #[test]
