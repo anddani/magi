@@ -3,7 +3,8 @@ use magi::{
     model::{
         Line, LineContent, ViewMode,
         log_view::LogEntry,
-        popup::{ConfirmAction, ConfirmPopupState, PopupContent, SelectContext},
+        popup::{ConfirmAction, ConfirmPopupState, PopupContent},
+        select_popup::OnSelect,
     },
     msg::{CommitSelect, LogType, Message, update::update},
 };
@@ -108,7 +109,7 @@ fn test_show_revise_commit_cursor_not_on_commit_shows_log_pick() {
         matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
         "Expected log pick view"
     );
-    assert_eq!(model.select_context, Some(SelectContext::ReviseCommit));
+    assert_eq!(model.log_pick_on_select, Some(OnSelect::ReviseCommit));
 }
 
 #[test]
@@ -159,7 +160,7 @@ fn test_revise_commit_select_confirm_routes_to_revise() {
     model.view_mode = ViewMode::Log(LogType::Current, true);
     model.ui_model.lines = vec![make_log_line(&commit_hash, "First commit")];
     model.ui_model.cursor_position = 0;
-    model.select_context = Some(SelectContext::ReviseCommit);
+    model.log_pick_on_select = Some(OnSelect::ReviseCommit);
 
     let result = update(
         &mut model,
@@ -168,5 +169,5 @@ fn test_revise_commit_select_confirm_routes_to_revise() {
 
     assert_eq!(result, Some(Message::ReviseCommit(commit_hash)));
     assert_eq!(model.view_mode, ViewMode::Status);
-    assert!(model.select_context.is_none());
+    assert!(model.log_pick_on_select.is_none());
 }

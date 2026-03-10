@@ -5,8 +5,9 @@ use magi::{
     model::{
         LineContent,
         popup::{MergePopupState, PopupContent, PopupContentCommand},
+        select_popup::OnSelect,
     },
-    msg::{MergeCommand, Message, SelectPopup, update::update},
+    msg::{MergeCommand, Message, OptionsSource, ShowSelectPopupConfig, update::update},
 };
 
 mod utils;
@@ -77,7 +78,11 @@ fn test_m_in_merge_popup_shows_select() {
     let result = handle_key(key(KeyCode::Char('m')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::MergeElsewhere))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Merge branch".to_string(),
+            source: OptionsSource::LocalAndRemoteBranches,
+            on_select: OnSelect::MergeElsewhere,
+        }))
     );
 }
 
@@ -206,7 +211,11 @@ fn test_merge_elsewhere_cursor_on_branch_ref_prioritizes_it() {
         model.ui_model.cursor_position = pos;
         update(
             &mut model,
-            Message::ShowSelectPopup(SelectPopup::MergeElsewhere),
+            Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Merge branch".to_string(),
+                source: OptionsSource::LocalAndRemoteBranches,
+                on_select: OnSelect::MergeElsewhere,
+            }),
         );
 
         if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
@@ -242,7 +251,11 @@ fn test_merge_elsewhere_no_cursor_suggestion_shows_normal_order() {
 
     update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::MergeElsewhere),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Merge branch".to_string(),
+            source: OptionsSource::LocalAndRemoteBranches,
+            on_select: OnSelect::MergeElsewhere,
+        }),
     );
 
     if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {

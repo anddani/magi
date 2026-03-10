@@ -4,9 +4,10 @@ use magi::{
     keys::handle_key,
     model::{
         LineContent,
-        popup::{PopupContent, PopupContentCommand, SelectContext, SelectPopupState},
+        popup::{PopupContent, PopupContentCommand},
+        select_popup::{OnSelect, SelectPopupState},
     },
-    msg::{Message, SelectPopup, update::update},
+    msg::{Message, OptionsSource, ShowSelectPopupConfig, update::update},
 };
 
 mod utils;
@@ -37,7 +38,11 @@ fn test_f_in_reset_popup_shows_revision_select() {
     let result = handle_key(key(KeyCode::Char('f')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::FileCheckoutRevision))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Checkout file from revision".to_string(),
+            source: OptionsSource::FileCheckoutRevisions,
+            on_select: OnSelect::FileCheckoutRevision,
+        }))
     );
 }
 
@@ -54,7 +59,11 @@ fn test_file_checkout_revision_shows_refs() {
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::FileCheckoutRevision),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Checkout file from revision".to_string(),
+            source: OptionsSource::FileCheckoutRevisions,
+            on_select: OnSelect::FileCheckoutRevision,
+        }),
     );
 
     assert_eq!(result, None);
@@ -63,10 +72,11 @@ fn test_file_checkout_revision_shows_refs() {
         Some(PopupContent::Command(PopupContentCommand::Select(state)))
             if !state.all_options.is_empty()
     ));
-    assert_eq!(
-        model.select_context,
-        Some(SelectContext::FileCheckoutRevision)
-    );
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+        assert_eq!(state.on_select, OnSelect::FileCheckoutRevision);
+    } else {
+        panic!("Expected select popup");
+    }
 }
 
 // ── Selecting revision moves to FileCheckoutFile select ──────────────────────
@@ -80,11 +90,11 @@ fn test_selecting_revision_shows_file_select() {
         .commit("Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.select_context = Some(SelectContext::FileCheckoutRevision);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         SelectPopupState::new(
             "Checkout file from revision".to_string(),
             vec!["HEAD".to_string()],
+            OnSelect::FileCheckoutRevision,
         ),
     )));
 
@@ -95,9 +105,13 @@ fn test_selecting_revision_shows_file_select() {
 
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::FileCheckoutFile(
-            "HEAD".to_string()
-        )))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "File to checkout".to_string(),
+            source: OptionsSource::TrackedFiles,
+            on_select: OnSelect::FileCheckoutFile {
+                revision: "HEAD".to_string(),
+            },
+        }))
     );
 }
 
@@ -114,7 +128,13 @@ fn test_file_checkout_file_shows_tracked_files() {
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::FileCheckoutFile("HEAD".to_string())),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "File to checkout".to_string(),
+            source: OptionsSource::TrackedFiles,
+            on_select: OnSelect::FileCheckoutFile {
+                revision: "HEAD".to_string(),
+            },
+        }),
     );
 
     assert_eq!(result, None);
@@ -123,13 +143,15 @@ fn test_file_checkout_file_shows_tracked_files() {
             state.all_options.iter().any(|f| f == "tracked.txt"),
             "tracked.txt should be in the file list"
         );
+        assert_eq!(
+            state.on_select,
+            OnSelect::FileCheckoutFile {
+                revision: "HEAD".to_string(),
+            }
+        );
     } else {
         panic!("Expected Select popup");
     }
-    assert_eq!(
-        model.select_context,
-        Some(SelectContext::FileCheckoutFile("HEAD".to_string()))
-    );
 }
 
 // ── Selecting file dispatches FileCheckout message ────────────────────────────
@@ -143,9 +165,14 @@ fn test_selecting_file_dispatches_file_checkout() {
         .commit("Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.select_context = Some(SelectContext::FileCheckoutFile("HEAD".to_string()));
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
-        SelectPopupState::new("File to checkout".to_string(), vec!["file.txt".to_string()]),
+        SelectPopupState::new(
+            "File to checkout".to_string(),
+            vec!["file.txt".to_string()],
+            OnSelect::FileCheckoutFile {
+                revision: "HEAD".to_string(),
+            },
+        ),
     )));
 
     let result = update(
@@ -253,7 +280,13 @@ fn test_file_checkout_cursor_on_file_preselects_it() {
         model.ui_model.cursor_position = pos;
         update(
             &mut model,
-            Message::ShowSelectPopup(SelectPopup::FileCheckoutFile("HEAD".to_string())),
+            Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "File to checkout".to_string(),
+                source: OptionsSource::TrackedFiles,
+                on_select: OnSelect::FileCheckoutFile {
+                    revision: "HEAD".to_string(),
+                },
+            }),
         );
 
         if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {

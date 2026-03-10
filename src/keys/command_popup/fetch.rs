@@ -5,7 +5,7 @@ use crate::{
         arguments::{Argument::Fetch, FetchArgument},
         popup::FetchPopupState,
     },
-    msg::{FetchCommand, Message, SelectPopup},
+    msg::{FetchCommand, Message, OnSelect, OptionsSource, ShowSelectPopupConfig},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Message> {
@@ -23,7 +23,11 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
             if state.upstream.is_some() {
                 Some(Message::Fetch(FetchCommand::FetchUpstream))
             } else {
-                Some(Message::ShowSelectPopup(SelectPopup::FetchUpstream))
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Fetch from".to_string(),
+                    source: OptionsSource::UpstreamBranches,
+                    on_select: OnSelect::FetchUpstream,
+                }))
             }
         }
         KeyCode::Char('p') => {
@@ -32,16 +36,30 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
                     remote.clone(),
                 )))
             } else {
-                Some(Message::ShowSelectPopup(SelectPopup::FetchPushRemote))
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Fetch from push remote".to_string(),
+                    source: OptionsSource::Remotes,
+                    on_select: OnSelect::FetchPushRemote,
+                }))
             }
         }
         KeyCode::Char('a') => Some(Message::Fetch(FetchCommand::FetchAllRemotes)),
-        KeyCode::Char('e') => Some(Message::ShowSelectPopup(SelectPopup::FetchElsewhere)),
-        KeyCode::Char('o') => Some(Message::ShowSelectPopup(SelectPopup::FetchAnotherBranch)),
+        KeyCode::Char('e') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Fetch from".to_string(),
+            source: OptionsSource::Remotes,
+            on_select: OnSelect::FetchElsewhere,
+        })),
+        KeyCode::Char('o') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Fetch branch from".to_string(),
+            source: OptionsSource::Remotes,
+            on_select: OnSelect::FetchAnotherBranchRemote,
+        })),
         KeyCode::Char('m') => Some(Message::Fetch(FetchCommand::FetchModules)),
-        KeyCode::Char('r') => Some(Message::ShowSelectPopup(
-            SelectPopup::FetchRefspecRemotePick,
-        )),
+        KeyCode::Char('r') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Fetch from remote".to_string(),
+            source: OptionsSource::Remotes,
+            on_select: OnSelect::FetchRefspecRemotePick,
+        })),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

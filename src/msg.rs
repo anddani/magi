@@ -1,6 +1,7 @@
 use crate::i18n;
 use crate::model::arguments::Argument;
 use crate::model::popup::PopupContent;
+pub use crate::model::select_popup::{OnSelect, OptionsSource};
 
 pub mod update;
 pub mod util;
@@ -279,7 +280,7 @@ pub enum Message {
     },
 
     /// Show a select popup
-    ShowSelectPopup(SelectPopup),
+    ShowSelectPopup(ShowSelectPopupConfig),
     /// Show the input popup for entering refspec(s) to push to the given remote
     ShowPushRefspecInput(String),
     /// Show the input popup for entering refspec(s) to fetch from the given remote
@@ -542,123 +543,15 @@ pub enum CommitSelect {
     /// Show select popup (or confirm) to pick a commit to revise (reword)
     ReviseCommit,
 }
-// SelectPopup::FixupCommit(fixup_type) => show_fixup_commit(model, fixup_type),
-// SelectPopup::RebaseElsewhere => show_rebase_elsewhere(model),
-
-/// Messages for showing select popups
+/// Config for showing a select popup (replaces the old SelectPopup enum)
 #[derive(PartialEq, Eq, Debug)]
-pub enum SelectPopup {
-    // Fetch-related
-    /// Show select popup to choose upstream for fetch
-    FetchUpstream,
-    /// Show select popup to choose a remote to fetch from
-    FetchElsewhere,
-    /// Show select popup to fetch a specific branch (picks remote first if multiple)
-    FetchAnotherBranch,
-    /// Show select popup to choose a branch from the given remote to fetch
-    FetchAnotherBranchBranch(String),
-    /// Show select popup to choose push remote for fetch
-    FetchPushRemote,
-
-    // Fetch-related (continued)
-    /// Show select popup to pick a remote for explicit refspec fetch
-    FetchRefspecRemotePick,
-
-    // Push-related
-    /// Show select popup to choose upstream for push
-    PushUpstream,
-    /// Show select popup to choose push remote for push
-    PushPushRemote,
-    /// Show select popup to choose remote for pushing all tags
-    PushAllTags,
-    /// Show select popup to choose a tag to push
-    PushTag,
-    /// Show select popup to choose an arbitrary remote branch to push to (elsewhere)
-    PushElsewhere,
-    /// Show select popup to pick a local branch to push (step 1 of 2)
-    PushOtherBranchPick,
-    /// Show select popup to pick a remote branch; holds the chosen local branch (step 2 of 2)
-    PushOtherBranchTarget(String),
-    /// Show select popup to pick a remote for explicit refspec push
-    PushRefspecRemotePick,
-    /// Show select popup to choose a remote for pushing matching branches
-    PushMatching,
-
-    // Pull-related
-    /// Show select popup to choose upstream for pull
-    PullUpstream,
-    /// Show select popup to choose push remote for pull
-    PullPushRemote,
-    /// Show select popup to choose an arbitrary remote branch to pull from (elsewhere)
-    PullElsewhere,
-
-    // Branch-related
-    /// Show the checkout branch select popup
-    CheckoutBranch,
-    /// Show branch/revision select for a new worktree (switches to it after)
-    WorktreeCheckout,
-    /// Show branch/revision select for a new worktree (stays in current worktree)
-    WorktreeCreate,
-    /// Show the checkout local branch select popup (only local branches)
-    CheckoutLocalBranch,
-    /// Show the delete branch select popup
-    DeleteBranch,
-    /// Show the rename branch select popup (select branch to rename)
-    RenameBranch,
-    /// Show the create new branch popup (select starting point)
-    CreateNewBranch { checkout: bool },
-
-    // Stash-related
-    /// Show apply stash popup, or immediately apply if cursor is on a stash entry
-    StashApply,
-    /// Show pop stash popup, or immediately pop if cursor is on a stash entry
-    StashPop,
-    /// Show drop stash popup, or immediately drop if cursor is on a stash entry
-    StashDrop,
-
-    // Reset-related
-    /// Show select popup to pick which local branch to reset
-    ResetBranchPick,
-    /// Show select popup to pick a target to reset the given branch to
-    ResetBranchTarget(String),
-    /// Show select popup to pick a target for a mixed reset of HEAD
-    Reset(ResetMode),
-    /// Show select popup to pick a target for an index-only reset
-    ResetIndex,
-    /// Show select popup to pick a target for a worktree-only reset
-    ResetWorktree,
-
-    // Merge-related
-    /// Show select popup to choose a branch to merge into current branch
-    MergeElsewhere,
-
-    // Apply (cherry-pick) related
-    /// Show select popup to choose a commit/ref to cherry-pick onto the current branch
-    ApplyPick,
-    /// Show select popup to choose a commit/ref to apply (--no-commit) onto the current branch
-    ApplyApply,
-
-    // Tag-related
-    /// Show select popup to choose a ref/commit to tag (carries tag name)
-    CreateTagTarget(String),
-    /// Show select popup to choose an existing tag to delete
-    DeleteTag,
-    /// Show select popup to choose a remote for tag pruning
-    PruneTagsRemotePick,
-
-    // File checkout-related
-    /// Show select popup to choose a revision to checkout a file from
-    FileCheckoutRevision,
-    /// Show select popup to choose a file to checkout from the given revision
-    FileCheckoutFile(String),
-
-    // PR-related
-    /// Show select popup to pick source branch for PR (opens to default target)
-    OpenPr,
-    /// Show select popup to pick source branch for PR, then pick target
-    OpenPrWithTarget,
-    /// Show select popup to pick target branch for PR (source already chosen)
-    OpenPrTarget(String),
+pub struct ShowSelectPopupConfig {
+    /// The title displayed at the top of the popup
+    pub title: String,
+    /// Where to fetch the list of options from
+    pub source: OptionsSource,
+    /// What to do when the user confirms a selection
+    pub on_select: OnSelect,
 }
 
 /// Messages for the select popup

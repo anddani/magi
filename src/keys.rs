@@ -264,8 +264,12 @@ mod tests {
     use crate::model::arguments::Argument::{Fetch, Push};
     use crate::model::arguments::{FetchArgument, PushArgument};
     use crate::model::popup::PopupContentCommand;
+    use crate::model::select_popup::OnSelect;
     use crate::model::{RunningState, UiModel};
-    use crate::msg::{FetchCommand, NavigationAction, PullCommand, PushCommand, SelectMessage};
+    use crate::msg::{
+        FetchCommand, NavigationAction, OptionsSource, PullCommand, PushCommand, SelectMessage,
+        ShowSelectPopupConfig,
+    };
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState};
 
     fn create_key_event(modifiers: KeyModifiers, code: KeyCode) -> KeyEvent {
@@ -293,12 +297,11 @@ mod tests {
             popup: None,
             toast: None,
             select_result: None,
-            select_context: None,
+            log_pick_on_select: None,
             pty_state: None,
             arg_mode: false,
             pending_g: false,
             arguments: None,
-            open_pr_branch: None,
             view_mode: ViewMode::Status,
             cursor_reposition_context: None,
             preview_return_mode: None,
@@ -531,9 +534,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::PushUpstream
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Push to".to_string(),
+                source: OptionsSource::UpstreamBranches,
+                on_select: OnSelect::PushUpstream,
+            }))
         );
     }
 
@@ -554,9 +559,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::PushAllTags
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Push tags to".to_string(),
+                source: OptionsSource::Remotes,
+                on_select: OnSelect::PushAllTags,
+            }))
         );
     }
 
@@ -577,7 +584,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(crate::msg::SelectPopup::PushTag))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Push tag".to_string(),
+                source: OptionsSource::Tags,
+                on_select: OnSelect::PushTag,
+            }))
         );
     }
 
@@ -639,9 +650,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::PushPushRemote
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Push to push remote".to_string(),
+                source: OptionsSource::Remotes,
+                on_select: OnSelect::PushPushRemote,
+            }))
         );
     }
 
@@ -749,12 +762,14 @@ mod tests {
 
     fn create_select_popup_model() -> Model {
         use crate::model::popup::SelectPopupState;
+        use crate::model::select_popup::OnSelect;
 
         let mut model = create_test_model();
         model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
             SelectPopupState::new(
                 "Checkout".to_string(),
                 vec!["main".to_string(), "feature".to_string()],
+                OnSelect::CheckoutBranch,
             ),
         )));
         model
@@ -880,9 +895,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::RenameBranch
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Rename branch".to_string(),
+                source: OptionsSource::LocalBranches,
+                on_select: OnSelect::RenameBranch,
+            }))
         );
     }
 
@@ -912,9 +929,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::CheckoutBranch
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Checkout".to_string(),
+                source: OptionsSource::LocalAndRemoteBranches,
+                on_select: OnSelect::CheckoutBranch,
+            }))
         );
     }
 
@@ -926,9 +945,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::CreateNewBranch { checkout: true }
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Create branch starting at".to_string(),
+                source: OptionsSource::BranchesAndTags,
+                on_select: OnSelect::CreateNewBranchBase { checkout: true },
+            }))
         );
     }
 
@@ -940,9 +961,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::CheckoutLocalBranch
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Checkout local".to_string(),
+                source: OptionsSource::LocalBranches,
+                on_select: OnSelect::CheckoutLocalBranch,
+            }))
         );
     }
 
@@ -1056,9 +1079,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::FetchUpstream
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Fetch from".to_string(),
+                source: OptionsSource::UpstreamBranches,
+                on_select: OnSelect::FetchUpstream,
+            }))
         );
     }
 
@@ -1222,9 +1247,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::FetchPushRemote
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Fetch from push remote".to_string(),
+                source: OptionsSource::Remotes,
+                on_select: OnSelect::FetchPushRemote,
+            }))
         );
     }
 
@@ -1302,9 +1329,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::PullPushRemote
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Pull from push remote".to_string(),
+                source: OptionsSource::Remotes,
+                on_select: OnSelect::PullPushRemote,
+            }))
         );
     }
 
@@ -1366,9 +1395,11 @@ mod tests {
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::ShowSelectPopup(
-                crate::msg::SelectPopup::PullUpstream
-            ))
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Pull from".to_string(),
+                source: OptionsSource::UpstreamBranches,
+                on_select: OnSelect::PullUpstream,
+            }))
         );
     }
 

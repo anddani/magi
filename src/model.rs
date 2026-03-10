@@ -10,7 +10,7 @@ use crate::msg::Message;
 pub use log_view::LogEntry;
 pub use popup::{CredentialPopupState, InputContext, InputPopupState, PopupContent};
 pub use pty_state::PtyState;
-use select_popup::{SelectContext, SelectResult};
+use select_popup::SelectResult;
 
 pub mod arguments;
 pub mod cursor_context;
@@ -37,8 +37,8 @@ pub struct Model {
     pub toast: Option<Toast>,
     /// Result from the most recent select popup (cleared when consumed)
     pub select_result: Option<SelectResult>,
-    /// Context for what action the select popup is performing
-    pub select_context: Option<SelectContext>,
+    /// Context for what action to perform after a log-pick selection (ViewMode::Log(_, true))
+    pub log_pick_on_select: Option<crate::model::select_popup::OnSelect>,
     /// State for an ongoing PTY command that may require credentials
     pub pty_state: Option<PtyState>,
     /// When true, user is selecting an argument (pressed '-')
@@ -47,8 +47,6 @@ pub struct Model {
     pub pending_g: bool,
     /// Flags to add to the next command
     pub arguments: Option<Arguments>,
-    /// Source branch for the Open PR flow (set after first select, consumed by target select)
-    pub open_pr_branch: Option<String>,
     /// Current view mode (status view, log view, etc.)
     pub view_mode: ViewMode,
     /// Cursor context for smart repositioning after refresh (consumed by refresh)

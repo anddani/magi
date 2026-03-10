@@ -1,9 +1,6 @@
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
-    model::{
-        Toast, ViewMode,
-        popup::{PopupContent, SelectContext},
-    },
+    model::{Toast, ViewMode, popup::PopupContent, select_popup::OnSelect},
     msg::{CommitSelect, FixupType, LogType, Message, update::update},
 };
 
@@ -73,8 +70,8 @@ fn test_show_fixup_commit_select_shows_log_pick_view() {
         "Expected log pick view"
     );
     assert_eq!(
-        model.select_context,
-        Some(SelectContext::FixupCommit(FixupType::Fixup))
+        model.log_pick_on_select,
+        Some(OnSelect::FixupCommit(FixupType::Fixup))
     );
 }
 
@@ -225,8 +222,8 @@ fn test_show_squash_commit_select_shows_log_pick_view() {
         "Expected log pick view"
     );
     assert_eq!(
-        model.select_context,
-        Some(SelectContext::FixupCommit(FixupType::Squash))
+        model.log_pick_on_select,
+        Some(OnSelect::FixupCommit(FixupType::Squash))
     );
 }
 

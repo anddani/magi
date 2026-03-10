@@ -1,4 +1,4 @@
-pub use super::select_popup::{SelectContext, SelectPopupState, SelectResult};
+pub use super::select_popup::{OnSelect, OptionsSource, SelectPopupState, SelectResult};
 
 use crate::git::credential::CredentialType;
 use crate::i18n;
@@ -327,5 +327,8 @@ pub enum PopupContent {
 impl PopupContent {
     pub fn input_popup(context: InputContext) -> Self {
         Self::Input(InputPopupState::new(context))
+    }
+    pub fn error(message: String) -> Self {
+        Self::Error { message }
     }
 }

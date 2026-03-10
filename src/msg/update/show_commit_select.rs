@@ -4,7 +4,8 @@ use crate::{
     git::log::get_log_entries,
     model::{
         Line, LineContent, Model, Toast, ToastStyle, ViewMode,
-        popup::{ConfirmAction, ConfirmPopupState, PopupContent, SelectContext},
+        popup::{ConfirmAction, ConfirmPopupState, PopupContent},
+        select_popup::OnSelect,
     },
     msg::{CommitSelect, FixupType, LogType, Message, update::commit::TOAST_DURATION},
 };
@@ -27,11 +28,7 @@ pub fn show_select_fixup_commit(model: &mut Model, fixup_type: FixupType) -> Opt
         return Some(Message::DismissPopup);
     }
 
-    show_log_select(
-        model,
-        LogType::Current,
-        SelectContext::FixupCommit(fixup_type),
-    )
+    show_log_select(model, LogType::Current, OnSelect::FixupCommit(fixup_type))
 }
 
 pub fn show_select_rebase_elsewhere_commit(model: &mut Model) -> Option<Message> {
@@ -55,11 +52,7 @@ pub fn show_select_rebase_elsewhere_commit(model: &mut Model) -> Option<Message>
         }
     }
 
-    show_log_select(
-        model,
-        LogType::AllReferences,
-        SelectContext::RebaseElsewhere,
-    )
+    show_log_select(model, LogType::AllReferences, OnSelect::RebaseElsewhere)
 }
 
 pub fn show_select_revise_commit(model: &mut Model) -> Option<Message> {
@@ -83,15 +76,10 @@ pub fn show_select_revise_commit(model: &mut Model) -> Option<Message> {
         }
     }
 
-    show_log_select(model, LogType::Current, SelectContext::ReviseCommit)
+    show_log_select(model, LogType::Current, OnSelect::ReviseCommit)
 }
 
-fn show_log_select(
-    model: &mut Model,
-    log_type: LogType,
-    context: SelectContext,
-) -> Option<Message> {
-    // Otherwise show the log view in picking mode
+fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) -> Option<Message> {
     match get_log_entries(&model.git_info.repository, log_type) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
@@ -114,7 +102,7 @@ fn show_log_select(
                 model.ui_model.scroll_offset = 0;
                 model.view_mode = ViewMode::Log(log_type, true);
                 model.popup = None;
-                model.select_context = Some(context);
+                model.log_pick_on_select = Some(on_select);
                 None
             }
         }

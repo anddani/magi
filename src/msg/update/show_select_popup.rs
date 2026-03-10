@@ -15,544 +15,370 @@ use crate::{
     i18n,
     model::{
         BranchSuggestion, LineContent, Model, Toast, ToastStyle,
-        popup::{
-            ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand, SelectContext,
-            SelectPopupState,
-        },
+        popup::{ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand},
+        select_popup::{OnSelect, OptionsSource, SelectPopupState},
         suggestions_from_line,
     },
-    msg::{Message, ResetMode, SelectPopup, StashCommand, update::commit::TOAST_DURATION},
+    msg::{
+        Message, PushCommand, ShowSelectPopupConfig, StashCommand, update::commit::TOAST_DURATION,
+    },
 };
 
-pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
-    match popup {
-        SelectPopup::FetchUpstream => {
-            show_upstream_select(model, "Fetch from", SelectContext::FetchUpstream)
-        }
-        SelectPopup::PullUpstream => {
-            show_upstream_select(model, "Pull from", SelectContext::PullUpstream)
-        }
-        SelectPopup::PushUpstream => {
-            show_upstream_select(model, "Push to", SelectContext::PushUpstream)
-        }
-
-        SelectPopup::FetchElsewhere => {
-            show_remote_select(model, "Fetch from", SelectContext::FetchElsewhere)
-        }
-        SelectPopup::FetchPushRemote => show_remote_select(
-            model,
-            "Fetch from push remote",
-            SelectContext::FetchPushRemote,
-        ),
-        SelectPopup::PushPushRemote => {
-            show_remote_select(model, "Push to push remote", SelectContext::PushPushRemote)
-        }
-        SelectPopup::PullPushRemote => show_remote_select(
-            model,
-            "Pull from push remote",
-            SelectContext::PullPushRemote,
-        ),
-        SelectPopup::PullElsewhere => {
-            show_upstream_select(model, "Pull from", SelectContext::PullElsewhere)
-        }
-        SelectPopup::PushElsewhere => {
-            show_upstream_select(model, "Push to", SelectContext::PushElsewhere)
-        }
-        SelectPopup::PushOtherBranchPick => show_push_other_branch_pick(model),
-        SelectPopup::PushOtherBranchTarget(local) => show_upstream_select(
-            model,
-            "Push to",
-            SelectContext::PushOtherBranchTarget(local),
-        ),
-        SelectPopup::PushRefspecRemotePick => show_remote_select(
-            model,
-            "Push to remote",
-            SelectContext::PushRefspecRemotePick,
-        ),
-        SelectPopup::FetchRefspecRemotePick => show_remote_select(
-            model,
-            "Fetch from remote",
-            SelectContext::FetchRefspecRemotePick,
-        ),
-        SelectPopup::PushMatching => show_remote_select(
-            model,
-            "Push matching branches to",
-            SelectContext::PushMatching,
-        ),
-        SelectPopup::PushAllTags => show_push_all_tags(model),
-
-        SelectPopup::PushTag => show_tag_select(model),
-        SelectPopup::FetchAnotherBranch => show_fetch_another_branch(model),
-        SelectPopup::FetchAnotherBranchBranch(r) => show_fetch_another_branch_branch(model, r),
-
-        SelectPopup::CheckoutBranch => show_checkout_branch(model, false),
-        SelectPopup::CheckoutLocalBranch => show_checkout_branch(model, true),
-        SelectPopup::WorktreeCheckout => show_worktree_add(model, true),
-        SelectPopup::WorktreeCreate => show_worktree_add(model, false),
-        SelectPopup::DeleteBranch => show_delete_branch(model),
-        SelectPopup::RenameBranch => show_rename_branch(model),
-        SelectPopup::CreateNewBranch { checkout } => show_new_branch_base(model, checkout),
-
-        SelectPopup::StashApply => show_stash_select(model, StashOp::Apply),
-        SelectPopup::StashPop => show_stash_select(model, StashOp::Pop),
-        SelectPopup::StashDrop => show_stash_select(model, StashOp::Drop),
-
-        SelectPopup::OpenPr => show_open_pr(model, false),
-        SelectPopup::OpenPrWithTarget => show_open_pr(model, true),
-        SelectPopup::OpenPrTarget(b) => show_open_pr_target(model, b),
-
-        SelectPopup::ResetBranchPick => show_reset_branch_pick(model),
-        SelectPopup::ResetBranchTarget(branch) => show_reset_branch_target(model, branch),
-        SelectPopup::Reset(reset_mode) => show_reset_ref_picker(model, reset_mode),
-        SelectPopup::ResetIndex => show_reset_index_picker(model),
-        SelectPopup::ResetWorktree => show_reset_worktree_picker(model),
-
-        SelectPopup::FileCheckoutRevision => show_file_checkout_revision(model),
-        SelectPopup::FileCheckoutFile(revision) => show_file_checkout_file(model, revision),
-
-        SelectPopup::MergeElsewhere => show_merge_elsewhere(model),
-
-        SelectPopup::ApplyPick => show_apply_pick(model),
-        SelectPopup::ApplyApply => show_apply_apply(model),
-
-        SelectPopup::CreateTagTarget(tag_name) => show_tag_target_select(model, tag_name),
-        SelectPopup::DeleteTag => show_delete_tag(model),
-
-        SelectPopup::PruneTagsRemotePick => show_prune_tags_remote_pick(model),
+pub fn update(model: &mut Model, config: ShowSelectPopupConfig) -> Option<Message> {
+    // Special-case: stash cursor shortcuts (act immediately or show confirm)
+    if let Some(msg) = handle_stash_cursor(model, &config) {
+        return msg;
     }
-}
 
-// ── Shared helpers ────────────────────────────────────────────────────────────
+    // Special-case: skip-if-one-remote shortcuts
+    if let Some(msg) = handle_skip_if_one(model, &config) {
+        return msg;
+    }
 
-/// Shows a select popup for choosing an upstream branch (fetch/pull/push).
-fn show_upstream_select(model: &mut Model, title: &str, context: SelectContext) -> Option<Message> {
-    let local_branch = get_current_branch(&model.workdir)
-        .ok()
-        .flatten()
-        .unwrap_or_default();
+    // Special-case: open PR (needs detached HEAD check)
+    if let Some(msg) = handle_open_pr(model, &config) {
+        return msg;
+    }
 
-    let remotes = get_remotes(&model.git_info.repository);
-    let default_remote = remotes.into_iter().next().unwrap_or_default();
+    let mut options = fetch_options(model, &config.source);
 
-    let suggested = if !default_remote.is_empty() && !local_branch.is_empty() {
-        Some(format!("{}/{}", default_remote, local_branch))
-    } else {
-        None
-    };
+    // Apply exclusion (current branch for checkout/merge, source branch for PR target)
+    if let Some(ex) = compute_exclude(model, &config.on_select) {
+        options.retain(|o| o != &ex);
+    }
 
-    let branches =
-        get_remote_branches_for_upstream(&model.git_info.repository, suggested.as_deref());
-
-    if branches.is_empty() {
+    if options.is_empty() {
         model.popup = Some(PopupContent::Error {
-            message: "No remote branches found".to_string(),
+            message: error_msg(&config),
         });
         return None;
     }
 
-    model.select_context = Some(context);
-    let state = SelectPopupState::new(title.to_string(), branches);
+    // Reorder/insert preferred item based on cursor or last-checked-out
+    reorder_preferred(model, &mut options, &config.on_select);
+
+    let state = SelectPopupState::new(config.title, options, config.on_select);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }
 
-/// Shows a select popup for choosing a remote (fetch-elsewhere, push-remote, etc.).
-fn show_remote_select(model: &mut Model, title: &str, context: SelectContext) -> Option<Message> {
-    let remotes = get_remotes(&model.git_info.repository);
+// ── Options fetching ──────────────────────────────────────────────────────────
 
-    if remotes.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No remotes configured".to_string(),
-        });
-        return None;
+fn fetch_options(model: &Model, source: &OptionsSource) -> Vec<String> {
+    match source {
+        OptionsSource::LocalBranches => get_local_branches(&model.git_info.repository),
+        OptionsSource::LocalAndRemoteBranches => get_branches(&model.git_info.repository),
+        OptionsSource::Remotes => get_remotes(&model.git_info.repository),
+        OptionsSource::RemoteBranches { remote } => {
+            let prefix = format!("{}/", remote);
+            get_all_branches(&model.git_info.repository)
+                .into_iter()
+                .filter_map(|b| match b {
+                    BranchEntry::Remote(name) if name.starts_with(&prefix) => Some(name),
+                    _ => None,
+                })
+                .collect()
+        }
+        OptionsSource::UpstreamBranches => {
+            let local_branch = get_current_branch(&model.workdir)
+                .ok()
+                .flatten()
+                .unwrap_or_default();
+            let remotes = get_remotes(&model.git_info.repository);
+            let default_remote = remotes.into_iter().next().unwrap_or_default();
+            let suggested = if !default_remote.is_empty() && !local_branch.is_empty() {
+                Some(format!("{}/{}", default_remote, local_branch))
+            } else {
+                None
+            };
+            get_remote_branches_for_upstream(&model.git_info.repository, suggested.as_deref())
+        }
+        OptionsSource::Tags => get_local_tags(&model.git_info.repository),
+        OptionsSource::BranchesAndTags => {
+            let mut options = get_branches(&model.git_info.repository);
+            options.extend(get_local_tags(&model.git_info.repository));
+            options
+        }
+        OptionsSource::BranchesAndTagsExcludingCheckedOut => {
+            let checked_out = get_checked_out_branches(&model.workdir);
+            let mut options: Vec<String> = get_branches(&model.git_info.repository)
+                .into_iter()
+                .filter(|b| !checked_out.contains(b.as_str()))
+                .collect();
+            options.extend(get_local_tags(&model.git_info.repository));
+            options
+        }
+        OptionsSource::LocalBranchesWithRemote => get_local_branches(&model.git_info.repository)
+            .into_iter()
+            .filter(|b| has_any_remote(&model.workdir, b, &model.git_info.repository))
+            .collect(),
+        OptionsSource::FileCheckoutRevisions | OptionsSource::AllRefs => {
+            let local = get_local_branches(&model.git_info.repository);
+            let remote: Vec<String> = get_all_branches(&model.git_info.repository)
+                .into_iter()
+                .filter_map(|b| match b {
+                    BranchEntry::Remote(name) => Some(name),
+                    _ => None,
+                })
+                .collect();
+            let tags = get_local_tags(&model.git_info.repository);
+            let mut options = local;
+            options.extend(remote);
+            options.extend(tags);
+            options
+        }
+        OptionsSource::Stashes => model
+            .ui_model
+            .lines
+            .iter()
+            .filter_map(|line| {
+                if let LineContent::Stash(entry) = &line.content {
+                    Some(format!("stash@{{{}}}: {}", entry.index, entry.message))
+                } else {
+                    None
+                }
+            })
+            .collect(),
+        OptionsSource::TrackedFiles => get_tracked_files(&model.git_info.repository),
     }
-
-    model.select_context = Some(context);
-    let state = SelectPopupState::new(title.to_string(), remotes);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
 }
 
-// ── Individual handlers ───────────────────────────────────────────────────────
+// ── Exclusion ─────────────────────────────────────────────────────────────────
 
-fn show_push_all_tags(model: &mut Model) -> Option<Message> {
-    let remotes = get_remotes(&model.git_info.repository);
-
-    if remotes.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No remotes configured".to_string(),
-        });
-        return None;
+/// Returns the item to exclude from options (if any).
+fn compute_exclude(model: &Model, on_select: &OnSelect) -> Option<String> {
+    match on_select {
+        OnSelect::CheckoutBranch | OnSelect::CheckoutLocalBranch | OnSelect::MergeElsewhere => {
+            model.git_info.current_branch().map(|b| b.to_string())
+        }
+        OnSelect::ResetBranchTarget { branch } => Some(branch.clone()),
+        OnSelect::OpenPrTarget { source_branch } => Some(source_branch.clone()),
+        _ => None,
     }
-
-    if remotes.len() == 1 {
-        return Some(Message::Push(crate::msg::PushCommand::PushAllTags(
-            remotes.into_iter().next().unwrap(),
-        )));
-    }
-
-    show_remote_select(model, "Push tags to", SelectContext::PushAllTags)
 }
 
-fn show_tag_select(model: &mut Model) -> Option<Message> {
-    let tags = get_local_tags(&model.git_info.repository);
+// ── Preferred item ────────────────────────────────────────────────────────────
 
-    if tags.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No tags to push".to_string(),
-        });
-        return None;
+/// Reorders `options` to place the preferred item first.
+fn reorder_preferred(model: &Model, options: &mut Vec<String>, on_select: &OnSelect) {
+    let preferred = compute_preferred(model, on_select);
+    let insert_if_missing = should_insert_if_missing(on_select);
+    if let Some(pref) = preferred.as_deref() {
+        if let Some(idx) = options.iter().position(|o| o == pref) {
+            let item = options.remove(idx);
+            options.insert(0, item);
+        } else if insert_if_missing {
+            options.insert(0, pref.to_string());
+        }
     }
-
-    model.select_context = Some(SelectContext::PushTag);
-    let state = SelectPopupState::new("Push tag".to_string(), tags);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
 }
 
-fn show_fetch_another_branch(model: &mut Model) -> Option<Message> {
-    let remotes = get_remotes(&model.git_info.repository);
-
-    if remotes.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No remotes configured".to_string(),
-        });
-        return None;
-    }
-
-    if remotes.len() == 1 {
-        return Some(Message::ShowSelectPopup(
-            SelectPopup::FetchAnotherBranchBranch(remotes.into_iter().next().unwrap()),
-        ));
-    }
-
-    model.select_context = Some(SelectContext::FetchAnotherBranchRemote);
-    let state = SelectPopupState::new("Fetch branch from".to_string(), remotes);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-fn show_fetch_another_branch_branch(model: &mut Model, remote: String) -> Option<Message> {
-    let prefix = format!("{}/", remote);
-
-    let branches: Vec<String> = get_all_branches(&model.git_info.repository)
-        .into_iter()
-        .filter_map(|b| match b {
-            BranchEntry::Remote(name) if name.starts_with(&prefix) => Some(name),
-            _ => None,
-        })
-        .collect();
-
-    if branches.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: format!("No branches found for remote '{}'", remote),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::FetchAnotherBranch);
-    let state = SelectPopupState::new(format!("Fetch branch from {}", remote), branches);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-/// Shows a checkout-branch select popup.
-/// If `local_only` is true, only local branches are listed (CheckoutLocalBranch).
-/// If `local_only` is false, all branches (local + remote) are listed (CheckoutBranch).
-fn show_checkout_branch(model: &mut Model, local_only: bool) -> Option<Message> {
+/// Returns the preferred pre-selected item for the given action.
+fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
+    let cursor_line = model.ui_model.lines.get(model.ui_model.cursor_position);
     let current_branch = model.git_info.current_branch();
 
-    let mut branches: Vec<String> = if local_only {
-        get_local_branches(&model.git_info.repository)
-    } else {
-        get_branches(&model.git_info.repository)
-    }
-    .into_iter()
-    .filter(|b| current_branch.as_deref() != Some(b.as_str()))
-    .collect();
-
-    if branches.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: if local_only {
-                "No local branches found".to_string()
-            } else {
-                "No branches found".to_string()
-            },
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::CheckoutBranch);
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| {
-            let suggestions = suggestions_from_line(line);
-            suggestions.into_iter().find(|s| {
-                if local_only {
-                    matches!(s, BranchSuggestion::LocalBranch(name)
-                        if current_branch.as_deref() != Some(name.as_str()))
-                } else {
-                    match s {
+    match on_select {
+        OnSelect::CheckoutBranch => {
+            // Cursor branch (not current), then last checked out
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line).into_iter().find(|s| match s {
                         BranchSuggestion::LocalBranch(name) => {
                             current_branch.as_deref() != Some(name.as_str())
                         }
                         _ => true,
-                    }
-                }
-            })
-        })
-        .or_else(|| {
-            let last = get_last_checked_out_branch(&model.git_info.repository);
-            if local_only {
-                last.filter(|b| branches.contains(b))
-                    .map(BranchSuggestion::LocalBranch)
-            } else {
-                last.map(BranchSuggestion::LocalBranch)
-            }
-        });
-
-    if let Some(ref preferred) = preferred {
-        let name = preferred.name();
-        if let Some(idx) = branches.iter().position(|b| b == name) {
-            let branch = branches.remove(idx);
-            branches.insert(0, branch);
-        } else if !local_only {
-            // For all-branches mode, insert revisions at the top even if not in list
-            branches.insert(0, name.to_string());
+                    })
+                })
+                .map(|s| s.name().to_string())
+                .or_else(|| get_last_checked_out_branch(&model.git_info.repository))
         }
+        OnSelect::CheckoutLocalBranch => {
+            // Cursor local branch (not current), then last checked out (in list)
+            let branches = get_local_branches(&model.git_info.repository);
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line).into_iter().find(|s| {
+                        matches!(s, BranchSuggestion::LocalBranch(name)
+                            if current_branch.as_deref() != Some(name.as_str()))
+                    })
+                })
+                .map(|s| s.name().to_string())
+                .or_else(|| {
+                    get_last_checked_out_branch(&model.git_info.repository)
+                        .filter(|b| branches.contains(b))
+                })
+        }
+        OnSelect::DeleteBranch => {
+            // Cursor branch suggestion (not current local branch)
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line).into_iter().find(|s| match s {
+                        BranchSuggestion::LocalBranch(name) => {
+                            current_branch.as_deref() != Some(name.as_str())
+                        }
+                        BranchSuggestion::RemoteBranch(_) => true,
+                        BranchSuggestion::Revision(_) => false,
+                    })
+                })
+                .map(|s| s.name().to_string())
+        }
+        OnSelect::RenameBranch => {
+            // Cursor local branch (not current), then last checked out
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line).into_iter().find(|s| {
+                        matches!(s, BranchSuggestion::LocalBranch(name)
+                            if current_branch.as_deref() != Some(name.as_str()))
+                    })
+                })
+                .map(|s| s.name().to_string())
+                .or_else(|| get_last_checked_out_branch(&model.git_info.repository))
+        }
+        OnSelect::CreateNewBranchBase { .. } | OnSelect::CreateTagTarget { .. } => {
+            // Cursor suggestion (any), then current branch
+            cursor_line
+                .and_then(|line| suggestions_from_line(line).into_iter().next())
+                .map(|s| s.name().to_string())
+                .or_else(|| current_branch.map(|b| b.to_string()))
+        }
+        OnSelect::WorktreeAdd { .. } => {
+            // Cursor suggestion (not checked out)
+            let checked_out = get_checked_out_branches(&model.workdir);
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line)
+                        .into_iter()
+                        .find(|s| !checked_out.contains(s.name()))
+                })
+                .map(|s| s.name().to_string())
+        }
+        OnSelect::FileCheckoutRevision => {
+            // Cursor suggestion (any)
+            cursor_line
+                .and_then(|line| suggestions_from_line(line).into_iter().next())
+                .map(|s| s.name().to_string())
+        }
+        OnSelect::FileCheckoutFile { .. } => {
+            // Cursor file line
+            cursor_line.and_then(|line| match &line.content {
+                LineContent::UnstagedFile(fc) => Some(fc.path.clone()),
+                LineContent::StagedFile(fc) => Some(fc.path.clone()),
+                LineContent::UntrackedFile(path) => Some(path.clone()),
+                _ => None,
+            })
+        }
+        OnSelect::ResetBranchPick => {
+            // Cursor local branch, then current branch
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line)
+                        .into_iter()
+                        .find(|s| matches!(s, BranchSuggestion::LocalBranch(_)))
+                })
+                .map(|s| s.name().to_string())
+                .or_else(|| current_branch.map(|b| b.to_string()))
+        }
+        OnSelect::ResetBranchTarget { .. }
+        | OnSelect::Reset(_)
+        | OnSelect::ResetIndex
+        | OnSelect::ResetWorktree => {
+            // Cursor first suggestion (any; may be a bare commit hash)
+            cursor_line
+                .and_then(|line| suggestions_from_line(line).into_iter().next())
+                .map(|s| s.name().to_string())
+        }
+        OnSelect::MergeElsewhere => {
+            // Cursor branch/revision (not current)
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line).into_iter().find(|s| match s {
+                        BranchSuggestion::LocalBranch(name)
+                        | BranchSuggestion::RemoteBranch(name) => {
+                            current_branch.as_deref() != Some(name.as_str())
+                        }
+                        BranchSuggestion::Revision(_) => true,
+                    })
+                })
+                .map(|s| s.name().to_string())
+        }
+        OnSelect::ApplyPick | OnSelect::ApplyApply => {
+            // Cursor commit hash (Commit or LogLine)
+            cursor_line.and_then(|line| match &line.content {
+                LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
+                LineContent::LogLine(entry) => entry.hash.clone(),
+                _ => None,
+            })
+        }
+        OnSelect::DeleteTag => {
+            // Cursor tag ref
+            cursor_line.and_then(|line| match &line.content {
+                LineContent::Commit(commit_info) => commit_info
+                    .refs
+                    .iter()
+                    .find(|r| r.ref_type == CommitRefType::Tag)
+                    .map(|r| r.name.clone()),
+                LineContent::LogLine(entry) => entry
+                    .refs
+                    .iter()
+                    .find(|r| r.ref_type == CommitRefType::Tag)
+                    .map(|r| r.name.clone()),
+                _ => None,
+            })
+        }
+        OnSelect::OpenPrBranch | OnSelect::OpenPrBranchWithTarget => {
+            // Cursor local branch (in filtered list), else current branch
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line)
+                        .into_iter()
+                        .find(|s| matches!(s, BranchSuggestion::LocalBranch(_)))
+                })
+                .map(|s| s.name().to_string())
+                .or_else(|| current_branch.map(|b| b.to_string()))
+        }
+        // No preferred for remotes, upstream branches (pre-sorted), stashes, tags, etc.
+        _ => None,
     }
+}
 
-    let title = if local_only {
-        "Checkout local"
-    } else {
-        "Checkout"
+/// Returns true if the preferred item should be inserted at top even when not in the options list.
+fn should_insert_if_missing(on_select: &OnSelect) -> bool {
+    matches!(
+        on_select,
+        OnSelect::CheckoutBranch           // LocalAndRemoteBranches — revision can be inserted
+        | OnSelect::MergeElsewhere         // can insert revision
+        | OnSelect::WorktreeAdd { .. }     // can insert non-list suggestion
+        | OnSelect::CreateNewBranchBase { .. } // can insert revision/hash
+        | OnSelect::FileCheckoutRevision   // can insert cursor suggestion
+        | OnSelect::ResetBranchTarget { .. } // can insert cursor hash
+        | OnSelect::Reset(_)               // can insert cursor hash
+        | OnSelect::ResetIndex             // can insert cursor hash
+        | OnSelect::ResetWorktree          // can insert cursor hash
+        | OnSelect::ApplyPick              // cursor hash is inserted
+        | OnSelect::ApplyApply             // cursor hash is inserted
+        | OnSelect::CreateTagTarget { .. } // can insert cursor suggestion
+    )
+}
+
+// ── Stash cursor shortcuts ────────────────────────────────────────────────────
+
+/// Handles stash operations when cursor is on a stash entry (acts immediately).
+/// Returns `Some(msg)` when handled, `None` to fall through to the popup.
+fn handle_stash_cursor(
+    model: &mut Model,
+    config: &ShowSelectPopupConfig,
+) -> Option<Option<Message>> {
+    let op = match config.on_select {
+        OnSelect::ApplyStash => StashOp::Apply,
+        OnSelect::PopStash => StashOp::Pop,
+        OnSelect::DropStash => StashOp::Drop,
+        _ => return None,
     };
-    let state = SelectPopupState::new(title.to_string(), branches);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
 
-fn show_worktree_add(model: &mut Model, checkout: bool) -> Option<Message> {
-    let checked_out = get_checked_out_branches(&model.workdir);
-    let branches: Vec<String> = get_branches(&model.git_info.repository)
-        .into_iter()
-        .filter(|b| !checked_out.contains(b.as_str()))
-        .collect();
-    let tags = get_local_tags(&model.git_info.repository);
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| {
-            suggestions_from_line(line)
-                .into_iter()
-                .find(|s| !checked_out.contains(s.name()))
-        });
-
-    let mut options: Vec<String> = Vec::new();
-
-    if let Some(ref preferred) = preferred {
-        options.push(preferred.name().to_string());
-    }
-
-    for branch in &branches {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != branch.as_str())
-            .unwrap_or(true)
-        {
-            options.push(branch.clone());
-        }
-    }
-
-    for tag in &tags {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != tag.as_str())
-            .unwrap_or(true)
-        {
-            options.push(tag.clone());
-        }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No branches or tags found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::WorktreeAdd { checkout });
-    let title = if checkout {
-        "Worktree checkout"
-    } else {
-        "Worktree create"
-    };
-    let state = SelectPopupState::new(title.to_string(), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-fn show_delete_branch(model: &mut Model) -> Option<Message> {
-    let mut branches: Vec<String> = get_branches(&model.git_info.repository);
-
-    if branches.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No branches found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::DeleteBranch);
-
-    let current_branch = model.git_info.current_branch();
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| {
-            suggestions_from_line(line).into_iter().find(|s| match s {
-                BranchSuggestion::LocalBranch(name) => {
-                    current_branch.as_deref() != Some(name.as_str())
-                }
-                BranchSuggestion::RemoteBranch(_) => true,
-                BranchSuggestion::Revision(_) => false,
-            })
-        });
-
-    if let Some(ref preferred) = preferred {
-        let name = preferred.name();
-        if let Some(idx) = branches.iter().position(|b| b == name) {
-            let branch = branches.remove(idx);
-            branches.insert(0, branch);
-        }
-    }
-
-    let state = SelectPopupState::new("Delete branch".to_string(), branches);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-fn show_rename_branch(model: &mut Model) -> Option<Message> {
-    let current_branch = model.git_info.current_branch();
-    let mut branches: Vec<String> = get_local_branches(&model.git_info.repository);
-
-    if branches.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No local branches found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::RenameBranch);
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| {
-            let suggestions = suggestions_from_line(line);
-            suggestions.into_iter().find(|s| {
-                matches!(s, BranchSuggestion::LocalBranch(name)
-                    if current_branch.as_deref() != Some(name.as_str()))
-            })
-        })
-        .or_else(|| {
-            get_last_checked_out_branch(&model.git_info.repository)
-                .filter(|b| branches.contains(b))
-                .map(BranchSuggestion::LocalBranch)
-        });
-
-    if let Some(ref preferred) = preferred {
-        let name = preferred.name();
-        if let Some(idx) = branches.iter().position(|b| b == name) {
-            let branch = branches.remove(idx);
-            branches.insert(0, branch);
-        }
-    }
-
-    let state = SelectPopupState::new("Rename branch".to_string(), branches);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-fn show_new_branch_base(model: &mut Model, checkout: bool) -> Option<Message> {
-    let branches = get_branches(&model.git_info.repository);
-    let tags = get_local_tags(&model.git_info.repository);
-
-    let mut options: Vec<String> = Vec::new();
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| {
-            let suggestions = suggestions_from_line(line);
-            suggestions.into_iter().next()
-        })
-        .or_else(|| {
-            model
-                .git_info
-                .current_branch()
-                .map(|b| BranchSuggestion::LocalBranch(b.to_string()))
-        });
-
-    if let Some(ref preferred) = preferred {
-        options.push(preferred.name().to_string());
-    }
-
-    for branch in branches {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != branch)
-            .unwrap_or(true)
-        {
-            options.push(branch);
-        }
-    }
-
-    for tag in tags {
-        if preferred
-            .as_ref()
-            .map(|p| match p {
-                BranchSuggestion::Revision(rev) => rev != &tag,
-                _ => p.name() != tag,
-            })
-            .unwrap_or(true)
-        {
-            options.push(tag);
-        }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No references found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::CreateNewBranchBase { checkout });
-    let state = SelectPopupState::new("Create branch starting at".to_string(), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-// ── Stash ─────────────────────────────────────────────────────────────────────
-
-enum StashOp {
-    Apply,
-    Pop,
-    Drop,
-}
-
-fn show_stash_select(model: &mut Model, op: StashOp) -> Option<Message> {
     let cursor_pos = model.ui_model.cursor_position;
 
-    // For Drop: check if cursor is on the "Stashes" section header first
+    // For Drop: check if cursor is on the "Stashes" section header
     if let StashOp::Drop = op
         && let Some(line) = model.ui_model.lines.get(cursor_pos)
         && let LineContent::SectionHeader { title, .. } = &line.content
@@ -562,15 +388,15 @@ fn show_stash_select(model: &mut Model, op: StashOp) -> Option<Message> {
             message: "Drop all stashes?".to_string(),
             on_confirm: ConfirmAction::DropStash("all".to_string()),
         }));
-        return None;
+        return Some(None);
     }
 
-    // If cursor is on a stash line, act immediately (op-specific behaviour)
+    // If cursor is on a stash line, act immediately
     if let Some(line) = model.ui_model.lines.get(cursor_pos)
         && let LineContent::Stash(entry) = &line.content
     {
         let stash_ref = format!("stash@{{{}}}", entry.index);
-        return match op {
+        let msg = match op {
             StashOp::Apply => Some(Message::Stash(StashCommand::Apply(stash_ref))),
             StashOp::Pop => {
                 let message = format!(
@@ -603,856 +429,131 @@ fn show_stash_select(model: &mut Model, op: StashOp) -> Option<Message> {
                 None
             }
         };
+        return Some(msg);
     }
 
-    // Otherwise collect all stash entries and show a selection popup
-    let stashes: Vec<String> = model
-        .ui_model
-        .lines
-        .iter()
-        .filter_map(|line| {
-            if let LineContent::Stash(entry) = &line.content {
-                Some(format!("stash@{{{}}}: {}", entry.index, entry.message))
-            } else {
-                None
-            }
-        })
-        .collect();
+    None // Cursor not on stash, fall through to popup
+}
 
-    if stashes.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No stashes found".to_string(),
-        });
-        return None;
+enum StashOp {
+    Apply,
+    Pop,
+    Drop,
+}
+
+// ── Skip-if-one-remote shortcuts ──────────────────────────────────────────────
+fn with_single_remote<F>(model: &mut Model, create_msg: F) -> Option<Option<Message>>
+where
+    F: FnOnce(String) -> Message, // Note: Adjust `String` if your remote type differs
+{
+    let remotes = get_remotes(&model.git_info.repository);
+
+    if remotes.is_empty() {
+        model.popup = Some(PopupContent::error("No remotes configured".to_string()));
+        return Some(None);
     }
 
-    let (context, title) = match op {
-        StashOp::Apply => (SelectContext::ApplyStash, "Apply stash"),
-        StashOp::Pop => (SelectContext::PopStash, "Pop stash"),
-        StashOp::Drop => (SelectContext::DropStash, "Drop stash"),
-    };
+    if remotes.len() == 1 {
+        let remote = remotes.into_iter().next().unwrap();
+        return Some(Some(create_msg(remote)));
+    }
 
-    model.select_context = Some(context);
-    let state = SelectPopupState::new(title.to_string(), stashes);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
+}
+
+/// For operations where only one remote is configured, skip the remote-selection popup
+/// and go directly to the next step.
+/// Returns `Some(msg)` when handled, `None` to fall through.
+fn handle_skip_if_one(
+    model: &mut Model,
+    config: &ShowSelectPopupConfig,
+) -> Option<Option<Message>> {
+    match &config.on_select {
+        OnSelect::PushAllTags => with_single_remote(model, |remote| {
+            Message::Push(PushCommand::PushAllTags(remote))
+        }),
+        OnSelect::FetchAnotherBranchRemote => with_single_remote(model, |remote| {
+            Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: format!("Fetch branch from {}", remote),
+                source: OptionsSource::RemoteBranches {
+                    remote: remote.clone(),
+                },
+                on_select: OnSelect::FetchAnotherBranch,
+            })
+        }),
+        OnSelect::PruneTagsRemotePick => {
+            with_single_remote(model, |remote| Message::ShowPruneTagsConfirm { remote })
+        }
+        _ => None,
+    }
 }
 
 // ── Open PR ───────────────────────────────────────────────────────────────────
 
-fn show_open_pr(model: &mut Model, with_target: bool) -> Option<Message> {
+/// Handles the detached-HEAD early exit for open-PR flows.
+/// Returns `Some(None)` when in detached HEAD (shows toast), `None` to continue.
+fn handle_open_pr(model: &mut Model, config: &ShowSelectPopupConfig) -> Option<Option<Message>> {
+    if !matches!(
+        config.on_select,
+        OnSelect::OpenPrBranch | OnSelect::OpenPrBranchWithTarget
+    ) {
+        return None;
+    }
     model.popup = None;
-
-    let current_branch = match model.git_info.current_branch() {
-        Some(branch) => branch,
-        None => {
-            model.toast = Some(Toast {
-                message: "Not checked out to a branch (detached HEAD)".to_string(),
-                style: ToastStyle::Warning,
-                expires_at: Instant::now() + TOAST_DURATION,
-            });
-            return None;
-        }
-    };
-
-    let mut branches: Vec<String> = get_local_branches(&model.git_info.repository)
-        .into_iter()
-        .filter(|b| has_any_remote(&model.workdir, b, &model.git_info.repository))
-        .collect();
-
-    if branches.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No branches with upstream found".to_string(),
+    if model.git_info.current_branch().is_none() {
+        model.toast = Some(Toast {
+            message: "Not checked out to a branch (detached HEAD)".to_string(),
+            style: ToastStyle::Warning,
+            expires_at: Instant::now() + TOAST_DURATION,
         });
-        return None;
+        return Some(None);
     }
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| {
-            let suggestions = suggestions_from_line(line);
-            suggestions.into_iter().find(|s| {
-                matches!(s, BranchSuggestion::LocalBranch(name)
-                    if branches.contains(name))
-            })
-        });
-
-    let preferred_name = preferred
-        .map(|s| s.name().to_string())
-        .unwrap_or(current_branch);
-
-    if let Some(idx) = branches.iter().position(|b| b == &preferred_name) {
-        let branch = branches.remove(idx);
-        branches.insert(0, branch);
-    }
-
-    model.select_context = Some(if with_target {
-        SelectContext::OpenPrBranchWithTarget
-    } else {
-        SelectContext::OpenPrBranch
-    });
-
-    let state = SelectPopupState::new("Open PR".to_string(), branches);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
+    None // Continue with main flow
 }
 
-fn show_open_pr_target(model: &mut Model, branch: String) -> Option<Message> {
-    let branches: Vec<String> = get_local_branches(&model.git_info.repository)
-        .into_iter()
-        .filter(|b| b != &branch)
-        .collect();
+// ── Error messages ────────────────────────────────────────────────────────────
 
-    if branches.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No other local branches found".to_string(),
-        });
-        return None;
-    }
-
-    model.open_pr_branch = Some(branch);
-    model.select_context = Some(SelectContext::OpenPrTarget);
-
-    let state = SelectPopupState::new("Open PR to".to_string(), branches);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-// ── Rebase ────────────────────────────────────────────────────────────────────
-
-// ── File checkout ──────────────────────────────────────────────────────────────
-
-/// Step 1: pick the revision to checkout a file from (local branches, remote branches, tags).
-/// The first suggestion from the cursor line is pre-selected if available.
-fn show_file_checkout_revision(model: &mut Model) -> Option<Message> {
-    let local_branches: Vec<String> = get_local_branches(&model.git_info.repository);
-
-    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
-        .into_iter()
-        .filter_map(|b| match b {
-            BranchEntry::Remote(name) => Some(name),
-            _ => None,
-        })
-        .collect();
-
-    let tags = get_local_tags(&model.git_info.repository);
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| suggestions_from_line(line).into_iter().next());
-
-    let mut options: Vec<String> = Vec::new();
-
-    if let Some(ref preferred) = preferred {
-        options.push(preferred.name().to_string());
-    }
-
-    for b in &local_branches {
-        if preferred.as_ref().map(|p| p.name() != b).unwrap_or(true) {
-            options.push(b.clone());
+fn error_msg(config: &ShowSelectPopupConfig) -> String {
+    match &config.on_select {
+        OnSelect::CheckoutBranch | OnSelect::MergeElsewhere | OnSelect::DeleteBranch => {
+            "No branches found".to_string()
         }
-    }
-    for b in &remote_branches {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != b.as_str())
-            .unwrap_or(true)
-        {
-            options.push(b.clone());
+        OnSelect::CheckoutLocalBranch
+        | OnSelect::RenameBranch
+        | OnSelect::ResetBranchPick
+        | OnSelect::PushOtherBranchPick => "No local branches found".to_string(),
+        OnSelect::WorktreeAdd { .. } | OnSelect::CreateNewBranchBase { .. } => {
+            "No branches or tags found".to_string()
         }
-    }
-    for tag in &tags {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != tag.as_str())
-            .unwrap_or(true)
-        {
-            options.push(tag.clone());
+        OnSelect::FileCheckoutRevision
+        | OnSelect::ResetBranchTarget { .. }
+        | OnSelect::Reset(_)
+        | OnSelect::ResetIndex
+        | OnSelect::ResetWorktree
+        | OnSelect::CreateTagTarget { .. } => "No references found".to_string(),
+        OnSelect::FileCheckoutFile { .. } => "No tracked files found".to_string(),
+        OnSelect::ApplyStash | OnSelect::PopStash | OnSelect::DropStash => {
+            "No stashes found".to_string()
         }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No references found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::FileCheckoutRevision);
-    let state = SelectPopupState::new("Checkout file from revision".to_string(), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-/// Step 2: pick the file to checkout from the given revision.
-/// Cursor file (UnstagedFile, StagedFile, UntrackedFile) is pre-selected if available.
-fn show_file_checkout_file(model: &mut Model, revision: String) -> Option<Message> {
-    let mut files = get_tracked_files(&model.git_info.repository);
-
-    if files.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No tracked files found".to_string(),
-        });
-        return None;
-    }
-
-    // Pre-select file under cursor if it's a file line
-    let cursor_file = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| match &line.content {
-            LineContent::UnstagedFile(fc) => Some(fc.path.clone()),
-            LineContent::StagedFile(fc) => Some(fc.path.clone()),
-            LineContent::UntrackedFile(path) => Some(path.clone()),
-            _ => None,
-        });
-
-    if let Some(ref path) = cursor_file
-        && let Some(idx) = files.iter().position(|f| f == path)
-    {
-        let file = files.remove(idx);
-        files.insert(0, file);
-    }
-
-    model.select_context = Some(SelectContext::FileCheckoutFile(revision));
-    let state = SelectPopupState::new("File to checkout".to_string(), files);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-// ── Reset ─────────────────────────────────────────────────────────────────────
-
-/// Step 1: pick which local branch to reset.
-/// If the cursor is on a line with a local branch, that branch is pre-selected.
-/// Falls back to the currently checked-out branch.
-fn show_reset_branch_pick(model: &mut Model) -> Option<Message> {
-    let mut branches = get_local_branches(&model.git_info.repository);
-
-    if branches.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No local branches found".to_string(),
-        });
-        return None;
-    }
-
-    // Prefer a local branch from the cursor line, fall back to current branch
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| {
-            suggestions_from_line(line).into_iter().find(
-                |s| matches!(s, BranchSuggestion::LocalBranch(name) if branches.contains(name)),
-            )
-        })
-        .or_else(|| {
-            model
-                .git_info
-                .current_branch()
-                .map(BranchSuggestion::LocalBranch)
-        });
-
-    if let Some(ref preferred) = preferred
-        && let Some(idx) = branches.iter().position(|b| b == preferred.name())
-    {
-        let branch = branches.remove(idx);
-        branches.insert(0, branch);
-    }
-
-    model.select_context = Some(SelectContext::ResetBranchPick);
-    let state = SelectPopupState::new("Reset: select branch".to_string(), branches);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-/// Step 2: pick what to reset the given branch to (local branches, remote branches, tags).
-/// The first suggestion from the cursor line is prioritized — including a bare commit hash when
-/// the line has no named refs (e.g. the cursor is on a plain commit line).
-fn show_reset_branch_target(model: &mut Model, branch: String) -> Option<Message> {
-    let local_branches: Vec<String> = get_local_branches(&model.git_info.repository)
-        .into_iter()
-        .filter(|b| b != &branch)
-        .collect();
-
-    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
-        .into_iter()
-        .filter_map(|b| match b {
-            BranchEntry::Remote(name) => Some(name),
-            _ => None,
-        })
-        .collect();
-
-    let tags = get_local_tags(&model.git_info.repository);
-
-    // Take the highest-priority suggestion from the cursor line.
-    // suggestions_from_line returns: local branches first, then remote, then the hash.
-    // So if the line has branch refs we get those; if it's a bare commit we get the hash.
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| suggestions_from_line(line).into_iter().next());
-
-    let mut options: Vec<String> = Vec::new();
-
-    if let Some(ref preferred) = preferred {
-        options.push(preferred.name().to_string());
-    }
-
-    for b in &local_branches {
-        if preferred.as_ref().map(|p| p.name() != b).unwrap_or(true) {
-            options.push(b.clone());
+        OnSelect::ApplyPick | OnSelect::ApplyApply => "No commits or references found".to_string(),
+        OnSelect::DeleteTag => "No tags found".to_string(),
+        OnSelect::PushTag => "No tags to push".to_string(),
+        OnSelect::OpenPrBranch | OnSelect::OpenPrBranchWithTarget => {
+            "No branches with upstream found".to_string()
         }
-    }
-    for b in &remote_branches {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != b.as_str())
-            .unwrap_or(true)
-        {
-            options.push(b.clone());
+        OnSelect::FetchAnotherBranch => {
+            if let OptionsSource::RemoteBranches { remote } = &config.source {
+                format!("No branches found for remote '{}'", remote)
+            } else {
+                "No remote branches found".to_string()
+            }
         }
+        OnSelect::FetchUpstream
+        | OnSelect::PullUpstream
+        | OnSelect::PushUpstream
+        | OnSelect::PullElsewhere
+        | OnSelect::PushElsewhere
+        | OnSelect::PushOtherBranchTarget { .. } => "No remote branches found".to_string(),
+        _ => "No options found".to_string(),
     }
-    for tag in &tags {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != tag.as_str())
-            .unwrap_or(true)
-        {
-            options.push(tag.clone());
-        }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No references found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::ResetBranchTarget(branch));
-    let state = SelectPopupState::new("Reset branch to".to_string(), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-/// Pick a target ref/commit for a mixed reset of HEAD.
-/// Includes local branches, remote branches, and tags.
-/// Prioritises the first suggestion from the cursor line.
-fn show_reset_ref_picker(model: &mut Model, reset_mode: ResetMode) -> Option<Message> {
-    let local_branches = get_local_branches(&model.git_info.repository);
-
-    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
-        .into_iter()
-        .filter_map(|b| match b {
-            BranchEntry::Remote(name) => Some(name),
-            _ => None,
-        })
-        .collect();
-
-    let tags = get_local_tags(&model.git_info.repository);
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| suggestions_from_line(line).into_iter().next());
-
-    let mut options: Vec<String> = Vec::new();
-
-    if let Some(ref preferred) = preferred {
-        options.push(preferred.name().to_string());
-    }
-
-    for b in &local_branches {
-        if preferred.as_ref().map(|p| p.name() != b).unwrap_or(true) {
-            options.push(b.clone());
-        }
-    }
-    for b in &remote_branches {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != b.as_str())
-            .unwrap_or(true)
-        {
-            options.push(b.clone());
-        }
-    }
-    for tag in &tags {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != tag.as_str())
-            .unwrap_or(true)
-        {
-            options.push(tag.clone());
-        }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No references found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::Reset(reset_mode));
-    let state = SelectPopupState::new(format!("{} reset to", reset_mode.name()), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-/// Pick a target tree-ish for an index-only reset (`git reset <target> -- .`).
-/// Includes local branches, remote branches, and tags.
-/// Prioritises the first suggestion from the cursor line.
-fn show_reset_index_picker(model: &mut Model) -> Option<Message> {
-    let local_branches = get_local_branches(&model.git_info.repository);
-
-    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
-        .into_iter()
-        .filter_map(|b| match b {
-            BranchEntry::Remote(name) => Some(name),
-            _ => None,
-        })
-        .collect();
-
-    let tags = get_local_tags(&model.git_info.repository);
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| suggestions_from_line(line).into_iter().next());
-
-    let mut options: Vec<String> = Vec::new();
-
-    if let Some(ref preferred) = preferred {
-        options.push(preferred.name().to_string());
-    }
-
-    for b in &local_branches {
-        if preferred.as_ref().map(|p| p.name() != b).unwrap_or(true) {
-            options.push(b.clone());
-        }
-    }
-    for b in &remote_branches {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != b.as_str())
-            .unwrap_or(true)
-        {
-            options.push(b.clone());
-        }
-    }
-    for tag in &tags {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != tag.as_str())
-            .unwrap_or(true)
-        {
-            options.push(tag.clone());
-        }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No references found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::ResetIndex);
-    let state = SelectPopupState::new("Reset index to".to_string(), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-/// Pick a target tree-ish for a worktree-only reset (`git checkout <target> -- .`).
-/// Includes local branches, remote branches, and tags.
-/// Prioritises the first suggestion from the cursor line.
-fn show_reset_worktree_picker(model: &mut Model) -> Option<Message> {
-    let local_branches = get_local_branches(&model.git_info.repository);
-
-    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
-        .into_iter()
-        .filter_map(|b| match b {
-            BranchEntry::Remote(name) => Some(name),
-            _ => None,
-        })
-        .collect();
-
-    let tags = get_local_tags(&model.git_info.repository);
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| suggestions_from_line(line).into_iter().next());
-
-    let mut options: Vec<String> = Vec::new();
-
-    if let Some(ref preferred) = preferred {
-        options.push(preferred.name().to_string());
-    }
-
-    for b in &local_branches {
-        if preferred.as_ref().map(|p| p.name() != b).unwrap_or(true) {
-            options.push(b.clone());
-        }
-    }
-    for b in &remote_branches {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != b.as_str())
-            .unwrap_or(true)
-        {
-            options.push(b.clone());
-        }
-    }
-    for tag in &tags {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != tag.as_str())
-            .unwrap_or(true)
-        {
-            options.push(tag.clone());
-        }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No references found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::ResetWorktree);
-    let state = SelectPopupState::new("Reset worktree to".to_string(), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-// ── Merge ─────────────────────────────────────────────────────────────────────
-
-/// Shows a select popup for choosing a branch to merge into the current branch.
-/// The branch under the cursor (if any) is pre-selected.
-fn show_merge_elsewhere(model: &mut Model) -> Option<Message> {
-    let current_branch = model.git_info.current_branch();
-    let mut branches: Vec<String> = get_branches(&model.git_info.repository)
-        .into_iter()
-        .filter(|b| current_branch.as_deref() != Some(b.as_str()))
-        .collect();
-
-    if branches.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No branches found".to_string(),
-        });
-        return None;
-    }
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| {
-            suggestions_from_line(line).into_iter().find(|s| match s {
-                BranchSuggestion::LocalBranch(name) | BranchSuggestion::RemoteBranch(name) => {
-                    current_branch.as_deref() != Some(name.as_str())
-                }
-                BranchSuggestion::Revision(_) => true,
-            })
-        });
-
-    if let Some(ref preferred) = preferred {
-        let name = preferred.name();
-        if let Some(idx) = branches.iter().position(|b| b == name) {
-            branches.remove(idx);
-        }
-        branches.insert(0, name.to_string());
-    }
-
-    model.select_context = Some(SelectContext::MergeElsewhere);
-    let state = SelectPopupState::new("Merge branch".to_string(), branches);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-// ── Apply (cherry-pick) ───────────────────────────────────────────────────────
-
-/// Shows a select popup for choosing a commit/ref to cherry-pick onto the current branch.
-/// The git hash under the cursor (from a Commit or LogLine) is pre-selected as the first
-/// suggestion, followed by local branches, remote branches, and tags.
-fn show_apply_pick(model: &mut Model) -> Option<Message> {
-    let local_branches = get_local_branches(&model.git_info.repository);
-
-    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
-        .into_iter()
-        .filter_map(|b| match b {
-            BranchEntry::Remote(name) => Some(name),
-            _ => None,
-        })
-        .collect();
-
-    let tags = get_local_tags(&model.git_info.repository);
-
-    // Prefer the git hash on the cursor line (works in status view and log view)
-    let cursor_hash = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| match &line.content {
-            LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
-            LineContent::LogLine(entry) => entry.hash.clone(),
-            _ => None,
-        });
-
-    let mut options: Vec<String> = Vec::new();
-
-    if let Some(ref hash) = cursor_hash {
-        options.push(hash.clone());
-    }
-
-    for b in &local_branches {
-        if cursor_hash.as_deref() != Some(b.as_str()) {
-            options.push(b.clone());
-        }
-    }
-    for b in &remote_branches {
-        if cursor_hash.as_deref() != Some(b.as_str()) {
-            options.push(b.clone());
-        }
-    }
-    for tag in &tags {
-        if cursor_hash.as_deref() != Some(tag.as_str()) {
-            options.push(tag.clone());
-        }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No commits or references found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::ApplyPick);
-    let state = SelectPopupState::new("Apply (cherry-pick)".to_string(), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-/// Shows a select popup for choosing a commit/ref to apply (--no-commit) onto the current branch.
-fn show_apply_apply(model: &mut Model) -> Option<Message> {
-    let local_branches = get_local_branches(&model.git_info.repository);
-
-    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
-        .into_iter()
-        .filter_map(|b| match b {
-            BranchEntry::Remote(name) => Some(name),
-            _ => None,
-        })
-        .collect();
-
-    let tags = get_local_tags(&model.git_info.repository);
-
-    let cursor_hash = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| match &line.content {
-            LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
-            LineContent::LogLine(entry) => entry.hash.clone(),
-            _ => None,
-        });
-
-    let mut options: Vec<String> = Vec::new();
-
-    if let Some(ref hash) = cursor_hash {
-        options.push(hash.clone());
-    }
-
-    for b in &local_branches {
-        if cursor_hash.as_deref() != Some(b.as_str()) {
-            options.push(b.clone());
-        }
-    }
-    for b in &remote_branches {
-        if cursor_hash.as_deref() != Some(b.as_str()) {
-            options.push(b.clone());
-        }
-    }
-    for tag in &tags {
-        if cursor_hash.as_deref() != Some(tag.as_str()) {
-            options.push(tag.clone());
-        }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No commits or references found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::ApplyApply);
-    let state = SelectPopupState::new("Apply without committing".to_string(), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-// ── Tag ───────────────────────────────────────────────────────────────────────
-
-/// Shows a select popup for choosing a ref/commit to tag.
-/// Uses the same cursor-suggestion logic as `show_new_branch_base`.
-fn show_tag_target_select(model: &mut Model, tag_name: String) -> Option<Message> {
-    let branches = get_branches(&model.git_info.repository);
-    let tags = get_local_tags(&model.git_info.repository);
-
-    let mut options: Vec<String> = Vec::new();
-
-    let preferred = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| {
-            let suggestions = suggestions_from_line(line);
-            suggestions.into_iter().next()
-        })
-        .or_else(|| {
-            model
-                .git_info
-                .current_branch()
-                .map(|b| BranchSuggestion::LocalBranch(b.to_string()))
-        });
-
-    if let Some(ref preferred) = preferred {
-        options.push(preferred.name().to_string());
-    }
-
-    for branch in branches {
-        if preferred
-            .as_ref()
-            .map(|p| p.name() != branch)
-            .unwrap_or(true)
-        {
-            options.push(branch);
-        }
-    }
-
-    for tag in tags {
-        if preferred
-            .as_ref()
-            .map(|p| match p {
-                BranchSuggestion::Revision(rev) => rev != &tag,
-                _ => p.name() != tag,
-            })
-            .unwrap_or(true)
-        {
-            options.push(tag);
-        }
-    }
-
-    if options.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No references found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::CreateTagTarget(tag_name));
-    let state = SelectPopupState::new("Create tag at".to_string(), options);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-/// Shows a remote select popup for tag pruning.
-/// If only one remote is configured, skips directly to `ShowPruneTagsConfirm`.
-fn show_prune_tags_remote_pick(model: &mut Model) -> Option<Message> {
-    let remotes = get_remotes(&model.git_info.repository);
-
-    if remotes.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No remotes configured".to_string(),
-        });
-        return None;
-    }
-
-    if remotes.len() == 1 {
-        return Some(Message::ShowPruneTagsConfirm {
-            remote: remotes.into_iter().next().unwrap(),
-        });
-    }
-
-    show_remote_select(
-        model,
-        "Prune tags against",
-        SelectContext::PruneTagsRemotePick,
-    )
-}
-
-/// Shows a select popup for choosing an existing local tag to delete.
-/// Pre-selects the tag under the cursor (from a Commit or LogLine ref with Tag type).
-fn show_delete_tag(model: &mut Model) -> Option<Message> {
-    let mut tags = get_local_tags(&model.git_info.repository);
-
-    if tags.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No tags found".to_string(),
-        });
-        return None;
-    }
-
-    // Prefer a tag from the cursor line (CommitRefType::Tag in refs)
-    let preferred_tag = model
-        .ui_model
-        .lines
-        .get(model.ui_model.cursor_position)
-        .and_then(|line| match &line.content {
-            LineContent::Commit(commit_info) => commit_info
-                .refs
-                .iter()
-                .find(|r| r.ref_type == CommitRefType::Tag)
-                .map(|r| r.name.clone()),
-            LineContent::LogLine(entry) => entry
-                .refs
-                .iter()
-                .find(|r| r.ref_type == CommitRefType::Tag)
-                .map(|r| r.name.clone()),
-            _ => None,
-        });
-
-    if let Some(ref tag) = preferred_tag
-        && let Some(idx) = tags.iter().position(|t| t == tag)
-    {
-        let t = tags.remove(idx);
-        tags.insert(0, t);
-    }
-
-    model.select_context = Some(SelectContext::DeleteTag);
-    let state = SelectPopupState::new("Delete tag".to_string(), tags);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
-}
-
-// ── Push other branch ──────────────────────────────────────────────────────────
-
-/// Step 1: pick which local branch to push.
-fn show_push_other_branch_pick(model: &mut Model) -> Option<Message> {
-    let branches = get_local_branches(&model.git_info.repository);
-
-    if branches.is_empty() {
-        model.popup = Some(PopupContent::Error {
-            message: "No local branches found".to_string(),
-        });
-        return None;
-    }
-
-    model.select_context = Some(SelectContext::PushOtherBranchPick);
-    let state = SelectPopupState::new("Push branch".to_string(), branches);
-    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
-    None
 }

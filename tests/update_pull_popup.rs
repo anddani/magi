@@ -1,7 +1,8 @@
 use magi::{
     git::test_repo::TestRepo,
-    model::popup::{PopupContent, PopupContentCommand, SelectContext, SelectPopupState},
-    msg::{Message, PullCommand, SelectPopup, update::update},
+    model::popup::{PopupContent, PopupContentCommand},
+    model::select_popup::{OnSelect, SelectPopupState},
+    msg::{Message, OptionsSource, PullCommand, ShowSelectPopupConfig, update::update},
 };
 
 mod utils;
@@ -22,7 +23,11 @@ fn test_pull_elsewhere_no_remotes_shows_error() {
     // No remotes → should show an error popup
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::PullElsewhere),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Pull from".to_string(),
+            source: OptionsSource::UpstreamBranches,
+            on_select: OnSelect::PullElsewhere,
+        }),
     );
 
     assert_eq!(result, None);
@@ -43,11 +48,11 @@ fn test_select_pull_elsewhere_routes_to_pull_command() {
 
     // Simulate the state after the user has been shown the remote-branch picker
     // and "origin/main" is the selected item.
-    model.select_context = Some(SelectContext::PullElsewhere);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         SelectPopupState::new(
             "Pull from".to_string(),
             vec!["origin/main".to_string(), "origin/dev".to_string()],
+            OnSelect::PullElsewhere,
         ),
     )));
 
@@ -64,7 +69,6 @@ fn test_select_pull_elsewhere_routes_to_pull_command() {
         )))
     );
 
-    // Popup should be dismissed and context consumed
+    // Popup should be dismissed
     assert!(model.popup.is_none());
-    assert!(model.select_context.is_none());
 }

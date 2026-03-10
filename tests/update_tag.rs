@@ -3,8 +3,8 @@ use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
     model::popup::{ConfirmAction, InputContext, PopupContent, PopupContentCommand},
-    model::select_popup::SelectContext,
-    msg::{Message, SelectPopup, update::update},
+    model::select_popup::OnSelect,
+    msg::{Message, OptionsSource, ShowSelectPopupConfig, update::update},
 };
 
 mod utils;
@@ -149,9 +149,13 @@ fn test_create_tag_input_confirm_shows_ref_select() {
 
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::CreateTagTarget(
-            "v1.0.0".to_string()
-        )))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Create tag at".to_string(),
+            source: OptionsSource::BranchesAndTags,
+            on_select: OnSelect::CreateTagTarget {
+                name: "v1.0.0".to_string(),
+            },
+        }))
     );
 }
 
@@ -167,7 +171,13 @@ fn test_create_tag_target_select_shows_refs() {
 
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::CreateTagTarget("v1.0.0".to_string())),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Create tag at".to_string(),
+            source: OptionsSource::BranchesAndTags,
+            on_select: OnSelect::CreateTagTarget {
+                name: "v1.0.0".to_string(),
+            },
+        }),
     );
 
     assert_eq!(result, None);
@@ -179,10 +189,16 @@ fn test_create_tag_target_select_shows_refs() {
         ),
         "Expected Select popup with non-empty options"
     );
-    assert_eq!(
-        model.select_context,
-        Some(SelectContext::CreateTagTarget("v1.0.0".to_string()))
-    );
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+        assert_eq!(
+            state.on_select,
+            OnSelect::CreateTagTarget {
+                name: "v1.0.0".to_string(),
+            }
+        );
+    } else {
+        panic!("Expected select popup");
+    }
 }
 
 #[test]
@@ -231,7 +247,11 @@ fn test_x_in_tag_popup_shows_delete_tag_select() {
     let result = handle_key(key(KeyCode::Char('x')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::DeleteTag))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Delete tag".to_string(),
+            source: OptionsSource::Tags,
+            on_select: OnSelect::DeleteTag,
+        }))
     );
 }
 
@@ -253,7 +273,14 @@ fn test_delete_tag_select_shows_existing_tags() {
         },
     );
 
-    let result = update(&mut model, Message::ShowSelectPopup(SelectPopup::DeleteTag));
+    let result = update(
+        &mut model,
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Delete tag".to_string(),
+            source: OptionsSource::Tags,
+            on_select: OnSelect::DeleteTag,
+        }),
+    );
 
     assert_eq!(result, None);
     assert!(
@@ -264,7 +291,11 @@ fn test_delete_tag_select_shows_existing_tags() {
         ),
         "Expected Select popup listing 'v1.0.0'"
     );
-    assert_eq!(model.select_context, Some(SelectContext::DeleteTag));
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+        assert_eq!(state.on_select, OnSelect::DeleteTag);
+    } else {
+        panic!("Expected select popup");
+    }
 }
 
 #[test]
@@ -278,7 +309,14 @@ fn test_delete_tag_select_empty_repo_shows_error() {
     let mut model = create_model_from_test_repo(&test_repo);
     // No tags created — should show an error popup
 
-    let result = update(&mut model, Message::ShowSelectPopup(SelectPopup::DeleteTag));
+    let result = update(
+        &mut model,
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Delete tag".to_string(),
+            source: OptionsSource::Tags,
+            on_select: OnSelect::DeleteTag,
+        }),
+    );
 
     assert_eq!(result, None);
     assert!(
@@ -334,7 +372,11 @@ fn test_p_in_tag_popup_shows_prune_remote_select() {
     let result = handle_key(key(KeyCode::Char('p')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::PruneTagsRemotePick))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Prune tags against".to_string(),
+            source: OptionsSource::Remotes,
+            on_select: OnSelect::PruneTagsRemotePick,
+        }))
     );
 }
 
@@ -383,7 +425,11 @@ fn test_prune_remote_pick_skips_select_with_single_remote() {
 
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::PruneTagsRemotePick),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Prune tags against".to_string(),
+            source: OptionsSource::Remotes,
+            on_select: OnSelect::PruneTagsRemotePick,
+        }),
     );
 
     assert_eq!(
@@ -417,7 +463,11 @@ fn test_prune_remote_pick_shows_select_with_multiple_remotes() {
 
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::PruneTagsRemotePick),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Prune tags against".to_string(),
+            source: OptionsSource::Remotes,
+            on_select: OnSelect::PruneTagsRemotePick,
+        }),
     );
 
     assert_eq!(result, None);
@@ -429,10 +479,11 @@ fn test_prune_remote_pick_shows_select_with_multiple_remotes() {
         ),
         "Expected Select popup listing remotes"
     );
-    assert_eq!(
-        model.select_context,
-        Some(SelectContext::PruneTagsRemotePick)
-    );
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+        assert_eq!(state.on_select, OnSelect::PruneTagsRemotePick);
+    } else {
+        panic!("Expected select popup");
+    }
 }
 
 #[test]
