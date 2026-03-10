@@ -28,7 +28,7 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     let command_popup_col_2 = PopupColumn {
         title: Some("".into()),
         content: vec![
-            command_description(theme, false, "O", t.cmd_rebase),
+            command_description(theme, false, "r", t.cmd_rebase),
             command_description(theme, false, "O", t.cmd_reset),
             command_description(theme, false, "_", t.cmd_revert),
             command_description(theme, false, "z", t.cmd_stash),
