@@ -79,9 +79,7 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
             "Push matching branches to",
             SelectContext::PushMatching,
         ),
-        SelectPopup::PushAllTags => {
-            show_remote_select(model, "Push tags to", SelectContext::PushAllTags)
-        }
+        SelectPopup::PushAllTags => show_push_all_tags(model),
 
         SelectPopup::PushTag => show_tag_select(model),
         SelectPopup::FetchAnotherBranch => show_fetch_another_branch(model),
@@ -176,6 +174,25 @@ fn show_remote_select(model: &mut Model, title: &str, context: SelectContext) ->
 }
 
 // ── Individual handlers ───────────────────────────────────────────────────────
+
+fn show_push_all_tags(model: &mut Model) -> Option<Message> {
+    let remotes = get_remotes(&model.git_info.repository);
+
+    if remotes.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No remotes configured".to_string(),
+        });
+        return None;
+    }
+
+    if remotes.len() == 1 {
+        return Some(Message::Push(
+            crate::msg::PushCommand::PushAllTags(remotes.into_iter().next().unwrap()),
+        ));
+    }
+
+    show_remote_select(model, "Push tags to", SelectContext::PushAllTags)
+}
 
 fn show_tag_select(model: &mut Model) -> Option<Message> {
     let tags = get_local_tags(&model.git_info.repository);
