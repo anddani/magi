@@ -6,6 +6,7 @@ use crate::{
 pub fn update(model: &mut Model, cmd: ApplyCommand) -> Option<Message> {
     match cmd {
         ApplyCommand::Pick(hashes) => pick(model, hashes),
+        ApplyCommand::Apply(hashes) => apply_no_commit(model, hashes),
         ApplyCommand::Continue => continue_apply(model),
         ApplyCommand::Skip => skip_apply(model),
         ApplyCommand::Abort => abort_apply(model),
@@ -17,6 +18,15 @@ fn pick(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
         return None;
     }
     let mut args = vec!["cherry-pick".to_string()];
+    args.extend(hashes);
+    execute_pty_command(model, args, "Apply".to_string())
+}
+
+fn apply_no_commit(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
+    if hashes.is_empty() {
+        return None;
+    }
+    let mut args = vec!["cherry-pick".to_string(), "--no-commit".to_string()];
     args.extend(hashes);
     execute_pty_command(model, args, "Apply".to_string())
 }

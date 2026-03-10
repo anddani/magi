@@ -115,6 +115,7 @@ pub fn update(model: &mut Model, popup: SelectPopup) -> Option<Message> {
         SelectPopup::MergeElsewhere => show_merge_elsewhere(model),
 
         SelectPopup::ApplyPick => show_apply_pick(model),
+        SelectPopup::ApplyApply => show_apply_apply(model),
 
         SelectPopup::CreateTagTarget(tag_name) => show_tag_target_select(model, tag_name),
         SelectPopup::DeleteTag => show_delete_tag(model),
@@ -1223,6 +1224,65 @@ fn show_apply_pick(model: &mut Model) -> Option<Message> {
 
     model.select_context = Some(SelectContext::ApplyPick);
     let state = SelectPopupState::new("Apply (cherry-pick)".to_string(), options);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+    None
+}
+
+/// Shows a select popup for choosing a commit/ref to apply (--no-commit) onto the current branch.
+fn show_apply_apply(model: &mut Model) -> Option<Message> {
+    let local_branches = get_local_branches(&model.git_info.repository);
+
+    let remote_branches: Vec<String> = get_all_branches(&model.git_info.repository)
+        .into_iter()
+        .filter_map(|b| match b {
+            BranchEntry::Remote(name) => Some(name),
+            _ => None,
+        })
+        .collect();
+
+    let tags = get_local_tags(&model.git_info.repository);
+
+    let cursor_hash = model
+        .ui_model
+        .lines
+        .get(model.ui_model.cursor_position)
+        .and_then(|line| match &line.content {
+            LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
+            LineContent::LogLine(entry) => entry.hash.clone(),
+            _ => None,
+        });
+
+    let mut options: Vec<String> = Vec::new();
+
+    if let Some(ref hash) = cursor_hash {
+        options.push(hash.clone());
+    }
+
+    for b in &local_branches {
+        if cursor_hash.as_deref() != Some(b.as_str()) {
+            options.push(b.clone());
+        }
+    }
+    for b in &remote_branches {
+        if cursor_hash.as_deref() != Some(b.as_str()) {
+            options.push(b.clone());
+        }
+    }
+    for tag in &tags {
+        if cursor_hash.as_deref() != Some(tag.as_str()) {
+            options.push(tag.clone());
+        }
+    }
+
+    if options.is_empty() {
+        model.popup = Some(PopupContent::Error {
+            message: "No commits or references found".to_string(),
+        });
+        return None;
+    }
+
+    model.select_context = Some(SelectContext::ApplyApply);
+    let state = SelectPopupState::new("Apply without committing".to_string(), options);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
     None
 }

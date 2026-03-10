@@ -278,6 +278,8 @@ pub struct RevertPopupState {
 pub struct ApplyPopupState {
     /// Whether a cherry-pick sequence is currently in progress (conflict stopped)
     pub in_progress: bool,
+    /// Commit hashes selected for cherry-picking (empty when in_progress or no commit under cursor)
+    pub selected_commits: Vec<String>,
 }
 
 /// State for the Merge popup

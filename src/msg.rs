@@ -446,8 +446,10 @@ pub enum MergeCommand {
 /// Messages for apply (cherry-pick) commands
 #[derive(PartialEq, Eq, Debug)]
 pub enum ApplyCommand {
-    /// Cherry-pick the given commit hashes
+    /// Cherry-pick the given commit hashes (creates new commits)
     Pick(Vec<String>),
+    /// Apply the given commit hashes without committing (`git cherry-pick --no-commit`)
+    Apply(Vec<String>),
     /// Continue after resolving conflicts
     Continue,
     /// Skip the current conflicting commit
@@ -633,6 +635,8 @@ pub enum SelectPopup {
     // Apply (cherry-pick) related
     /// Show select popup to choose a commit/ref to cherry-pick onto the current branch
     ApplyPick,
+    /// Show select popup to choose a commit/ref to apply (--no-commit) onto the current branch
+    ApplyApply,
 
     // Tag-related
     /// Show select popup to choose a ref/commit to tag (carries tag name)

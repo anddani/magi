@@ -256,6 +256,9 @@ fn route_result(
         (Some(SelectContext::ApplyPick), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Pick(vec![hash])))
         }
+        (Some(SelectContext::ApplyApply), SelectResult::Selected(hash)) => {
+            Some(Message::Apply(ApplyCommand::Apply(vec![hash])))
+        }
         (Some(SelectContext::CreateTagTarget(name)), SelectResult::Selected(target)) => {
             Some(Message::CreateTag { name, target })
         }

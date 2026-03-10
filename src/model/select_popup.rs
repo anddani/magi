@@ -96,6 +96,8 @@ pub enum SelectContext {
     MergeElsewhere,
     /// Selecting a commit to cherry-pick onto the current branch
     ApplyPick,
+    /// Selecting a commit to apply (--no-commit) onto the current branch
+    ApplyApply,
     /// Selecting a ref/commit to tag (carries tag name)
     CreateTagTarget(String),
     /// Selecting an existing tag to delete

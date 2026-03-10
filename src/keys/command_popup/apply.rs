@@ -18,7 +18,24 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
 
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
-        KeyCode::Char('A') => Some(Message::ShowSelectPopup(SelectPopup::ApplyPick)),
+        KeyCode::Char('A') => {
+            if state.selected_commits.is_empty() {
+                Some(Message::ShowSelectPopup(SelectPopup::ApplyPick))
+            } else {
+                Some(Message::Apply(ApplyCommand::Pick(
+                    state.selected_commits.clone(),
+                )))
+            }
+        }
+        KeyCode::Char('a') => {
+            if state.selected_commits.is_empty() {
+                Some(Message::ShowSelectPopup(SelectPopup::ApplyApply))
+            } else {
+                Some(Message::Apply(ApplyCommand::Apply(
+                    state.selected_commits.clone(),
+                )))
+            }
+        }
         _ => None,
     }
 }
