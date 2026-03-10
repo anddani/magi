@@ -77,7 +77,12 @@ pub fn push_remote_description<'a>(
                 Span::styled(format!("{}/{}", remote, current_branch), remote_style),
             ])
         }
-        None => command_description(theme, model.arg_mode, "p", i18n::t().arg_push_remote_setting_it),
+        None => command_description(
+            theme,
+            model.arg_mode,
+            "p",
+            i18n::t().arg_push_remote_setting_it,
+        ),
     }
 }
 
