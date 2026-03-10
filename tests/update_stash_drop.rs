@@ -3,8 +3,9 @@ use magi::{
     model::{
         LineContent,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent},
+        select_popup::OnSelect,
     },
-    msg::{Message, StashCommand, update::update},
+    msg::{Message, OptionsSource, ShowSelectPopupConfig, StashCommand, update::update},
 };
 
 mod utils;
@@ -38,7 +39,11 @@ fn test_drop_stash_on_section_header_shows_confirm_all() {
     // Press 'k' key to drop stash (via ShowSelectPopup -> StashDrop)
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(magi::msg::SelectPopup::StashDrop),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Drop stash".to_string(),
+            source: OptionsSource::Stashes,
+            on_select: OnSelect::DropStash,
+        }),
     );
 
     // Should show confirmation popup for dropping all stashes
@@ -78,7 +83,11 @@ fn test_drop_stash_on_stash_entry_shows_confirm_single() {
     // Press 'k' key to drop stash
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(magi::msg::SelectPopup::StashDrop),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Drop stash".to_string(),
+            source: OptionsSource::Stashes,
+            on_select: OnSelect::DropStash,
+        }),
     );
 
     // Should show confirmation popup for dropping single stash

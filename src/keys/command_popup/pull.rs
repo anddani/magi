@@ -5,7 +5,7 @@ use crate::{
         arguments::{Argument::Pull, PullArgument},
         popup::PullPopupState,
     },
-    msg::{Message, PullCommand, SelectPopup},
+    msg::{Message, OnSelect, OptionsSource, PullCommand, ShowSelectPopupConfig},
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool, state: &PullPopupState) -> Option<Message> {
@@ -25,17 +25,29 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PullPopupState) -> Option<Mes
                     remote.clone(),
                 )))
             } else {
-                Some(Message::ShowSelectPopup(SelectPopup::PullPushRemote))
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Pull from push remote".to_string(),
+                    source: OptionsSource::Remotes,
+                    on_select: OnSelect::PullPushRemote,
+                }))
             }
         }
         KeyCode::Char('u') => {
             if state.upstream.is_some() {
                 Some(Message::Pull(PullCommand::PullUpstream))
             } else {
-                Some(Message::ShowSelectPopup(SelectPopup::PullUpstream))
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Pull from".to_string(),
+                    source: OptionsSource::UpstreamBranches,
+                    on_select: OnSelect::PullUpstream,
+                }))
             }
         }
-        KeyCode::Char('e') => Some(Message::ShowSelectPopup(SelectPopup::PullElsewhere)),
+        KeyCode::Char('e') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Pull from".to_string(),
+            source: OptionsSource::UpstreamBranches,
+            on_select: OnSelect::PullElsewhere,
+        })),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

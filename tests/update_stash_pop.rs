@@ -3,8 +3,9 @@ use magi::{
     model::{
         LineContent,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand},
+        select_popup::OnSelect,
     },
-    msg::{Message, StashCommand, update::update},
+    msg::{Message, OptionsSource, ShowSelectPopupConfig, StashCommand, update::update},
 };
 
 mod utils;
@@ -31,7 +32,11 @@ fn test_pop_stash_on_stash_entry_shows_confirm() {
     // Press 'p' key to pop stash
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(magi::msg::SelectPopup::StashPop),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Pop stash".to_string(),
+            source: OptionsSource::Stashes,
+            on_select: OnSelect::PopStash,
+        }),
     );
 
     // Should show confirmation popup
@@ -78,7 +83,11 @@ fn test_pop_stash_not_on_entry_shows_select() {
     // Press 'p' key to pop stash
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(magi::msg::SelectPopup::StashPop),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Pop stash".to_string(),
+            source: OptionsSource::Stashes,
+            on_select: OnSelect::PopStash,
+        }),
     );
 
     // Should show select popup
@@ -104,7 +113,11 @@ fn test_pop_stash_no_stashes_shows_error() {
     // Press 'p' key to pop stash (no stashes exist)
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(magi::msg::SelectPopup::StashPop),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Pop stash".to_string(),
+            source: OptionsSource::Stashes,
+            on_select: OnSelect::PopStash,
+        }),
     );
 
     // Should show error popup

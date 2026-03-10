@@ -5,8 +5,9 @@ use magi::{
     model::{
         Line, LineContent,
         popup::{ApplyPopupState, PopupContent, PopupContentCommand},
+        select_popup::OnSelect,
     },
-    msg::{ApplyCommand, LogType, Message, SelectPopup, update::update},
+    msg::{ApplyCommand, LogType, Message, OptionsSource, ShowSelectPopupConfig, update::update},
 };
 use std::fs;
 
@@ -222,7 +223,11 @@ fn test_shift_a_in_apply_popup_no_commits_shows_select_popup() {
     let result = handle_key(shift_key(KeyCode::Char('A')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::ApplyPick))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Apply (cherry-pick)".to_string(),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::ApplyPick,
+        }))
     );
 }
 
@@ -502,7 +507,11 @@ fn test_a_in_apply_popup_no_commits_shows_apply_select_popup() {
     let result = handle_key(key(KeyCode::Char('a')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::ApplyApply))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Apply without committing".to_string(),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::ApplyApply,
+        }))
     );
 }
 

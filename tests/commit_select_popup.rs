@@ -1,9 +1,6 @@
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
-    model::{
-        ViewMode,
-        popup::{CommitSelectPopupState, SelectContext},
-    },
+    model::{ViewMode, popup::CommitSelectPopupState, select_popup::OnSelect},
     msg::{
         CommitSelect, FixupType, LogType, Message, NavigationAction, SelectMessage, update::update,
     },
@@ -213,14 +210,14 @@ fn test_commit_select_popup_escape_cancels() {
     );
 
     assert!(matches!(model.view_mode, ViewMode::Log(_, true)));
-    assert!(model.select_context.is_some());
+    assert!(model.log_pick_on_select.is_some());
 
     // Escape via ExitLogView
     update(&mut model, Message::ExitLogView);
 
     assert_eq!(model.view_mode, ViewMode::Status);
-    // select_context should be cleared on cancel
-    assert!(model.select_context.is_none());
+    // log_pick_on_select should be cleared on cancel
+    assert!(model.log_pick_on_select.is_none());
 }
 
 #[test]
@@ -248,7 +245,7 @@ fn test_rebase_elsewhere_opens_log_pick_all_references() {
         "Expected AllReferences log pick view"
     );
     assert!(model.popup.is_none());
-    assert_eq!(model.select_context, Some(SelectContext::RebaseElsewhere));
+    assert_eq!(model.log_pick_on_select, Some(OnSelect::RebaseElsewhere));
 }
 
 #[test]

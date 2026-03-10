@@ -2,11 +2,10 @@ use std::collections::HashSet;
 
 use magi::model::Model;
 use magi::model::arguments::{Argument, Arguments, PushArgument};
-use magi::model::popup::{
-    PopupContent, PopupContentCommand, PushPopupState, SelectContext, SelectPopupState,
-};
+use magi::model::popup::{PopupContent, PopupContentCommand, PushPopupState};
+use magi::model::select_popup::{OnSelect, SelectPopupState};
 use magi::msg::update::update;
-use magi::msg::{Message, PushCommand, SelectPopup};
+use magi::msg::{Message, OptionsSource, PushCommand, ShowSelectPopupConfig};
 
 use crate::utils::create_test_model;
 
@@ -124,7 +123,11 @@ fn test_push_elsewhere_key_shows_select_popup() {
     // No remotes → should show an error popup (no remote branches to select)
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::PushElsewhere),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Push to".to_string(),
+            source: OptionsSource::UpstreamBranches,
+            on_select: OnSelect::PushElsewhere,
+        }),
     );
 
     assert_eq!(result, None);
@@ -135,22 +138,23 @@ fn test_push_elsewhere_key_shows_select_popup() {
 
 #[test]
 fn test_push_elsewhere_select_routes_to_push_message() {
-    use magi::msg::SelectMessage;
-
     let mut model = create_test_model();
 
     // Simulate the state after the user has been shown the remote-branch picker
     // and "origin/main" is the selected item.
-    model.select_context = Some(SelectContext::PushElsewhere);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         SelectPopupState::new(
             "Push to".to_string(),
             vec!["origin/main".to_string(), "origin/dev".to_string()],
+            OnSelect::PushElsewhere,
         ),
     )));
 
     // Confirm the selection (first item "origin/main" is selected by default)
-    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    let result = update(
+        &mut model,
+        Message::Select(magi::msg::SelectMessage::Confirm),
+    );
 
     assert_eq!(
         result,
@@ -159,64 +163,70 @@ fn test_push_elsewhere_select_routes_to_push_message() {
         )))
     );
 
-    // Popup should be dismissed and context consumed
+    // Popup should be dismissed
     assert!(model.popup.is_none());
-    assert!(model.select_context.is_none());
 }
 
 // ── PushOtherBranchPick routes to PushOtherBranchTarget select ────────────────
 
 #[test]
 fn test_push_other_branch_pick_routes_to_target_select() {
-    use magi::msg::SelectMessage;
-
     let mut model = create_test_model();
 
     // Simulate the state after the user has been shown the local branch picker
     // and "feature" is the selected item.
-    model.select_context = Some(SelectContext::PushOtherBranchPick);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         SelectPopupState::new(
             "Push branch".to_string(),
             vec!["feature".to_string(), "main".to_string()],
+            OnSelect::PushOtherBranchPick,
         ),
     )));
 
     // Confirm the selection (first item "feature" is selected by default)
-    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    let result = update(
+        &mut model,
+        Message::Select(magi::msg::SelectMessage::Confirm),
+    );
 
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(
-            SelectPopup::PushOtherBranchTarget("feature".to_string())
-        ))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Push to".to_string(),
+            source: OptionsSource::UpstreamBranches,
+            on_select: OnSelect::PushOtherBranchTarget {
+                local: "feature".to_string()
+            },
+        }))
     );
 
-    // Popup should be dismissed and context consumed
+    // Popup should be dismissed
     assert!(model.popup.is_none());
-    assert!(model.select_context.is_none());
 }
 
 // ── PushOtherBranchTarget routes to Push(PushOtherBranch) ────────────────────
 
 #[test]
 fn test_push_other_branch_target_routes_to_push_message() {
-    use magi::msg::SelectMessage;
-
     let mut model = create_test_model();
 
     // Simulate the state after the user has been shown the remote branch picker
     // and "origin/main" is the selected item.
-    model.select_context = Some(SelectContext::PushOtherBranchTarget("feature".to_string()));
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         SelectPopupState::new(
             "Push to".to_string(),
             vec!["origin/main".to_string(), "origin/dev".to_string()],
+            OnSelect::PushOtherBranchTarget {
+                local: "feature".to_string(),
+            },
         ),
     )));
 
     // Confirm the selection (first item "origin/main" is selected by default)
-    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    let result = update(
+        &mut model,
+        Message::Select(magi::msg::SelectMessage::Confirm),
+    );
 
     assert_eq!(
         result,
@@ -226,35 +236,34 @@ fn test_push_other_branch_target_routes_to_push_message() {
         }))
     );
 
-    // Popup should be dismissed and context consumed
+    // Popup should be dismissed
     assert!(model.popup.is_none());
-    assert!(model.select_context.is_none());
 }
 
 // ── PushRefspecRemotePick routes to ShowPushRefspecInput ──────────────────────
 
 #[test]
 fn test_push_refspec_remote_pick_routes_to_input() {
-    use magi::msg::SelectMessage;
-
     let mut model = create_test_model();
 
-    model.select_context = Some(SelectContext::PushRefspecRemotePick);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         SelectPopupState::new(
             "Push to remote".to_string(),
             vec!["origin".to_string(), "upstream".to_string()],
+            OnSelect::PushRefspecRemotePick,
         ),
     )));
 
-    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    let result = update(
+        &mut model,
+        Message::Select(magi::msg::SelectMessage::Confirm),
+    );
 
     assert_eq!(
         result,
         Some(Message::ShowPushRefspecInput("origin".to_string()))
     );
     assert!(model.popup.is_none());
-    assert!(model.select_context.is_none());
 }
 
 // ── ShowPushRefspecInput opens an input popup ─────────────────────────────────
@@ -319,7 +328,11 @@ fn test_push_matching_without_remote_shows_select_popup() {
 
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::PushMatching))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Push matching branches to".to_string(),
+            source: OptionsSource::Remotes,
+            on_select: OnSelect::PushMatching,
+        }))
     );
 }
 
@@ -327,19 +340,20 @@ fn test_push_matching_without_remote_shows_select_popup() {
 
 #[test]
 fn test_push_matching_select_routes_to_push_message() {
-    use magi::msg::SelectMessage;
-
     let mut model = create_test_model();
 
-    model.select_context = Some(SelectContext::PushMatching);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         SelectPopupState::new(
             "Push matching branches to".to_string(),
             vec!["origin".to_string(), "upstream".to_string()],
+            OnSelect::PushMatching,
         ),
     )));
 
-    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    let result = update(
+        &mut model,
+        Message::Select(magi::msg::SelectMessage::Confirm),
+    );
 
     assert_eq!(
         result,
@@ -348,7 +362,6 @@ fn test_push_matching_select_routes_to_push_message() {
         )))
     );
     assert!(model.popup.is_none());
-    assert!(model.select_context.is_none());
 }
 
 // ── Confirming refspec input dispatches Push(PushRefspecs) ───────────────────

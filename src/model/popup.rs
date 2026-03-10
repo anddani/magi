@@ -1,4 +1,4 @@
-pub use super::select_popup::{SelectContext, SelectPopupState, SelectResult};
+pub use super::select_popup::{OnSelect, OptionsSource, SelectPopupState, SelectResult};
 
 use crate::git::credential::CredentialType;
 use crate::i18n;

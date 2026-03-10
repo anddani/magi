@@ -3,13 +3,13 @@ use crate::{
     model::{
         LineContent, Model, ViewMode,
         popup::{
-            ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand, SelectContext,
-            SelectResult,
+            ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand, SelectResult,
         },
+        select_popup::OnSelect,
     },
     msg::{
-        ApplyCommand, FetchCommand, MergeCommand, Message, PullCommand, PushCommand, RebaseCommand,
-        ResetMode, SelectPopup, StashCommand,
+        ApplyCommand, FetchCommand, MergeCommand, Message, OptionsSource, PullCommand, PushCommand,
+        RebaseCommand, ResetMode, ShowSelectPopupConfig, StashCommand,
     },
 };
 
@@ -30,115 +30,123 @@ pub fn update(model: &mut Model) -> Option<Message> {
         };
         model.view_mode = ViewMode::Status;
         model.select_result = Some(result.clone());
-        let context = model.select_context.take();
-        return route_result(context, result, model);
+        let on_select = model.log_pick_on_select.take();
+        return route_result(on_select, result, model);
     }
 
-    let result = match &model.popup {
+    // Extract result and on_select from the select popup state
+    let (on_select, result) = match model.popup.take() {
         Some(PopupContent::Command(PopupContentCommand::Select(state))) => {
-            if let Some(item) = state.selected_item() {
-                // Use the selected item from filtered results
+            let result = if let Some(item) = state.selected_item() {
                 SelectResult::Selected(item.to_string())
             } else if !state.input_text.is_empty() {
-                // No matches, but user entered text - use the input text directly
-                // This allows entering arbitrary values like git hashes
+                // No matches but user typed text — use it directly (allows git hashes)
                 SelectResult::Selected(state.input_text.clone())
             } else {
                 SelectResult::NoneSelected
-            }
+            };
+            (state.on_select, result)
         }
-        _ => return None,
+        other => {
+            model.popup = other;
+            return None;
+        }
     };
 
-    // Store the result for the caller to retrieve
     model.select_result = Some(result.clone());
-
-    // Dismiss the popup
-    model.popup = None;
-
-    // Check context and return appropriate follow-up message
-    let context = model.select_context.take();
-    route_result(context, result, model)
+    route_result(Some(on_select), result, model)
 }
 
 fn route_result(
-    context: Option<SelectContext>,
+    on_select: Option<OnSelect>,
     result: SelectResult,
     model: &mut Model,
 ) -> Option<Message> {
-    match (context, result) {
-        (Some(SelectContext::CheckoutBranch), SelectResult::Selected(branch)) => {
-            Some(Message::CheckoutBranch(branch))
-        }
+    match (on_select, result) {
         (
-            Some(SelectContext::CreateNewBranchBase { checkout }),
+            Some(OnSelect::CheckoutBranch) | Some(OnSelect::CheckoutLocalBranch),
+            SelectResult::Selected(branch),
+        ) => Some(Message::CheckoutBranch(branch)),
+        (
+            Some(OnSelect::CreateNewBranchBase { checkout }),
             SelectResult::Selected(starting_point),
         ) => Some(Message::ShowCreateNewBranchInput {
             starting_point,
             checkout,
         }),
-        (Some(SelectContext::PushUpstream), SelectResult::Selected(upstream)) => {
+        (Some(OnSelect::PushUpstream), SelectResult::Selected(upstream)) => {
             Some(Message::Push(PushCommand::PushToRemote(upstream)))
         }
-        (Some(SelectContext::FetchUpstream), SelectResult::Selected(upstream)) => Some(
-            Message::Fetch(FetchCommand::FetchFromRemoteBranch(upstream)),
-        ),
-        (Some(SelectContext::FetchElsewhere), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::FetchUpstream), SelectResult::Selected(upstream)) => Some(Message::Fetch(
+            FetchCommand::FetchFromRemoteBranch(upstream),
+        )),
+        (Some(OnSelect::FetchElsewhere), SelectResult::Selected(remote)) => {
             Some(Message::Fetch(FetchCommand::FetchFromRemoteBranch(remote)))
         }
-        (Some(SelectContext::PullUpstream), SelectResult::Selected(upstream)) => {
+        (Some(OnSelect::PullUpstream), SelectResult::Selected(upstream)) => {
             Some(Message::Pull(PullCommand::PullFromUpstream(upstream)))
         }
-        (Some(SelectContext::DeleteBranch), SelectResult::Selected(branch)) => {
+        (Some(OnSelect::DeleteBranch), SelectResult::Selected(branch)) => {
             Some(Message::DeleteBranch(branch))
         }
-        (Some(SelectContext::RenameBranch), SelectResult::Selected(branch)) => {
+        (Some(OnSelect::RenameBranch), SelectResult::Selected(branch)) => {
             Some(Message::ShowRenameBranchInput(branch))
         }
-        (Some(SelectContext::PushAllTags), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::PushAllTags), SelectResult::Selected(remote)) => {
             Some(Message::Push(PushCommand::PushAllTags(remote)))
         }
-        (Some(SelectContext::PushTag), SelectResult::Selected(tag)) => {
+        (Some(OnSelect::PushTag), SelectResult::Selected(tag)) => {
             Some(Message::Push(PushCommand::PushTag(tag)))
         }
-        (Some(SelectContext::OpenPrBranch), SelectResult::Selected(branch)) => {
-            Some(Message::OpenPr {
-                branch,
-                target: None,
-            })
+        (Some(OnSelect::OpenPrBranch), SelectResult::Selected(branch)) => Some(Message::OpenPr {
+            branch,
+            target: None,
+        }),
+        (Some(OnSelect::OpenPrBranchWithTarget), SelectResult::Selected(branch)) => {
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Open PR to".to_string(),
+                source: OptionsSource::LocalBranches,
+                on_select: OnSelect::OpenPrTarget {
+                    source_branch: branch,
+                },
+            }))
         }
-        (Some(SelectContext::OpenPrBranchWithTarget), SelectResult::Selected(branch)) => {
-            Some(Message::ShowSelectPopup(SelectPopup::OpenPrTarget(branch)))
-        }
-        (Some(SelectContext::OpenPrTarget), SelectResult::Selected(target)) => {
-            let branch = model.open_pr_branch.take().unwrap_or_default();
+        (Some(OnSelect::OpenPrTarget { source_branch }), SelectResult::Selected(target)) => {
             Some(Message::OpenPr {
-                branch,
+                branch: source_branch,
                 target: Some(target),
             })
         }
-        (Some(SelectContext::FixupCommit(fixup_type)), SelectResult::Selected(commit)) => {
+        (Some(OnSelect::FixupCommit(fixup_type)), SelectResult::Selected(commit)) => {
             Some(Message::FixupCommit(commit, fixup_type))
         }
-        (Some(SelectContext::RebaseElsewhere), SelectResult::Selected(commit)) => {
+        (Some(OnSelect::RebaseElsewhere), SelectResult::Selected(commit)) => {
             Some(Message::Rebase(RebaseCommand::Elsewhere(commit)))
         }
-        (Some(SelectContext::ReviseCommit), SelectResult::Selected(hash)) => {
+        (Some(OnSelect::ReviseCommit), SelectResult::Selected(hash)) => {
             Some(Message::ReviseCommit(hash))
         }
-        (Some(SelectContext::WorktreeAdd { checkout }), SelectResult::Selected(branch)) => {
+        (Some(OnSelect::WorktreeAdd { checkout }), SelectResult::Selected(branch)) => {
             Some(Message::ShowWorktreePathInput { branch, checkout })
         }
-        (Some(SelectContext::ResetBranchPick), SelectResult::Selected(branch)) => Some(
-            Message::ShowSelectPopup(SelectPopup::ResetBranchTarget(branch)),
-        ),
-        (Some(SelectContext::FileCheckoutRevision), SelectResult::Selected(rev)) => {
-            Some(Message::ShowSelectPopup(SelectPopup::FileCheckoutFile(rev)))
+        (Some(OnSelect::ResetBranchPick), SelectResult::Selected(branch)) => {
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Reset branch to".to_string(),
+                source: OptionsSource::AllRefs,
+                on_select: OnSelect::ResetBranchTarget { branch },
+            }))
         }
-        (Some(SelectContext::FileCheckoutFile(revision)), SelectResult::Selected(file)) => {
+        (Some(OnSelect::FileCheckoutRevision), SelectResult::Selected(revision)) => {
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "File to checkout".to_string(),
+                source: OptionsSource::TrackedFiles,
+                on_select: OnSelect::FileCheckoutFile { revision },
+            }))
+        }
+        (Some(OnSelect::FileCheckoutFile { revision }), SelectResult::Selected(file)) => {
             Some(Message::FileCheckout { revision, file })
         }
-        (Some(SelectContext::ResetBranchTarget(branch)), SelectResult::Selected(target)) => {
+        (Some(OnSelect::ResetBranchTarget { branch }), SelectResult::Selected(target)) => {
             let current_branch = model.git_info.current_branch();
             if current_branch.as_deref() == Some(branch.as_str())
                 && has_uncommitted_changes(&model.git_info.repository)
@@ -160,7 +168,7 @@ fn route_result(
                 })
             }
         }
-        (Some(SelectContext::Reset(mode)), SelectResult::Selected(target)) => {
+        (Some(OnSelect::Reset(mode)), SelectResult::Selected(target)) => {
             let branch = model.git_info.current_branch().unwrap_or_default();
             Some(Message::ResetBranch {
                 branch,
@@ -168,53 +176,62 @@ fn route_result(
                 mode,
             })
         }
-        (Some(SelectContext::ResetIndex), SelectResult::Selected(target)) => {
+        (Some(OnSelect::ResetIndex), SelectResult::Selected(target)) => {
             Some(Message::ResetIndex { target })
         }
-        (Some(SelectContext::ResetWorktree), SelectResult::Selected(target)) => {
+        (Some(OnSelect::ResetWorktree), SelectResult::Selected(target)) => {
             Some(Message::ResetWorktree { target })
         }
-        (Some(SelectContext::PullPushRemote), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::PullPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))
         }
-        (Some(SelectContext::PullElsewhere), SelectResult::Selected(upstream)) => {
+        (Some(OnSelect::PullElsewhere), SelectResult::Selected(upstream)) => {
             Some(Message::Pull(PullCommand::PullFromElsewhere(upstream)))
         }
-        (Some(SelectContext::PushElsewhere), SelectResult::Selected(upstream)) => {
+        (Some(OnSelect::PushElsewhere), SelectResult::Selected(upstream)) => {
             Some(Message::Push(PushCommand::PushElsewhere(upstream)))
         }
-        (Some(SelectContext::PushOtherBranchPick), SelectResult::Selected(branch)) => Some(
-            Message::ShowSelectPopup(SelectPopup::PushOtherBranchTarget(branch)),
-        ),
-        (Some(SelectContext::PushOtherBranchTarget(local)), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::PushOtherBranchPick), SelectResult::Selected(branch)) => {
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Push to".to_string(),
+                source: OptionsSource::UpstreamBranches,
+                on_select: OnSelect::PushOtherBranchTarget { local: branch },
+            }))
+        }
+        (Some(OnSelect::PushOtherBranchTarget { local }), SelectResult::Selected(remote)) => {
             Some(Message::Push(PushCommand::PushOtherBranch {
                 local,
                 remote,
             }))
         }
-        (Some(SelectContext::PushRefspecRemotePick), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::PushRefspecRemotePick), SelectResult::Selected(remote)) => {
             Some(Message::ShowPushRefspecInput(remote))
         }
-        (Some(SelectContext::FetchRefspecRemotePick), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::FetchRefspecRemotePick), SelectResult::Selected(remote)) => {
             Some(Message::ShowFetchRefspecInput(remote))
         }
-        (Some(SelectContext::PushMatching), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::PushMatching), SelectResult::Selected(remote)) => {
             Some(Message::Push(PushCommand::PushMatching(remote)))
         }
-        (Some(SelectContext::PushPushRemote), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::PushPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Push(PushCommand::PushToPushRemote(remote)))
         }
-        (Some(SelectContext::FetchPushRemote), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::FetchPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Fetch(FetchCommand::FetchFromPushRemote(remote)))
         }
-        (Some(SelectContext::FetchAnotherBranchRemote), SelectResult::Selected(remote)) => Some(
-            Message::ShowSelectPopup(SelectPopup::FetchAnotherBranchBranch(remote)),
-        ),
-        (Some(SelectContext::FetchAnotherBranch), SelectResult::Selected(branch)) => {
+        (Some(OnSelect::FetchAnotherBranchRemote), SelectResult::Selected(remote)) => {
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: format!("Fetch branch from {}", remote),
+                source: OptionsSource::RemoteBranches {
+                    remote: remote.clone(),
+                },
+                on_select: OnSelect::FetchAnotherBranch,
+            }))
+        }
+        (Some(OnSelect::FetchAnotherBranch), SelectResult::Selected(branch)) => {
             Some(Message::Fetch(FetchCommand::FetchFromRemoteBranch(branch)))
         }
-        (Some(SelectContext::ApplyStash), SelectResult::Selected(stash_display)) => {
-            // Extract "stash@{N}" from "stash@{N}: message"
+        (Some(OnSelect::ApplyStash), SelectResult::Selected(stash_display)) => {
             let stash_ref = stash_display
                 .split(": ")
                 .next()
@@ -222,50 +239,44 @@ fn route_result(
                 .to_string();
             Some(Message::Stash(StashCommand::Apply(stash_ref)))
         }
-        (Some(SelectContext::PopStash), SelectResult::Selected(stash_display)) => {
-            // Extract "stash@{N}" from "stash@{N}: message"
+        (Some(OnSelect::PopStash), SelectResult::Selected(stash_display)) => {
             let stash_ref = stash_display
                 .split(": ")
                 .next()
                 .unwrap_or(&stash_display)
                 .to_string();
-            // Show confirmation popup before popping
             model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
                 message: format!("Pop {}?", stash_display),
                 on_confirm: ConfirmAction::PopStash(stash_ref),
             }));
             None
         }
-        (Some(SelectContext::DropStash), SelectResult::Selected(stash_display)) => {
-            // Extract "stash@{N}" from "stash@{N}: message"
+        (Some(OnSelect::DropStash), SelectResult::Selected(stash_display)) => {
             let stash_ref = stash_display
                 .split(": ")
                 .next()
                 .unwrap_or(&stash_display)
                 .to_string();
-            // Show confirmation popup before dropping
             model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
                 message: format!("Drop {}?", stash_display),
                 on_confirm: ConfirmAction::DropStash(stash_ref),
             }));
             None
         }
-        (Some(SelectContext::MergeElsewhere), SelectResult::Selected(branch)) => {
+        (Some(OnSelect::MergeElsewhere), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Branch(branch)))
         }
-        (Some(SelectContext::ApplyPick), SelectResult::Selected(hash)) => {
+        (Some(OnSelect::ApplyPick), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Pick(vec![hash])))
         }
-        (Some(SelectContext::ApplyApply), SelectResult::Selected(hash)) => {
+        (Some(OnSelect::ApplyApply), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Apply(vec![hash])))
         }
-        (Some(SelectContext::CreateTagTarget(name)), SelectResult::Selected(target)) => {
+        (Some(OnSelect::CreateTagTarget { name }), SelectResult::Selected(target)) => {
             Some(Message::CreateTag { name, target })
         }
-        (Some(SelectContext::DeleteTag), SelectResult::Selected(tag)) => {
-            Some(Message::DeleteTag(tag))
-        }
-        (Some(SelectContext::PruneTagsRemotePick), SelectResult::Selected(remote)) => {
+        (Some(OnSelect::DeleteTag), SelectResult::Selected(tag)) => Some(Message::DeleteTag(tag)),
+        (Some(OnSelect::PruneTagsRemotePick), SelectResult::Selected(remote)) => {
             Some(Message::ShowPruneTagsConfirm { remote })
         }
         _ => None,
@@ -279,7 +290,7 @@ mod tests {
     use crate::git::GitInfo;
     use crate::git::test_repo::TestRepo;
     use crate::model::log_view::LogEntry;
-    use crate::model::popup::SelectContext;
+    use crate::model::select_popup::OnSelect;
     use crate::model::{Line, LineContent, RunningState, UiModel, ViewMode};
     use crate::msg::{FixupType, LogType};
 
@@ -297,12 +308,11 @@ mod tests {
             popup: None,
             toast: None,
             select_result: None,
-            select_context: None,
+            log_pick_on_select: None,
             pty_state: None,
             arg_mode: false,
             pending_g: false,
             arguments: None,
-            open_pr_branch: None,
             view_mode: ViewMode::Status,
             cursor_reposition_context: None,
             preview_return_mode: None,
@@ -333,7 +343,7 @@ mod tests {
             make_log_line("def5678", "Second commit"),
         ];
         model.ui_model.cursor_position = 0;
-        model.select_context = Some(SelectContext::FixupCommit(FixupType::Fixup));
+        model.log_pick_on_select = Some(OnSelect::FixupCommit(FixupType::Fixup));
 
         let result = update(&mut model);
 
@@ -345,7 +355,7 @@ mod tests {
             ))
         );
         assert_eq!(model.view_mode, ViewMode::Status);
-        assert!(model.select_context.is_none());
+        assert!(model.log_pick_on_select.is_none());
     }
 
     #[test]
@@ -357,7 +367,7 @@ mod tests {
             make_log_line("def5678", "Second commit"),
         ];
         model.ui_model.cursor_position = 1;
-        model.select_context = Some(SelectContext::FixupCommit(FixupType::Squash));
+        model.log_pick_on_select = Some(OnSelect::FixupCommit(FixupType::Squash));
 
         let result = update(&mut model);
 
@@ -387,7 +397,7 @@ mod tests {
             section: None,
         }];
         model.ui_model.cursor_position = 0;
-        model.select_context = Some(SelectContext::RebaseElsewhere);
+        model.log_pick_on_select = Some(OnSelect::RebaseElsewhere);
 
         let result = update(&mut model);
 
@@ -404,7 +414,7 @@ mod tests {
         model.view_mode = ViewMode::Log(LogType::AllReferences, true);
         model.ui_model.lines = vec![make_log_line("deadbeef", "Some commit")];
         model.ui_model.cursor_position = 0;
-        model.select_context = Some(SelectContext::RebaseElsewhere);
+        model.log_pick_on_select = Some(OnSelect::RebaseElsewhere);
 
         let result = update(&mut model);
 
@@ -423,7 +433,7 @@ mod tests {
         // picking = false → should fall through to popup check and return None (no popup)
         model.view_mode = ViewMode::Log(LogType::Current, false);
         model.ui_model.lines = vec![make_log_line("abc1234", "First commit")];
-        model.select_context = Some(SelectContext::FixupCommit(FixupType::Fixup));
+        model.log_pick_on_select = Some(OnSelect::FixupCommit(FixupType::Fixup));
 
         let result = update(&mut model);
 
@@ -431,7 +441,7 @@ mod tests {
         assert_eq!(result, None);
         // view_mode unchanged
         assert_eq!(model.view_mode, ViewMode::Log(LogType::Current, false));
-        // select_context still set (not consumed)
-        assert!(model.select_context.is_some());
+        // log_pick_on_select still set (not consumed)
+        assert!(model.log_pick_on_select.is_some());
     }
 }

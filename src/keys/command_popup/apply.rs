@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     model::popup::ApplyPopupState,
-    msg::{ApplyCommand, Message, SelectPopup},
+    msg::{ApplyCommand, Message, OnSelect, OptionsSource, ShowSelectPopupConfig},
 };
 
 pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
@@ -20,7 +20,11 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
         KeyCode::Char('q') => Some(Message::DismissPopup),
         KeyCode::Char('A') => {
             if state.selected_commits.is_empty() {
-                Some(Message::ShowSelectPopup(SelectPopup::ApplyPick))
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Apply (cherry-pick)".to_string(),
+                    source: OptionsSource::AllRefs,
+                    on_select: OnSelect::ApplyPick,
+                }))
             } else {
                 Some(Message::Apply(ApplyCommand::Pick(
                     state.selected_commits.clone(),
@@ -29,7 +33,11 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
         }
         KeyCode::Char('a') => {
             if state.selected_commits.is_empty() {
-                Some(Message::ShowSelectPopup(SelectPopup::ApplyApply))
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Apply without committing".to_string(),
+                    source: OptionsSource::AllRefs,
+                    on_select: OnSelect::ApplyApply,
+                }))
             } else {
                 Some(Message::Apply(ApplyCommand::Apply(
                     state.selected_commits.clone(),

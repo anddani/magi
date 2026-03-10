@@ -5,8 +5,11 @@ use magi::{
     model::{
         LineContent,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand},
+        select_popup::{OnSelect, SelectPopupState},
     },
-    msg::{Message, ResetMode, SelectMessage, SelectPopup, update::update},
+    msg::{
+        Message, OptionsSource, ResetMode, SelectMessage, ShowSelectPopupConfig, update::update,
+    },
 };
 use std::fs;
 
@@ -94,7 +97,11 @@ fn test_b_in_reset_popup_shows_branch_pick_select() {
     let result = handle_key(key(KeyCode::Char('b')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::ResetBranchPick))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Reset: select branch".to_string(),
+            source: OptionsSource::LocalBranches,
+            on_select: OnSelect::ResetBranchPick,
+        }))
     );
 }
 
@@ -141,7 +148,11 @@ fn test_reset_branch_pick_shows_local_branches() {
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::ResetBranchPick),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Reset: select branch".to_string(),
+            source: OptionsSource::LocalBranches,
+            on_select: OnSelect::ResetBranchPick,
+        }),
     );
 
     assert_eq!(result, None);
@@ -150,10 +161,11 @@ fn test_reset_branch_pick_shows_local_branches() {
         Some(PopupContent::Command(PopupContentCommand::Select(state)))
             if !state.all_options.is_empty()
     ));
-    assert_eq!(
-        model.select_context,
-        Some(magi::model::popup::SelectContext::ResetBranchPick)
-    );
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+        assert_eq!(state.on_select, OnSelect::ResetBranchPick);
+    } else {
+        panic!("Expected select popup");
+    }
 }
 
 #[test]
@@ -169,7 +181,11 @@ fn test_reset_branch_pick_prioritizes_current_branch() {
 
     update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::ResetBranchPick),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Reset: select branch".to_string(),
+            source: OptionsSource::LocalBranches,
+            on_select: OnSelect::ResetBranchPick,
+        }),
     );
 
     if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
@@ -195,7 +211,13 @@ fn test_reset_branch_target_shows_refs() {
     // We need another branch to have a target
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::ResetBranchTarget(current.clone())),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Reset branch to".to_string(),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::ResetBranchTarget {
+                branch: current.clone(),
+            },
+        }),
     );
 
     assert_eq!(result, None);
@@ -319,8 +341,6 @@ fn test_reset_current_branch_to_earlier_commit() {
 
 #[test]
 fn test_reset_current_branch_with_uncommitted_shows_confirmation() {
-    use magi::model::popup::SelectContext;
-
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file.txt", "initial")
@@ -348,12 +368,14 @@ fn test_reset_current_branch_with_uncommitted_shows_confirmation() {
     let mut model = create_model_from_test_repo(&test_repo);
     let current = model.git_info.current_branch().unwrap();
 
-    // Simulate the second step of the flow: context = ResetBranchTarget(current)
-    model.select_context = Some(SelectContext::ResetBranchTarget(current.clone()));
+    // Simulate the second step of the flow: popup with ResetBranchTarget context
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
-        magi::model::popup::SelectPopupState::new(
+        SelectPopupState::new(
             "Reset branch to".to_string(),
             vec![initial_hash.clone()],
+            OnSelect::ResetBranchTarget {
+                branch: current.clone(),
+            },
         ),
     )));
 
@@ -382,8 +404,6 @@ fn test_reset_current_branch_with_uncommitted_shows_confirmation() {
 
 #[test]
 fn test_reset_current_branch_clean_no_confirmation() {
-    use magi::model::popup::SelectContext;
-
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file.txt", "initial")
@@ -409,11 +429,13 @@ fn test_reset_current_branch_clean_no_confirmation() {
     let current = model.git_info.current_branch().unwrap();
 
     // Simulate clean repo — no uncommitted changes
-    model.select_context = Some(SelectContext::ResetBranchTarget(current.clone()));
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
-        magi::model::popup::SelectPopupState::new(
+        SelectPopupState::new(
             "Reset branch to".to_string(),
             vec![initial_hash.clone()],
+            OnSelect::ResetBranchTarget {
+                branch: current.clone(),
+            },
         ),
     )));
 
@@ -523,7 +545,11 @@ fn test_reset_branch_pick_cursor_on_branch_ref_prioritizes_it() {
         model.ui_model.cursor_position = pos;
         update(
             &mut model,
-            Message::ShowSelectPopup(SelectPopup::ResetBranchPick),
+            Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Reset: select branch".to_string(),
+                source: OptionsSource::LocalBranches,
+                on_select: OnSelect::ResetBranchPick,
+            }),
         );
 
         if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
@@ -586,7 +612,13 @@ fn test_reset_branch_target_cursor_on_bare_hash_prioritizes_it() {
         model.ui_model.cursor_position = pos;
         update(
             &mut model,
-            Message::ShowSelectPopup(SelectPopup::ResetBranchTarget("other".to_string())),
+            Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Reset branch to".to_string(),
+                source: OptionsSource::AllRefs,
+                on_select: OnSelect::ResetBranchTarget {
+                    branch: "other".to_string(),
+                },
+            }),
         );
 
         if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
@@ -631,7 +663,13 @@ fn test_reset_branch_target_cursor_on_branch_ref_prioritizes_branch_over_hash() 
         // Reset a different branch to see target options
         update(
             &mut model,
-            Message::ShowSelectPopup(SelectPopup::ResetBranchTarget("other-branch".to_string())),
+            Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Reset branch to".to_string(),
+                source: OptionsSource::AllRefs,
+                on_select: OnSelect::ResetBranchTarget {
+                    branch: "other-branch".to_string(),
+                },
+            }),
         );
 
         if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
@@ -662,9 +700,11 @@ fn test_m_in_reset_popup_shows_select_popup() {
     let result = handle_key(key(KeyCode::Char('m')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::Reset(
-            ResetMode::Mixed
-        )))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: format!("{} reset to", ResetMode::Mixed.name()),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::Reset(ResetMode::Mixed),
+        }))
     );
 }
 
@@ -686,7 +726,11 @@ fn test_reset_mixed_shows_refs_select_popup() {
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::Reset(ResetMode::Mixed)),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: format!("{} reset to", ResetMode::Mixed.name()),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::Reset(ResetMode::Mixed),
+        }),
     );
 
     assert_eq!(result, None);
@@ -695,16 +739,15 @@ fn test_reset_mixed_shows_refs_select_popup() {
         Some(PopupContent::Command(PopupContentCommand::Select(state)))
             if !state.all_options.is_empty()
     ));
-    assert_eq!(
-        model.select_context,
-        Some(magi::model::popup::SelectContext::Reset(ResetMode::Mixed))
-    );
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+        assert_eq!(state.on_select, OnSelect::Reset(ResetMode::Mixed));
+    } else {
+        panic!("Expected select popup");
+    }
 }
 
 #[test]
 fn test_reset_mixed_dispatches_reset_branch_with_mixed_mode() {
-    use magi::model::popup::SelectContext;
-
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file.txt", "initial")
@@ -730,11 +773,11 @@ fn test_reset_mixed_dispatches_reset_branch_with_mixed_mode() {
     let current = model.git_info.current_branch().unwrap();
 
     // Simulate the select popup returning a target
-    model.select_context = Some(SelectContext::Reset(ResetMode::Mixed));
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
-        magi::model::popup::SelectPopupState::new(
+        SelectPopupState::new(
             "Mixed reset to".to_string(),
             vec![initial_hash.clone()],
+            OnSelect::Reset(ResetMode::Mixed),
         ),
     )));
 
@@ -813,7 +856,11 @@ fn test_i_in_reset_popup_shows_select_popup() {
     let result = handle_key(key(KeyCode::Char('i')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::ResetIndex))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Reset index to".to_string(),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::ResetIndex,
+        }))
     );
 }
 
@@ -835,7 +882,11 @@ fn test_reset_index_shows_refs_select_popup() {
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::ResetIndex),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Reset index to".to_string(),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::ResetIndex,
+        }),
     );
 
     assert_eq!(result, None);
@@ -844,16 +895,15 @@ fn test_reset_index_shows_refs_select_popup() {
         Some(PopupContent::Command(PopupContentCommand::Select(state)))
             if !state.all_options.is_empty() && state.title == "Reset index to"
     ));
-    assert_eq!(
-        model.select_context,
-        Some(magi::model::popup::SelectContext::ResetIndex)
-    );
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+        assert_eq!(state.on_select, OnSelect::ResetIndex);
+    } else {
+        panic!("Expected select popup");
+    }
 }
 
 #[test]
 fn test_reset_index_select_confirm_dispatches_reset_index_message() {
-    use magi::model::popup::SelectContext;
-
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file.txt", "initial")
@@ -877,11 +927,11 @@ fn test_reset_index_select_confirm_dispatches_reset_index_message() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    model.select_context = Some(SelectContext::ResetIndex);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
-        magi::model::popup::SelectPopupState::new(
+        SelectPopupState::new(
             "Reset index to".to_string(),
             vec![initial_hash.clone()],
+            OnSelect::ResetIndex,
         ),
     )));
 
@@ -980,7 +1030,11 @@ fn test_w_in_reset_popup_shows_select_popup() {
     let result = handle_key(key(KeyCode::Char('w')), &model);
     assert_eq!(
         result,
-        Some(Message::ShowSelectPopup(SelectPopup::ResetWorktree))
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Reset worktree to".to_string(),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::ResetWorktree,
+        }))
     );
 }
 
@@ -1002,7 +1056,11 @@ fn test_reset_worktree_shows_refs_select_popup() {
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::ResetWorktree),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Reset worktree to".to_string(),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::ResetWorktree,
+        }),
     );
 
     assert_eq!(result, None);
@@ -1011,16 +1069,15 @@ fn test_reset_worktree_shows_refs_select_popup() {
         Some(PopupContent::Command(PopupContentCommand::Select(state)))
             if !state.all_options.is_empty() && state.title == "Reset worktree to"
     ));
-    assert_eq!(
-        model.select_context,
-        Some(magi::model::popup::SelectContext::ResetWorktree)
-    );
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+        assert_eq!(state.on_select, OnSelect::ResetWorktree);
+    } else {
+        panic!("Expected select popup");
+    }
 }
 
 #[test]
 fn test_reset_worktree_select_confirm_dispatches_message() {
-    use magi::model::popup::SelectContext;
-
     let test_repo = TestRepo::new();
     test_repo
         .write_file_content("file.txt", "initial")
@@ -1044,11 +1101,11 @@ fn test_reset_worktree_select_confirm_dispatches_message() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    model.select_context = Some(SelectContext::ResetWorktree);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
-        magi::model::popup::SelectPopupState::new(
+        SelectPopupState::new(
             "Reset worktree to".to_string(),
             vec![initial_hash.clone()],
+            OnSelect::ResetWorktree,
         ),
     )));
 

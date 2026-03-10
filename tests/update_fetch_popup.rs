@@ -1,9 +1,9 @@
-use magi::model::popup::{
-    InputContext, InputPopupState, PopupContent, PopupContentCommand, SelectContext,
-    SelectPopupState,
-};
+use magi::model::popup::{InputContext, InputPopupState, PopupContent, PopupContentCommand};
+use magi::model::select_popup::{OnSelect, SelectPopupState};
 use magi::msg::update::update;
-use magi::msg::{FetchCommand, InputMessage, Message, SelectMessage, SelectPopup};
+use magi::msg::{
+    FetchCommand, InputMessage, Message, OptionsSource, SelectMessage, ShowSelectPopupConfig,
+};
 
 use crate::utils::create_test_model;
 
@@ -15,11 +15,11 @@ mod utils;
 fn test_fetch_refspec_remote_pick_routes_to_input() {
     let mut model = create_test_model();
 
-    model.select_context = Some(SelectContext::FetchRefspecRemotePick);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         SelectPopupState::new(
             "Fetch from remote".to_string(),
             vec!["origin".to_string(), "upstream".to_string()],
+            OnSelect::FetchRefspecRemotePick,
         ),
     )));
 
@@ -30,7 +30,6 @@ fn test_fetch_refspec_remote_pick_routes_to_input() {
         Some(Message::ShowFetchRefspecInput("origin".to_string()))
     );
     assert!(model.popup.is_none());
-    assert!(model.select_context.is_none());
 }
 
 // ── ShowFetchRefspecInput opens an input popup ────────────────────────────────
@@ -85,7 +84,11 @@ fn test_fetch_refspec_remote_pick_shows_select_popup() {
     // ShowSelectPopup(FetchRefspecRemotePick) should open a select popup (or error if no remotes)
     let result = update(
         &mut model,
-        Message::ShowSelectPopup(SelectPopup::FetchRefspecRemotePick),
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Fetch from remote".to_string(),
+            source: OptionsSource::Remotes,
+            on_select: OnSelect::FetchRefspecRemotePick,
+        }),
     );
 
     // No remotes in test repo → error popup
