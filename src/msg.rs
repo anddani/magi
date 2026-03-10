@@ -1,3 +1,4 @@
+use crate::i18n;
 use crate::model::arguments::Argument;
 use crate::model::popup::PopupContent;
 
@@ -484,10 +485,11 @@ pub enum StashType {
 impl StashType {
     /// Human-readable title used in the input popup
     pub fn title(self) -> &'static str {
+        let t = i18n::t();
         match self {
-            StashType::Both => "Stash message",
-            StashType::Index => "Stash index message",
-            StashType::Worktree => "Stash worktree message",
+            StashType::Both => t.input_stash_message,
+            StashType::Index => t.input_stash_index_message,
+            StashType::Worktree => t.input_stash_worktree_message,
         }
     }
 

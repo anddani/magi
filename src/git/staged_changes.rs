@@ -1,5 +1,6 @@
 use crate::{
     errors::MagiResult,
+    i18n,
     model::{Line, LineContent, SectionType},
 };
 use git2::{DiffOptions, Repository};
@@ -17,7 +18,7 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
 
     Ok(build_change_lines(
         file_changes,
-        "Staged changes",
+        i18n::t().section_staged_changes,
         SectionType::StagedChanges,
         LineContent::StagedFile,
         |path| SectionType::StagedFile { path },

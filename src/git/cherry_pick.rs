@@ -4,6 +4,7 @@ use std::path::Path;
 use super::read_commit_message;
 use crate::{
     errors::MagiResult,
+    i18n,
     model::{LineContent, SectionType},
 };
 
@@ -43,7 +44,7 @@ pub fn get_cherry_picking_lines(workdir: &Path) -> MagiResult<Vec<crate::model::
     // Section header
     lines.push(crate::model::Line {
         content: LineContent::SectionHeader {
-            title: "Cherry Picking".to_string(),
+            title: i18n::t().section_cherry_picking.to_string(),
             count: None,
         },
         section: Some(SectionType::CherryPicking),

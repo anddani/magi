@@ -2,6 +2,7 @@ use git2::Repository;
 
 use crate::{
     errors::MagiResult,
+    i18n,
     model::{Line, LineContent, SectionType},
 };
 
@@ -23,7 +24,7 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
 
     lines.push(Line {
         content: LineContent::SectionHeader {
-            title: "Stashes".to_string(),
+            title: i18n::t().section_stashes.to_string(),
             count: Some(reflog.len()),
         },
         section: Some(SectionType::Stashes),

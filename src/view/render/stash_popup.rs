@@ -4,11 +4,14 @@ use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
 
 use crate::{
     config::Theme,
+    i18n,
     model::{Model, arguments::StashArgument},
     view::render::util::{argument_lines, command_description},
 };
 
 pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
+    let t = i18n::t();
+
     let arguments: Vec<Line<'_>> = argument_lines::<StashArgument>(
         theme,
         model.arg_mode,
@@ -16,30 +19,30 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     );
 
     let arguments_col = PopupColumn {
-        title: Some("Arguments".into()),
+        title: Some(t.col_arguments.into()),
         content: arguments,
     };
 
     let stash = PopupColumn {
-        title: Some("Stash".into()),
+        title: Some(t.popup_stash.into()),
         content: vec![
-            command_description(theme, model.arg_mode, "z", "both"),
-            command_description(theme, model.arg_mode, "i", "index"),
-            command_description(theme, model.arg_mode, "w", "worktree"),
+            command_description(theme, model.arg_mode, "z", t.cmd_both),
+            command_description(theme, model.arg_mode, "i", t.cmd_index),
+            command_description(theme, model.arg_mode, "w", t.cmd_worktree),
         ],
     };
 
     let use_col = PopupColumn {
-        title: Some("Use".into()),
+        title: Some(t.col_use.into()),
         content: vec![
-            command_description(theme, model.arg_mode, "a", "apply"),
-            command_description(theme, model.arg_mode, "p", "pop"),
-            command_description(theme, model.arg_mode, "k", "drop"),
+            command_description(theme, model.arg_mode, "a", t.cmd_apply),
+            command_description(theme, model.arg_mode, "p", t.cmd_pop),
+            command_description(theme, model.arg_mode, "k", t.cmd_drop),
         ],
     };
 
     CommandPopupContent {
-        title: "Stash",
+        title: t.popup_stash,
         rows: vec![
             PopupRow {
                 columns: vec![arguments_col],

@@ -1,5 +1,6 @@
 use crate::{
     errors::MagiResult,
+    i18n,
     model::{Line, LineContent, SectionType},
 };
 use git2::Repository;
@@ -37,7 +38,7 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     // Add section header
     let header_line = Line {
         content: LineContent::SectionHeader {
-            title: "Untracked files".to_string(),
+            title: i18n::t().section_untracked_files.to_string(),
             count: Some(untracked_count),
         },
         section: Some(SectionType::UntrackedFiles),

@@ -1,5 +1,7 @@
 use std::{collections::HashSet, hash::Hash};
 
+use crate::i18n;
+
 pub enum Arguments {
     CommitArguments(HashSet<CommitArgument>),
     FetchArguments(HashSet<FetchArgument>),
@@ -143,12 +145,13 @@ impl PopupArgument for CommitArgument {
     }
 
     fn description(&self) -> &'static str {
+        let t = i18n::t();
         match self {
-            CommitArgument::StageAll => "Stage all modified and deleted files",
-            CommitArgument::AllowEmpty => "Allow empty commit",
-            CommitArgument::Verbose => "Show diff of changes to be commited",
-            CommitArgument::DisableHooks => "Disable hooks",
-            CommitArgument::ResetAuthor => "Claim authorship and reset author date",
+            CommitArgument::StageAll => t.arg_commit_stage_all,
+            CommitArgument::AllowEmpty => t.arg_commit_allow_empty,
+            CommitArgument::Verbose => t.arg_commit_verbose,
+            CommitArgument::DisableHooks => t.arg_commit_disable_hooks,
+            CommitArgument::ResetAuthor => t.arg_commit_reset_author,
         }
     }
 
@@ -194,10 +197,11 @@ impl PopupArgument for FetchArgument {
     }
 
     fn description(&self) -> &'static str {
+        let t = i18n::t();
         match self {
-            FetchArgument::Prune => "Prune deleted branches",
-            FetchArgument::Tags => "Fetch all tags",
-            FetchArgument::Force => "Force",
+            FetchArgument::Prune => t.arg_fetch_prune,
+            FetchArgument::Tags => t.arg_fetch_tags,
+            FetchArgument::Force => t.arg_fetch_force,
         }
     }
 
@@ -253,14 +257,15 @@ impl PopupArgument for PushArgument {
     }
 
     fn description(&self) -> &'static str {
+        let t = i18n::t();
         match self {
-            PushArgument::ForceWithLease => "Force with lease",
-            PushArgument::Force => "Force",
-            PushArgument::DisableHooks => "Disable hooks",
-            PushArgument::DryRun => "Dry run",
-            PushArgument::SetUpstream => "Set upstream",
-            PushArgument::IncludeAllTags => "Include all tags",
-            PushArgument::IncludeRelatedAnnotatedTags => "Include related annotated tags",
+            PushArgument::ForceWithLease => t.arg_push_force_with_lease,
+            PushArgument::Force => t.arg_push_force,
+            PushArgument::DisableHooks => t.arg_push_disable_hooks,
+            PushArgument::DryRun => t.arg_push_dry_run,
+            PushArgument::SetUpstream => t.arg_push_set_upstream,
+            PushArgument::IncludeAllTags => t.arg_push_include_all_tags,
+            PushArgument::IncludeRelatedAnnotatedTags => t.arg_push_include_related_tags,
         }
     }
 
@@ -311,11 +316,12 @@ impl PopupArgument for PullArgument {
     }
 
     fn description(&self) -> &'static str {
+        let t = i18n::t();
         match self {
-            PullArgument::FfOnly => "Fast-forward only",
-            PullArgument::Rebase => "Rebase local commits",
-            PullArgument::Autostash => "Autostash",
-            PullArgument::Force => "Force",
+            PullArgument::FfOnly => t.arg_pull_ff_only,
+            PullArgument::Rebase => t.arg_pull_rebase,
+            PullArgument::Autostash => t.arg_pull_autostash,
+            PullArgument::Force => t.arg_pull_force,
         }
     }
 
@@ -354,9 +360,10 @@ impl PopupArgument for StashArgument {
     }
 
     fn description(&self) -> &'static str {
+        let t = i18n::t();
         match self {
-            StashArgument::IncludeUntracked => "Also save untracked files",
-            StashArgument::All => "Also save untracked and ignored files",
+            StashArgument::IncludeUntracked => t.arg_stash_include_untracked,
+            StashArgument::All => t.arg_stash_all,
         }
     }
 

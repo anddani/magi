@@ -7,6 +7,7 @@ use ratatui::{
 
 use crate::{
     config::Theme,
+    i18n,
     model::{Model, arguments::PopupArgument},
 };
 
@@ -76,7 +77,12 @@ pub fn push_remote_description<'a>(
                 Span::styled(format!("{}/{}", remote, current_branch), remote_style),
             ])
         }
-        None => command_description(theme, model.arg_mode, "p", "${push-remote}, setting it"),
+        None => command_description(
+            theme,
+            model.arg_mode,
+            "p",
+            i18n::t().arg_push_remote_setting_it,
+        ),
     }
 }
 
@@ -108,7 +114,7 @@ pub fn upstream_description<'a>(
                 Span::styled(upstream.clone(), upstream_style),
             ])
         }
-        None => command_description(theme, arg_mode, "u", "${upstream}, setting it"),
+        None => command_description(theme, arg_mode, "u", i18n::t().arg_upstream_setting_it),
     }
 }
 

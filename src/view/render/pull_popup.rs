@@ -6,6 +6,7 @@ use ratatui::{
 use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
+    i18n,
     model::{Model, arguments::PullArgument, popup::PullPopupState},
     view::render::{
         popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
@@ -21,6 +22,8 @@ pub fn content<'a>(
     model: &Model,
     state: &PullPopupState,
 ) -> CommandPopupContent<'a> {
+    let t = i18n::t();
+
     let arguments: Vec<Line<'_>> = argument_lines::<PullArgument>(
         theme,
         model.arg_mode,
@@ -28,7 +31,7 @@ pub fn content<'a>(
     );
 
     let arguments_col = PopupColumn {
-        title: Some("Arguments".into()),
+        title: Some(t.col_arguments.into()),
         content: arguments,
     };
 
@@ -41,12 +44,12 @@ pub fn content<'a>(
                 .fg(theme.local_branch)
                 .add_modifier(Modifier::BOLD);
             Line::from(vec![
-                Span::styled("Pull into ", column_title_style),
+                Span::styled(t.pull_into_pre, column_title_style),
                 Span::styled(branch, branch_style),
-                Span::styled(" from", column_title_style),
+                Span::styled(t.pull_into_post, column_title_style),
             ])
         }
-        None => column_title("Pull into", theme),
+        None => column_title(t.pull_into_fallback, theme),
     };
 
     let pull_into_col = PopupColumn {
@@ -54,12 +57,12 @@ pub fn content<'a>(
         content: vec![
             push_remote_description(model, theme, &state.push_remote),
             upstream_description(theme, model.arg_mode, &state.upstream),
-            command_description(theme, model.arg_mode, "e", "elsewhere"),
+            command_description(theme, model.arg_mode, "e", t.cmd_elsewhere),
         ],
     };
 
     CommandPopupContent {
-        title: "Pull",
+        title: t.popup_pull,
         rows: vec![
             PopupRow {
                 columns: vec![arguments_col],

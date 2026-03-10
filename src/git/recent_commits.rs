@@ -2,6 +2,7 @@ use git2::Repository;
 
 use crate::{
     errors::MagiResult,
+    i18n,
     model::{Line, LineContent, SectionType},
 };
 
@@ -60,7 +61,7 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
 
     lines.push(Line {
         content: LineContent::SectionHeader {
-            title: "Recent commits".to_string(),
+            title: i18n::t().section_recent_commits.to_string(),
             count: None,
         },
         section: Some(SectionType::RecentCommits),

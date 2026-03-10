@@ -1,6 +1,7 @@
 pub use super::select_popup::{SelectContext, SelectPopupState, SelectResult};
 
 use crate::git::credential::CredentialType;
+use crate::i18n;
 use crate::model::LogEntry;
 use crate::msg::StashType;
 
@@ -145,22 +146,17 @@ impl InputPopupState {
     }
 
     pub fn title(&self) -> String {
+        let t = i18n::t();
         match &self.context {
-            InputContext::CreateNewBranch { .. } => "Name for new branch".to_string(),
-            InputContext::RenameBranch { old_name } => {
-                format!("Rename branch '{}' to:", old_name)
-            }
+            InputContext::CreateNewBranch { .. } => t.input_new_branch.to_string(),
+            InputContext::RenameBranch { old_name } => t.fmt1(t.input_rename_branch_fmt, old_name),
             InputContext::Stash(stash_type) => stash_type.title().to_string(),
-            InputContext::SpinoffBranch => "Name for new spin-off branch".to_string(),
-            InputContext::SpinoutBranch => "Name for new spin-out branch".to_string(),
-            InputContext::WorktreePath { branch, .. } => format!("Worktree path for '{branch}'"),
-            InputContext::PushRefspec { remote } => {
-                format!("Push refspec(s) to '{}' (comma-separated)", remote)
-            }
-            InputContext::FetchRefspec { remote } => {
-                format!("Fetch refspec(s) from '{}' (comma-separated)", remote)
-            }
-            InputContext::CreateTag => "Tag name".to_string(),
+            InputContext::SpinoffBranch => t.input_spinoff_branch.to_string(),
+            InputContext::SpinoutBranch => t.input_spinout_branch.to_string(),
+            InputContext::WorktreePath { branch, .. } => t.fmt1(t.input_worktree_path_fmt, branch),
+            InputContext::PushRefspec { remote } => t.fmt1(t.input_push_refspec_fmt, remote),
+            InputContext::FetchRefspec { remote } => t.fmt1(t.input_fetch_refspec_fmt, remote),
+            InputContext::CreateTag => t.input_tag_name.to_string(),
         }
     }
 }

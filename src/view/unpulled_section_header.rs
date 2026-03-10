@@ -3,7 +3,7 @@ use ratatui::{
     text::{Line as TextLine, Span},
 };
 
-use crate::config::Theme;
+use crate::{config::Theme, i18n};
 
 /// Generate the view lines for the "Unpulled from [remote]" section header
 /// The remote name is colored with the remote_branch color, the rest with section_header color
@@ -17,7 +17,7 @@ pub fn get_lines(
 
     let header_line = TextLine::from(vec![
         Span::styled(
-            format!("{}Unpulled from ", indicator),
+            format!("{}{}", indicator, i18n::t().section_unpulled_from_prefix),
             Style::default().fg(theme.section_header),
         ),
         Span::styled(

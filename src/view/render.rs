@@ -7,6 +7,7 @@ use ratatui::{
 };
 
 use crate::{
+    i18n,
     model::{
         Model, Toast, ToastStyle,
         popup::{PopupContent, PopupContentCommand},
@@ -134,7 +135,7 @@ pub fn render_popup(
 
 /// Render an error popup (centered)
 fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crate::config::Theme) {
-    let title = "Error";
+    let title = i18n::t().popup_error;
     let border_color = theme.diff_deletion;
 
     // Split message into lines
@@ -157,7 +158,7 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
     frame.render_widget(Clear, popup_area);
 
     // Build popup content with hint
-    let hint = "Press Enter or Esc to dismiss";
+    let hint = i18n::t().hint_dismiss;
     let mut popup_text: Vec<TextLine> = message_lines.into_iter().map(TextLine::from).collect();
     popup_text.push(TextLine::from(""));
     popup_text.push(TextLine::from(Span::styled(
@@ -182,13 +183,13 @@ fn render_confirm_popup(
     area: Rect,
     theme: &crate::config::Theme,
 ) {
-    let title = "Confirm";
+    let title = i18n::t().popup_confirm;
     let border_color = theme.section_header;
 
     let message_lines: Vec<&str> = message.lines().collect();
     let line_count = message_lines.len();
 
-    let hint = "y/Enter to confirm, n/Esc to cancel";
+    let hint = i18n::t().hint_confirm;
     let max_line_width = message_lines
         .iter()
         .map(|line| line.len())

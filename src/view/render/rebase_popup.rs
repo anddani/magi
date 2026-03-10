@@ -6,6 +6,7 @@ use ratatui::{
 use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
+    i18n,
     model::{Model, popup::RebasePopupState},
     view::render::{
         popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
@@ -18,6 +19,7 @@ pub fn content<'a>(
     model: &Model,
     state: &'a RebasePopupState,
 ) -> CommandPopupContent<'a> {
+    let t = i18n::t();
     let section_style = Style::default()
         .fg(theme.section_header)
         .add_modifier(Modifier::BOLD);
@@ -26,14 +28,14 @@ pub fn content<'a>(
     if state.in_progress {
         // Rebase sequence paused on a conflict — show Continue / Skip / Abort
         return CommandPopupContent {
-            title: "Rebasing",
+            title: t.section_rebasing,
             rows: vec![PopupRow {
                 columns: vec![PopupColumn {
                     title: None,
                     content: vec![
-                        command_description(theme, model.arg_mode, "r", "continue"),
-                        command_description(theme, model.arg_mode, "s", "skip"),
-                        command_description(theme, model.arg_mode, "a", "abort"),
+                        command_description(theme, model.arg_mode, "r", t.cmd_continue),
+                        command_description(theme, model.arg_mode, "s", t.cmd_skip),
+                        command_description(theme, model.arg_mode, "a", t.cmd_abort),
                     ],
                 }],
             }],
@@ -41,17 +43,22 @@ pub fn content<'a>(
     }
 
     let rebase_onto_title = Line::from(vec![
-        Span::styled("Rebase ", section_style),
+        Span::styled(t.rebase_onto_pre, section_style),
         Span::styled(state.branch.as_str(), branch_style),
-        Span::styled(" onto", section_style),
+        Span::styled(t.rebase_onto_post, section_style),
     ]);
     let rebase_onto_col = PopupColumn {
         title: Some(PopupColumnTitle::Styled(rebase_onto_title)),
-        content: vec![command_description(theme, model.arg_mode, "e", "elsewhere")],
+        content: vec![command_description(
+            theme,
+            model.arg_mode,
+            "e",
+            t.cmd_elsewhere,
+        )],
     };
 
     CommandPopupContent {
-        title: "Rebase",
+        title: t.popup_rebase,
         rows: vec![PopupRow {
             columns: vec![rebase_onto_col],
         }],
