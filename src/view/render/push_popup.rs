@@ -6,6 +6,7 @@ use ratatui::{
 use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
+    i18n,
     model::{Model, arguments::PushArgument, popup::PushPopupState},
     view::render::{
         popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
@@ -21,6 +22,8 @@ pub fn content<'a>(
     model: &Model,
     state: &PushPopupState,
 ) -> CommandPopupContent<'a> {
+    let t = i18n::t();
+
     let push_to_title = match model.git_info.current_branch() {
         Some(branch) => {
             let column_title_style = Style::default()
@@ -30,12 +33,12 @@ pub fn content<'a>(
                 .fg(theme.local_branch)
                 .add_modifier(Modifier::BOLD);
             Line::from(vec![
-                Span::styled("Push ", column_title_style),
+                Span::styled(t.push_to_pre, column_title_style),
                 Span::styled(branch, branch_style),
-                Span::styled(" to", column_title_style),
+                Span::styled(t.push_to_post, column_title_style),
             ])
         }
-        None => column_title("Push to", theme),
+        None => column_title(t.push_to_fallback, theme),
     };
 
     let arguments: Vec<Line<'_>> = argument_lines::<PushArgument>(
@@ -45,7 +48,7 @@ pub fn content<'a>(
     );
 
     let arguments_col = PopupColumn {
-        title: Some("Arguments".into()),
+        title: Some(t.col_arguments.into()),
         content: arguments,
     };
 
@@ -54,16 +57,16 @@ pub fn content<'a>(
         content: vec![
             push_remote_description(model, theme, &state.push_remote),
             upstream_description(theme, model.arg_mode, &state.upstream),
-            command_description(theme, model.arg_mode, "e", "elsewhere"),
+            command_description(theme, model.arg_mode, "e", t.cmd_elsewhere),
         ],
     };
 
     let push_1_col = PopupColumn {
-        title: Some(PopupColumnTitle::Raw("Push")),
+        title: Some(PopupColumnTitle::Raw(t.popup_push)),
         content: vec![
-            command_description(theme, model.arg_mode, "o", "other branch"),
-            command_description(theme, model.arg_mode, "r", "explicit refspec"),
-            command_description(theme, model.arg_mode, "m", "matching branches"),
+            command_description(theme, model.arg_mode, "o", t.cmd_other_branch),
+            command_description(theme, model.arg_mode, "r", t.cmd_explicit_refspec),
+            command_description(theme, model.arg_mode, "m", t.cmd_matching_branches),
         ],
     };
 
@@ -71,13 +74,13 @@ pub fn content<'a>(
         title: None,
         content: vec![
             Line::from(""),
-            command_description(theme, model.arg_mode, "T", "push a tag"),
-            command_description(theme, model.arg_mode, "t", "push all tags"),
+            command_description(theme, model.arg_mode, "T", t.cmd_push_tag),
+            command_description(theme, model.arg_mode, "t", t.cmd_push_all_tags),
         ],
     };
 
     CommandPopupContent {
-        title: "Push",
+        title: t.popup_push,
         rows: vec![
             PopupRow {
                 columns: vec![arguments_col],

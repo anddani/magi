@@ -2,6 +2,7 @@ use super::popup_content::CommandPopupContent;
 
 use crate::{
     config::Theme,
+    i18n,
     model::{Model, popup::ApplyPopupState},
     view::render::{
         popup_content::{PopupColumn, PopupRow},
@@ -14,17 +15,19 @@ pub fn content<'a>(
     model: &Model,
     state: &'a ApplyPopupState,
 ) -> CommandPopupContent<'a> {
+    let t = i18n::t();
+
     if state.in_progress {
         // Cherry-pick sequence is paused on a conflict — show Continue / Skip / Abort
         return CommandPopupContent {
-            title: "Applying",
+            title: t.popup_applying,
             rows: vec![PopupRow {
                 columns: vec![PopupColumn {
                     title: None,
                     content: vec![
-                        command_description(theme, model.arg_mode, "A", "continue"),
-                        command_description(theme, model.arg_mode, "s", "skip"),
-                        command_description(theme, model.arg_mode, "a", "abort"),
+                        command_description(theme, model.arg_mode, "A", t.cmd_continue),
+                        command_description(theme, model.arg_mode, "s", t.cmd_skip),
+                        command_description(theme, model.arg_mode, "a", t.cmd_abort),
                     ],
                 }],
             }],
@@ -32,11 +35,11 @@ pub fn content<'a>(
     }
 
     CommandPopupContent {
-        title: "Apply",
+        title: t.popup_apply,
         rows: vec![PopupRow {
             columns: vec![PopupColumn {
-                title: Some("Apply here".into()),
-                content: vec![command_description(theme, model.arg_mode, "A", "pick")],
+                title: Some(t.col_apply_here.into()),
+                content: vec![command_description(theme, model.arg_mode, "A", t.cmd_pick)],
             }],
         }],
     }

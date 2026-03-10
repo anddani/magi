@@ -6,6 +6,7 @@ use ratatui::{
 };
 
 use crate::{
+    i18n,
     model::{InputMode, Model, ViewMode},
     view::{
         render::{render_popup, render_toast},
@@ -219,9 +220,13 @@ pub fn view(model: &Model, frame: &mut Frame) {
         InputMode::Search => (theme.status_mode_search_bg, theme.status_mode_search_fg),
     };
     let mode_label = if model.view_mode == ViewMode::Preview {
-        "PREVIEW"
+        i18n::t().mode_preview
     } else {
-        mode.display_name()
+        match mode {
+            InputMode::Normal => i18n::t().mode_normal,
+            InputMode::Visual => i18n::t().mode_visual,
+            InputMode::Search => i18n::t().mode_search,
+        }
     };
     let mode_pill = Span::styled(
         format!(" {} ", mode_label),

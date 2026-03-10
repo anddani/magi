@@ -5,6 +5,7 @@ use super::git_cmd;
 use crate::{
     errors::MagiResult,
     git::{commit::get_commit_result, read_commit_message},
+    i18n,
     model::{LineContent, SectionType},
 };
 
@@ -108,7 +109,7 @@ pub fn get_reverting_lines(workdir: &Path) -> MagiResult<Vec<crate::model::Line>
     // Section header
     lines.push(crate::model::Line {
         content: LineContent::SectionHeader {
-            title: "Reverting".to_string(),
+            title: i18n::t().section_reverting.to_string(),
             count: None,
         },
         section: Some(SectionType::Reverting),

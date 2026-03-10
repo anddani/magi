@@ -96,6 +96,9 @@ pub struct Config {
 
     #[serde(default)]
     pub colors: ColorOverrides,
+
+    #[serde(default)]
+    pub language: Option<String>,
 }
 
 fn default_theme_name() -> String {
@@ -107,6 +110,7 @@ impl Default for Config {
         Self {
             theme: default_theme_name(),
             colors: ColorOverrides::default(),
+            language: None,
         }
     }
 }

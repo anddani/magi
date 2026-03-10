@@ -5,6 +5,7 @@ use super::git_cmd;
 use crate::{
     errors::MagiResult,
     git::{commit::get_commit_result, read_commit_message},
+    i18n,
     model::{LineContent, SectionType},
 };
 
@@ -103,7 +104,7 @@ pub fn get_rebasing_lines(workdir: &Path) -> MagiResult<Vec<crate::model::Line>>
 
     lines.push(crate::model::Line {
         content: LineContent::SectionHeader {
-            title: "Rebasing".to_string(),
+            title: i18n::t().section_rebasing.to_string(),
             count: None,
         },
         section: Some(SectionType::Rebasing),

@@ -1,5 +1,6 @@
 use crate::{
     errors::MagiError,
+    i18n::{self, Language},
     keys::handle_key,
     msg::{update::update, util::is_external_command},
 };
@@ -26,19 +27,31 @@ use crate::{
 
 const EVENT_POLL_TIMEOUT_MILLIS: u64 = 250;
 
-pub fn run(workdir: Option<PathBuf>) -> MagiResult<()> {
+pub fn run(workdir: Option<PathBuf>, language_override: Option<String>) -> MagiResult<()> {
     let terminal = ratatui::init();
-    let result = run_loop(terminal, workdir);
+    let result = run_loop(terminal, workdir, language_override);
     ratatui::restore();
     result
 }
 
 /// Main run loop which polls events (messages), transforms the model,
 /// and renders the UI.
-fn run_loop(mut terminal: DefaultTerminal, path: Option<PathBuf>) -> MagiResult<()> {
+fn run_loop(
+    mut terminal: DefaultTerminal,
+    path: Option<PathBuf>,
+    language_override: Option<String>,
+) -> MagiResult<()> {
     // Load config and resolve theme
     let config = Config::load();
     let theme = config.resolve_theme();
+
+    // Initialise i18n: CLI flag takes priority over config file
+    let lang = language_override
+        .as_deref()
+        .or(config.language.as_deref())
+        .and_then(Language::from_str)
+        .unwrap_or(Language::English);
+    i18n::init(lang);
 
     let git_info = match path {
         Some(ref p) => GitInfo::new_from_path(p)?,
@@ -192,7 +205,7 @@ fn handle_pty_result(model: &mut Model, result: PtyCommandResult) -> Option<Mess
         .pty_state
         .as_ref()
         .map(|s| s.operation.clone())
-        .unwrap_or_else(|| "Operation".to_string());
+        .unwrap_or_else(|| i18n::t().operation_fallback.to_string());
 
     // Clear PTY state
     model.pty_state = None;
@@ -205,7 +218,7 @@ fn handle_pty_result(model: &mut Model, result: PtyCommandResult) -> Option<Mess
     match result {
         PtyCommandResult::Success { .. } => {
             model.toast = Some(Toast {
-                message: format!("{} completed successfully", operation),
+                message: i18n::t().fmt1(i18n::t().completed_successfully_fmt, &operation),
                 style: ToastStyle::Success,
                 expires_at: Instant::now() + TOAST_DURATION,
             });

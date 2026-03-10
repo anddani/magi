@@ -3,6 +3,7 @@ use ratatui::text::Line;
 use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
+    i18n,
     model::{Model, arguments::CommitArgument},
     view::render::{
         popup_content::{PopupColumn, PopupRow},
@@ -11,6 +12,7 @@ use crate::{
 };
 
 pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
+    let t = i18n::t();
     let arguments: Vec<Line<'_>> = argument_lines::<CommitArgument>(
         theme,
         model.arg_mode,
@@ -18,39 +20,44 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     );
 
     let arguments_col = PopupColumn {
-        title: Some("Arguments".into()),
+        title: Some(t.col_arguments.into()),
         content: arguments,
     };
 
     let create_col = PopupColumn {
-        title: Some("Create".into()),
-        content: vec![command_description(theme, model.arg_mode, "c", "commit")],
+        title: Some(t.col_create.into()),
+        content: vec![command_description(
+            theme,
+            model.arg_mode,
+            "c",
+            t.cmd_commit,
+        )],
     };
 
     let edit_head_col = PopupColumn {
-        title: Some("Edit HEAD".into()),
+        title: Some(t.col_edit_head.into()),
         content: vec![
-            command_description(theme, model.arg_mode, "e", "extend"),
+            command_description(theme, model.arg_mode, "e", t.cmd_extend),
             Line::from(""),
-            command_description(theme, model.arg_mode, "a", "amend"),
+            command_description(theme, model.arg_mode, "a", t.cmd_amend),
             Line::from(""),
-            command_description(theme, model.arg_mode, "w", "reword"),
+            command_description(theme, model.arg_mode, "w", t.cmd_reword),
         ],
     };
 
     let edit_col = PopupColumn {
-        title: Some("Edit".into()),
+        title: Some(t.col_edit.into()),
         content: vec![
-            command_description(theme, model.arg_mode, "f", "fixup"),
-            command_description(theme, model.arg_mode, "s", "squash"),
-            command_description(theme, model.arg_mode, "A", "alter"),
-            command_description(theme, model.arg_mode, "n", "augment"),
-            command_description(theme, model.arg_mode, "W", "revise"),
+            command_description(theme, model.arg_mode, "f", t.cmd_fixup),
+            command_description(theme, model.arg_mode, "s", t.cmd_squash),
+            command_description(theme, model.arg_mode, "A", t.cmd_alter),
+            command_description(theme, model.arg_mode, "n", t.cmd_augment),
+            command_description(theme, model.arg_mode, "W", t.cmd_revise),
         ],
     };
 
     CommandPopupContent {
-        title: "Commit",
+        title: t.popup_commit,
         rows: vec![
             PopupRow {
                 columns: vec![arguments_col],

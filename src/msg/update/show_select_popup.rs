@@ -12,6 +12,7 @@ use crate::{
         push::{get_current_branch, get_local_tags, get_remotes},
         worktree::get_checked_out_branches,
     },
+    i18n,
     model::{
         BranchSuggestion, LineContent, Model, Toast, ToastStyle,
         popup::{
@@ -537,7 +538,7 @@ fn show_stash_select(model: &mut Model, op: StashOp) -> Option<Message> {
     if let StashOp::Drop = op
         && let Some(line) = model.ui_model.lines.get(cursor_pos)
         && let LineContent::SectionHeader { title, .. } = &line.content
-        && title == "Stashes"
+        && title == i18n::t().section_stashes
     {
         model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
             message: "Drop all stashes?".to_string(),
