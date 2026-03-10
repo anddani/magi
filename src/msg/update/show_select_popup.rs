@@ -186,9 +186,9 @@ fn show_push_all_tags(model: &mut Model) -> Option<Message> {
     }
 
     if remotes.len() == 1 {
-        return Some(Message::Push(
-            crate::msg::PushCommand::PushAllTags(remotes.into_iter().next().unwrap()),
-        ));
+        return Some(Message::Push(crate::msg::PushCommand::PushAllTags(
+            remotes.into_iter().next().unwrap(),
+        )));
     }
 
     show_remote_select(model, "Push tags to", SelectContext::PushAllTags)
