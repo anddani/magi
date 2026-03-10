@@ -177,10 +177,25 @@ fn test_show_apply_popup_visual_selection_all_commits_collects_all_hashes() {
     model.ui_model.visual_mode_anchor = Some(first);
     model.ui_model.cursor_position = last;
 
+    // Collect hashes in display order (newest-first) to compare against reversed result
+    let display_order_hashes: Vec<String> = commit_positions
+        .iter()
+        .filter_map(|&i| {
+            if let LineContent::Commit(info) = &model.ui_model.lines[i].content {
+                Some(info.hash.clone())
+            } else {
+                None
+            }
+        })
+        .collect();
+
     update(&mut model, Message::ShowApplyPopup);
 
     if let Some(PopupContent::Command(PopupContentCommand::Apply(state))) = &model.popup {
         assert_eq!(state.selected_commits.len(), commit_positions.len());
+        // Commits must be oldest-first (reverse of display order) for cherry-pick
+        let expected: Vec<String> = display_order_hashes.into_iter().rev().collect();
+        assert_eq!(state.selected_commits, expected);
     } else {
         panic!("Expected Apply popup");
     }
