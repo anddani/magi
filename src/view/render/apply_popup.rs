@@ -39,7 +39,10 @@ pub fn content<'a>(
         rows: vec![PopupRow {
             columns: vec![PopupColumn {
                 title: Some(t.col_apply_here.into()),
-                content: vec![command_description(theme, model.arg_mode, "A", t.cmd_pick)],
+                content: vec![
+                    command_description(theme, model.arg_mode, "A", t.cmd_pick),
+                    command_description(theme, model.arg_mode, "a", t.cmd_apply),
+                ],
             }],
         }],
     }
