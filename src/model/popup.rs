@@ -328,4 +328,7 @@ impl PopupContent {
     pub fn input_popup(context: InputContext) -> Self {
         Self::Input(InputPopupState::new(context))
     }
+    pub fn error(message: String) -> Self {
+        Self::Error { message }
+    }
 }

@@ -19,7 +19,9 @@ use crate::{
         select_popup::{OnSelect, OptionsSource, SelectPopupState},
         suggestions_from_line,
     },
-    msg::{Message, ShowSelectPopupConfig, StashCommand, update::commit::TOAST_DURATION},
+    msg::{
+        Message, PushCommand, ShowSelectPopupConfig, StashCommand, update::commit::TOAST_DURATION,
+    },
 };
 
 pub fn update(model: &mut Model, config: ShowSelectPopupConfig) -> Option<Message> {
@@ -440,6 +442,24 @@ enum StashOp {
 }
 
 // ── Skip-if-one-remote shortcuts ──────────────────────────────────────────────
+fn with_single_remote<F>(model: &mut Model, create_msg: F) -> Option<Option<Message>>
+where
+    F: FnOnce(String) -> Message, // Note: Adjust `String` if your remote type differs
+{
+    let remotes = get_remotes(&model.git_info.repository);
+
+    if remotes.is_empty() {
+        model.popup = Some(PopupContent::error("No remotes configured".to_string()));
+        return Some(None);
+    }
+
+    if remotes.len() == 1 {
+        let remote = remotes.into_iter().next().unwrap();
+        return Some(Some(create_msg(remote)));
+    }
+
+    None
+}
 
 /// For operations where only one remote is configured, skip the remote-selection popup
 /// and go directly to the next step.
@@ -449,55 +469,20 @@ fn handle_skip_if_one(
     config: &ShowSelectPopupConfig,
 ) -> Option<Option<Message>> {
     match &config.on_select {
-        OnSelect::PushAllTags => {
-            let remotes = get_remotes(&model.git_info.repository);
-            if remotes.is_empty() {
-                model.popup = Some(PopupContent::Error {
-                    message: "No remotes configured".to_string(),
-                });
-                return Some(None);
-            }
-            if remotes.len() == 1 {
-                return Some(Some(Message::Push(crate::msg::PushCommand::PushAllTags(
-                    remotes.into_iter().next().unwrap(),
-                ))));
-            }
-            None
-        }
-        OnSelect::FetchAnotherBranchRemote => {
-            let remotes = get_remotes(&model.git_info.repository);
-            if remotes.is_empty() {
-                model.popup = Some(PopupContent::Error {
-                    message: "No remotes configured".to_string(),
-                });
-                return Some(None);
-            }
-            if remotes.len() == 1 {
-                let remote = remotes.into_iter().next().unwrap();
-                return Some(Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: format!("Fetch branch from {}", remote),
-                    source: OptionsSource::RemoteBranches {
-                        remote: remote.clone(),
-                    },
-                    on_select: OnSelect::FetchAnotherBranch,
-                })));
-            }
-            None
-        }
+        OnSelect::PushAllTags => with_single_remote(model, |remote| {
+            Message::Push(PushCommand::PushAllTags(remote))
+        }),
+        OnSelect::FetchAnotherBranchRemote => with_single_remote(model, |remote| {
+            Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: format!("Fetch branch from {}", remote),
+                source: OptionsSource::RemoteBranches {
+                    remote: remote.clone(),
+                },
+                on_select: OnSelect::FetchAnotherBranch,
+            })
+        }),
         OnSelect::PruneTagsRemotePick => {
-            let remotes = get_remotes(&model.git_info.repository);
-            if remotes.is_empty() {
-                model.popup = Some(PopupContent::Error {
-                    message: "No remotes configured".to_string(),
-                });
-                return Some(None);
-            }
-            if remotes.len() == 1 {
-                return Some(Some(Message::ShowPruneTagsConfirm {
-                    remote: remotes.into_iter().next().unwrap(),
-                }));
-            }
-            None
+            with_single_remote(model, |remote| Message::ShowPruneTagsConfirm { remote })
         }
         _ => None,
     }
