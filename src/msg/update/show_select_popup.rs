@@ -153,6 +153,9 @@ fn compute_exclude(model: &Model, on_select: &OnSelect) -> Option<String> {
         }
         OnSelect::ResetBranchTarget { branch } => Some(branch.clone()),
         OnSelect::OpenPrTarget { source_branch } => Some(source_branch.clone()),
+        OnSelect::HarvestSourceBranch { .. } => {
+            model.git_info.current_branch().map(|b| b.to_string())
+        }
         _ => None,
     }
 }
@@ -302,7 +305,7 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
                 })
                 .map(|s| s.name().to_string())
         }
-        OnSelect::ApplyPick | OnSelect::ApplyApply => {
+        OnSelect::ApplyPick | OnSelect::ApplyApply | OnSelect::HarvestCommitPick => {
             // Cursor commit hash (Commit or LogLine)
             cursor_line.and_then(|line| match &line.content {
                 LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
@@ -357,6 +360,7 @@ fn should_insert_if_missing(on_select: &OnSelect) -> bool {
         | OnSelect::ResetWorktree          // can insert cursor hash
         | OnSelect::ApplyPick              // cursor hash is inserted
         | OnSelect::ApplyApply             // cursor hash is inserted
+        | OnSelect::HarvestCommitPick      // cursor hash is inserted
         | OnSelect::CreateTagTarget { .. } // can insert cursor suggestion
     )
 }
@@ -535,7 +539,10 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         OnSelect::ApplyStash | OnSelect::PopStash | OnSelect::DropStash => {
             "No stashes found".to_string()
         }
-        OnSelect::ApplyPick | OnSelect::ApplyApply => "No commits or references found".to_string(),
+        OnSelect::ApplyPick | OnSelect::ApplyApply | OnSelect::HarvestCommitPick => {
+            "No commits or references found".to_string()
+        }
+        OnSelect::HarvestSourceBranch { .. } => "No local branches found".to_string(),
         OnSelect::DeleteTag => "No tags found".to_string(),
         OnSelect::PushTag => "No tags to push".to_string(),
         OnSelect::OpenPrBranch | OnSelect::OpenPrBranchWithTarget => {

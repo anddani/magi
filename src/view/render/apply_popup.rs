@@ -42,6 +42,7 @@ pub fn content<'a>(
                 content: vec![
                     command_description(theme, model.arg_mode, "A", t.cmd_pick),
                     command_description(theme, model.arg_mode, "a", t.cmd_apply),
+                    command_description(theme, model.arg_mode, "h", t.cmd_harvest),
                 ],
             }],
         }],

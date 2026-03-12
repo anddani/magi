@@ -226,6 +226,11 @@ pub enum Message {
     ShowApplyPopup,
     /// Execute an apply command
     Apply(ApplyCommand),
+    /// Harvest commits from another branch (cherry-pick + remove from source)
+    Harvest {
+        commits: Vec<String>,
+        source: String,
+    },
 
     /// Show merge popup
     ShowMergePopup,
