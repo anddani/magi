@@ -272,6 +272,18 @@ fn route_result(
         (Some(OnSelect::ApplyApply), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Apply(vec![hash])))
         }
+        (Some(OnSelect::HarvestCommitPick), SelectResult::Selected(hash)) => {
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Harvest from branch".to_string(),
+                source: OptionsSource::LocalBranches,
+                on_select: OnSelect::HarvestSourceBranch {
+                    commits: vec![hash],
+                },
+            }))
+        }
+        (Some(OnSelect::HarvestSourceBranch { commits }), SelectResult::Selected(source)) => {
+            Some(Message::Harvest { commits, source })
+        }
         (Some(OnSelect::CreateTagTarget { name }), SelectResult::Selected(target)) => {
             Some(Message::CreateTag { name, target })
         }

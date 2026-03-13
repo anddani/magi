@@ -151,6 +151,7 @@ pub struct Strings {
     pub cmd_merge: &'static str,
     pub cmd_revert_commits: &'static str,
     pub cmd_pick: &'static str,
+    pub cmd_harvest: &'static str,
     // Help popup command descriptions
     pub cmd_fetch: &'static str,
     pub cmd_log: &'static str,
@@ -350,6 +351,7 @@ static ENGLISH: Strings = Strings {
     cmd_merge: "Merge",
     cmd_revert_commits: "Revert commit(s)",
     cmd_pick: "Pick",
+    cmd_harvest: "Harvest",
     cmd_fetch: "Fetch",
     cmd_log: "Log",
     cmd_pull: "Pull",
@@ -533,6 +535,7 @@ static SWEDISH: Strings = Strings {
     cmd_merge: "Sammanfoga",
     cmd_revert_commits: "Återgå förbindelse(r)",
     cmd_pick: "Plocka",
+    cmd_harvest: "Skörda",
     cmd_fetch: "Hämta",
     cmd_log: "Diarium",
     cmd_pull: "Rycka",

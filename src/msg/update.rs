@@ -28,6 +28,7 @@ mod exit_visual_mode;
 mod fetch;
 mod file_checkout;
 mod fixup_commit;
+mod harvest;
 mod input_input;
 mod merge;
 mod navigation;
@@ -190,6 +191,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Revert(revert_command) => revert::update(model, revert_command),
         Message::ShowApplyPopup => show_apply_popup::update(model),
         Message::Apply(apply_command) => apply::update(model, apply_command),
+        Message::Harvest { commits, source } => harvest::update(model, commits, source),
         Message::ShowMergePopup => show_merge_popup::update(model),
         Message::ShowTagPopup => show_tag_popup::update(model),
         Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),
