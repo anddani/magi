@@ -31,5 +31,6 @@ pub fn is_external_command(msg: &Message) -> bool {
             | Message::Revert(RevertCommand::Continue)
             | Message::Rebase(RebaseCommand::Continue)
             | Message::Merge(MergeCommand::Continue)
+            | Message::Merge(MergeCommand::Branch(_))
     )
 }
