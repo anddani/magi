@@ -12,12 +12,13 @@ pub fn update(model: &mut Model, commits: Vec<String>, source: String) -> Option
     }
 
     // Remember the current branch so we can switch back after the source cleanup
-    let current_branch: Option<String> = git_cmd(&model.workdir, &["rev-parse", "--abbrev-ref", "HEAD"])
-        .output()
-        .ok()
-        .filter(|o| o.status.success())
-        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-        .filter(|s| s != "HEAD"); // ignore detached HEAD
+    let current_branch: Option<String> =
+        git_cmd(&model.workdir, &["rev-parse", "--abbrev-ref", "HEAD"])
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+            .filter(|s| s != "HEAD"); // ignore detached HEAD
 
     // Step 1: cherry-pick the commits onto the current branch
     let mut cherry_pick_args: Vec<&str> = vec!["cherry-pick"];
