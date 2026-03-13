@@ -88,10 +88,8 @@ pub fn update(model: &mut Model, commits: Vec<String>, source: String) -> Option
     };
 
     // Step 3: switch back to the original branch (rebase --onto may have switched branches)
-    if rebase_ok {
-        if let Some(branch) = &current_branch {
-            let _ = git_cmd(&model.workdir, &["checkout", branch]).output();
-        }
+    if rebase_ok && let Some(branch) = &current_branch {
+        let _ = git_cmd(&model.workdir, &["checkout", branch]).output();
     }
 
     Some(Message::Refresh)
