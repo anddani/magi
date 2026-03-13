@@ -1,7 +1,7 @@
 <div align="center">
     <h1>Magi</h1>
     <p>A terminal-based Git client.</p>
-    <img src="assets/monitor.jpg" alt="Banner">
+    <img src="assets/monitor_icon.jpg" alt="icon">
 </div>
 
 ---
@@ -22,7 +22,7 @@ Magi is inspired by [Magit](https://magit.vc/), the legendary Emacs Git interfac
 - **Vi(m) bindings first class citizen**
 - **No Emacs Required**
 
-<img alt="Welcome to VHS" src="assets/magi.gif" />
+<img alt="Welcome to VHS" src="assets/showcase.gif" />
 
 ## Installation
 
