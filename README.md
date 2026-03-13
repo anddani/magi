@@ -1,7 +1,7 @@
 <div align="center">
+    <img src="assets/monitor_icon.png" width="200" style="max-width: 100%" alt="icon">
     <h1>Magi</h1>
     <p>A terminal-based Git client.</p>
-    <img src="assets/monitor_icon.png" alt="icon">
 </div>
 
 ---
