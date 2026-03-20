@@ -199,6 +199,10 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
                 });
             }
             p if is_remote_branch(p, remotes) => {
+                // Skip remote HEAD symbolic refs (e.g., origin/HEAD)
+                if p.ends_with("/HEAD") {
+                    continue;
+                }
                 // Remote branch (starts with a known remote name)
                 refs.push(CommitRef {
                     name: part.to_string(),
@@ -340,6 +344,15 @@ mod tests {
         assert_eq!(refs.len(), 1);
         assert_eq!(refs[0].name, "feature/test");
         assert_eq!(refs[0].ref_type, CommitRefType::LocalBranch);
+    }
+
+    #[test]
+    fn test_parse_refs_filters_remote_head() {
+        let remotes = vec!["origin".to_string()];
+        let refs = parse_refs("origin/HEAD, origin/main", &remotes);
+        assert_eq!(refs.len(), 1);
+        assert_eq!(refs[0].name, "origin/main");
+        assert_eq!(refs[0].ref_type, CommitRefType::RemoteBranch);
     }
 
     #[test]
