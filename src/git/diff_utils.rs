@@ -48,7 +48,9 @@ pub fn collect_file_changes(diff: &Diff) -> MagiResult<FileChangesWithDiffs> {
 
         // Handle hunk header
         if let Some(hunk_info) = hunk {
-            let header = String::from_utf8_lossy(hunk_info.header()).to_string();
+            let header = String::from_utf8_lossy(hunk_info.header())
+                .trim_end_matches('\n')
+                .to_string();
 
             // Check if this hunk already exists for this file
             let hunk_exists = result[file_idx].1.iter().any(|(h, _)| h.header == header);
