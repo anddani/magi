@@ -100,6 +100,10 @@ pub enum OnSelect {
     ApplyPick,
     /// Select a commit to apply (--no-commit) onto the current branch
     ApplyApply,
+    /// Select a commit to harvest (step 1 of 2, no pre-selection)
+    HarvestCommitPick,
+    /// Select a source branch to harvest commits from (has commits embedded)
+    HarvestSourceBranch { commits: Vec<String> },
     /// Select a ref/commit to tag (carries tag name)
     CreateTagTarget { name: String },
     /// Select an existing tag to delete

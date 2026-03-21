@@ -44,6 +44,23 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
                 )))
             }
         }
+        KeyCode::Char('h') => {
+            if state.selected_commits.is_empty() {
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Harvest commit".to_string(),
+                    source: OptionsSource::AllRefs,
+                    on_select: OnSelect::HarvestCommitPick,
+                }))
+            } else {
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Harvest from branch".to_string(),
+                    source: OptionsSource::LocalBranches,
+                    on_select: OnSelect::HarvestSourceBranch {
+                        commits: state.selected_commits.clone(),
+                    },
+                }))
+            }
+        }
         _ => None,
     }
 }
