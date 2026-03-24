@@ -67,6 +67,7 @@ mod show_pull_popup;
 mod show_push_popup;
 mod show_rebase_popup;
 mod show_reset_popup;
+mod show_revert_mainline_input;
 mod show_revert_popup;
 mod show_select_popup;
 mod show_tag_popup;
@@ -188,6 +189,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowRebasePopup => show_rebase_popup::update(model),
         Message::Rebase(rebase_command) => rebase::update(model, rebase_command),
         Message::ShowRevertPopup => show_revert_popup::update(model),
+        Message::ShowRevertMainlineInput => show_revert_mainline_input::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),
         Message::ShowApplyPopup => show_apply_popup::update(model),
         Message::Apply(apply_command) => apply::update(model, apply_command),

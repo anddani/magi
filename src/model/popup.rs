@@ -125,6 +125,10 @@ pub enum InputContext {
     },
     /// Creating a new tag (name input; target picked next)
     CreateTag,
+    /// Entering the mainline parent number for a revert of a merge commit
+    RevertMainline {
+        revert_state: RevertPopupState,
+    },
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -157,6 +161,7 @@ impl InputPopupState {
             InputContext::PushRefspec { remote } => t.fmt1(t.input_push_refspec_fmt, remote),
             InputContext::FetchRefspec { remote } => t.fmt1(t.input_fetch_refspec_fmt, remote),
             InputContext::CreateTag => t.input_tag_name.to_string(),
+            InputContext::RevertMainline { .. } => t.input_revert_mainline.to_string(),
         }
     }
 }
@@ -271,6 +276,8 @@ pub struct RevertPopupState {
     pub in_progress: bool,
     /// Commit hashes selected for reverting (empty when in_progress or no commit under cursor)
     pub selected_commits: Vec<String>,
+    /// Mainline parent number set via `-m` argument (bypasses the select popup when set)
+    pub mainline: Option<String>,
 }
 
 /// State for the Apply (cherry-pick) popup

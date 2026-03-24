@@ -1,7 +1,7 @@
 use crate::{
     model::{
         Model,
-        popup::{InputContext, PopupContent},
+        popup::{InputContext, PopupContent, PopupContentCommand},
     },
     msg::{
         FetchCommand, Message, OnSelect, OptionsSource, PushCommand, ShowSelectPopupConfig,
@@ -37,6 +37,16 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             stash_type,
             state.input_text.trim().to_string(),
         )));
+    }
+
+    // RevertMainline allows empty input (empty = clear the mainline value)
+    if let InputContext::RevertMainline { mut revert_state } = state.context {
+        let input = state.input_text.trim().to_string();
+        revert_state.mainline = if input.is_empty() { None } else { Some(input) };
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+            revert_state,
+        )));
+        return None;
     }
 
     let input = state.input_text.trim().to_string();
@@ -81,6 +91,6 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             source: OptionsSource::BranchesAndTags,
             on_select: OnSelect::CreateTagTarget { name: input },
         })),
-        InputContext::Stash(_) => unreachable!(),
+        InputContext::Stash(_) | InputContext::RevertMainline { .. } => unreachable!(),
     }
 }

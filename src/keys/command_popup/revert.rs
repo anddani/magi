@@ -9,6 +9,7 @@ use crate::{
 pub fn keys(key: KeyEvent, arg_mode: bool, state: &RevertPopupState) -> Option<Message> {
     if arg_mode {
         return match key.code {
+            KeyCode::Char('m') => Some(Message::ShowRevertMainlineInput),
             KeyCode::Char(c) => RevertArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Revert(arg)))
                 .or(Some(Message::ExitArgMode)),
@@ -28,12 +29,14 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &RevertPopupState) -> Option<M
     let has_commits = !state.selected_commits.is_empty();
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
-        KeyCode::Char('_') if has_commits => Some(Message::Revert(RevertCommand::Commits(
-            state.selected_commits.clone(),
-        ))),
-        KeyCode::Char('v') if has_commits => Some(Message::Revert(RevertCommand::NoCommit(
-            state.selected_commits.clone(),
-        ))),
+        KeyCode::Char('_') if has_commits => Some(Message::Revert(RevertCommand::Commits {
+            hashes: state.selected_commits.clone(),
+            mainline: state.mainline.clone(),
+        })),
+        KeyCode::Char('v') if has_commits => Some(Message::Revert(RevertCommand::NoCommit {
+            hashes: state.selected_commits.clone(),
+            mainline: state.mainline.clone(),
+        })),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

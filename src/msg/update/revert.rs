@@ -14,8 +14,8 @@ const TOAST_DURATION: Duration = Duration::from_secs(5);
 
 pub fn update(model: &mut Model, cmd: RevertCommand) -> Option<Message> {
     match cmd {
-        RevertCommand::Commits(hashes) => commits(model, hashes),
-        RevertCommand::NoCommit(hashes) => no_commit(model, hashes),
+        RevertCommand::Commits { hashes, mainline } => commits(model, hashes, mainline),
+        RevertCommand::NoCommit { hashes, mainline } => no_commit(model, hashes, mainline),
         RevertCommand::CommitsWithMainline {
             hashes,
             mainline,
@@ -27,11 +27,14 @@ pub fn update(model: &mut Model, cmd: RevertCommand) -> Option<Message> {
     }
 }
 
-fn commits(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
+fn commits(model: &mut Model, hashes: Vec<String>, mainline: Option<String>) -> Option<Message> {
     if hashes.is_empty() {
         return None;
     }
     if any_is_merge_commit(&model.workdir, &hashes) {
+        if let Some(m) = mainline.as_deref().and_then(|s| s.parse::<u8>().ok()) {
+            return commits_with_mainline(model, hashes, m, false);
+        }
         show_mainline_popup(model, hashes, false);
         return None;
     }
@@ -40,11 +43,14 @@ fn commits(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
     execute_pty_command(model, args, "Revert".to_string())
 }
 
-fn no_commit(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
+fn no_commit(model: &mut Model, hashes: Vec<String>, mainline: Option<String>) -> Option<Message> {
     if hashes.is_empty() {
         return None;
     }
     if any_is_merge_commit(&model.workdir, &hashes) {
+        if let Some(m) = mainline.as_deref().and_then(|s| s.parse::<u8>().ok()) {
+            return commits_with_mainline(model, hashes, m, true);
+        }
         show_mainline_popup(model, hashes, true);
         return None;
     }

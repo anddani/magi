@@ -248,15 +248,17 @@ fn test_underscore_in_revert_popup_with_commits_triggers_revert() {
         RevertPopupState {
             in_progress: false,
             selected_commits: vec!["abc1234".to_string()],
+            mainline: None,
         },
     )));
 
     let result = handle_key(key(KeyCode::Char('_')), &model);
     assert_eq!(
         result,
-        Some(Message::Revert(RevertCommand::Commits(vec![
-            "abc1234".to_string()
-        ])))
+        Some(Message::Revert(RevertCommand::Commits {
+            hashes: vec!["abc1234".to_string()],
+            mainline: None,
+        }))
     );
 }
 
@@ -273,6 +275,7 @@ fn test_underscore_in_revert_popup_without_commits_does_nothing() {
         RevertPopupState {
             in_progress: false,
             selected_commits: vec![],
+            mainline: None,
         },
     )));
 
@@ -293,6 +296,7 @@ fn test_underscore_in_revert_popup_in_progress_triggers_continue() {
         RevertPopupState {
             in_progress: true,
             selected_commits: vec![],
+            mainline: None,
         },
     )));
 
@@ -313,6 +317,7 @@ fn test_s_in_revert_popup_in_progress_triggers_skip() {
         RevertPopupState {
             in_progress: true,
             selected_commits: vec![],
+            mainline: None,
         },
     )));
 
@@ -333,6 +338,7 @@ fn test_a_in_revert_popup_in_progress_triggers_abort() {
         RevertPopupState {
             in_progress: true,
             selected_commits: vec![],
+            mainline: None,
         },
     )));
 
@@ -353,6 +359,7 @@ fn test_s_in_revert_popup_not_in_progress_does_nothing() {
         RevertPopupState {
             in_progress: false,
             selected_commits: vec![],
+            mainline: None,
         },
     )));
 
@@ -373,6 +380,7 @@ fn test_q_dismisses_revert_popup() {
         RevertPopupState {
             in_progress: false,
             selected_commits: vec![],
+            mainline: None,
         },
     )));
 
@@ -393,6 +401,7 @@ fn test_esc_dismisses_revert_popup() {
         RevertPopupState {
             in_progress: false,
             selected_commits: vec![],
+            mainline: None,
         },
     )));
 
@@ -415,15 +424,17 @@ fn test_v_in_revert_popup_with_commits_triggers_no_commit_revert() {
         RevertPopupState {
             in_progress: false,
             selected_commits: vec!["abc1234".to_string()],
+            mainline: None,
         },
     )));
 
     let result = handle_key(key(KeyCode::Char('v')), &model);
     assert_eq!(
         result,
-        Some(Message::Revert(RevertCommand::NoCommit(vec![
-            "abc1234".to_string()
-        ])))
+        Some(Message::Revert(RevertCommand::NoCommit {
+            hashes: vec!["abc1234".to_string()],
+            mainline: None,
+        }))
     );
 }
 
@@ -440,6 +451,7 @@ fn test_v_in_revert_popup_without_commits_does_nothing() {
         RevertPopupState {
             in_progress: false,
             selected_commits: vec![],
+            mainline: None,
         },
     )));
 
@@ -460,6 +472,7 @@ fn test_v_in_revert_popup_in_progress_does_nothing() {
         RevertPopupState {
             in_progress: true,
             selected_commits: vec![],
+            mainline: None,
         },
     )));
 
