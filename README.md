@@ -11,6 +11,7 @@
     <img alt="Language: Rust" src="https://img.shields.io/badge/Language-Rust-orange" />
     <a href="https://ratatui.rs"><img alt="Built with Ratatui" src="https://img.shields.io/badge/Built_With-Ratatui-000?logo=ratatui&logoColor=fff&labelColor=000&color=fff" /></a>
     <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue" />
+[![Hypercommit](https://img.shields.io/badge/Hypercommit-DB2475)](https://hypercommit.com/magi)
 </div>
 
 ## Features and goals
