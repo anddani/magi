@@ -46,6 +46,7 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
             revert_state,
         )));
+        model.arg_mode = false;
         return None;
     }
 
