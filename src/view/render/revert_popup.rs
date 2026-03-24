@@ -8,7 +8,7 @@ use crate::{
     model::{Model, arguments::RevertArgument, popup::RevertPopupState},
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::{argument_lines, command_description},
+        util::{argument_lines, argument_value_line, command_description},
     },
 };
 
@@ -36,11 +36,20 @@ pub fn content<'a>(
         };
     }
 
-    let arguments: Vec<Line<'_>> = argument_lines::<RevertArgument>(
+    let mut arguments: Vec<Line<'_>> = vec![argument_value_line(
+        theme,
+        'm',
+        t.arg_revert_mainline,
+        "--mainline=",
+        state.mainline.as_deref(),
+        model.arg_mode,
+    )];
+
+    arguments.extend(argument_lines::<RevertArgument>(
         theme,
         model.arg_mode,
         model.arguments.as_ref().and_then(|a| a.revert()),
-    );
+    ));
 
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),

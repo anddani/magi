@@ -139,6 +139,38 @@ pub fn command_description<'a>(
     ])
 }
 
+pub fn argument_value_line<'a>(
+    theme: &Theme,
+    key: char,
+    description: &'a str,
+    flag_prefix: &'a str,
+    value: Option<&'a str>,
+    arg_mode: bool,
+) -> Line<'a> {
+    let faded_style = Style::default().fg(Color::DarkGray);
+    let desc_style = Style::default();
+    let key_style = Style::default()
+        .fg(theme.diff_addition)
+        .add_modifier(Modifier::BOLD);
+
+    let dash_style = if arg_mode { faded_style } else { key_style };
+
+    let (flag_text, flag_style) = match value {
+        Some(v) => (
+            format!("{flag_prefix}{v}"),
+            Style::default().fg(theme.diff_addition),
+        ),
+        None => (flag_prefix.to_string(), faded_style),
+    };
+    Line::from(vec![
+        Span::styled(" -", dash_style),
+        Span::styled(key.to_string(), key_style),
+        Span::styled(format!(" {description} ("), desc_style),
+        Span::styled(flag_text, flag_style),
+        Span::styled(")", desc_style),
+    ])
+}
+
 pub fn argument_line<'a>(
     theme: &Theme,
     key: char,
