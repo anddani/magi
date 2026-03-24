@@ -470,9 +470,15 @@ pub enum ApplyCommand {
 #[derive(PartialEq, Eq, Debug)]
 pub enum RevertCommand {
     /// Revert the given commit hashes, creating a revert commit (--no-edit)
-    Commits { hashes: Vec<String>, mainline: Option<String> },
+    Commits {
+        hashes: Vec<String>,
+        mainline: Option<String>,
+    },
     /// Revert the given commit hashes into the worktree without committing (--no-commit)
-    NoCommit { hashes: Vec<String>, mainline: Option<String> },
+    NoCommit {
+        hashes: Vec<String>,
+        mainline: Option<String>,
+    },
     /// Revert merge commit(s) with an explicit mainline parent number (-m)
     CommitsWithMainline {
         hashes: Vec<String>,

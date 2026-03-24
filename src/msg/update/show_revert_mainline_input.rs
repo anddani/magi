@@ -7,8 +7,7 @@ use crate::{
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    let Some(PopupContent::Command(PopupContentCommand::Revert(revert_state))) =
-        model.popup.take()
+    let Some(PopupContent::Command(PopupContentCommand::Revert(revert_state))) = model.popup.take()
     else {
         return None;
     };

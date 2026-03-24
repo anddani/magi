@@ -126,9 +126,7 @@ pub enum InputContext {
     /// Creating a new tag (name input; target picked next)
     CreateTag,
     /// Entering the mainline parent number for a revert of a merge commit
-    RevertMainline {
-        revert_state: RevertPopupState,
-    },
+    RevertMainline { revert_state: RevertPopupState },
 }
 
 /// State for text input popups (e.g., new branch name)
