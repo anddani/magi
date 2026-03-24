@@ -63,7 +63,11 @@ fn commits_with_mainline(
         return None;
     }
     let mainline_str = mainline.to_string();
-    let flag = if no_commit { "--no-commit" } else { "--no-edit" };
+    let flag = if no_commit {
+        "--no-commit"
+    } else {
+        "--no-edit"
+    };
     let mut args = vec![
         "revert".to_string(),
         "-m".to_string(),
@@ -77,9 +81,16 @@ fn commits_with_mainline(
 fn show_mainline_popup(model: &mut Model, hashes: Vec<String>, no_commit: bool) {
     let options = if hashes.len() == 1 {
         let count = parent_count(&model.workdir, &hashes[0]);
-        (1..=count.max(2))
-            .map(|n| format!("{}  parent {}", n, n))
-            .collect()
+        if count > 2 {
+            (1..=count)
+                .map(|n| format!("{}  parent {}", n, n))
+                .collect()
+        } else {
+            vec![
+                "1  first parent (branch merged into)".to_string(),
+                "2  second parent (merged branch)".to_string(),
+            ]
+        }
     } else {
         vec![
             "1  first parent (branch merged into)".to_string(),

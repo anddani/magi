@@ -139,9 +139,7 @@ pub fn parent_count(workdir: &Path, hash: &str) -> usize {
     let Ok(oid) = repo.revparse_single(hash).map(|o| o.id()) else {
         return 0;
     };
-    repo.find_commit(oid)
-        .map(|c| c.parent_count())
-        .unwrap_or(0)
+    repo.find_commit(oid).map(|c| c.parent_count()).unwrap_or(0)
 }
 
 /// Returns true if the given commit has more than one parent (i.e. is a merge commit).
