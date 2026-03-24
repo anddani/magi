@@ -1,8 +1,12 @@
 use std::time::{Duration, Instant};
 
 use crate::{
-    git::revert::{self, CommitResult},
-    model::{Model, Toast, ToastStyle, popup::PopupContent},
+    git::revert::{self, CommitResult, any_is_merge_commit},
+    model::{
+        Model, Toast, ToastStyle,
+        popup::{PopupContent, PopupContentCommand},
+        select_popup::{OnSelect, SelectPopupState},
+    },
     msg::{Message, RevertCommand, update::pty_helper::execute_pty_command},
 };
 
@@ -12,6 +16,11 @@ pub fn update(model: &mut Model, cmd: RevertCommand) -> Option<Message> {
     match cmd {
         RevertCommand::Commits(hashes) => commits(model, hashes),
         RevertCommand::NoCommit(hashes) => no_commit(model, hashes),
+        RevertCommand::CommitsWithMainline {
+            hashes,
+            mainline,
+            no_commit,
+        } => commits_with_mainline(model, hashes, mainline, no_commit),
         RevertCommand::Continue => continue_revert(model),
         RevertCommand::Skip => skip_revert(model),
         RevertCommand::Abort => abort_revert(model),
@@ -20,6 +29,10 @@ pub fn update(model: &mut Model, cmd: RevertCommand) -> Option<Message> {
 
 fn commits(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
     if hashes.is_empty() {
+        return None;
+    }
+    if any_is_merge_commit(&model.workdir, &hashes) {
+        show_mainline_popup(model, hashes, false);
         return None;
     }
     let mut args = vec!["revert".to_string(), "--no-edit".to_string()];
@@ -31,9 +44,46 @@ fn no_commit(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
     if hashes.is_empty() {
         return None;
     }
+    if any_is_merge_commit(&model.workdir, &hashes) {
+        show_mainline_popup(model, hashes, true);
+        return None;
+    }
     let mut args = vec!["revert".to_string(), "--no-commit".to_string()];
     args.extend(hashes);
     execute_pty_command(model, args, "Revert".to_string())
+}
+
+fn commits_with_mainline(
+    model: &mut Model,
+    hashes: Vec<String>,
+    mainline: u8,
+    no_commit: bool,
+) -> Option<Message> {
+    if hashes.is_empty() {
+        return None;
+    }
+    let mainline_str = mainline.to_string();
+    let flag = if no_commit { "--no-commit" } else { "--no-edit" };
+    let mut args = vec![
+        "revert".to_string(),
+        "-m".to_string(),
+        mainline_str,
+        flag.to_string(),
+    ];
+    args.extend(hashes);
+    execute_pty_command(model, args, "Revert".to_string())
+}
+
+fn show_mainline_popup(model: &mut Model, hashes: Vec<String>, no_commit: bool) {
+    let state = SelectPopupState::new(
+        "Replay merges relative to parent".to_string(),
+        vec![
+            "1  first parent (branch merged into)".to_string(),
+            "2  second parent (merged branch)".to_string(),
+        ],
+        OnSelect::RevertMergeMainline { hashes, no_commit },
+    );
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
 }
 
 fn continue_revert(model: &mut Model) -> Option<Message> {

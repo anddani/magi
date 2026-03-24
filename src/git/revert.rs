@@ -129,6 +129,25 @@ pub fn get_reverting_lines(workdir: &Path) -> MagiResult<Vec<crate::model::Line>
     Ok(lines)
 }
 
+/// Returns true if the given commit has more than one parent (i.e. is a merge commit).
+pub fn is_merge_commit(workdir: &Path, hash: &str) -> bool {
+    let output = git_cmd(workdir, &["log", "--format=%P", "-1", hash])
+        .output()
+        .ok();
+    match output {
+        Some(out) if out.status.success() => {
+            let parents = String::from_utf8_lossy(&out.stdout);
+            parents.trim().contains(' ')
+        }
+        _ => false,
+    }
+}
+
+/// Returns true if any of the given commit hashes is a merge commit.
+pub fn any_is_merge_commit(workdir: &Path, hashes: &[String]) -> bool {
+    hashes.iter().any(|h| is_merge_commit(workdir, h))
+}
+
 /// Runs `git revert --continue` which opens the user's configured editor
 /// to edit the commit message after resolving conflicts.
 pub fn run_revert_continue_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {

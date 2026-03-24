@@ -110,6 +110,11 @@ pub enum OnSelect {
     DeleteTag,
     /// Select a remote to prune tags against
     PruneTagsRemotePick,
+    /// Select the mainline parent number when reverting a merge commit
+    RevertMergeMainline {
+        hashes: Vec<String>,
+        no_commit: bool,
+    },
 }
 
 /// Data source used to populate select popup options
