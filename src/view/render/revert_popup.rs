@@ -1,12 +1,14 @@
+use ratatui::text::Line;
+
 use super::popup_content::CommandPopupContent;
 
 use crate::{
     config::Theme,
     i18n,
-    model::{Model, popup::RevertPopupState},
+    model::{Model, arguments::RevertArgument, popup::RevertPopupState},
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::command_description,
+        util::{argument_lines, command_description},
     },
 };
 
@@ -34,16 +36,32 @@ pub fn content<'a>(
         };
     }
 
+    let arguments: Vec<Line<'_>> = argument_lines::<RevertArgument>(
+        theme,
+        model.arg_mode,
+        model.arguments.as_ref().and_then(|a| a.revert()),
+    );
+
+    let arguments_col = PopupColumn {
+        title: Some(t.col_arguments.into()),
+        content: arguments,
+    };
+
     CommandPopupContent {
         title: t.popup_revert,
-        rows: vec![PopupRow {
-            columns: vec![PopupColumn {
-                title: Some(t.col_actions.into()),
-                content: vec![
-                    command_description(theme, model.arg_mode, "_", t.cmd_revert_commits),
-                    command_description(theme, model.arg_mode, "s", t.cmd_skip),
-                ],
-            }],
-        }],
+        rows: vec![
+            PopupRow {
+                columns: vec![arguments_col],
+            },
+            PopupRow {
+                columns: vec![PopupColumn {
+                    title: Some(t.col_actions.into()),
+                    content: vec![
+                        command_description(theme, model.arg_mode, "_", t.cmd_revert_commits),
+                        command_description(theme, model.arg_mode, "s", t.cmd_skip),
+                    ],
+                }],
+            },
+        ],
     }
 }

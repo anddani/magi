@@ -39,7 +39,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Stash => stash::keys(key, arg_mode),
         PopupContentCommand::Reset => reset::keys(key),
         PopupContentCommand::Rebase(state) => rebase::keys(key, state),
-        PopupContentCommand::Revert(state) => revert::keys(key, state),
+        PopupContentCommand::Revert(state) => revert::keys(key, arg_mode, state),
         PopupContentCommand::Merge(state) => merge::keys(key, state),
         PopupContentCommand::Apply(state) => apply::keys(key, state),
         PopupContentCommand::Tag => tag::keys(key),
