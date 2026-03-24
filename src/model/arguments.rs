@@ -8,6 +8,7 @@ pub enum Arguments {
     PushArguments(HashSet<PushArgument>),
     PullArguments(HashSet<PullArgument>),
     StashArguments(HashSet<StashArgument>),
+    RevertArguments(HashSet<RevertArgument>),
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -17,6 +18,7 @@ pub enum Argument {
     Push(PushArgument),
     Pull(PullArgument),
     Stash(StashArgument),
+    Revert(RevertArgument),
 }
 
 pub trait PopupArgument: Sized + Eq + Hash {
@@ -67,6 +69,14 @@ impl Arguments {
         }
     }
 
+    pub fn revert(&self) -> Option<&HashSet<RevertArgument>> {
+        if let Arguments::RevertArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
     pub fn commit_mut(&mut self) -> Option<&mut HashSet<CommitArgument>> {
         if let Arguments::CommitArguments(args) = self {
             Some(args)
@@ -101,6 +111,14 @@ impl Arguments {
 
     pub fn stash_mut(&mut self) -> Option<&mut HashSet<StashArgument>> {
         if let Arguments::StashArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn revert_mut(&mut self) -> Option<&mut HashSet<RevertArgument>> {
+        if let Arguments::RevertArguments(args) = self {
             Some(args)
         } else {
             None
@@ -371,6 +389,42 @@ impl PopupArgument for StashArgument {
         match self {
             StashArgument::IncludeUntracked => "--include-untracked",
             StashArgument::All => "--all",
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum RevertArgument {
+    NoEdit,
+}
+
+impl RevertArgument {
+    pub fn from_key(key: char) -> Option<RevertArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for RevertArgument {
+    fn all() -> Vec<RevertArgument> {
+        vec![RevertArgument::NoEdit]
+    }
+
+    fn key(&self) -> char {
+        match self {
+            RevertArgument::NoEdit => 'E',
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        let t = i18n::t();
+        match self {
+            RevertArgument::NoEdit => t.arg_revert_no_edit,
+        }
+    }
+
+    fn flag(&self) -> &'static str {
+        match self {
+            RevertArgument::NoEdit => "--no-edit",
         }
     }
 }

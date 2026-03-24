@@ -1,11 +1,20 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    model::arguments::{Argument::Revert, RevertArgument},
     model::popup::RevertPopupState,
     msg::{Message, RevertCommand},
 };
 
-pub fn keys(key: KeyEvent, state: &RevertPopupState) -> Option<Message> {
+pub fn keys(key: KeyEvent, arg_mode: bool, state: &RevertPopupState) -> Option<Message> {
+    if arg_mode {
+        return match key.code {
+            KeyCode::Char(c) => RevertArgument::from_key(c)
+                .map(|arg| Message::ToggleArgument(Revert(arg)))
+                .or(Some(Message::ExitArgMode)),
+            _ => Some(Message::ExitArgMode),
+        };
+    }
     if state.in_progress {
         return match key.code {
             KeyCode::Char('q') => Some(Message::DismissPopup),
@@ -25,6 +34,7 @@ pub fn keys(key: KeyEvent, state: &RevertPopupState) -> Option<Message> {
         KeyCode::Char('v') if has_commits => Some(Message::Revert(RevertCommand::NoCommit(
             state.selected_commits.clone(),
         ))),
+        KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }
 }
