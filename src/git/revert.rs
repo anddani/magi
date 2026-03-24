@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::Path;
 
+use git2::Repository;
+
 use super::git_cmd;
 use crate::{
     errors::MagiResult,
@@ -129,18 +131,22 @@ pub fn get_reverting_lines(workdir: &Path) -> MagiResult<Vec<crate::model::Line>
     Ok(lines)
 }
 
+/// Returns the number of parents for the given commit (0 on error).
+pub fn parent_count(workdir: &Path, hash: &str) -> usize {
+    let Ok(repo) = Repository::open(workdir) else {
+        return 0;
+    };
+    let Ok(oid) = repo.revparse_single(hash).map(|o| o.id()) else {
+        return 0;
+    };
+    repo.find_commit(oid)
+        .map(|c| c.parent_count())
+        .unwrap_or(0)
+}
+
 /// Returns true if the given commit has more than one parent (i.e. is a merge commit).
 pub fn is_merge_commit(workdir: &Path, hash: &str) -> bool {
-    let output = git_cmd(workdir, &["log", "--format=%P", "-1", hash])
-        .output()
-        .ok();
-    match output {
-        Some(out) if out.status.success() => {
-            let parents = String::from_utf8_lossy(&out.stdout);
-            parents.trim().contains(' ')
-        }
-        _ => false,
-    }
+    parent_count(workdir, hash) > 1
 }
 
 /// Returns true if any of the given commit hashes is a merge commit.

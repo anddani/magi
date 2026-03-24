@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use crate::{
-    git::revert::{self, CommitResult, any_is_merge_commit},
+    git::revert::{self, CommitResult, any_is_merge_commit, parent_count},
     model::{
         Model, Toast, ToastStyle,
         popup::{PopupContent, PopupContentCommand},
@@ -75,12 +75,21 @@ fn commits_with_mainline(
 }
 
 fn show_mainline_popup(model: &mut Model, hashes: Vec<String>, no_commit: bool) {
-    let state = SelectPopupState::new(
-        "Replay merges relative to parent".to_string(),
+    let options = if hashes.len() == 1 {
+        let count = parent_count(&model.workdir, &hashes[0]);
+        (1..=count.max(2))
+            .map(|n| format!("{}  parent {}", n, n))
+            .collect()
+    } else {
         vec![
             "1  first parent (branch merged into)".to_string(),
             "2  second parent (merged branch)".to_string(),
-        ],
+        ]
+    };
+
+    let state = SelectPopupState::new(
+        "Replay merges relative to parent".to_string(),
+        options,
         OnSelect::RevertMergeMainline { hashes, no_commit },
     );
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
