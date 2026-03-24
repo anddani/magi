@@ -471,6 +471,12 @@ pub enum RevertCommand {
     Commits(Vec<String>),
     /// Revert the given commit hashes into the worktree without committing (--no-commit)
     NoCommit(Vec<String>),
+    /// Revert merge commit(s) with an explicit mainline parent number (-m)
+    CommitsWithMainline {
+        hashes: Vec<String>,
+        mainline: u8,
+        no_commit: bool,
+    },
     /// Continue after resolving conflicts
     Continue,
     /// Skip the current conflicting commit

@@ -9,7 +9,7 @@ use crate::{
     },
     msg::{
         ApplyCommand, FetchCommand, MergeCommand, Message, OptionsSource, PullCommand, PushCommand,
-        RebaseCommand, ResetMode, ShowSelectPopupConfig, StashCommand,
+        RebaseCommand, ResetMode, RevertCommand, ShowSelectPopupConfig, StashCommand,
     },
 };
 
@@ -290,6 +290,21 @@ fn route_result(
         (Some(OnSelect::DeleteTag), SelectResult::Selected(tag)) => Some(Message::DeleteTag(tag)),
         (Some(OnSelect::PruneTagsRemotePick), SelectResult::Selected(remote)) => {
             Some(Message::ShowPruneTagsConfirm { remote })
+        }
+        (
+            Some(OnSelect::RevertMergeMainline { hashes, no_commit }),
+            SelectResult::Selected(selection),
+        ) => {
+            let mainline = selection
+                .chars()
+                .next()
+                .and_then(|c| c.to_digit(10))
+                .unwrap_or(1) as u8;
+            Some(Message::Revert(RevertCommand::CommitsWithMainline {
+                hashes,
+                mainline,
+                no_commit,
+            }))
         }
         _ => None,
     }
