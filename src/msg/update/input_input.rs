@@ -72,6 +72,11 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         }),
         InputContext::SpinoffBranch => Some(Message::SpinoffBranch(input)),
         InputContext::SpinoutBranch => Some(Message::SpinoutBranch(input)),
+        InputContext::CherrySpinout { commits, root } => Some(Message::CherrySpinout {
+            commits,
+            branch: input,
+            root,
+        }),
         InputContext::WorktreePath { branch, checkout } => Some(Message::WorktreeCheckout {
             branch,
             path: input,

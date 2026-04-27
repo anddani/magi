@@ -238,6 +238,17 @@ pub enum Message {
         commits: Vec<String>,
         target: String,
     },
+    /// Show input popup to name the new spin-out branch (carries commits and root start point)
+    ShowCherrySpinoutInput {
+        commits: Vec<String>,
+        root: String,
+    },
+    /// Spin out commits to a new branch (cherry-pick + remove from current, stay on current)
+    CherrySpinout {
+        commits: Vec<String>,
+        branch: String,
+        root: String,
+    },
 
     /// Show merge popup
     ShowMergePopup,

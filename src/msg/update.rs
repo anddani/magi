@@ -7,6 +7,7 @@ mod amend;
 mod apply;
 mod checkout_branch;
 mod checkout_new_branch;
+mod cherry_spinout;
 mod commit;
 mod confirm_delete_branch;
 mod confirm_discard;
@@ -196,6 +197,14 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Apply(apply_command) => apply::update(model, apply_command),
         Message::Harvest { commits, source } => harvest::update(model, commits, source),
         Message::Donate { commits, target } => donate::update(model, commits, target),
+        Message::ShowCherrySpinoutInput { commits, root } => {
+            show_input_popup::update(model, InputContext::CherrySpinout { commits, root })
+        }
+        Message::CherrySpinout {
+            commits,
+            branch,
+            root,
+        } => cherry_spinout::update(model, commits, branch, root),
         Message::ShowMergePopup => show_merge_popup::update(model),
         Message::ShowTagPopup => show_tag_popup::update(model),
         Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),

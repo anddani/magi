@@ -49,12 +49,10 @@ pub fn content<'a>(
                 },
                 PopupColumn {
                     title: Some(t.col_apply_elsewhere.into()),
-                    content: vec![command_description(
-                        theme,
-                        model.arg_mode,
-                        "d",
-                        t.cmd_donate,
-                    )],
+                    content: vec![
+                        command_description(theme, model.arg_mode, "d", t.cmd_donate),
+                        command_description(theme, model.arg_mode, "n", t.cmd_spinout),
+                    ],
                 },
             ],
         }],

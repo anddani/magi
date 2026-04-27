@@ -309,6 +309,8 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
         | OnSelect::ApplyApply
         | OnSelect::ApplySquash
         | OnSelect::DonateCommitPick
+        | OnSelect::CherrySpinoutCommitPick
+        | OnSelect::CherrySpinoutRootPick { .. }
         | OnSelect::HarvestCommitPick => {
             // Cursor commit hash (Commit or LogLine)
             cursor_line.and_then(|line| match &line.content {
@@ -366,6 +368,8 @@ fn should_insert_if_missing(on_select: &OnSelect) -> bool {
         | OnSelect::ApplyApply             // cursor hash is inserted
         | OnSelect::ApplySquash            // cursor hash is inserted
         | OnSelect::DonateCommitPick       // cursor hash is inserted
+        | OnSelect::CherrySpinoutCommitPick // cursor hash is inserted
+        | OnSelect::CherrySpinoutRootPick { .. } // cursor hash is inserted
         | OnSelect::HarvestCommitPick      // cursor hash is inserted
         | OnSelect::CreateTagTarget { .. } // can insert cursor suggestion
     )
@@ -549,6 +553,8 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::ApplyApply
         | OnSelect::ApplySquash
         | OnSelect::DonateCommitPick
+        | OnSelect::CherrySpinoutCommitPick
+        | OnSelect::CherrySpinoutRootPick { .. }
         | OnSelect::HarvestCommitPick => "No commits or references found".to_string(),
         OnSelect::HarvestSourceBranch { .. } | OnSelect::DonateTargetBranch { .. } => {
             "No local branches found".to_string()
