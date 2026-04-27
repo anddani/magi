@@ -37,15 +37,26 @@ pub fn content<'a>(
     CommandPopupContent {
         title: t.popup_apply,
         rows: vec![PopupRow {
-            columns: vec![PopupColumn {
-                title: Some(t.col_apply_here.into()),
-                content: vec![
-                    command_description(theme, model.arg_mode, "A", t.cmd_pick),
-                    command_description(theme, model.arg_mode, "a", t.cmd_apply),
-                    command_description(theme, model.arg_mode, "h", t.cmd_harvest),
-                    command_description(theme, model.arg_mode, "m", t.cmd_squash),
-                ],
-            }],
+            columns: vec![
+                PopupColumn {
+                    title: Some(t.col_apply_here.into()),
+                    content: vec![
+                        command_description(theme, model.arg_mode, "A", t.cmd_pick),
+                        command_description(theme, model.arg_mode, "a", t.cmd_apply),
+                        command_description(theme, model.arg_mode, "h", t.cmd_harvest),
+                        command_description(theme, model.arg_mode, "m", t.cmd_squash),
+                    ],
+                },
+                PopupColumn {
+                    title: Some(t.col_apply_elsewhere.into()),
+                    content: vec![command_description(
+                        theme,
+                        model.arg_mode,
+                        "d",
+                        t.cmd_donate,
+                    )],
+                },
+            ],
         }],
     }
 }

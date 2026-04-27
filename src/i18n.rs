@@ -69,6 +69,7 @@ pub struct Strings {
     pub col_applying_changes: &'static str,
     pub col_general: &'static str,
     pub col_apply_here: &'static str,
+    pub col_apply_elsewhere: &'static str,
 
     // Dynamic styled title parts used in push/pull/rebase popups.
     // The branch name is coloured separately between pre and post.
@@ -152,6 +153,7 @@ pub struct Strings {
     pub cmd_revert_commits: &'static str,
     pub cmd_pick: &'static str,
     pub cmd_harvest: &'static str,
+    pub cmd_donate: &'static str,
     // Help popup command descriptions
     pub cmd_fetch: &'static str,
     pub cmd_log: &'static str,
@@ -277,6 +279,7 @@ static ENGLISH: Strings = Strings {
     col_applying_changes: "Applying changes",
     col_general: "General",
     col_apply_here: "Apply here",
+    col_apply_elsewhere: "Apply elsewhere",
 
     push_to_pre: "Push ",
     push_to_post: " to",
@@ -355,6 +358,7 @@ static ENGLISH: Strings = Strings {
     cmd_revert_commits: "Revert commit(s)",
     cmd_pick: "Pick",
     cmd_harvest: "Harvest",
+    cmd_donate: "Donate",
     cmd_fetch: "Fetch",
     cmd_log: "Log",
     cmd_pull: "Pull",
@@ -464,6 +468,7 @@ static SWEDISH: Strings = Strings {
     col_applying_changes: "Tillämpa ändringar",
     col_general: "Allmänt",
     col_apply_here: "Plocka russin här",
+    col_apply_elsewhere: "Plocka russin någon annanstans",
 
     push_to_pre: "Knuffa ",
     push_to_post: " till",
@@ -542,6 +547,7 @@ static SWEDISH: Strings = Strings {
     cmd_revert_commits: "Återgå förbindelse(r)",
     cmd_pick: "Plocka",
     cmd_harvest: "Skörda",
+    cmd_donate: "Donera",
     cmd_fetch: "Hämta",
     cmd_log: "Diarium",
     cmd_pull: "Rycka",

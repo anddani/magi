@@ -57,6 +57,23 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
                 )))
             }
         }
+        KeyCode::Char('d') => {
+            if state.selected_commits.is_empty() {
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Donate commit".to_string(),
+                    source: OptionsSource::AllRefs,
+                    on_select: OnSelect::DonateCommitPick,
+                }))
+            } else {
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Donate to branch".to_string(),
+                    source: OptionsSource::LocalBranches,
+                    on_select: OnSelect::DonateTargetBranch {
+                        commits: state.selected_commits.clone(),
+                    },
+                }))
+            }
+        }
         KeyCode::Char('h') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
