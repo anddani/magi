@@ -100,6 +100,8 @@ pub enum OnSelect {
     ApplyPick,
     /// Select a commit to apply (--no-commit) onto the current branch
     ApplyApply,
+    /// Select a ref to squash-merge into the working tree (`git merge --squash`)
+    ApplySquash,
     /// Select a commit to harvest (step 1 of 2, no pre-selection)
     HarvestCommitPick,
     /// Select a source branch to harvest commits from (has commits embedded)

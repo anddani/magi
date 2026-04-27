@@ -458,6 +458,8 @@ pub enum ApplyCommand {
     Pick(Vec<String>),
     /// Apply the given commit hashes without committing (`git cherry-pick --no-commit`)
     Apply(Vec<String>),
+    /// Squash the given ref into the working tree (`git merge --squash`)
+    Squash(String),
     /// Continue after resolving conflicts
     Continue,
     /// Skip the current conflicting commit

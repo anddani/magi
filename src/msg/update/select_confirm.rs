@@ -272,6 +272,9 @@ fn route_result(
         (Some(OnSelect::ApplyApply), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Apply(vec![hash])))
         }
+        (Some(OnSelect::ApplySquash), SelectResult::Selected(hash)) => {
+            Some(Message::Apply(ApplyCommand::Squash(hash)))
+        }
         (Some(OnSelect::HarvestCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
                 title: "Harvest from branch".to_string(),
