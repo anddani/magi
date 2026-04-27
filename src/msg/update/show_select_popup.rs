@@ -546,9 +546,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         OnSelect::ApplyPick
         | OnSelect::ApplyApply
         | OnSelect::ApplySquash
-        | OnSelect::HarvestCommitPick => {
-            "No commits or references found".to_string()
-        }
+        | OnSelect::HarvestCommitPick => "No commits or references found".to_string(),
         OnSelect::HarvestSourceBranch { .. } => "No local branches found".to_string(),
         OnSelect::DeleteTag => "No tags found".to_string(),
         OnSelect::PushTag => "No tags to push".to_string(),
