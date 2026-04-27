@@ -102,6 +102,10 @@ pub enum OnSelect {
     ApplyApply,
     /// Select a ref to squash-merge into the working tree (`git merge --squash`)
     ApplySquash,
+    /// Select a commit to donate (step 1 of 2, no pre-selection)
+    DonateCommitPick,
+    /// Select a target branch to donate commits to (has commits embedded)
+    DonateTargetBranch { commits: Vec<String> },
     /// Select a commit to harvest (step 1 of 2, no pre-selection)
     HarvestCommitPick,
     /// Select a source branch to harvest commits from (has commits embedded)

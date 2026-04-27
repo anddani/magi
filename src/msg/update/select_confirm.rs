@@ -275,6 +275,18 @@ fn route_result(
         (Some(OnSelect::ApplySquash), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Squash(hash)))
         }
+        (Some(OnSelect::DonateCommitPick), SelectResult::Selected(hash)) => {
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Donate to branch".to_string(),
+                source: OptionsSource::LocalBranches,
+                on_select: OnSelect::DonateTargetBranch {
+                    commits: vec![hash],
+                },
+            }))
+        }
+        (Some(OnSelect::DonateTargetBranch { commits }), SelectResult::Selected(target)) => {
+            Some(Message::Donate { commits, target })
+        }
         (Some(OnSelect::HarvestCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
                 title: "Harvest from branch".to_string(),

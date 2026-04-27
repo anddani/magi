@@ -233,6 +233,11 @@ pub enum Message {
         commits: Vec<String>,
         source: String,
     },
+    /// Donate commits to another existing branch (cherry-pick + remove from current)
+    Donate {
+        commits: Vec<String>,
+        target: String,
+    },
 
     /// Show merge popup
     ShowMergePopup,

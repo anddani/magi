@@ -18,6 +18,7 @@ mod delete_branch;
 mod delete_tag;
 mod discard_selected;
 mod dismiss_popup;
+mod donate;
 mod enter_arg_mode;
 mod enter_search_mode;
 mod enter_visual_mode;
@@ -194,6 +195,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowApplyPopup => show_apply_popup::update(model),
         Message::Apply(apply_command) => apply::update(model, apply_command),
         Message::Harvest { commits, source } => harvest::update(model, commits, source),
+        Message::Donate { commits, target } => donate::update(model, commits, target),
         Message::ShowMergePopup => show_merge_popup::update(model),
         Message::ShowTagPopup => show_tag_popup::update(model),
         Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),
