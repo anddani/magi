@@ -44,6 +44,19 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
                 )))
             }
         }
+        KeyCode::Char('m') => {
+            if state.selected_commits.is_empty() {
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Squash commit".to_string(),
+                    source: OptionsSource::AllRefs,
+                    on_select: OnSelect::ApplySquash,
+                }))
+            } else {
+                Some(Message::Apply(ApplyCommand::Squash(
+                    state.selected_commits[0].clone(),
+                )))
+            }
+        }
         KeyCode::Char('h') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {

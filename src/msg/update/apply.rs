@@ -7,6 +7,7 @@ pub fn update(model: &mut Model, cmd: ApplyCommand) -> Option<Message> {
     match cmd {
         ApplyCommand::Pick(hashes) => pick(model, hashes),
         ApplyCommand::Apply(hashes) => apply_no_commit(model, hashes),
+        ApplyCommand::Squash(hash) => squash(model, hash),
         ApplyCommand::Continue => continue_apply(model),
         ApplyCommand::Skip => skip_apply(model),
         ApplyCommand::Abort => abort_apply(model),
@@ -29,6 +30,14 @@ fn apply_no_commit(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
     let mut args = vec!["cherry-pick".to_string(), "--no-commit".to_string()];
     args.extend(hashes);
     execute_pty_command(model, args, "Apply".to_string())
+}
+
+fn squash(model: &mut Model, hash: String) -> Option<Message> {
+    execute_pty_command(
+        model,
+        vec!["merge".to_string(), "--squash".to_string(), hash],
+        "Apply".to_string(),
+    )
 }
 
 fn continue_apply(model: &mut Model) -> Option<Message> {
