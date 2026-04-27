@@ -104,6 +104,10 @@ pub enum OnSelect {
     ApplySquash,
     /// Select a commit to donate (step 1 of 2, no pre-selection)
     DonateCommitPick,
+    /// Select a commit to spin out (step 1 of 3, no pre-selection)
+    CherrySpinoutCommitPick,
+    /// Select the root (start point) for the new spin-out branch (step 2 of 3)
+    CherrySpinoutRootPick { commits: Vec<String> },
     /// Select a target branch to donate commits to (has commits embedded)
     DonateTargetBranch { commits: Vec<String> },
     /// Select a commit to harvest (step 1 of 2, no pre-selection)

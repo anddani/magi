@@ -275,6 +275,18 @@ fn route_result(
         (Some(OnSelect::ApplySquash), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Squash(hash)))
         }
+        (Some(OnSelect::CherrySpinoutCommitPick), SelectResult::Selected(hash)) => {
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Spinout root".to_string(),
+                source: OptionsSource::AllRefs,
+                on_select: OnSelect::CherrySpinoutRootPick {
+                    commits: vec![hash],
+                },
+            }))
+        }
+        (Some(OnSelect::CherrySpinoutRootPick { commits }), SelectResult::Selected(root)) => {
+            Some(Message::ShowCherrySpinoutInput { commits, root })
+        }
         (Some(OnSelect::DonateCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
                 title: "Donate to branch".to_string(),
