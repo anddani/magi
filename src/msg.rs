@@ -251,6 +251,17 @@ pub enum Message {
         branch: String,
         root: String,
     },
+    /// Show input popup to name the new spin-off branch (carries commits and root start point)
+    ShowCherrySpinoffInput {
+        commits: Vec<String>,
+        root: String,
+    },
+    /// Spin off commits to a new branch (cherry-pick + remove from current, checkout new branch)
+    CherrySpinoff {
+        commits: Vec<String>,
+        branch: String,
+        root: String,
+    },
 
     /// Show merge popup
     ShowMergePopup,

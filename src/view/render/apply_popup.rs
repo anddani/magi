@@ -52,6 +52,7 @@ pub fn content<'a>(
                     content: vec![
                         command_description(theme, model.arg_mode, "d", t.cmd_donate),
                         command_description(theme, model.arg_mode, "n", t.cmd_spinout),
+                        command_description(theme, model.arg_mode, "s", t.cmd_spinoff),
                     ],
                 },
             ],

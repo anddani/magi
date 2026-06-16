@@ -74,6 +74,23 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
                 }))
             }
         }
+        KeyCode::Char('s') => {
+            if state.selected_commits.is_empty() {
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Spinoff commit".to_string(),
+                    source: OptionsSource::AllRefs,
+                    on_select: OnSelect::CherrySpinoffCommitPick,
+                }))
+            } else {
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Spinoff root".to_string(),
+                    source: OptionsSource::AllRefs,
+                    on_select: OnSelect::CherrySpinoffRootPick {
+                        commits: state.selected_commits.clone(),
+                    },
+                }))
+            }
+        }
         KeyCode::Char('d') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {

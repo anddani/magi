@@ -31,8 +31,16 @@ Magi is inspired by [Magit](https://magit.vc/), the legendary Emacs Git interfac
 brew tap anddani/homebrew-magi
 brew install magi
 
-# Nix
-nix-env -iA nixpkgs.magi
+# Nix flake
+inputs = {
+    magi.url = "github:anddani/magi";
+}
+
+...
+
+packages = [
+    magi.packages.${SYSTEM}.default;
+]
 
 # Arch Linux (AUR)
 yay -S magi

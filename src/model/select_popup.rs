@@ -110,6 +110,10 @@ pub enum OnSelect {
     CherrySpinoutCommitPick,
     /// Select the root (start point) for the new spin-out branch (step 2 of 3)
     CherrySpinoutRootPick { commits: Vec<String> },
+    /// Select a commit to spin off (step 1 of 3, no pre-selection)
+    CherrySpinoffCommitPick,
+    /// Select the root (start point) for the new spin-off branch (step 2 of 3)
+    CherrySpinoffRootPick { commits: Vec<String> },
     /// Select a target branch to donate commits to (has commits embedded)
     DonateTargetBranch { commits: Vec<String> },
     /// Select a commit to harvest (step 1 of 2, no pre-selection)
