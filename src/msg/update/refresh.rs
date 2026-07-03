@@ -5,9 +5,9 @@ use crate::{
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    match model.view_mode {
+    match model.view_mode.clone() {
         ViewMode::Status => refresh_status(model),
-        ViewMode::Log(log_type, _) => refresh_log(model, log_type),
+        ViewMode::Log(log_type, _) => refresh_log(model, &log_type),
         // In preview mode, refresh is a no-op (preview content is static)
         ViewMode::Preview => {}
     }
@@ -77,7 +77,7 @@ fn refresh_status(model: &mut Model) {
     }
 }
 
-fn refresh_log(model: &mut Model, log_type: crate::msg::LogType) {
+fn refresh_log(model: &mut Model, log_type: &crate::msg::LogType) {
     if let Ok(entries) = get_log_entries(&model.git_info.repository, log_type) {
         let lines: Vec<Line> = entries
             .into_iter()

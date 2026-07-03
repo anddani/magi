@@ -198,7 +198,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
 
     // Populate the model with log-view lines (as ShowLog does)
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let log_lines: Vec<Line> = get_log_entries(&repo, LogType::Current)
+    let log_lines: Vec<Line> = get_log_entries(&repo, &LogType::Current)
         .unwrap()
         .into_iter()
         .map(|entry| Line {

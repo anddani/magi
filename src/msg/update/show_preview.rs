@@ -19,7 +19,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    model.preview_return_mode = Some(model.view_mode);
+    model.preview_return_mode = Some(model.view_mode.clone());
     model.preview_return_ui_model = Some(model.ui_model.clone());
     model.ui_model.lines = preview_lines;
     model.ui_model.cursor_position = 0;

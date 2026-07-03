@@ -158,7 +158,7 @@ fn test_harvest_commits_at_tip_of_source_branch() {
 
     // Get the hash of the commit to harvest
     let repo = git2::Repository::open(&workdir).unwrap();
-    let log = get_log_entries(&repo, LogType::Current).unwrap();
+    let log = get_log_entries(&repo, &LogType::Current).unwrap();
     let harvest_hash = log
         .iter()
         .find(|e| e.hash.is_some() && e.message.as_deref() == Some("Commit to harvest"))

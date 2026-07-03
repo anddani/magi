@@ -20,10 +20,12 @@ pub enum FixupType {
 }
 
 /// Type of log view to display
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum LogType {
     /// Show log for current branch (HEAD)
     Current,
+    /// Show log for another branch/revision
+    Other(String),
     /// Show log for all references (--all)
     AllReferences,
     /// Show log for local branches and HEAD

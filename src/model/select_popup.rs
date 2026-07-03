@@ -102,6 +102,8 @@ pub enum OnSelect {
     ApplyApply,
     /// Select a ref to squash-merge into the working tree (`git merge --squash`)
     ApplySquash,
+    /// Select a branch/revision to show the log for
+    LogOther,
     /// Select a commit to donate (step 1 of 2, no pre-selection)
     DonateCommitPick,
     /// Select a commit to spin out (step 1 of 3, no pre-selection)

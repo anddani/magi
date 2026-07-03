@@ -13,7 +13,7 @@ const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
 /// Fetches git log entries with graph
-pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult<Vec<LogEntry>> {
+pub fn get_log_entries(repository: &Repository, log_type: &LogType) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
         .ok_or_else(|| git2::Error::from_str("No working directory"))?;
@@ -43,6 +43,7 @@ pub fn get_log_entries(repository: &Repository, log_type: LogType) -> MagiResult
 
     match log_type {
         LogType::Current => args.push("HEAD".to_string()),
+        LogType::Other(revision) => args.push(revision.clone()),
         LogType::AllReferences => args.push("--all".to_string()),
         LogType::LocalBranches => {
             if head_detached {
@@ -262,6 +263,27 @@ mod tests {
     fn test_find_graph_end_only_graph() {
         assert_eq!(find_graph_end("| |"), 3);
         assert_eq!(find_graph_end("* "), 2);
+    }
+
+    #[test]
+    fn test_get_log_entries_other_revision() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        // Create a branch at the initial commit, then advance main past it
+        let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+        test_repo.repo.branch("feature", &head, false).unwrap();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Second commit");
+
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Other("feature".to_string())).unwrap();
+        let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
+
+        assert!(messages.contains(&"Initial commit".to_string()));
+        assert!(!messages.contains(&"Second commit".to_string()));
     }
 
     #[test]

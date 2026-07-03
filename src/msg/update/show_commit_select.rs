@@ -80,7 +80,7 @@ pub fn show_select_revise_commit(model: &mut Model) -> Option<Message> {
 }
 
 fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) -> Option<Message> {
-    match get_log_entries(&model.git_info.repository, log_type) {
+    match get_log_entries(&model.git_info.repository, &log_type) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
 

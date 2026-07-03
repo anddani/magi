@@ -1600,6 +1600,24 @@ mod tests {
     }
 
     #[test]
+    fn test_o_in_log_popup_shows_revision_select() {
+        use crate::msg::{OnSelect, OptionsSource, ShowSelectPopupConfig};
+
+        let model = create_log_popup_model();
+
+        let key = create_key_event(NONE, Char('o'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Log revision".to_string(),
+                source: OptionsSource::AllRefs,
+                on_select: OnSelect::LogOther,
+            }))
+        );
+    }
+
+    #[test]
     fn test_esc_dismisses_log_popup() {
         let model = create_log_popup_model();
 

@@ -99,7 +99,7 @@ pub enum PreviewLineType {
 }
 
 /// The current view mode of the application
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum ViewMode {
     /// Default status view showing staged/unstaged changes, commits, etc.
     #[default]

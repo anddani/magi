@@ -82,7 +82,7 @@ Here are a few features that the aforementioned applications lack:
     - [x] Help
     - [ ] Log
         - [x] Local
-        - [ ] Other
+        - [x] Other
         - [ ] Related
         - [x] Local branches
         - [x] All branches
