@@ -282,7 +282,9 @@ fn route_result(
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
                 title: "Spinoff root".to_string(),
                 source: OptionsSource::AllRefs,
-                on_select: OnSelect::CherrySpinoffRootPick { commits: vec![hash] },
+                on_select: OnSelect::CherrySpinoffRootPick {
+                    commits: vec![hash],
+                },
             }))
         }
         (Some(OnSelect::CherrySpinoffRootPick { commits }), SelectResult::Selected(root)) => {

@@ -45,11 +45,7 @@ pub fn update(
         Ok(output) if !output.status.success() => {
             let stderr = String::from_utf8_lossy(&output.stderr);
             model.popup = Some(PopupContent::Error {
-                message: format!(
-                    "Failed to create branch '{}': {}",
-                    branch,
-                    stderr.trim()
-                ),
+                message: format!("Failed to create branch '{}': {}", branch, stderr.trim()),
             });
             return Some(Message::Refresh);
         }
