@@ -12,7 +12,7 @@ use utils::create_model_from_test_repo;
 /// Helper to get log entries for testing (filters out graph-only entries)
 fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> {
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut entries = get_log_entries(&repo, LogType::Current).unwrap();
+    let mut entries = get_log_entries(&repo, &LogType::Current).unwrap();
     entries.retain(|e| e.is_commit());
     entries
 }

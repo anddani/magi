@@ -8,8 +8,8 @@ use crate::{
         select_popup::OnSelect,
     },
     msg::{
-        ApplyCommand, FetchCommand, MergeCommand, Message, OptionsSource, PullCommand, PushCommand,
-        RebaseCommand, ResetMode, RevertCommand, ShowSelectPopupConfig, StashCommand,
+        ApplyCommand, FetchCommand, LogType, MergeCommand, Message, OptionsSource, PullCommand,
+        PushCommand, RebaseCommand, ResetMode, RevertCommand, ShowSelectPopupConfig, StashCommand,
     },
 };
 
@@ -275,6 +275,9 @@ fn route_result(
         (Some(OnSelect::ApplySquash), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Squash(hash)))
         }
+        (Some(OnSelect::LogOther), SelectResult::Selected(revision)) => {
+            Some(Message::ShowLog(LogType::Other(revision)))
+        }
         (Some(OnSelect::CherrySpinoutCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
                 title: "Spinout root".to_string(),
@@ -479,6 +482,28 @@ mod tests {
             )))
         );
         assert_eq!(model.view_mode, ViewMode::Status);
+    }
+
+    #[test]
+    fn test_select_popup_routes_log_other() {
+        use crate::model::select_popup::SelectPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+            SelectPopupState::new(
+                "Log revision".to_string(),
+                vec!["feature/foo".to_string()],
+                OnSelect::LogOther,
+            ),
+        )));
+
+        let result = update(&mut model);
+
+        assert_eq!(
+            result,
+            Some(Message::ShowLog(LogType::Other("feature/foo".to_string())))
+        );
+        assert!(model.popup.is_none());
     }
 
     #[test]

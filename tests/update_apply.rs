@@ -454,7 +454,7 @@ fn test_show_apply_popup_cursor_on_log_line_collects_hash() {
 
     // Switch to log view
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let log_lines: Vec<Line> = get_log_entries(&repo, LogType::Current)
+    let log_lines: Vec<Line> = get_log_entries(&repo, &LogType::Current)
         .unwrap()
         .into_iter()
         .map(|entry| Line {

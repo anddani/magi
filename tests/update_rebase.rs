@@ -310,7 +310,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
         .commit("First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(&repo, LogType::Current).unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);

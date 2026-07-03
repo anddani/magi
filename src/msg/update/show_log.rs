@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
-    match get_log_entries(&model.git_info.repository, log_type) {
+    match get_log_entries(&model.git_info.repository, &log_type) {
         Ok(entries) => {
             // Convert log entries to lines
             let lines: Vec<Line> = entries
