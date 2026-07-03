@@ -108,6 +108,8 @@ pub enum InputContext {
     SpinoutBranch,
     /// Spinning out cherry-picked commits to a new branch (stays on current branch)
     CherrySpinout { commits: Vec<String>, root: String },
+    /// Spinning off cherry-picked commits to a new branch (checks out the new branch)
+    CherrySpinoff { commits: Vec<String>, root: String },
     /// Entering the directory path for a new worktree
     WorktreePath {
         /// The branch or revision to check out in the new worktree
@@ -158,6 +160,7 @@ impl InputPopupState {
             InputContext::SpinoffBranch => t.input_spinoff_branch.to_string(),
             InputContext::SpinoutBranch => t.input_spinout_branch.to_string(),
             InputContext::CherrySpinout { .. } => t.input_cherry_spinout.to_string(),
+            InputContext::CherrySpinoff { .. } => t.input_cherry_spinoff.to_string(),
             InputContext::WorktreePath { branch, .. } => t.fmt1(t.input_worktree_path_fmt, branch),
             InputContext::PushRefspec { remote } => t.fmt1(t.input_push_refspec_fmt, remote),
             InputContext::FetchRefspec { remote } => t.fmt1(t.input_fetch_refspec_fmt, remote),

@@ -278,6 +278,18 @@ fn route_result(
         (Some(OnSelect::LogOther), SelectResult::Selected(revision)) => {
             Some(Message::ShowLog(LogType::Other(revision)))
         }
+        (Some(OnSelect::CherrySpinoffCommitPick), SelectResult::Selected(hash)) => {
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Spinoff root".to_string(),
+                source: OptionsSource::AllRefs,
+                on_select: OnSelect::CherrySpinoffRootPick {
+                    commits: vec![hash],
+                },
+            }))
+        }
+        (Some(OnSelect::CherrySpinoffRootPick { commits }), SelectResult::Selected(root)) => {
+            Some(Message::ShowCherrySpinoffInput { commits, root })
+        }
         (Some(OnSelect::CherrySpinoutCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
                 title: "Spinout root".to_string(),
