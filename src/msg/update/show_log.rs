@@ -1,11 +1,21 @@
 use crate::{
     git::log::get_log_entries,
-    model::{Line, LineContent, Model, PopupContent, ViewMode},
+    model::{
+        Line, LineContent, Model, PopupContent, ViewMode,
+        arguments::{Arguments::LogArguments, LogArgument},
+    },
     msg::{LogType, Message},
 };
 
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
-    match get_log_entries(&model.git_info.repository, &log_type) {
+    // Graph is shown by default; only disabled when toggled off in the log popup
+    let graph = match model.arguments.take() {
+        Some(LogArguments(args)) => args.contains(&LogArgument::Graph),
+        _ => true,
+    };
+    model.log_graph = graph;
+
+    match get_log_entries(&model.git_info.repository, &log_type, graph) {
         Ok(entries) => {
             // Convert log entries to lines
             let lines: Vec<Line> = entries

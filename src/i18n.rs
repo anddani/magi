@@ -59,6 +59,7 @@ pub struct Strings {
     pub col_create: &'static str,
     pub col_do: &'static str,
     pub col_arguments: &'static str,
+    pub col_formatting: &'static str,
     pub col_edit_head: &'static str,
     pub col_edit: &'static str,
     pub col_use: &'static str,
@@ -213,6 +214,7 @@ pub struct Strings {
     /// Shown when no upstream is configured: "${upstream}, setting it"
     pub arg_upstream_setting_it: &'static str,
     pub arg_revert_no_edit: &'static str,
+    pub arg_log_graph: &'static str,
     pub arg_revert_mainline: &'static str,
     pub input_revert_mainline: &'static str,
 
@@ -274,6 +276,7 @@ static ENGLISH: Strings = Strings {
     col_create: "Create",
     col_do: "Do",
     col_arguments: "Arguments",
+    col_formatting: "Formatting",
     col_edit_head: "Edit HEAD",
     col_edit: "Edit",
     col_use: "Use",
@@ -419,6 +422,7 @@ static ENGLISH: Strings = Strings {
     arg_push_remote_setting_it: "${push-remote}, setting it",
     arg_upstream_setting_it: "${upstream}, setting it",
     arg_revert_no_edit: "Don't edit commit message",
+    arg_log_graph: "Show graph",
     arg_revert_mainline: "Replay merge relative to parent",
     input_revert_mainline: "Mainline parent number",
 
@@ -468,6 +472,7 @@ static SWEDISH: Strings = Strings {
     col_create: "Skapa",
     col_do: "Utför",
     col_arguments: "Argument",
+    col_formatting: "Formatering",
     col_edit_head: "Redigera HEAD",
     col_edit: "Redigera",
     col_use: "Använd",
@@ -613,6 +618,7 @@ static SWEDISH: Strings = Strings {
     arg_push_remote_setting_it: "${knuffjärr}, och sätt den",
     arg_upstream_setting_it: "${uppström}, och sätt den",
     arg_revert_no_edit: "Ändra inte förbindelsemeddelandet",
+    arg_log_graph: "Visa graf",
     arg_revert_mainline: "Spela upp sammanslagning relativt förälder",
     input_revert_mainline: "Förälderantalsnummer",
 

@@ -49,6 +49,8 @@ pub struct Model {
     pub arguments: Option<Arguments>,
     /// Current view mode (status view, log view, etc.)
     pub view_mode: ViewMode,
+    /// Whether the log view shows the commit graph (--graph); used when refreshing
+    pub log_graph: bool,
     /// Cursor context for smart repositioning after refresh (consumed by refresh)
     pub cursor_reposition_context: Option<cursor_context::CursorContext>,
     /// The view mode to return to when exiting Preview

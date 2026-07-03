@@ -47,6 +47,12 @@ pub fn update(model: &mut Model, argument: Argument) -> Option<Message> {
             |a| a.revert_mut(),
             Arguments::RevertArguments,
         ),
+        Argument::Log(arg) => toggle_set(
+            &mut model.arguments,
+            arg,
+            |a| a.log_mut(),
+            Arguments::LogArguments,
+        ),
     }
     model.arg_mode = false;
     None

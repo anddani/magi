@@ -30,9 +30,7 @@ fn command_popup_keys(c: char) -> Option<Message> {
         'b' => Some(Message::ShowPopup(PopupContent::Command(
             PopupContentCommand::Branch,
         ))),
-        'l' => Some(Message::ShowPopup(PopupContent::Command(
-            PopupContentCommand::Log,
-        ))),
+        'l' => Some(Message::ShowLogPopup),
         'z' | 'Z' => Some(Message::ShowPopup(PopupContent::Command(
             PopupContentCommand::Stash,
         ))),
@@ -303,6 +301,7 @@ mod tests {
             pending_g: false,
             arguments: None,
             view_mode: ViewMode::Status,
+            log_graph: true,
             cursor_reposition_context: None,
             preview_return_mode: None,
             preview_return_ui_model: None,
@@ -1563,12 +1562,7 @@ mod tests {
 
         let key = create_key_event(NONE, Char('l'));
         let result = handle_key(key, &model);
-        assert_eq!(
-            result,
-            Some(Message::ShowPopup(PopupContent::Command(
-                PopupContentCommand::Log
-            )))
-        );
+        assert_eq!(result, Some(Message::ShowLogPopup));
     }
 
     fn create_log_popup_model() -> Model {
@@ -1615,6 +1609,40 @@ mod tests {
                 on_select: OnSelect::LogOther,
             }))
         );
+    }
+
+    #[test]
+    fn test_minus_in_log_popup_enters_arg_mode() {
+        let model = create_log_popup_model();
+
+        let key = create_key_event(NONE, Char('-'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::EnterArgMode));
+    }
+
+    #[test]
+    fn test_g_in_log_arg_mode_toggles_graph() {
+        use crate::model::arguments::{Argument::Log, LogArgument};
+
+        let mut model = create_log_popup_model();
+        model.arg_mode = true;
+
+        let key = create_key_event(NONE, Char('g'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Log(LogArgument::Graph)))
+        );
+    }
+
+    #[test]
+    fn test_other_key_in_log_arg_mode_exits_arg_mode() {
+        let mut model = create_log_popup_model();
+        model.arg_mode = true;
+
+        let key = create_key_event(NONE, Char('x'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitArgMode));
     }
 
     #[test]
