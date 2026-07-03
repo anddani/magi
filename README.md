@@ -72,7 +72,7 @@ Here are a few features that the aforementioned applications lack:
 - [x] Toast
 - [x] Configurable color themes
 - [ ] Commands
-    - [ ] Apply
+    - [x] Apply
     - [x] Branch
     - [ ] Bisect
     - [x] Commit
@@ -97,14 +97,14 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Subtree
     - [x] Push
     - [ ] Rebase
-    - [ ] Tag
+    - [x] Tag
     - [ ] Note
-    - [ ] Revert
+    - [x] Revert
     - [ ] Apply patches
     - [ ] Format patches
     - [x] Reset
     - [ ] Show refs
-    - [ ] Stash
+    - [x] Stash
     - [ ] Worktree
 - [ ] Applying changes
     - [ ] Apply
