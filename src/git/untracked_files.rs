@@ -21,7 +21,7 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
         .iter()
         .filter_map(|entry| {
             if entry.status().is_wt_new() {
-                entry.path().map(|path| path.to_string())
+                entry.path().ok().map(|path| path.to_string())
             } else {
                 None
             }

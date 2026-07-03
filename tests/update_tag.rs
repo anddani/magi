@@ -224,7 +224,7 @@ fn test_create_tag_creates_tag() {
 
     // Verify the tag exists in the repository
     let tags = model.git_info.repository.tag_names(None).unwrap();
-    let tag_list: Vec<&str> = tags.iter().flatten().collect();
+    let tag_list: Vec<&str> = tags.iter().filter_map(|t| t.ok().flatten()).collect();
     assert!(
         tag_list.contains(&"v1.0.0"),
         "Tag 'v1.0.0' should exist in the repository"
@@ -349,7 +349,7 @@ fn test_delete_tag_removes_tag() {
     assert!(model.popup.is_none());
 
     let tags = model.git_info.repository.tag_names(None).unwrap();
-    let tag_list: Vec<&str> = tags.iter().flatten().collect();
+    let tag_list: Vec<&str> = tags.iter().filter_map(|t| t.ok().flatten()).collect();
     assert!(
         !tag_list.contains(&"v1.0.0"),
         "Tag 'v1.0.0' should have been deleted"
@@ -519,7 +519,7 @@ fn test_prune_tags_deletes_local_only_tags() {
     assert!(model.popup.is_none());
 
     let tags = model.git_info.repository.tag_names(None).unwrap();
-    let tag_list: Vec<&str> = tags.iter().flatten().collect();
+    let tag_list: Vec<&str> = tags.iter().filter_map(|t| t.ok().flatten()).collect();
     assert!(
         !tag_list.contains(&"v1.0.0"),
         "v1.0.0 should have been deleted locally"

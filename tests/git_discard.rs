@@ -290,7 +290,9 @@ fn test_discard_staged_new_file_deletes_it() {
     // Verify file is no longer staged and deleted
     let statuses = test_repo.repo.statuses(None).unwrap();
     assert!(
-        !statuses.iter().any(|s| s.path() == Some("new_file.txt")),
+        !statuses
+            .iter()
+            .any(|s| s.path().ok() == Some("new_file.txt")),
         "File should not appear in status after discard"
     );
     assert!(
@@ -393,7 +395,7 @@ fn test_discard_untracked_file() {
     );
     let statuses = test_repo.repo.statuses(None).unwrap();
     assert!(
-        !statuses.iter().any(|s| s.path() == Some(file_name)),
+        !statuses.iter().any(|s| s.path().ok() == Some(file_name)),
         "File should not appear in status after discard"
     );
 }

@@ -21,7 +21,11 @@ pub fn get_log_entries(repository: &Repository, log_type: &LogType) -> MagiResul
     // Get list of remote names to distinguish remote branches from local branches with slashes
     let remotes: Vec<String> = repository
         .remotes()
-        .map(|r| r.iter().filter_map(|s| s.map(String::from)).collect())
+        .map(|r| {
+            r.iter()
+                .filter_map(|s| s.ok().flatten().map(String::from))
+                .collect()
+        })
         .unwrap_or_default();
 
     let head_detached = repository.head_detached()?;

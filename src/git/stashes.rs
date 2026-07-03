@@ -31,7 +31,7 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     });
 
     for (index, entry) in reflog.iter().enumerate() {
-        let message = entry.message().unwrap_or("").to_string();
+        let message = entry.message().ok().flatten().unwrap_or("").to_string();
         lines.push(Line {
             content: LineContent::Stash(StashEntry { index, message }),
             section: Some(SectionType::Stashes),

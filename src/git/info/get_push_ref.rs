@@ -14,8 +14,8 @@ pub fn get_push_ref(repo: &Repository) -> Result<Option<GitRef>, git2::Error> {
 
     let branch_ref = head.resolve()?;
     let branch_name = match branch_ref.shorthand() {
-        Some(name) => name.to_string(),
-        None => return Ok(None),
+        Ok(name) => name.to_string(),
+        Err(_) => return Ok(None),
     };
 
     // Only show push ref when pushRemote or pushDefault is explicitly configured
@@ -34,7 +34,7 @@ pub fn get_push_ref(repo: &Repository) -> Result<Option<GitRef>, git2::Error> {
     let commit = push_ref.peel_to_commit()?;
     let commit_hash = commit.id().to_string();
     let short_hash = &commit_hash[..7];
-    let commit_summary = commit.summary().unwrap_or("").to_string();
+    let commit_summary = commit.summary().ok().flatten().unwrap_or("").to_string();
     let push_shorthand = push_ref.shorthand().unwrap_or(&push_ref_name).to_string();
 
     Ok(Some(GitRef::new_remote_branch(

@@ -53,7 +53,12 @@ pub fn get_local_tags(repo: &Repository) -> Vec<String> {
 /// Returns an empty vec if no remotes are configured.
 pub fn get_remotes(repo: &Repository) -> Vec<String> {
     repo.remotes()
-        .map(|remotes| remotes.iter().flatten().map(|s| s.to_string()).collect())
+        .map(|remotes| {
+            remotes
+                .iter()
+                .filter_map(|s| s.ok().flatten().map(|s| s.to_string()))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -82,9 +87,7 @@ pub fn get_current_branch<P: AsRef<Path>>(repo_path: P) -> MagiResult<Option<Str
 /// The upstream should be in the format "remote/branch" (e.g., "origin/main").
 pub fn set_upstream_branch(repo: &Repository, upstream: &str) -> MagiResult<()> {
     let head = repo.head()?;
-    let branch_name = head
-        .shorthand()
-        .ok_or_else(|| git2::Error::from_str("Could not get branch name"))?;
+    let branch_name = head.shorthand()?;
 
     let mut branch = repo.find_branch(branch_name, git2::BranchType::Local)?;
     branch.set_upstream(Some(upstream))?;

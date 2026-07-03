@@ -262,7 +262,7 @@ pub fn create_commit_line(
         content: LineContent::Commit(CommitInfo {
             hash: format!("{:.7}", commit.id()),
             refs,
-            message: commit.summary().unwrap_or("").to_string(),
+            message: commit.summary().ok().flatten().unwrap_or("").to_string(),
         }),
         section: Some(section),
     }

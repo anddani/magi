@@ -38,7 +38,7 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     let upstream_name = match repository
         .branch_upstream_name(branch_name)
         .ok()
-        .and_then(|n| n.as_str().map(|s| s.to_string()))
+        .and_then(|n| n.as_str().ok().map(|s| s.to_string()))
     {
         Some(name) => name,
         None => return Ok(lines), // No upstream configured

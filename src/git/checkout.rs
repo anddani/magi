@@ -109,7 +109,7 @@ pub fn get_remote_branches_for_upstream(
 pub fn get_last_checked_out_branch(repo: &Repository) -> Option<String> {
     let reflog = repo.reflog("HEAD").ok()?;
     for entry in reflog.iter() {
-        let msg = entry.message()?;
+        let msg = entry.message().ok().flatten()?;
         if let Some(rest) = msg.strip_prefix("checkout: moving from ")
             && let Some((from, _to)) = rest.split_once(" to ")
         {

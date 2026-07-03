@@ -33,7 +33,7 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     let current_branch = if is_detached {
         None
     } else {
-        head.shorthand().map(|s| s.to_string())
+        head.shorthand().ok().map(|s| s.to_string())
     };
 
     // Build a map of commit OID -> tag names

@@ -17,7 +17,7 @@ pub fn get_merge_ref(repo: &Repository) -> Result<Option<GitRef>, git2::Error> {
     let Some(upstream_name) = repo
         .branch_upstream_name(branch_name)
         .ok()
-        .and_then(|n| n.as_str().map(|s| s.to_string()))
+        .and_then(|n| n.as_str().ok().map(|s| s.to_string()))
     else {
         return Ok(None);
     };
@@ -30,7 +30,7 @@ pub fn get_merge_ref(repo: &Repository) -> Result<Option<GitRef>, git2::Error> {
     let commit = upstream_ref.peel_to_commit()?;
     let commit_hash = commit.id().to_string();
     let short_hash = &commit_hash[..7];
-    let commit_summary = commit.summary().unwrap_or("").to_string();
+    let commit_summary = commit.summary().ok().flatten().unwrap_or("").to_string();
     let upstream_shorthand = upstream_ref
         .shorthand()
         .unwrap_or(&upstream_name)

@@ -11,7 +11,7 @@ pub fn get_head_ref(repo: &Repository) -> Result<GitRef, git2::Error> {
         let commit = head.peel_to_commit()?;
         let commit_hash = commit.id().to_string();
         let short_hash = commit_hash.chars().take(7).collect::<String>();
-        let commit_summary = commit.summary().unwrap_or("").to_string();
+        let commit_summary = commit.summary().ok().flatten().unwrap_or("").to_string();
 
         // Determine if it's a local or remote branch
         let reference_type = if name.starts_with("origin/") {
@@ -31,7 +31,7 @@ pub fn get_head_ref(repo: &Repository) -> Result<GitRef, git2::Error> {
         let commit = head.peel_to_commit()?;
         let commit_hash = commit.id().to_string();
         let short_hash = commit_hash.chars().take(7).collect::<String>();
-        let commit_summary = commit.summary().unwrap_or("").to_string();
+        let commit_summary = commit.summary().ok().flatten().unwrap_or("").to_string();
 
         Ok(GitRef::new_detached_head(short_hash, commit_summary))
     }
