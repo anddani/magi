@@ -1,35 +1,23 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+use crossterm::event::KeyCode;
 use magi::{
-    git::{log::get_log_entries, test_repo::TestRepo},
+    git::test_repo::TestRepo,
     keys::handle_key,
     model::{
         popup::{ApplyPopupState, PopupContent, PopupContentCommand},
         select_popup::OnSelect,
     },
-    msg::{LogType, Message, OptionsSource, ShowSelectPopupConfig, update::update},
+    msg::{Message, OptionsSource, ShowSelectPopupConfig, update::update},
 };
 
 mod utils;
-use utils::create_model_from_test_repo;
-
-fn key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
+use utils::{create_model_from_test_repo, key};
 
 // ── Key binding — 'h' in apply popup ─────────────────────────────────────────
 
 #[test]
 fn test_h_in_apply_popup_no_commits_shows_harvest_commit_picker() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -53,10 +41,7 @@ fn test_h_in_apply_popup_no_commits_shows_harvest_commit_picker() {
 #[test]
 fn test_h_in_apply_popup_with_commits_shows_source_branch_picker() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -82,10 +67,7 @@ fn test_h_in_apply_popup_with_commits_shows_source_branch_picker() {
 #[test]
 fn test_h_in_apply_popup_with_multiple_commits_embeds_all() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -113,10 +95,7 @@ fn test_h_in_apply_popup_with_multiple_commits_embeds_all() {
 #[test]
 fn test_h_in_apply_popup_in_progress_does_nothing() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -137,10 +116,7 @@ fn test_harvest_commits_at_tip_of_source_branch() {
     let test_repo = TestRepo::new();
 
     // Create base commit
-    test_repo
-        .write_file_content("base.txt", "base content")
-        .stage_files(&["base.txt"])
-        .commit("Base commit");
+    test_repo.commit_file("base.txt", "base content", "Base commit");
 
     // Create source branch and add commits to harvest
     let workdir = test_repo.repo.workdir().unwrap().to_path_buf();
@@ -151,19 +127,10 @@ fn test_harvest_commits_at_tip_of_source_branch() {
         .output()
         .unwrap();
 
-    test_repo
-        .write_file_content("harvested.txt", "harvested content")
-        .stage_files(&["harvested.txt"])
-        .commit("Commit to harvest");
+    test_repo.commit_file("harvested.txt", "harvested content", "Commit to harvest");
 
-    // Get the hash of the commit to harvest
-    let repo = git2::Repository::open(&workdir).unwrap();
-    let log = get_log_entries(&repo, &LogType::Current, true).unwrap();
-    let harvest_hash = log
-        .iter()
-        .find(|e| e.hash.is_some() && e.message.as_deref() == Some("Commit to harvest"))
-        .and_then(|e| e.hash.clone())
-        .expect("Could not find commit to harvest");
+    // Get the hash of the commit to harvest (the tip of source-branch)
+    let harvest_hash = test_repo.head_hash();
 
     // Switch back to main
     std::process::Command::new("git")
@@ -204,26 +171,10 @@ fn test_harvest_commits_at_tip_of_source_branch() {
 #[test]
 fn test_harvest_invalid_commit_shows_error_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
-
-    let workdir = test_repo.repo.workdir().unwrap().to_path_buf();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // Create a source branch (so LocalBranches picker has something)
-    std::process::Command::new("git")
-        .arg("-C")
-        .arg(&workdir)
-        .args(["checkout", "-b", "source-branch"])
-        .output()
-        .unwrap();
-    std::process::Command::new("git")
-        .arg("-C")
-        .arg(&workdir)
-        .args(["checkout", "main"])
-        .output()
-        .unwrap();
+    test_repo.create_branch("source-branch");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -251,26 +202,10 @@ fn test_harvest_source_branch_on_select_routes_to_harvest_message() {
     use magi::msg::update::update as msg_update;
 
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
-
-    let workdir = test_repo.repo.workdir().unwrap().to_path_buf();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // Create a local branch for the picker
-    std::process::Command::new("git")
-        .arg("-C")
-        .arg(&workdir)
-        .args(["checkout", "-b", "feature-branch"])
-        .output()
-        .unwrap();
-    std::process::Command::new("git")
-        .arg("-C")
-        .arg(&workdir)
-        .args(["checkout", "main"])
-        .output()
-        .unwrap();
+    test_repo.create_branch("feature-branch");
 
     let mut model = create_model_from_test_repo(&test_repo);
 

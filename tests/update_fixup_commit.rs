@@ -18,10 +18,7 @@ fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> 
 #[test]
 fn test_show_fixup_commit_select_without_staged_changes_shows_toast() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -41,15 +38,9 @@ fn test_show_fixup_commit_select_without_staged_changes_shows_toast() {
 #[test]
 fn test_show_fixup_commit_select_shows_log_pick_view() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
 
     // Stage some changes to prepare for fixup
     test_repo
@@ -78,10 +69,7 @@ fn test_show_fixup_commit_select_shows_log_pick_view() {
 #[test]
 fn test_fixup_commit_creates_fixup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // Get the hash of the first user commit
     let commits = get_log_entries_for_test(&test_repo);
@@ -113,10 +101,7 @@ fn test_fixup_commit_creates_fixup() {
 #[test]
 fn test_fixup_commit_without_staged_changes_shows_error() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // Get the hash of the first user commit
     let commits = get_log_entries_for_test(&test_repo);
@@ -136,10 +121,7 @@ fn test_fixup_commit_without_staged_changes_shows_error() {
 #[test]
 fn test_fixup_commit_extracts_hash_from_selection() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // Make a change and stage it
     test_repo
@@ -170,10 +152,7 @@ fn test_fixup_commit_extracts_hash_from_selection() {
 #[test]
 fn test_show_squash_commit_select_without_staged_changes_shows_toast() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -193,15 +172,9 @@ fn test_show_squash_commit_select_without_staged_changes_shows_toast() {
 #[test]
 fn test_show_squash_commit_select_shows_log_pick_view() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
 
     // Stage some changes to prepare for squash
     test_repo
@@ -230,10 +203,7 @@ fn test_show_squash_commit_select_shows_log_pick_view() {
 #[test]
 fn test_squash_commit_creates_squash() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // Get the hash of the first user commit
     let commits = get_log_entries_for_test(&test_repo);
@@ -265,10 +235,7 @@ fn test_squash_commit_creates_squash() {
 #[test]
 fn test_squash_commit_without_staged_changes_shows_error() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // Get the hash of the first user commit
     let commits = get_log_entries_for_test(&test_repo);
@@ -288,10 +255,7 @@ fn test_squash_commit_without_staged_changes_shows_error() {
 #[test]
 fn test_squash_commit_extracts_hash_from_selection() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // Make a change and stage it
     test_repo

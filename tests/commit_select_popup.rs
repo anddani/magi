@@ -20,15 +20,9 @@ fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> 
 #[test]
 fn test_commit_select_popup_displays_log_entries() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
 
     // Stage some changes to prepare for fixup
     test_repo
@@ -65,10 +59,7 @@ fn test_commit_select_popup_displays_log_entries() {
 #[test]
 fn test_commit_select_popup_confirm_returns_hash() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     test_repo
         .write_file_content("file2.txt", "content2")
@@ -110,15 +101,9 @@ fn test_commit_select_popup_confirm_returns_hash() {
 #[test]
 fn test_commit_select_popup_navigation() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("Commit 1");
+    test_repo.commit_file("file1.txt", "content1", "Commit 1");
 
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Commit 2");
+    test_repo.commit_file("file2.txt", "content2", "Commit 2");
 
     test_repo
         .write_file_content("file3.txt", "content3")
@@ -150,15 +135,9 @@ fn test_commit_select_popup_navigation() {
 #[test]
 fn test_commit_select_popup_confirm_picks_second_commit() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
 
     test_repo
         .write_file_content("file3.txt", "content3")
@@ -193,10 +172,7 @@ fn test_commit_select_popup_confirm_picks_second_commit() {
 #[test]
 fn test_commit_select_popup_escape_cancels() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     test_repo
         .write_file_content("file2.txt", "content2")
@@ -223,15 +199,9 @@ fn test_commit_select_popup_escape_cancels() {
 #[test]
 fn test_rebase_elsewhere_opens_log_pick_all_references() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -263,15 +233,9 @@ fn test_commit_select_popup_state_new() {
 #[test]
 fn test_commit_select_popup_state_filter() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("Feature X");
+    test_repo.commit_file("file1.txt", "content1", "Feature X");
 
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Bug fix");
+    test_repo.commit_file("file2.txt", "content2", "Bug fix");
 
     let commits = get_log_entries_for_test(&test_repo);
     let mut state = CommitSelectPopupState::new("Test".to_string(), commits);

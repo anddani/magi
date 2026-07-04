@@ -78,9 +78,7 @@ fn test_discard_hunk() {
     let test_repo = TestRepo::new();
     test_repo
         .create_file(file_name)
-        .write_file_content(file_name, original_content)
-        .stage_files(&[file_name])
-        .commit("Initial content")
+        .commit_file(file_name, original_content, "Initial content")
         .write_file_content(file_name, modified_content);
 
     // Verify file is modified
@@ -170,9 +168,7 @@ fn test_discard_lines() {
     let test_repo = TestRepo::new();
     test_repo
         .create_file(file_name)
-        .write_file_content(file_name, original_content)
-        .stage_files(&[file_name])
-        .commit("Initial content")
+        .commit_file(file_name, original_content, "Initial content")
         .write_file_content(file_name, modified_content);
 
     // Discard only the first modified line (line index 0 in the hunk's diff lines)
@@ -205,9 +201,7 @@ fn test_discard_staged_modified_file() {
     let test_repo = TestRepo::new();
     test_repo
         .create_file(file_name)
-        .write_file_content(file_name, original_content)
-        .stage_files(&[file_name])
-        .commit("Add test.txt")
+        .commit_file(file_name, original_content, "Add test.txt")
         .write_file_content(file_name, "staged modification")
         .stage_files(&[file_name]);
 
@@ -245,9 +239,7 @@ fn test_discard_staged_preserves_unstaged_changes() {
     let test_repo = TestRepo::new();
     test_repo
         .create_file(file_name)
-        .write_file_content(file_name, original_content)
-        .stage_files(&[file_name])
-        .commit("Initial content")
+        .commit_file(file_name, original_content, "Initial content")
         .write_file_content(file_name, staged_content)
         .stage_files(&[file_name])
         .write_file_content(file_name, working_content);
@@ -309,9 +301,7 @@ fn test_discard_staged_hunk() {
     let test_repo = TestRepo::new();
     test_repo
         .create_file(file_name)
-        .write_file_content(file_name, original_content)
-        .stage_files(&[file_name])
-        .commit("Initial content")
+        .commit_file(file_name, original_content, "Initial content")
         .write_file_content(file_name, modified_content)
         .stage_files(&[file_name]);
 

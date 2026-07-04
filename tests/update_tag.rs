@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+use crossterm::event::KeyCode;
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
@@ -8,26 +8,14 @@ use magi::{
 };
 
 mod utils;
-use utils::create_model_from_test_repo;
-
-fn key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
+use utils::{create_model_from_test_repo, expect_input_popup, expect_select_popup, key};
 
 // ── ShowTagPopup — key binding ─────────────────────────────────────────────────
 
 #[test]
 fn test_t_key_shows_tag_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let model = create_model_from_test_repo(&test_repo);
 
@@ -40,10 +28,7 @@ fn test_t_key_shows_tag_popup() {
 #[test]
 fn test_show_tag_popup_sets_state() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -64,10 +49,7 @@ fn test_show_tag_popup_sets_state() {
 #[test]
 fn test_q_in_tag_popup_dismisses() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
@@ -79,10 +61,7 @@ fn test_q_in_tag_popup_dismisses() {
 #[test]
 fn test_esc_in_tag_popup_dismisses() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
@@ -96,10 +75,7 @@ fn test_esc_in_tag_popup_dismisses() {
 #[test]
 fn test_t_in_tag_popup_shows_create_tag_input() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
@@ -111,21 +87,17 @@ fn test_t_in_tag_popup_shows_create_tag_input() {
 #[test]
 fn test_show_create_tag_input_opens_input_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
     let result = update(&mut model, Message::ShowCreateTagInput);
 
     assert_eq!(result, None);
-    assert!(
-        matches!(
-            &model.popup,
-            Some(PopupContent::Input(state)) if state.context == InputContext::CreateTag
-        ),
+    let state = expect_input_popup(&model);
+    assert_eq!(
+        state.context,
+        InputContext::CreateTag,
         "Expected Input popup with CreateTag context"
     );
 }
@@ -133,10 +105,7 @@ fn test_show_create_tag_input_opens_input_popup() {
 #[test]
 fn test_create_tag_input_confirm_shows_ref_select() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     // Set up an input popup with CreateTag context and a tag name typed
@@ -162,10 +131,7 @@ fn test_create_tag_input_confirm_shows_ref_select() {
 #[test]
 fn test_create_tag_target_select_shows_refs() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -181,33 +147,23 @@ fn test_create_tag_target_select_shows_refs() {
     );
 
     assert_eq!(result, None);
+    let state = expect_select_popup(&model);
     assert!(
-        matches!(
-            &model.popup,
-            Some(PopupContent::Command(PopupContentCommand::Select(state)))
-                if !state.all_options.is_empty()
-        ),
+        !state.all_options.is_empty(),
         "Expected Select popup with non-empty options"
     );
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert_eq!(
-            state.on_select,
-            OnSelect::CreateTagTarget {
-                name: "v1.0.0".to_string(),
-            }
-        );
-    } else {
-        panic!("Expected select popup");
-    }
+    assert_eq!(
+        state.on_select,
+        OnSelect::CreateTagTarget {
+            name: "v1.0.0".to_string(),
+        }
+    );
 }
 
 #[test]
 fn test_create_tag_creates_tag() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -236,10 +192,7 @@ fn test_create_tag_creates_tag() {
 #[test]
 fn test_x_in_tag_popup_shows_delete_tag_select() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
@@ -258,10 +211,7 @@ fn test_x_in_tag_popup_shows_delete_tag_select() {
 #[test]
 fn test_delete_tag_select_shows_existing_tags() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     // Create a tag so the list is non-empty
@@ -283,28 +233,18 @@ fn test_delete_tag_select_shows_existing_tags() {
     );
 
     assert_eq!(result, None);
+    let state = expect_select_popup(&model);
     assert!(
-        matches!(
-            &model.popup,
-            Some(PopupContent::Command(PopupContentCommand::Select(state)))
-                if state.all_options.contains(&"v1.0.0".to_string())
-        ),
+        state.all_options.contains(&"v1.0.0".to_string()),
         "Expected Select popup listing 'v1.0.0'"
     );
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert_eq!(state.on_select, OnSelect::DeleteTag);
-    } else {
-        panic!("Expected select popup");
-    }
+    assert_eq!(state.on_select, OnSelect::DeleteTag);
 }
 
 #[test]
 fn test_delete_tag_select_empty_repo_shows_error() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     // No tags created — should show an error popup
@@ -328,10 +268,7 @@ fn test_delete_tag_select_empty_repo_shows_error() {
 #[test]
 fn test_delete_tag_removes_tag() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     // Create then delete
@@ -361,10 +298,7 @@ fn test_delete_tag_removes_tag() {
 #[test]
 fn test_p_in_tag_popup_shows_prune_remote_select() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
@@ -383,10 +317,7 @@ fn test_p_in_tag_popup_shows_prune_remote_select() {
 #[test]
 fn test_prune_tags_confirm_shows_error_for_bad_remote() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -407,10 +338,7 @@ fn test_prune_tags_confirm_shows_error_for_bad_remote() {
 #[test]
 fn test_prune_remote_pick_skips_select_with_single_remote() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // With exactly one remote, should skip the select and return ShowPruneTagsConfirm directly
     let repo_path = test_repo.repo.workdir().unwrap();
@@ -443,10 +371,7 @@ fn test_prune_remote_pick_skips_select_with_single_remote() {
 #[test]
 fn test_prune_remote_pick_shows_select_with_multiple_remotes() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // With two remotes, should show the select popup
     let repo_path = test_repo.repo.workdir().unwrap();
@@ -471,28 +396,18 @@ fn test_prune_remote_pick_shows_select_with_multiple_remotes() {
     );
 
     assert_eq!(result, None);
+    let state = expect_select_popup(&model);
     assert!(
-        matches!(
-            &model.popup,
-            Some(PopupContent::Command(PopupContentCommand::Select(state)))
-                if state.all_options.contains(&"origin".to_string())
-        ),
+        state.all_options.contains(&"origin".to_string()),
         "Expected Select popup listing remotes"
     );
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert_eq!(state.on_select, OnSelect::PruneTagsRemotePick);
-    } else {
-        panic!("Expected select popup");
-    }
+    assert_eq!(state.on_select, OnSelect::PruneTagsRemotePick);
 }
 
 #[test]
 fn test_prune_tags_deletes_local_only_tags() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -529,10 +444,7 @@ fn test_prune_tags_deletes_local_only_tags() {
 #[test]
 fn test_prune_tags_confirm_shows_confirm_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 

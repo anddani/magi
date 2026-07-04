@@ -5,14 +5,157 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 use magi::{
     config::Theme,
     git::{GitInfo, stage::stage_files, test_repo::TestRepo},
     model::{
         DiffHunk, DiffLine, DiffLineType, FileChange, FileStatus, Line, LineContent, Model,
         RunningState, SectionType, UiModel, ViewMode,
+        popup::{ConfirmPopupState, InputPopupState, PopupContent, PopupContentCommand},
+        select_popup::{OnSelect, SelectPopupState},
     },
 };
+
+// ── Key event builders ────────────────────────────────────────────────────────
+
+pub fn key(code: KeyCode) -> KeyEvent {
+    KeyEvent {
+        code,
+        modifiers: KeyModifiers::NONE,
+        kind: KeyEventKind::Press,
+        state: KeyEventState::NONE,
+    }
+}
+
+pub fn shift_key(code: KeyCode) -> KeyEvent {
+    KeyEvent {
+        code,
+        modifiers: KeyModifiers::SHIFT,
+        kind: KeyEventKind::Press,
+        state: KeyEventState::NONE,
+    }
+}
+
+pub fn ctrl_key(code: KeyCode) -> KeyEvent {
+    KeyEvent {
+        code,
+        modifiers: KeyModifiers::CONTROL,
+        kind: KeyEventKind::Press,
+        state: KeyEventState::NONE,
+    }
+}
+
+// ── Line finders ──────────────────────────────────────────────────────────────
+
+/// Find the index of the first line whose content matches the predicate.
+pub fn find_line<F>(model: &Model, predicate: F) -> Option<usize>
+where
+    F: Fn(&LineContent) -> bool,
+{
+    model
+        .ui_model
+        .lines
+        .iter()
+        .position(|l| predicate(&l.content))
+}
+
+pub fn find_commit_line(model: &Model) -> Option<usize> {
+    find_line(model, |c| matches!(c, LineContent::Commit(_)))
+}
+
+pub fn find_unstaged_file_line(model: &Model, path: &str) -> Option<usize> {
+    find_line(
+        model,
+        |c| matches!(c, LineContent::UnstagedFile(fc) if fc.path == path),
+    )
+}
+
+pub fn find_staged_file_line(model: &Model, path: &str) -> Option<usize> {
+    find_line(
+        model,
+        |c| matches!(c, LineContent::StagedFile(fc) if fc.path == path),
+    )
+}
+
+pub fn find_untracked_file_line(model: &Model, path: &str) -> Option<usize> {
+    find_line(
+        model,
+        |c| matches!(c, LineContent::UntrackedFile(p) if p == path),
+    )
+}
+
+pub fn find_section_header(model: &Model, title: &str) -> Option<usize> {
+    find_line(
+        model,
+        |c| matches!(c, LineContent::SectionHeader { title: t, .. } if t == title),
+    )
+}
+
+/// Place the cursor on the first Commit line, panicking if there is none.
+#[track_caller]
+pub fn cursor_to_commit(model: &mut Model) {
+    model.ui_model.cursor_position =
+        find_commit_line(model).expect("Expected a Commit line in the view");
+}
+
+// ── Popup assertions ──────────────────────────────────────────────────────────
+
+/// Assert the model shows an error popup and return its message.
+#[track_caller]
+pub fn expect_error_popup(model: &Model) -> &str {
+    match &model.popup {
+        Some(PopupContent::Error { message }) => message,
+        other => panic!("Expected Error popup, got: {:?}", other),
+    }
+}
+
+/// Assert the model shows a select popup and return its state.
+#[track_caller]
+pub fn expect_select_popup(model: &Model) -> &SelectPopupState {
+    match &model.popup {
+        Some(PopupContent::Command(PopupContentCommand::Select(state))) => state,
+        other => panic!("Expected Select popup, got: {:?}", other),
+    }
+}
+
+/// Assert the model shows a select popup with the given title and on_select.
+#[track_caller]
+pub fn assert_select_popup(model: &Model, title: &str, on_select: &OnSelect) {
+    let state = expect_select_popup(model);
+    assert_eq!(state.title, title, "Select popup title mismatch");
+    assert_eq!(
+        &state.on_select, on_select,
+        "Select popup on_select mismatch"
+    );
+}
+
+/// Assert the model shows a confirm popup and return its state.
+#[track_caller]
+pub fn expect_confirm_popup(model: &Model) -> &ConfirmPopupState {
+    match &model.popup {
+        Some(PopupContent::Confirm(state)) => state,
+        other => panic!("Expected Confirm popup, got: {:?}", other),
+    }
+}
+
+/// Assert the model shows an input popup and return its state.
+#[track_caller]
+pub fn expect_input_popup(model: &Model) -> &InputPopupState {
+    match &model.popup {
+        Some(PopupContent::Input(state)) => state,
+        other => panic!("Expected Input popup, got: {:?}", other),
+    }
+}
+
+#[track_caller]
+pub fn assert_no_popup(model: &Model) {
+    assert!(
+        model.popup.is_none(),
+        "Expected no popup, got: {:?}",
+        model.popup
+    );
+}
 
 /// Creates a test model with default values. Lines are populated from the git repo.
 pub fn create_test_model() -> Model {

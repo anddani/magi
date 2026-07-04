@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+use crossterm::event::KeyCode;
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
@@ -14,48 +14,26 @@ use magi::{
 use std::fs;
 
 mod utils;
-use utils::create_model_from_test_repo;
-
-fn key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
-
-fn shift_key(c: char) -> KeyEvent {
-    KeyEvent {
-        code: KeyCode::Char(c),
-        modifiers: KeyModifiers::SHIFT,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
+use utils::{
+    create_model_from_test_repo, expect_confirm_popup, expect_select_popup, key, shift_key,
+};
 
 // ── Key binding: 'O' shows reset popup ────────────────────────────────────────
 
 #[test]
 fn test_shift_o_shows_reset_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let model = create_model_from_test_repo(&test_repo);
-    let result = handle_key(shift_key('O'), &model);
+    let result = handle_key(shift_key(KeyCode::Char('O')), &model);
     assert_eq!(result, Some(Message::ShowResetPopup));
 }
 
 #[test]
 fn test_uppercase_o_shows_reset_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let model = create_model_from_test_repo(&test_repo);
     let result = handle_key(key(KeyCode::Char('O')), &model);
@@ -67,10 +45,7 @@ fn test_uppercase_o_shows_reset_popup() {
 #[test]
 fn test_show_reset_popup_sets_reset_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(&mut model, Message::ShowResetPopup);
@@ -86,10 +61,7 @@ fn test_show_reset_popup_sets_reset_popup() {
 #[test]
 fn test_b_in_reset_popup_shows_branch_pick_select() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Reset));
@@ -108,10 +80,7 @@ fn test_b_in_reset_popup_shows_branch_pick_select() {
 #[test]
 fn test_q_dismisses_reset_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Reset));
@@ -123,10 +92,7 @@ fn test_q_dismisses_reset_popup() {
 #[test]
 fn test_esc_dismisses_reset_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Reset));
@@ -140,10 +106,7 @@ fn test_esc_dismisses_reset_popup() {
 #[test]
 fn test_reset_branch_pick_shows_local_branches() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
@@ -156,25 +119,15 @@ fn test_reset_branch_pick_shows_local_branches() {
     );
 
     assert_eq!(result, None);
-    assert!(matches!(
-        &model.popup,
-        Some(PopupContent::Command(PopupContentCommand::Select(state)))
-            if !state.all_options.is_empty()
-    ));
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert_eq!(state.on_select, OnSelect::ResetBranchPick);
-    } else {
-        panic!("Expected select popup");
-    }
+    let state = expect_select_popup(&model);
+    assert!(!state.all_options.is_empty());
+    assert_eq!(state.on_select, OnSelect::ResetBranchPick);
 }
 
 #[test]
 fn test_reset_branch_pick_prioritizes_current_branch() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let current = model.git_info.current_branch().unwrap();
@@ -188,11 +141,8 @@ fn test_reset_branch_pick_prioritizes_current_branch() {
         }),
     );
 
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert_eq!(state.all_options[0], current);
-    } else {
-        panic!("Expected Select popup");
-    }
+    let state = expect_select_popup(&model);
+    assert_eq!(state.all_options[0], current);
 }
 
 // ── ShowSelectPopup::ResetBranchTarget ────────────────────────────────────────
@@ -200,10 +150,7 @@ fn test_reset_branch_pick_prioritizes_current_branch() {
 #[test]
 fn test_reset_branch_target_shows_refs() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let current = model.git_info.current_branch().unwrap();
@@ -234,34 +181,16 @@ fn test_reset_branch_target_shows_refs() {
 #[test]
 fn test_reset_non_current_branch_to_target() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
     // Get the initial commit hash
-    let initial_hash = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let initial_hash = test_repo.head_hash();
 
     // Create another commit
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     // Create a second branch pointing at second commit
-    {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        let head = repo.head().unwrap().peel_to_commit().unwrap();
-        repo.branch("other-branch", &head, false).unwrap();
-    }
+    test_repo.create_branch("other-branch");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let current = model.git_info.current_branch().unwrap();
@@ -298,25 +227,11 @@ fn test_reset_non_current_branch_to_target() {
 #[test]
 fn test_reset_current_branch_to_earlier_commit() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
-    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let initial_hash = repo
-        .head()
-        .unwrap()
-        .peel_to_commit()
-        .unwrap()
-        .id()
-        .to_string();
-    drop(repo);
+    let initial_hash = test_repo.head_hash();
 
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let current = model.git_info.current_branch().unwrap();
@@ -342,25 +257,11 @@ fn test_reset_current_branch_to_earlier_commit() {
 #[test]
 fn test_reset_current_branch_with_uncommitted_shows_confirmation() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
-    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let initial_hash = repo
-        .head()
-        .unwrap()
-        .peel_to_commit()
-        .unwrap()
-        .id()
-        .to_string();
-    drop(repo);
+    let initial_hash = test_repo.head_hash();
 
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     // Add an unstaged change to simulate uncommitted work
     test_repo.write_file_content("file.txt", "dirty");
@@ -387,43 +288,26 @@ fn test_reset_current_branch_with_uncommitted_shows_confirmation() {
     assert_eq!(result, None);
 
     // Should show a confirmation popup
-    if let Some(PopupContent::Confirm(state)) = &model.popup {
-        assert!(state.message.contains("Uncommitted changes will be lost"));
-        assert_eq!(
-            state.on_confirm,
-            ConfirmAction::ResetBranch {
-                branch: current.clone(),
-                target: initial_hash.clone(),
-                mode: ResetMode::Hard,
-            }
-        );
-    } else {
-        panic!("Expected Confirm popup, got: {:?}", model.popup);
-    }
+    let state = expect_confirm_popup(&model);
+    assert!(state.message.contains("Uncommitted changes will be lost"));
+    assert_eq!(
+        state.on_confirm,
+        ConfirmAction::ResetBranch {
+            branch: current.clone(),
+            target: initial_hash.clone(),
+            mode: ResetMode::Hard,
+        }
+    );
 }
 
 #[test]
 fn test_reset_current_branch_clean_no_confirmation() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
-    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let initial_hash = repo
-        .head()
-        .unwrap()
-        .peel_to_commit()
-        .unwrap()
-        .id()
-        .to_string();
-    drop(repo);
+    let initial_hash = test_repo.head_hash();
 
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let current = model.git_info.current_branch().unwrap();
@@ -459,10 +343,7 @@ fn test_reset_current_branch_clean_no_confirmation() {
 #[test]
 fn test_y_in_reset_confirm_popup_triggers_reset() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
@@ -488,10 +369,7 @@ fn test_y_in_reset_confirm_popup_triggers_reset() {
 #[test]
 fn test_n_in_reset_confirm_popup_dismisses() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
@@ -512,23 +390,13 @@ fn test_n_in_reset_confirm_popup_dismisses() {
 #[test]
 fn test_reset_branch_pick_cursor_on_branch_ref_prioritizes_it() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
     // Create a second branch pointing at the initial commit
-    {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        let head = repo.head().unwrap().peel_to_commit().unwrap();
-        repo.branch("other-branch", &head, false).unwrap();
-    }
+    test_repo.create_branch("other-branch");
 
     // Make another commit so current branch is ahead of other-branch
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -552,14 +420,11 @@ fn test_reset_branch_pick_cursor_on_branch_ref_prioritizes_it() {
             }),
         );
 
-        if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-            assert_eq!(
-                state.all_options[0], "other-branch",
-                "other-branch should be first because cursor is on its commit"
-            );
-        } else {
-            panic!("Expected Select popup");
-        }
+        let state = expect_select_popup(&model);
+        assert_eq!(
+            state.all_options[0], "other-branch",
+            "other-branch should be first because cursor is on its commit"
+        );
     }
     // If other-branch doesn't appear in the visible lines, the test is skipped
     // (shallow test repos may not always show it)
@@ -570,26 +435,12 @@ fn test_reset_branch_pick_cursor_on_branch_ref_prioritizes_it() {
 #[test]
 fn test_reset_branch_target_cursor_on_bare_hash_prioritizes_it() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
-    let initial_hash = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let initial_hash = test_repo.head_hash();
 
     // Make a second commit — now the first commit has no branch ref pointing at it
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -621,19 +472,16 @@ fn test_reset_branch_target_cursor_on_bare_hash_prioritizes_it() {
             }),
         );
 
-        if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-            assert_eq!(
-                state.all_options[0], short_hash,
-                "hash should be first because cursor is on a bare commit"
-            );
-            // Verify the hash is a prefix of the initial commit
-            assert!(
-                initial_hash.starts_with(&short_hash),
-                "short hash should be prefix of full hash"
-            );
-        } else {
-            panic!("Expected Select popup");
-        }
+        let state = expect_select_popup(&model);
+        assert_eq!(
+            state.all_options[0], short_hash,
+            "hash should be first because cursor is on a bare commit"
+        );
+        // Verify the hash is a prefix of the initial commit
+        assert!(
+            initial_hash.starts_with(&short_hash),
+            "short hash should be prefix of full hash"
+        );
     }
     // If no bare commit lines visible, test is skipped
 }
@@ -641,10 +489,7 @@ fn test_reset_branch_target_cursor_on_bare_hash_prioritizes_it() {
 #[test]
 fn test_reset_branch_target_cursor_on_branch_ref_prioritizes_branch_over_hash() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let current = model.git_info.current_branch().unwrap();
@@ -689,10 +534,7 @@ fn test_reset_branch_target_cursor_on_branch_ref_prioritizes_branch_over_hash() 
 #[test]
 fn test_m_in_reset_popup_shows_select_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Reset));
@@ -711,17 +553,10 @@ fn test_m_in_reset_popup_shows_select_popup() {
 #[test]
 fn test_reset_mixed_shows_refs_select_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
     // Create a second branch so there's at least one ref to show
-    {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        let head = repo.head().unwrap().peel_to_commit().unwrap();
-        repo.branch("other-branch", &head, false).unwrap();
-    }
+    test_repo.create_branch("other-branch");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
@@ -734,40 +569,19 @@ fn test_reset_mixed_shows_refs_select_popup() {
     );
 
     assert_eq!(result, None);
-    assert!(matches!(
-        &model.popup,
-        Some(PopupContent::Command(PopupContentCommand::Select(state)))
-            if !state.all_options.is_empty()
-    ));
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert_eq!(state.on_select, OnSelect::Reset(ResetMode::Mixed));
-    } else {
-        panic!("Expected select popup");
-    }
+    let state = expect_select_popup(&model);
+    assert!(!state.all_options.is_empty());
+    assert_eq!(state.on_select, OnSelect::Reset(ResetMode::Mixed));
 }
 
 #[test]
 fn test_reset_mixed_dispatches_reset_branch_with_mixed_mode() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
-    let initial_hash = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let initial_hash = test_repo.head_hash();
 
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let current = model.git_info.current_branch().unwrap();
@@ -800,25 +614,11 @@ fn test_reset_mixed_dispatches_reset_branch_with_mixed_mode() {
 #[test]
 fn test_reset_mixed_actually_resets_index_but_keeps_working_tree() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
-    let initial_hash = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let initial_hash = test_repo.head_hash();
 
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let current = model.git_info.current_branch().unwrap();
@@ -845,10 +645,7 @@ fn test_reset_mixed_actually_resets_index_but_keeps_working_tree() {
 #[test]
 fn test_i_in_reset_popup_shows_select_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Reset));
@@ -867,17 +664,10 @@ fn test_i_in_reset_popup_shows_select_popup() {
 #[test]
 fn test_reset_index_shows_refs_select_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
     // Create a second branch so there's at least one ref to show
-    {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        let head = repo.head().unwrap().peel_to_commit().unwrap();
-        repo.branch("other-branch", &head, false).unwrap();
-    }
+    test_repo.create_branch("other-branch");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
@@ -890,40 +680,19 @@ fn test_reset_index_shows_refs_select_popup() {
     );
 
     assert_eq!(result, None);
-    assert!(matches!(
-        &model.popup,
-        Some(PopupContent::Command(PopupContentCommand::Select(state)))
-            if !state.all_options.is_empty() && state.title == "Reset index to"
-    ));
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert_eq!(state.on_select, OnSelect::ResetIndex);
-    } else {
-        panic!("Expected select popup");
-    }
+    let state = expect_select_popup(&model);
+    assert!(!state.all_options.is_empty() && state.title == "Reset index to");
+    assert_eq!(state.on_select, OnSelect::ResetIndex);
 }
 
 #[test]
 fn test_reset_index_select_confirm_dispatches_reset_index_message() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
-    let initial_hash = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let initial_hash = test_repo.head_hash();
 
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -948,25 +717,14 @@ fn test_reset_index_select_confirm_dispatches_reset_index_message() {
 #[test]
 fn test_reset_index_only_unstages_does_not_move_head() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
     // Stage a change without committing
     test_repo
         .write_file_content("file.txt", "staged change")
         .stage_files(&["file.txt"]);
 
-    let head_hash = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let head_hash = test_repo.head_hash();
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -1019,10 +777,7 @@ fn test_reset_index_only_unstages_does_not_move_head() {
 #[test]
 fn test_w_in_reset_popup_shows_select_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Reset));
@@ -1041,17 +796,10 @@ fn test_w_in_reset_popup_shows_select_popup() {
 #[test]
 fn test_reset_worktree_shows_refs_select_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
     // Create a second branch so there's at least one ref to show
-    {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        let head = repo.head().unwrap().peel_to_commit().unwrap();
-        repo.branch("other-branch", &head, false).unwrap();
-    }
+    test_repo.create_branch("other-branch");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
@@ -1064,40 +812,19 @@ fn test_reset_worktree_shows_refs_select_popup() {
     );
 
     assert_eq!(result, None);
-    assert!(matches!(
-        &model.popup,
-        Some(PopupContent::Command(PopupContentCommand::Select(state)))
-            if !state.all_options.is_empty() && state.title == "Reset worktree to"
-    ));
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert_eq!(state.on_select, OnSelect::ResetWorktree);
-    } else {
-        panic!("Expected select popup");
-    }
+    let state = expect_select_popup(&model);
+    assert!(!state.all_options.is_empty() && state.title == "Reset worktree to");
+    assert_eq!(state.on_select, OnSelect::ResetWorktree);
 }
 
 #[test]
 fn test_reset_worktree_select_confirm_dispatches_message() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
-    let initial_hash = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let initial_hash = test_repo.head_hash();
 
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -1122,20 +849,9 @@ fn test_reset_worktree_select_confirm_dispatches_message() {
 #[test]
 fn test_reset_worktree_only_updates_worktree_not_head_or_index() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
-    let head_hash = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let head_hash = test_repo.head_hash();
 
     // Stage a change (index differs from HEAD)
     test_repo
