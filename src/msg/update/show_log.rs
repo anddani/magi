@@ -26,6 +26,8 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 })
                 .collect();
 
+            model.save_log_return_state();
+
             // Update the ui_model with log lines
             model.ui_model.lines = lines;
             model.ui_model.cursor_position = 0;

@@ -9,6 +9,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
     // Cancel any pending pick operation
     model.log_pick_on_select = None;
     model.ui_model.visual_mode_anchor = None;
+    model.restore_log_return_state();
     // Trigger a refresh to reload the status view
     Some(Message::Refresh)
 }
