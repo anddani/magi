@@ -63,6 +63,7 @@ mod show_commit_select;
 mod show_fetch_popup;
 mod show_input_popup;
 mod show_log;
+mod show_log_popup;
 mod show_merge_popup;
 mod show_preview;
 mod show_prune_tags_confirm;
@@ -172,6 +173,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             InputMessage::Confirm => input_input::confirm(model),
         },
         Message::Credentials(credentials_msg) => credentials_input::update(model, credentials_msg),
+        Message::ShowLogPopup => show_log_popup::update(model),
         Message::ShowLog(log_type) => show_log::update(model, log_type),
         Message::ExitLogView => exit_log_view::update(model),
 

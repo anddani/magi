@@ -9,6 +9,7 @@ pub enum Arguments {
     PullArguments(HashSet<PullArgument>),
     StashArguments(HashSet<StashArgument>),
     RevertArguments(HashSet<RevertArgument>),
+    LogArguments(HashSet<LogArgument>),
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -19,6 +20,7 @@ pub enum Argument {
     Pull(PullArgument),
     Stash(StashArgument),
     Revert(RevertArgument),
+    Log(LogArgument),
 }
 
 pub trait PopupArgument: Sized + Eq + Hash {
@@ -77,6 +79,14 @@ impl Arguments {
         }
     }
 
+    pub fn log(&self) -> Option<&HashSet<LogArgument>> {
+        if let Arguments::LogArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
     pub fn commit_mut(&mut self) -> Option<&mut HashSet<CommitArgument>> {
         if let Arguments::CommitArguments(args) = self {
             Some(args)
@@ -119,6 +129,14 @@ impl Arguments {
 
     pub fn revert_mut(&mut self) -> Option<&mut HashSet<RevertArgument>> {
         if let Arguments::RevertArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn log_mut(&mut self) -> Option<&mut HashSet<LogArgument>> {
+        if let Arguments::LogArguments(args) = self {
             Some(args)
         } else {
             None
@@ -401,6 +419,42 @@ pub enum RevertArgument {
 impl RevertArgument {
     pub fn from_key(key: char) -> Option<RevertArgument> {
         Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum LogArgument {
+    Graph,
+}
+
+impl LogArgument {
+    pub fn from_key(key: char) -> Option<LogArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for LogArgument {
+    fn all() -> Vec<LogArgument> {
+        vec![LogArgument::Graph]
+    }
+
+    fn key(&self) -> char {
+        match self {
+            LogArgument::Graph => 'g',
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        let t = i18n::t();
+        match self {
+            LogArgument::Graph => t.arg_log_graph,
+        }
+    }
+
+    fn flag(&self) -> &'static str {
+        match self {
+            LogArgument::Graph => "--graph",
+        }
     }
 }
 

@@ -78,7 +78,7 @@ fn refresh_status(model: &mut Model) {
 }
 
 fn refresh_log(model: &mut Model, log_type: &crate::msg::LogType) {
-    if let Ok(entries) = get_log_entries(&model.git_info.repository, log_type) {
+    if let Ok(entries) = get_log_entries(&model.git_info.repository, log_type, model.log_graph) {
         let lines: Vec<Line> = entries
             .into_iter()
             .map(|entry| Line {

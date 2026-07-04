@@ -1,17 +1,30 @@
+use ratatui::text::Line;
+
 use super::popup_content::CommandPopupContent;
 
 use crate::{
     config::Theme,
     i18n,
-    model::Model,
+    model::{Model, arguments::LogArgument},
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::command_description,
+        util::{argument_lines, command_description},
     },
 };
 
 pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     let t = i18n::t();
+
+    let formatting: Vec<Line<'_>> = argument_lines::<LogArgument>(
+        theme,
+        model.arg_mode,
+        model.arguments.as_ref().and_then(|a| a.log()),
+    );
+
+    let formatting_col = PopupColumn {
+        title: Some(t.col_formatting.into()),
+        content: formatting,
+    };
 
     let log_col = PopupColumn {
         title: Some(t.popup_log.into()),
@@ -26,8 +39,13 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
 
     CommandPopupContent {
         title: t.popup_log,
-        rows: vec![PopupRow {
-            columns: vec![log_col],
-        }],
+        rows: vec![
+            PopupRow {
+                columns: vec![formatting_col],
+            },
+            PopupRow {
+                columns: vec![log_col],
+            },
+        ],
     }
 }

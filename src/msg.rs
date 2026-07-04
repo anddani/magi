@@ -160,6 +160,8 @@ pub enum Message {
     ShowPushPopup,
     /// Show fetch popup with options
     ShowFetchPopup,
+    /// Show log popup with default arguments
+    ShowLogPopup,
     /// Show pull popup with options
     ShowPullPopup,
     /// Show the input popup for the new branch name (renaming old_name)

@@ -12,8 +12,12 @@ use super::commit_utils::{build_push_remote_map, enrich_refs_with_push_remote, s
 const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
-/// Fetches git log entries with graph
-pub fn get_log_entries(repository: &Repository, log_type: &LogType) -> MagiResult<Vec<LogEntry>> {
+/// Fetches git log entries, optionally with graph
+pub fn get_log_entries(
+    repository: &Repository,
+    log_type: &LogType,
+    graph: bool,
+) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
         .ok_or_else(|| git2::Error::from_str("No working directory"))?;
@@ -40,10 +44,13 @@ pub fn get_log_entries(repository: &Repository, log_type: &LogType) -> MagiResul
     let mut args = vec![
         "log".to_string(),
         format!("--format={}", format),
-        "--graph".to_string(),
         "--decorate=short".to_string(),
         format!("-n{}", MAX_LOG_ENTRIES),
     ];
+
+    if graph {
+        args.push("--graph".to_string());
+    }
 
     match log_type {
         LogType::Current => args.push("HEAD".to_string()),
@@ -282,8 +289,12 @@ mod tests {
             .stage_files(&["file.txt"])
             .commit("Second commit");
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Other("feature".to_string())).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Other("feature".to_string()),
+            true,
+        )
+        .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         assert!(messages.contains(&"Initial commit".to_string()));
