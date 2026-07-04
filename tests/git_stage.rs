@@ -1,23 +1,6 @@
 use magi::git::stage::{stage_files, stage_hunk, unstage_files, unstage_lines};
 use magi::git::test_repo::TestRepo;
 use std::fs;
-use std::process::Command;
-
-fn commit_changes(repo_path: &std::path::Path, message: &str) {
-    let output = Command::new("git")
-        .args(["-C", repo_path.to_str().unwrap(), "commit", "-m", message])
-        .env("GIT_AUTHOR_NAME", "Test User")
-        .env("GIT_AUTHOR_EMAIL", "test@example.com")
-        .env("GIT_COMMITTER_NAME", "Test User")
-        .env("GIT_COMMITTER_EMAIL", "test@example.com")
-        .output()
-        .expect("Failed to run git commit");
-    assert!(
-        output.status.success(),
-        "git commit failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-}
 
 #[test]
 fn test_stage_files_stages_modified_tracked_file() {
@@ -217,9 +200,7 @@ fn test_unstage_lines_after_staging_hunk_with_two_hunks() {
         content.push_str(&format!("line {}\n", i));
     }
     let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, &content).unwrap();
-    stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(repo_path, "Initial content with 20 lines");
+    test_repo.commit_file("test.txt", &content, "Initial content with 20 lines");
 
     // Modify lines 2 and 19 to create two separate hunks
     let modified = content
@@ -266,9 +247,11 @@ fn test_unstage_lines_no_trailing_newline() {
     let mut lines_vec: Vec<String> = (1..=20).map(|i| format!("line {}", i)).collect();
     let content = lines_vec.join("\n"); // no trailing \n
     let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, &content).unwrap();
-    stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(repo_path, "Initial content without trailing newline");
+    test_repo.commit_file(
+        "test.txt",
+        &content,
+        "Initial content without trailing newline",
+    );
 
     // Modify lines 2 and 19 to create two separate hunks
     lines_vec[1] = "MODIFIED 2".to_string();
@@ -309,9 +292,7 @@ fn test_unstage_partial_lines_with_unstaged_hunk_present() {
         content.push_str(&format!("line {}\n", i));
     }
     let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, &content).unwrap();
-    stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(repo_path, "Initial 20 lines");
+    test_repo.commit_file("test.txt", &content, "Initial 20 lines");
 
     // Modify lines 2 and 19 (two separate hunks)
     let modified = content
@@ -343,9 +324,7 @@ fn test_unstage_lines_second_staged_hunk_with_unstaged_hunk() {
         content.push_str(&format!("line {}\n", i));
     }
     let file_path = repo_path.join("test.txt");
-    fs::write(&file_path, &content).unwrap();
-    stage_files(repo_path, &["test.txt"]).unwrap();
-    commit_changes(repo_path, "Initial 30 lines");
+    test_repo.commit_file("test.txt", &content, "Initial 30 lines");
 
     // Modify lines 2, 15, and 28 (three separate hunks)
     let modified = content

@@ -1,29 +1,13 @@
 use magi::git::test_repo::TestRepo;
-use magi::model::{LineContent, Model, SectionType};
+use magi::model::{LineContent, SectionType};
 use magi::msg::Message;
 use magi::msg::update::update;
 
 mod utils;
 
-use crate::utils::create_model_from_test_repo;
-
-/// Find the line index for an UnstagedFile with the given path.
-fn find_unstaged_file_line(model: &Model, path: &str) -> Option<usize> {
-    model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == path))
-}
-
-/// Find the line index for an UntrackedFile with the given path.
-fn find_untracked_file_line(model: &Model, path: &str) -> Option<usize> {
-    model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::UntrackedFile(p) if p == path))
-}
+use crate::utils::{
+    create_model_from_test_repo, find_unstaged_file_line, find_untracked_file_line,
+};
 
 #[test]
 fn test_visual_stage_two_collapsed_unstaged_files() {

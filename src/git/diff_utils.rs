@@ -154,3 +154,313 @@ where
 
     lines
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::git::test_repo::TestRepo;
+    use git2::DiffOptions;
+
+    fn open_repo(test_repo: &TestRepo) -> git2::Repository {
+        git2::Repository::open(test_repo.repo_path()).unwrap()
+    }
+
+    /// Collects file changes from the index-to-workdir (unstaged) diff.
+    fn unstaged_changes(repo: &git2::Repository) -> FileChangesWithDiffs {
+        let mut opts = DiffOptions::new();
+        opts.include_untracked(false);
+        let diff = repo.diff_index_to_workdir(None, Some(&mut opts)).unwrap();
+        collect_file_changes(&diff).unwrap()
+    }
+
+    /// Collects file changes from the HEAD-to-index (staged) diff.
+    fn staged_changes(repo: &git2::Repository) -> FileChangesWithDiffs {
+        let head = repo.head().unwrap().peel_to_tree().unwrap();
+        let diff = repo.diff_tree_to_index(Some(&head), None, None).unwrap();
+        collect_file_changes(&diff).unwrap()
+    }
+
+    /// Maps diff lines to (content, line_type) pairs for easy comparison.
+    fn line_pairs(lines: &[DiffLine]) -> Vec<(String, DiffLineType)> {
+        lines
+            .iter()
+            .map(|l| (l.content.clone(), l.line_type.clone()))
+            .collect()
+    }
+
+    #[test]
+    fn test_collect_file_changes_empty_diff() {
+        let test_repo = TestRepo::new();
+        let repo = open_repo(&test_repo);
+
+        let changes = unstaged_changes(&repo);
+        assert!(changes.is_empty());
+    }
+
+    #[test]
+    fn test_collect_file_changes_modified_file_single_hunk() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("file.txt", "line1\nline2\nline3\n", "Add file");
+        test_repo.write_file_content("file.txt", "line1\nCHANGED\nline3\n");
+
+        let repo = open_repo(&test_repo);
+        let changes = unstaged_changes(&repo);
+
+        assert_eq!(changes.len(), 1);
+        let (file_change, hunks) = &changes[0];
+        assert_eq!(file_change.path, "file.txt");
+        assert_eq!(file_change.status, FileStatus::Modified);
+
+        assert_eq!(hunks.len(), 1);
+        let (hunk, lines) = &hunks[0];
+        assert!(hunk.header.starts_with("@@ -1,3 +1,3 @@"));
+        assert_eq!(hunk.hunk_index, 0);
+
+        assert_eq!(
+            line_pairs(lines),
+            vec![
+                ("line1".to_string(), DiffLineType::Context),
+                ("line2".to_string(), DiffLineType::Deletion),
+                ("CHANGED".to_string(), DiffLineType::Addition),
+                ("line3".to_string(), DiffLineType::Context),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_collect_file_changes_additions_only_new_file() {
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("new.txt", "one\ntwo\n")
+            .stage_files(&["new.txt"]);
+
+        let repo = open_repo(&test_repo);
+        let changes = staged_changes(&repo);
+
+        assert_eq!(changes.len(), 1);
+        let (file_change, hunks) = &changes[0];
+        assert_eq!(file_change.path, "new.txt");
+        assert_eq!(file_change.status, FileStatus::New);
+
+        assert_eq!(hunks.len(), 1);
+        let (hunk, lines) = &hunks[0];
+        assert!(hunk.header.starts_with("@@ -0,0 +1,2 @@"));
+
+        assert_eq!(
+            line_pairs(lines),
+            vec![
+                ("one".to_string(), DiffLineType::Addition),
+                ("two".to_string(), DiffLineType::Addition),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_collect_file_changes_deletions_only_deleted_file() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("doomed.txt", "one\ntwo\n", "Add doomed file");
+        test_repo
+            .delete_file("doomed.txt")
+            .stage_files(&["doomed.txt"]);
+
+        let repo = open_repo(&test_repo);
+        let changes = staged_changes(&repo);
+
+        assert_eq!(changes.len(), 1);
+        let (file_change, hunks) = &changes[0];
+        assert_eq!(file_change.path, "doomed.txt");
+        assert_eq!(file_change.status, FileStatus::Deleted);
+
+        assert_eq!(hunks.len(), 1);
+        let (hunk, lines) = &hunks[0];
+        assert!(hunk.header.starts_with("@@ -1,2 +0,0 @@"));
+
+        assert_eq!(
+            line_pairs(lines),
+            vec![
+                ("one".to_string(), DiffLineType::Deletion),
+                ("two".to_string(), DiffLineType::Deletion),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_collect_file_changes_multiple_hunks_indexed() {
+        let test_repo = TestRepo::new();
+        // 20 lines so that a change at the top and one at the bottom produce
+        // two separate hunks (default context is 3 lines).
+        let content = (1..=20)
+            .map(|i| format!("line{:02}\n", i))
+            .collect::<String>();
+        test_repo.commit_file("file.txt", &content, "Add file");
+
+        let modified = content
+            .replace("line01\n", "first-changed\n")
+            .replace("line20\n", "last-changed\n");
+        test_repo.write_file_content("file.txt", &modified);
+
+        let repo = open_repo(&test_repo);
+        let changes = unstaged_changes(&repo);
+
+        assert_eq!(changes.len(), 1);
+        let (_, hunks) = &changes[0];
+        assert_eq!(hunks.len(), 2);
+
+        let (first_hunk, first_lines) = &hunks[0];
+        assert_eq!(first_hunk.hunk_index, 0);
+        assert!(first_hunk.header.starts_with("@@ -1,4 +1,4 @@"));
+        assert!(
+            first_lines
+                .iter()
+                .any(|l| l.content == "first-changed" && l.line_type == DiffLineType::Addition)
+        );
+        assert!(first_lines.iter().all(|l| l.content != "last-changed"));
+
+        let (second_hunk, second_lines) = &hunks[1];
+        assert_eq!(second_hunk.hunk_index, 1);
+        assert!(second_hunk.header.starts_with("@@ -17,4 +17,4 @@"));
+        assert!(
+            second_lines
+                .iter()
+                .any(|l| l.content == "last-changed" && l.line_type == DiffLineType::Addition)
+        );
+        assert!(second_lines.iter().all(|l| l.content != "first-changed"));
+    }
+
+    #[test]
+    fn test_collect_file_changes_multiple_files() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "aaa\n", "Add a");
+        test_repo.commit_file("b.txt", "bbb\n", "Add b");
+        test_repo
+            .write_file_content("a.txt", "aaa changed\n")
+            .write_file_content("b.txt", "bbb changed\n");
+
+        let repo = open_repo(&test_repo);
+        let changes = unstaged_changes(&repo);
+
+        assert_eq!(changes.len(), 2);
+
+        for (path, expected_addition) in [("a.txt", "aaa changed"), ("b.txt", "bbb changed")] {
+            let (file_change, hunks) = changes
+                .iter()
+                .find(|(fc, _)| fc.path == path)
+                .unwrap_or_else(|| panic!("missing file change for {}", path));
+            assert_eq!(file_change.status, FileStatus::Modified);
+            assert_eq!(hunks.len(), 1);
+            assert!(
+                hunks[0].1.iter().any(
+                    |l| l.content == expected_addition && l.line_type == DiffLineType::Addition
+                ),
+                "hunk for {} should contain its own addition",
+                path
+            );
+        }
+    }
+
+    #[test]
+    fn test_collect_file_changes_no_trailing_newline() {
+        let test_repo = TestRepo::new();
+        // Neither the old nor the new version ends with a newline.
+        test_repo.commit_file("file.txt", "alpha\nbeta", "Add file");
+        test_repo.write_file_content("file.txt", "alpha\ngamma");
+
+        let repo = open_repo(&test_repo);
+        let changes = unstaged_changes(&repo);
+
+        assert_eq!(changes.len(), 1);
+        let (_, hunks) = &changes[0];
+        assert_eq!(hunks.len(), 1);
+
+        // The "\ No newline at end of file" marker lines (origins '<', '>', '=')
+        // must not show up as diff lines.
+        assert_eq!(
+            line_pairs(&hunks[0].1),
+            vec![
+                ("alpha".to_string(), DiffLineType::Context),
+                ("beta".to_string(), DiffLineType::Deletion),
+                ("gamma".to_string(), DiffLineType::Addition),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_build_change_lines_empty_input() {
+        let lines = build_change_lines(
+            Vec::new(),
+            "Unstaged changes",
+            SectionType::UnstagedChanges,
+            LineContent::UnstagedFile,
+            |path| SectionType::UnstagedFile { path },
+            |path, hunk_index| SectionType::UnstagedHunk { path, hunk_index },
+        );
+        assert!(lines.is_empty());
+    }
+
+    #[test]
+    fn test_build_change_lines_structure() {
+        let file_changes: FileChangesWithDiffs = vec![(
+            FileChange {
+                path: "a.txt".to_string(),
+                status: FileStatus::Modified,
+            },
+            vec![(
+                DiffHunk {
+                    header: "@@ -1,2 +1,2 @@".to_string(),
+                    hunk_index: 0,
+                },
+                vec![DiffLine {
+                    content: "new line".to_string(),
+                    line_type: DiffLineType::Addition,
+                }],
+            )],
+        )];
+
+        let lines = build_change_lines(
+            file_changes,
+            "Unstaged changes",
+            SectionType::UnstagedChanges,
+            LineContent::UnstagedFile,
+            |path| SectionType::UnstagedFile { path },
+            |path, hunk_index| SectionType::UnstagedHunk { path, hunk_index },
+        );
+
+        assert_eq!(lines.len(), 4);
+
+        // Section header with file count
+        assert!(matches!(
+            &lines[0].content,
+            LineContent::SectionHeader { title, count: Some(1) } if title == "Unstaged changes"
+        ));
+        assert_eq!(lines[0].section, Some(SectionType::UnstagedChanges));
+
+        // File line
+        assert!(matches!(
+            &lines[1].content,
+            LineContent::UnstagedFile(fc) if fc.path == "a.txt"
+        ));
+        assert_eq!(
+            lines[1].section,
+            Some(SectionType::UnstagedFile {
+                path: "a.txt".to_string()
+            })
+        );
+
+        // Hunk header and diff line both belong to the hunk section
+        let hunk_section = SectionType::UnstagedHunk {
+            path: "a.txt".to_string(),
+            hunk_index: 0,
+        };
+        assert!(matches!(
+            &lines[2].content,
+            LineContent::DiffHunk(h) if h.header == "@@ -1,2 +1,2 @@" && h.hunk_index == 0
+        ));
+        assert_eq!(lines[2].section, Some(hunk_section.clone()));
+        assert!(matches!(
+            &lines[3].content,
+            LineContent::DiffLine(l) if l.content == "new line"
+                && l.line_type == DiffLineType::Addition
+        ));
+        assert_eq!(lines[3].section, Some(hunk_section));
+    }
+}

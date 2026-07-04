@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+use crossterm::event::KeyCode;
 use magi::{
     git::{cherry_pick::cherry_pick_in_progress, log::get_log_entries, test_repo::TestRepo},
     keys::handle_key,
@@ -9,38 +9,16 @@ use magi::{
     },
     msg::{ApplyCommand, LogType, Message, OptionsSource, ShowSelectPopupConfig, update::update},
 };
-use std::fs;
 
 mod utils;
-use utils::create_model_from_test_repo;
-
-fn key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
-
-fn shift_key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::SHIFT,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
+use utils::{create_model_from_test_repo, find_commit_line, find_line, key, shift_key};
 
 // ── ShowApplyPopup — key binding ───────────────────────────────────────────────
 
 #[test]
 fn test_shift_a_key_shows_apply_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let model = create_model_from_test_repo(&test_repo);
 
@@ -53,10 +31,7 @@ fn test_shift_a_key_shows_apply_popup() {
 #[test]
 fn test_show_apply_popup_sets_state_not_in_progress() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -75,19 +50,11 @@ fn test_show_apply_popup_sets_state_not_in_progress() {
 #[test]
 fn test_show_apply_popup_cursor_on_commit_collects_hash() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let commit_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::Commit(_)))
-        .expect("Expected a Commit line in the status view");
+    let commit_pos = find_commit_line(&model).expect("Expected a Commit line in the status view");
     model.ui_model.cursor_position = commit_pos;
 
     let expected_hash = if let LineContent::Commit(info) = &model.ui_model.lines[commit_pos].content
@@ -111,19 +78,14 @@ fn test_show_apply_popup_cursor_on_commit_collects_hash() {
 #[test]
 fn test_show_apply_popup_cursor_not_on_commit_gives_empty_selection() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let non_commit_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| !matches!(&l.content, LineContent::Commit(_) | LineContent::LogLine(_)))
-        .expect("Expected a non-commit line");
+    let non_commit_pos = find_line(&model, |c| {
+        !matches!(c, LineContent::Commit(_) | LineContent::LogLine(_))
+    })
+    .expect("Expected a non-commit line");
     model.ui_model.cursor_position = non_commit_pos;
 
     update(&mut model, Message::ShowApplyPopup);
@@ -141,15 +103,9 @@ fn test_show_apply_popup_cursor_not_on_commit_gives_empty_selection() {
 fn test_show_apply_popup_visual_selection_all_commits_collects_all_hashes() {
     let test_repo = TestRepo::new();
     test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit")
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Second commit")
-        .write_file_content("file3.txt", "content3")
-        .stage_files(&["file3.txt"])
-        .commit("Third commit");
+        .commit_file("file1.txt", "content1", "First commit")
+        .commit_file("file2.txt", "content2", "Second commit")
+        .commit_file("file3.txt", "content3", "Third commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -207,10 +163,7 @@ fn test_show_apply_popup_visual_selection_all_commits_collects_all_hashes() {
 #[test]
 fn test_shift_a_in_apply_popup_no_commits_shows_select_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -236,10 +189,7 @@ fn test_shift_a_in_apply_popup_no_commits_shows_select_popup() {
 #[test]
 fn test_shift_a_in_apply_popup_with_commit_picks_directly() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -261,10 +211,7 @@ fn test_shift_a_in_apply_popup_with_commit_picks_directly() {
 #[test]
 fn test_shift_a_in_apply_popup_with_multiple_commits_picks_all() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -287,10 +234,7 @@ fn test_shift_a_in_apply_popup_with_multiple_commits_picks_all() {
 #[test]
 fn test_q_dismisses_apply_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -307,10 +251,7 @@ fn test_q_dismisses_apply_popup() {
 #[test]
 fn test_esc_dismisses_apply_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -329,10 +270,7 @@ fn test_esc_dismisses_apply_popup() {
 #[test]
 fn test_shift_a_in_apply_popup_in_progress_triggers_continue() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -349,10 +287,7 @@ fn test_shift_a_in_apply_popup_in_progress_triggers_continue() {
 #[test]
 fn test_s_in_apply_popup_in_progress_triggers_skip() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -369,10 +304,7 @@ fn test_s_in_apply_popup_in_progress_triggers_skip() {
 #[test]
 fn test_a_in_apply_popup_in_progress_triggers_abort() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -391,15 +323,11 @@ fn test_a_in_apply_popup_in_progress_triggers_abort() {
 #[test]
 fn test_cherry_pick_in_progress_returns_true_with_cherry_pick_head() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo_path = test_repo.repo_path().to_path_buf();
-    let git_dir = repo_path.join(".git");
 
-    fs::write(git_dir.join("CHERRY_PICK_HEAD"), "abc1234\n").unwrap();
+    test_repo.with_cherry_pick_in_progress();
 
     assert!(cherry_pick_in_progress(&repo_path));
 }
@@ -407,10 +335,7 @@ fn test_cherry_pick_in_progress_returns_true_with_cherry_pick_head() {
 #[test]
 fn test_cherry_pick_in_progress_returns_false_without_marker() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo_path = test_repo.repo_path().to_path_buf();
 
@@ -422,14 +347,10 @@ fn test_cherry_pick_in_progress_returns_false_without_marker() {
 #[test]
 fn test_show_apply_popup_in_progress_when_cherry_pick_head_exists() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    let git_dir = model.workdir.join(".git");
-    fs::write(git_dir.join("CHERRY_PICK_HEAD"), "abc1234\n").unwrap();
+    test_repo.with_cherry_pick_in_progress();
 
     update(&mut model, Message::ShowApplyPopup);
 
@@ -445,10 +366,7 @@ fn test_show_apply_popup_in_progress_when_cherry_pick_head_exists() {
 #[test]
 fn test_show_apply_popup_cursor_on_log_line_collects_hash() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -491,10 +409,7 @@ fn test_show_apply_popup_cursor_on_log_line_collects_hash() {
 #[test]
 fn test_a_in_apply_popup_no_commits_shows_apply_select_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -520,10 +435,7 @@ fn test_a_in_apply_popup_no_commits_shows_apply_select_popup() {
 #[test]
 fn test_a_in_apply_popup_with_commit_applies_directly() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(
@@ -545,10 +457,7 @@ fn test_a_in_apply_popup_with_commit_applies_directly() {
 #[test]
 fn test_a_in_apply_popup_with_multiple_commits_applies_all() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Apply(

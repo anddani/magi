@@ -5,25 +5,10 @@ use magi::msg::update::update;
 
 mod utils;
 
-use crate::utils::create_model_from_test_repo;
-
-/// Find the line index for an UnstagedFile with the given path.
-fn find_unstaged_file_line(model: &magi::model::Model, path: &str) -> Option<usize> {
-    model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == path))
-}
-
-/// Find the line index for a StagedFile with the given path.
-fn find_staged_file_line(model: &magi::model::Model, path: &str) -> Option<usize> {
-    model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == path))
-}
+use crate::utils::{
+    create_model_from_test_repo, find_staged_file_line, find_unstaged_file_line,
+    find_untracked_file_line,
+};
 
 #[test]
 fn test_cursor_moves_to_next_file_when_staging_first_file() {
@@ -255,12 +240,7 @@ fn test_cursor_moves_to_unstaged_when_all_untracked_files_staged() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Position cursor on the untracked file
-    let pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::UntrackedFile(p) if p == untracked))
-        .expect("untracked.txt should exist");
+    let pos = find_untracked_file_line(&model, untracked).expect("untracked.txt should exist");
     model.ui_model.cursor_position = pos;
 
     // Stage the untracked file

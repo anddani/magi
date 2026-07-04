@@ -113,10 +113,7 @@ fn test_push_elsewhere_key_shows_select_popup() {
     use magi::git::test_repo::TestRepo;
 
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 

@@ -15,3 +15,6 @@ portable-pty = "0.9"
 regex = "1"
 lazy_static = "1.5"
 urlencoding = "2"
+
+[dev-dependencies]
+insta = { version = "1.48", features = ["filters"] }

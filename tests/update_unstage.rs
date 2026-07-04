@@ -1,22 +1,13 @@
 use magi::git::stage::{stage_files, stage_hunk};
 use magi::git::test_repo::TestRepo;
-use magi::model::{LineContent, Model, SectionType};
+use magi::model::{LineContent, SectionType};
 use magi::msg::Message;
 use magi::msg::update::update;
 use std::fs;
 
 mod utils;
 
-use crate::utils::create_model_from_test_repo;
-
-/// Find the line index for a StagedFile with the given path.
-fn find_staged_file_line(model: &Model, path: &str) -> Option<usize> {
-    model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::StagedFile(fc) if fc.path == path))
-}
+use crate::utils::{create_model_from_test_repo, find_staged_file_line};
 
 #[test]
 fn test_visual_unstage_two_staged_files() {
@@ -142,9 +133,7 @@ fn test_visual_unstage_lines_from_staged_hunk_when_other_hunk_is_unstaged() {
     }
     test_repo
         .create_file(file_name)
-        .write_file_content(file_name, &content)
-        .stage_files(&[file_name])
-        .commit("Initial 20 lines");
+        .commit_file(file_name, &content, "Initial 20 lines");
 
     // Modify lines 2 and 19 to create two separate hunks
     let modified = content
@@ -216,7 +205,7 @@ fn test_visual_unstage_lines_from_staged_hunk_when_other_hunk_is_unstaged() {
     );
 
     // The working tree should still have both modifications
-    let wt_content = fs::read_to_string(test_repo.repo_path().join(&file_name)).unwrap();
+    let wt_content = fs::read_to_string(test_repo.repo_path().join(file_name)).unwrap();
     assert!(
         wt_content.contains("MODIFIED 2"),
         "working tree should still have MODIFIED 2"

@@ -91,7 +91,8 @@ pub struct Strings {
     pub input_stash_message: &'static str,
     pub input_stash_index_message: &'static str,
     pub input_stash_worktree_message: &'static str,
-    // Input popup title format strings — use fmt1() with one {} placeholder
+    // Input popup title format strings — use fmt1() with one {} placeholder.
+    // New *_fmt fields must be added to FMT_FIELDS in tests/i18n.rs.
     pub input_rename_branch_fmt: &'static str,
     pub input_worktree_path_fmt: &'static str,
     pub input_push_refspec_fmt: &'static str,

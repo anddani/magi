@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+use crossterm::event::KeyCode;
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
@@ -7,26 +7,14 @@ use magi::{
 };
 
 mod utils;
-use utils::create_model_from_test_repo;
-
-fn key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
+use utils::{create_model_from_test_repo, expect_input_popup, key};
 
 // ── Key binding: 'S' in branch popup shows input ───────────────────────────────
 
 #[test]
 fn test_shift_s_in_branch_popup_shows_spinout_input() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Branch));
@@ -40,10 +28,7 @@ fn test_shift_s_in_branch_popup_shows_spinout_input() {
 #[test]
 fn test_show_spinout_branch_input_sets_input_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(&mut model, Message::ShowSpinoutBranchInput);
@@ -61,23 +46,17 @@ fn test_show_spinout_branch_input_sets_input_popup() {
 #[test]
 fn test_show_spinout_branch_input_has_expected_title() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     update(&mut model, Message::ShowSpinoutBranchInput);
 
-    if let Some(PopupContent::Input(state)) = &model.popup {
-        assert!(
-            state.title().contains("spin-out"),
-            "Title should mention spin-out, got: {}",
-            state.title()
-        );
-    } else {
-        panic!("Expected Input popup");
-    }
+    let state = expect_input_popup(&model);
+    assert!(
+        state.title().contains("spin-out"),
+        "Title should mention spin-out, got: {}",
+        state.title()
+    );
 }
 
 // ── Confirming input dispatches SpinoutBranch message ─────────────────────────
@@ -85,10 +64,7 @@ fn test_show_spinout_branch_input_has_expected_title() {
 #[test]
 fn test_confirm_input_dispatches_spinout_branch_message() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     update(&mut model, Message::ShowSpinoutBranchInput);
@@ -107,10 +83,7 @@ fn test_confirm_input_dispatches_spinout_branch_message() {
 #[test]
 fn test_spinout_creates_new_branch_and_stays_on_current() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let current_branch_before = {
         let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
@@ -144,16 +117,9 @@ fn test_spinout_creates_new_branch_and_stays_on_current() {
 #[test]
 fn test_spinout_returns_error_for_duplicate_branch_name() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
-    {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        let head = repo.head().unwrap().peel_to_commit().unwrap();
-        repo.branch("feature", &head, false).unwrap();
-    }
+    test_repo.create_branch("feature");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(&mut model, Message::SpinoutBranch("feature".to_string()));
@@ -170,10 +136,7 @@ fn test_spinout_with_upstream_resets_current_branch_in_place() {
     use std::process::Command;
 
     let remote_repo = TestRepo::new();
-    remote_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    remote_repo.commit_file("file.txt", "initial", "Initial commit");
 
     let remote_path = remote_repo.repo_path().to_path_buf();
 
@@ -312,23 +275,10 @@ fn test_spinout_with_upstream_resets_current_branch_in_place() {
 fn test_spinout_without_upstream_does_not_reset_current_branch() {
     let test_repo = TestRepo::new();
     test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+        .commit_file("file.txt", "initial", "Initial commit")
+        .commit_file("file.txt", "second", "Second commit");
 
-    let head_before = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let head_before = test_repo.head_hash();
 
     let current_branch = {
         let repo = git2::Repository::open(test_repo.repo_path()).unwrap();

@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+use crossterm::event::KeyCode;
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     keys::handle_key,
@@ -10,26 +10,14 @@ use magi::{
 };
 
 mod utils;
-use utils::create_model_from_test_repo;
-
-fn key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
+use utils::{create_model_from_test_repo, find_commit_line, find_line, key};
 
 // ── ShowRevertPopup — key binding ──────────────────────────────────────────────
 
 #[test]
 fn test_underscore_key_shows_revert_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let model = create_model_from_test_repo(&test_repo);
 
@@ -43,19 +31,11 @@ fn test_underscore_key_shows_revert_popup() {
 #[test]
 fn test_show_revert_popup_on_commit_line_selects_hash() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let commit_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::Commit(_)))
-        .expect("Expected a commit line");
+    let commit_pos = find_commit_line(&model).expect("Expected a commit line");
     model.ui_model.cursor_position = commit_pos;
 
     let expected_hash = if let LineContent::Commit(info) = &model.ui_model.lines[commit_pos].content
@@ -81,19 +61,14 @@ fn test_show_revert_popup_on_commit_line_selects_hash() {
 #[test]
 fn test_show_revert_popup_on_non_commit_line_has_empty_commits() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let non_commit_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| !matches!(&l.content, LineContent::Commit(_) | LineContent::LogLine(_)))
-        .expect("Expected a non-commit line");
+    let non_commit_pos = find_line(&model, |c| {
+        !matches!(c, LineContent::Commit(_) | LineContent::LogLine(_))
+    })
+    .expect("Expected a non-commit line");
     model.ui_model.cursor_position = non_commit_pos;
 
     update(&mut model, Message::ShowRevertPopup);
@@ -111,14 +86,8 @@ fn test_show_revert_popup_on_non_commit_line_has_empty_commits() {
 #[test]
 fn test_show_revert_popup_visual_selection_all_commits_collects_all_hashes() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -162,10 +131,7 @@ fn test_show_revert_popup_visual_selection_all_commits_collects_all_hashes() {
 #[test]
 fn test_show_revert_popup_visual_selection_with_non_commit_gives_empty() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -189,10 +155,7 @@ fn test_show_revert_popup_visual_selection_with_non_commit_gives_empty() {
 #[test]
 fn test_show_revert_popup_on_log_line_selects_hash() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -238,10 +201,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
 #[test]
 fn test_underscore_in_revert_popup_with_commits_triggers_revert() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -265,10 +225,7 @@ fn test_underscore_in_revert_popup_with_commits_triggers_revert() {
 #[test]
 fn test_underscore_in_revert_popup_without_commits_does_nothing() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -286,10 +243,7 @@ fn test_underscore_in_revert_popup_without_commits_does_nothing() {
 #[test]
 fn test_underscore_in_revert_popup_in_progress_triggers_continue() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -307,10 +261,7 @@ fn test_underscore_in_revert_popup_in_progress_triggers_continue() {
 #[test]
 fn test_s_in_revert_popup_in_progress_triggers_skip() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -328,10 +279,7 @@ fn test_s_in_revert_popup_in_progress_triggers_skip() {
 #[test]
 fn test_a_in_revert_popup_in_progress_triggers_abort() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -349,10 +297,7 @@ fn test_a_in_revert_popup_in_progress_triggers_abort() {
 #[test]
 fn test_s_in_revert_popup_not_in_progress_does_nothing() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -370,10 +315,7 @@ fn test_s_in_revert_popup_not_in_progress_does_nothing() {
 #[test]
 fn test_q_dismisses_revert_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -391,10 +333,7 @@ fn test_q_dismisses_revert_popup() {
 #[test]
 fn test_esc_dismisses_revert_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -414,10 +353,7 @@ fn test_esc_dismisses_revert_popup() {
 #[test]
 fn test_v_in_revert_popup_with_commits_triggers_no_commit_revert() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -441,10 +377,7 @@ fn test_v_in_revert_popup_with_commits_triggers_no_commit_revert() {
 #[test]
 fn test_v_in_revert_popup_without_commits_does_nothing() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
@@ -462,10 +395,7 @@ fn test_v_in_revert_popup_without_commits_does_nothing() {
 #[test]
 fn test_v_in_revert_popup_in_progress_does_nothing() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(

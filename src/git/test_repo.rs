@@ -133,6 +133,77 @@ impl TestRepo {
         self
     }
 
+    /// Write a file, stage it, and commit it in one step.
+    pub fn commit_file(&self, file_name: &str, content: &str, commit_msg: &str) -> &Self {
+        self.write_file_content(file_name, content)
+            .stage_files(&[file_name])
+            .commit(commit_msg)
+    }
+
+    pub fn head_hash(&self) -> String {
+        self.repo
+            .head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id()
+            .to_string()
+    }
+
+    pub fn branch_hash(&self, branch_name: &str) -> String {
+        self.repo
+            .find_branch(branch_name, git2::BranchType::Local)
+            .unwrap()
+            .get()
+            .peel_to_commit()
+            .unwrap()
+            .id()
+            .to_string()
+    }
+
+    /// Create a local branch pointing at HEAD without checking it out.
+    pub fn create_branch(&self, branch_name: &str) -> &Self {
+        let commit = self.repo.head().unwrap().peel_to_commit().unwrap();
+        self.repo.branch(branch_name, &commit, false).unwrap();
+        self
+    }
+
+    /// Create a local branch pointing at the commit `target_ref` resolves to.
+    pub fn create_branch_at(&self, branch_name: &str, target_ref: &str) -> &Self {
+        let commit = self
+            .repo
+            .resolve_reference_from_short_name(target_ref)
+            .unwrap()
+            .peel_to_commit()
+            .unwrap();
+        self.repo.branch(branch_name, &commit, false).unwrap();
+        self
+    }
+
+    /// Simulate an in-progress rebase stopped at HEAD by creating the
+    /// `.git/rebase-merge/` directory with a `stopped-sha` file.
+    pub fn with_rebase_in_progress(&self) -> &Self {
+        let rebase_merge = self.repo.path().join("rebase-merge");
+        fs::create_dir_all(&rebase_merge).unwrap();
+        fs::write(
+            rebase_merge.join("stopped-sha"),
+            format!("{}\n", self.head_hash()),
+        )
+        .unwrap();
+        self
+    }
+
+    /// Simulate an in-progress cherry-pick of HEAD by writing
+    /// `.git/CHERRY_PICK_HEAD`.
+    pub fn with_cherry_pick_in_progress(&self) -> &Self {
+        fs::write(
+            self.repo.path().join("CHERRY_PICK_HEAD"),
+            format!("{}\n", self.head_hash()),
+        )
+        .unwrap();
+        self
+    }
+
     pub fn repo_path(&self) -> &Path {
         self.repo.workdir().unwrap()
     }

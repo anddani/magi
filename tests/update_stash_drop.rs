@@ -9,7 +9,7 @@ use magi::{
 };
 
 mod utils;
-use utils::create_model_from_test_repo;
+use utils::{create_model_from_test_repo, find_line, find_section_header};
 
 #[test]
 fn test_drop_stash_on_section_header_shows_confirm_all() {
@@ -22,17 +22,8 @@ fn test_drop_stash_on_section_header_shows_confirm_all() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Find the Stashes section header
-    let stashes_header_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|line| {
-            matches!(
-                &line.content,
-                LineContent::SectionHeader { title, .. } if title == "Stashes"
-            )
-        })
-        .expect("Should find Stashes header");
+    let stashes_header_pos =
+        find_section_header(&model, "Stashes").expect("Should find Stashes header");
 
     model.ui_model.cursor_position = stashes_header_pos;
 
@@ -71,12 +62,8 @@ fn test_drop_stash_on_stash_entry_shows_confirm_single() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Find the first stash entry
-    let stash_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|line| matches!(&line.content, LineContent::Stash(_)))
-        .expect("Should find stash entry");
+    let stash_pos =
+        find_line(&model, |c| matches!(c, LineContent::Stash(_))).expect("Should find stash entry");
 
     model.ui_model.cursor_position = stash_pos;
 

@@ -58,3 +58,56 @@ jobs:
 
       - name: Build
         run: nix develop --command cargo build
+
+  coverage:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Generate coverage
+        run: cargo llvm-cov --workspace --json --summary-only --output-path coverage.json
+
+      - name: Render coverage report
+        run: |
+          jq -r '
+            def pct(s): "\(s.percent * 100 | round / 100)%";
+            def icon(s): if s.percent >= 80 then "🟢" elif s.percent >= 50 then "🟡" else "🔴" end;
+            .data[0] as $d | $d.totals as $t |
+            "## Coverage report",
+            "",
+            "\(icon($t.lines)) **\(pct($t.lines)) line coverage** (\($t.lines.covered)/\($t.lines.count) lines)",
+            "",
+            "|  | Coverage | Covered | Total |",
+            "| --- | ---: | ---: | ---: |",
+            "| Lines | \(pct($t.lines)) | \($t.lines.covered) | \($t.lines.count) |",
+            "| Functions | \(pct($t.functions)) | \($t.functions.covered) | \($t.functions.count) |",
+            "| Regions | \(pct($t.regions)) | \($t.regions.covered) | \($t.regions.count) |",
+            "",
+            "<details>",
+            "<summary>Per-file coverage</summary>",
+            "",
+            "| File | Lines | Functions | Regions |",
+            "| --- | ---: | ---: | ---: |",
+            ($d.files[] |
+              "| `\(.filename | ltrimstr(env.GITHUB_WORKSPACE + "/"))` | \(icon(.summary.lines)) \(pct(.summary.lines)) | \(pct(.summary.functions)) | \(pct(.summary.regions)) |"),
+            "",
+            "</details>"
+          ' coverage.json > coverage.md
+
+          cat coverage.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post coverage comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage
+          path: coverage.md

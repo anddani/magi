@@ -37,10 +37,7 @@ fn make_log_line(hash: &str, message: &str) -> Line {
 #[test]
 fn test_show_revise_commit_cursor_on_commit_shows_confirm() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -80,15 +77,9 @@ fn test_show_revise_commit_cursor_on_commit_shows_confirm() {
 #[test]
 fn test_show_revise_commit_cursor_not_on_commit_shows_log_pick() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
-    test_repo
-        .write_file_content("file2.txt", "content2")
-        .stage_files(&["file2.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     // cursor on a non-commit line (empty)
@@ -116,10 +107,7 @@ fn test_show_revise_commit_cursor_not_on_commit_shows_log_pick() {
 fn test_show_revise_commit_no_staged_changes_still_shows_log_pick() {
     // Revise does NOT require staged changes — should proceed without warning
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     // No staged changes at this point
     let mut model = create_model_from_test_repo(&test_repo);
@@ -147,10 +135,7 @@ fn test_show_revise_commit_no_staged_changes_still_shows_log_pick() {
 #[test]
 fn test_revise_commit_select_confirm_routes_to_revise() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let commits = get_log_entries_for_test(&test_repo);
     let commit_hash = commits[0].hash.as_ref().unwrap().to_string();

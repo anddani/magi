@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+use crossterm::event::KeyCode;
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
@@ -11,26 +11,14 @@ use magi::{
 };
 
 mod utils;
-use utils::create_model_from_test_repo;
-
-fn key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
+use utils::{create_model_from_test_repo, expect_select_popup, find_line, key};
 
 // ── ShowMergePopup — key binding ───────────────────────────────────────────────
 
 #[test]
 fn test_m_key_shows_merge_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let model = create_model_from_test_repo(&test_repo);
 
@@ -43,10 +31,7 @@ fn test_m_key_shows_merge_popup() {
 #[test]
 fn test_show_merge_popup_sets_state() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -65,10 +50,7 @@ fn test_show_merge_popup_sets_state() {
 #[test]
 fn test_m_in_merge_popup_shows_select() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
@@ -89,10 +71,7 @@ fn test_m_in_merge_popup_shows_select() {
 #[test]
 fn test_q_dismisses_merge_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
@@ -106,10 +85,7 @@ fn test_q_dismisses_merge_popup() {
 #[test]
 fn test_esc_dismisses_merge_popup() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
@@ -125,10 +101,7 @@ fn test_esc_dismisses_merge_popup() {
 #[test]
 fn test_m_in_merge_popup_in_progress_continues() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
@@ -142,10 +115,7 @@ fn test_m_in_merge_popup_in_progress_continues() {
 #[test]
 fn test_a_in_merge_popup_in_progress_aborts() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
@@ -159,10 +129,7 @@ fn test_a_in_merge_popup_in_progress_aborts() {
 #[test]
 fn test_q_dismisses_merge_popup_in_progress() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file1.txt", "content1")
-        .stage_files(&["file1.txt"])
-        .commit("First commit");
+    test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
@@ -178,34 +145,21 @@ fn test_q_dismisses_merge_popup_in_progress() {
 #[test]
 fn test_merge_elsewhere_cursor_on_branch_ref_prioritizes_it() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
     // Create another branch pointing at this commit
-    {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        let head = repo.head().unwrap().peel_to_commit().unwrap();
-        repo.branch("feature-branch", &head, false).unwrap();
-    }
+    test_repo.create_branch("feature-branch");
 
     // Make a second commit so current branch is ahead
-    test_repo
-        .write_file_content("file.txt", "second")
-        .stage_files(&["file.txt"])
-        .commit("Second commit");
+    test_repo.commit_file("file.txt", "second", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Find a commit line that has "feature-branch" as a ref
-    let branch_pos = model.ui_model.lines.iter().position(|l| {
-        if let LineContent::Commit(info) = &l.content {
-            info.refs.iter().any(|r| r.name == "feature-branch")
-        } else {
-            false
-        }
-    });
+    let branch_pos = find_line(
+        &model,
+        |c| matches!(c, LineContent::Commit(info) if info.refs.iter().any(|r| r.name == "feature-branch")),
+    );
 
     if let Some(pos) = branch_pos {
         model.ui_model.cursor_position = pos;
@@ -218,31 +172,21 @@ fn test_merge_elsewhere_cursor_on_branch_ref_prioritizes_it() {
             }),
         );
 
-        if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-            assert_eq!(
-                state.all_options[0], "feature-branch",
-                "feature-branch should be first because cursor is on its commit"
-            );
-        } else {
-            panic!("Expected Select popup");
-        }
+        let state = expect_select_popup(&model);
+        assert_eq!(
+            state.all_options[0], "feature-branch",
+            "feature-branch should be first because cursor is on its commit"
+        );
     }
 }
 
 #[test]
 fn test_merge_elsewhere_no_cursor_suggestion_shows_normal_order() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
 
     // Create another branch
-    {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        let head = repo.head().unwrap().peel_to_commit().unwrap();
-        repo.branch("other-branch", &head, false).unwrap();
-    }
+    test_repo.create_branch("other-branch");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -258,17 +202,14 @@ fn test_merge_elsewhere_no_cursor_suggestion_shows_normal_order() {
         }),
     );
 
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert!(
-            !state.all_options.is_empty(),
-            "Should have branches to merge"
-        );
-        // other-branch should be present somewhere in the list
-        assert!(
-            state.all_options.contains(&"other-branch".to_string()),
-            "other-branch should be in the options"
-        );
-    } else {
-        panic!("Expected Select popup");
-    }
+    let state = expect_select_popup(&model);
+    assert!(
+        !state.all_options.is_empty(),
+        "Should have branches to merge"
+    );
+    // other-branch should be present somewhere in the list
+    assert!(
+        state.all_options.contains(&"other-branch".to_string()),
+        "other-branch should be in the options"
+    );
 }

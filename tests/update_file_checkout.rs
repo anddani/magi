@@ -1,9 +1,8 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+use crossterm::event::KeyCode;
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
     model::{
-        LineContent,
         popup::{PopupContent, PopupContentCommand},
         select_popup::{OnSelect, SelectPopupState},
     },
@@ -11,26 +10,14 @@ use magi::{
 };
 
 mod utils;
-use utils::create_model_from_test_repo;
-
-fn key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
+use utils::{create_model_from_test_repo, expect_select_popup, find_unstaged_file_line, key};
 
 // ── 'f' key in reset popup shows FileCheckoutRevision select ──────────────────
 
 #[test]
 fn test_f_in_reset_popup_shows_revision_select() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Reset));
@@ -51,10 +38,7 @@ fn test_f_in_reset_popup_shows_revision_select() {
 #[test]
 fn test_file_checkout_revision_shows_refs() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
@@ -67,16 +51,9 @@ fn test_file_checkout_revision_shows_refs() {
     );
 
     assert_eq!(result, None);
-    assert!(matches!(
-        &model.popup,
-        Some(PopupContent::Command(PopupContentCommand::Select(state)))
-            if !state.all_options.is_empty()
-    ));
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert_eq!(state.on_select, OnSelect::FileCheckoutRevision);
-    } else {
-        panic!("Expected select popup");
-    }
+    let state = expect_select_popup(&model);
+    assert!(!state.all_options.is_empty());
+    assert_eq!(state.on_select, OnSelect::FileCheckoutRevision);
 }
 
 // ── Selecting revision moves to FileCheckoutFile select ──────────────────────
@@ -84,10 +61,7 @@ fn test_file_checkout_revision_shows_refs() {
 #[test]
 fn test_selecting_revision_shows_file_select() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
@@ -120,10 +94,7 @@ fn test_selecting_revision_shows_file_select() {
 #[test]
 fn test_file_checkout_file_shows_tracked_files() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("tracked.txt", "hello")
-        .stage_files(&["tracked.txt"])
-        .commit("Commit with tracked file");
+    test_repo.commit_file("tracked.txt", "hello", "Commit with tracked file");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
@@ -138,20 +109,17 @@ fn test_file_checkout_file_shows_tracked_files() {
     );
 
     assert_eq!(result, None);
-    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-        assert!(
-            state.all_options.iter().any(|f| f == "tracked.txt"),
-            "tracked.txt should be in the file list"
-        );
-        assert_eq!(
-            state.on_select,
-            OnSelect::FileCheckoutFile {
-                revision: "HEAD".to_string(),
-            }
-        );
-    } else {
-        panic!("Expected Select popup");
-    }
+    let state = expect_select_popup(&model);
+    assert!(
+        state.all_options.iter().any(|f| f == "tracked.txt"),
+        "tracked.txt should be in the file list"
+    );
+    assert_eq!(
+        state.on_select,
+        OnSelect::FileCheckoutFile {
+            revision: "HEAD".to_string(),
+        }
+    );
 }
 
 // ── Selecting file dispatches FileCheckout message ────────────────────────────
@@ -159,10 +127,7 @@ fn test_file_checkout_file_shows_tracked_files() {
 #[test]
 fn test_selecting_file_dispatches_file_checkout() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
@@ -194,25 +159,11 @@ fn test_selecting_file_dispatches_file_checkout() {
 #[test]
 fn test_file_checkout_restores_file_content() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("restore.txt", "original")
-        .stage_files(&["restore.txt"])
-        .commit("Original commit");
+    test_repo.commit_file("restore.txt", "original", "Original commit");
 
-    let original_hash = {
-        let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        repo.head()
-            .unwrap()
-            .peel_to_commit()
-            .unwrap()
-            .id()
-            .to_string()
-    };
+    let original_hash = test_repo.head_hash();
 
-    test_repo
-        .write_file_content("restore.txt", "modified")
-        .stage_files(&["restore.txt"])
-        .commit("Modified commit");
+    test_repo.commit_file("restore.txt", "modified", "Modified commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
@@ -234,10 +185,7 @@ fn test_file_checkout_restores_file_content() {
 #[test]
 fn test_file_checkout_invalid_revision_shows_error() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     let result = update(
@@ -272,9 +220,7 @@ fn test_file_checkout_cursor_on_file_preselects_it() {
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Find the line for "second.txt" in the unstaged section
-    let file_pos = model.ui_model.lines.iter().position(
-        |l| matches!(&l.content, LineContent::UnstagedFile(fc) if fc.path == "second.txt"),
-    );
+    let file_pos = find_unstaged_file_line(&model, "second.txt");
 
     if let Some(pos) = file_pos {
         model.ui_model.cursor_position = pos;
@@ -289,14 +235,11 @@ fn test_file_checkout_cursor_on_file_preselects_it() {
             }),
         );
 
-        if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
-            assert_eq!(
-                state.all_options[0], "second.txt",
-                "second.txt should be pre-selected as it's under the cursor"
-            );
-        } else {
-            panic!("Expected Select popup");
-        }
+        let state = expect_select_popup(&model);
+        assert_eq!(
+            state.all_options[0], "second.txt",
+            "second.txt should be pre-selected as it's under the cursor"
+        );
     }
     // If second.txt doesn't appear in the visible lines, test is skipped
 }

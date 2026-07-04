@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+use crossterm::event::KeyCode;
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     keys::handle_key,
@@ -15,16 +15,7 @@ use magi::{
 };
 
 mod utils;
-use utils::create_model_from_test_repo;
-
-fn key(code: KeyCode) -> KeyEvent {
-    KeyEvent {
-        code,
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        state: KeyEventState::NONE,
-    }
-}
+use utils::{create_model_from_test_repo, key};
 
 fn git(workdir: &std::path::Path, args: &[&str]) -> std::process::Output {
     std::process::Command::new("git")
@@ -199,14 +190,8 @@ fn test_spinoff_input_confirm_routes_to_cherry_spinoff() {
 #[test]
 fn test_cherry_spinoff_moves_commit_and_checks_out_new_branch() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("a.txt", "content a")
-        .stage_files(&["a.txt"])
-        .commit("Commit A");
-    test_repo
-        .write_file_content("b.txt", "content b")
-        .stage_files(&["b.txt"])
-        .commit("Commit B");
+    test_repo.commit_file("a.txt", "content a", "Commit A");
+    test_repo.commit_file("b.txt", "content b", "Commit B");
 
     let workdir = test_repo.repo.workdir().unwrap().to_path_buf();
     let hash_a = commit_hash(&test_repo, "Commit A");
@@ -248,18 +233,9 @@ fn test_cherry_spinoff_moves_commit_and_checks_out_new_branch() {
 #[test]
 fn test_cherry_spinoff_multiple_commits() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("a.txt", "content a")
-        .stage_files(&["a.txt"])
-        .commit("Commit A");
-    test_repo
-        .write_file_content("b.txt", "content b")
-        .stage_files(&["b.txt"])
-        .commit("Commit B");
-    test_repo
-        .write_file_content("c.txt", "content c")
-        .stage_files(&["c.txt"])
-        .commit("Commit C");
+    test_repo.commit_file("a.txt", "content a", "Commit A");
+    test_repo.commit_file("b.txt", "content b", "Commit B");
+    test_repo.commit_file("c.txt", "content c", "Commit C");
 
     let workdir = test_repo.repo.workdir().unwrap().to_path_buf();
     let hash_a = commit_hash(&test_repo, "Commit A");
@@ -302,10 +278,7 @@ fn test_cherry_spinoff_multiple_commits() {
 #[test]
 fn test_cherry_spinoff_duplicate_branch_name_shows_error() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("a.txt", "content a")
-        .stage_files(&["a.txt"])
-        .commit("Commit A");
+    test_repo.commit_file("a.txt", "content a", "Commit A");
 
     let workdir = test_repo.repo.workdir().unwrap().to_path_buf();
     let hash_a = commit_hash(&test_repo, "Commit A");

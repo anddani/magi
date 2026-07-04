@@ -13,10 +13,7 @@ use utils::create_model_from_test_repo;
 #[test]
 fn test_pull_elsewhere_no_remotes_shows_error() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -39,10 +36,7 @@ fn test_pull_elsewhere_no_remotes_shows_error() {
 #[test]
 fn test_select_pull_elsewhere_routes_to_pull_command() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 

@@ -5,27 +5,19 @@ use magi::{
 };
 
 mod utils;
-use utils::create_model_from_test_repo;
+use utils::{create_model_from_test_repo, cursor_to_commit, find_commit_line, find_line};
 
 // ── ShowPreview on a Commit line ──────────────────────────────────────────────
 
 #[test]
 fn test_show_preview_on_commit_line_enters_preview_mode() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Find a Commit line and place the cursor on it
-    let commit_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::Commit(_)))
-        .expect("No commit line found");
+    let commit_pos = find_commit_line(&model).expect("No commit line found");
     model.ui_model.cursor_position = commit_pos;
 
     let result = update(&mut model, Message::ShowPreview);
@@ -52,10 +44,7 @@ fn test_show_preview_on_commit_line_enters_preview_mode() {
 #[test]
 fn test_show_preview_on_stash_line_enters_preview_mode() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "initial")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
     test_repo.write_file_content("file.txt", "changed");
 
     let workdir = test_repo.repo.workdir().unwrap();
@@ -65,12 +54,8 @@ fn test_show_preview_on_stash_line_enters_preview_mode() {
 
     let mut model = create_model_from_test_repo(&test_repo);
 
-    let stash_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::Stash(_)))
-        .expect("No stash line found");
+    let stash_pos =
+        find_line(&model, |c| matches!(c, LineContent::Stash(_))).expect("No stash line found");
     model.ui_model.cursor_position = stash_pos;
 
     let result = update(&mut model, Message::ShowPreview);
@@ -92,10 +77,7 @@ fn test_show_preview_on_stash_line_enters_preview_mode() {
 #[test]
 fn test_show_preview_on_log_line_enters_preview_mode() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -104,18 +86,11 @@ fn test_show_preview_on_log_line_enters_preview_mode() {
     assert!(matches!(model.view_mode, ViewMode::Log(_, false)));
 
     // Find a log line with a hash
-    let log_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| {
-            if let LineContent::LogLine(e) = &l.content {
-                e.hash.is_some()
-            } else {
-                false
-            }
-        })
-        .expect("No log line with hash found");
+    let log_pos = find_line(
+        &model,
+        |c| matches!(c, LineContent::LogLine(e) if e.hash.is_some()),
+    )
+    .expect("No log line with hash found");
     model.ui_model.cursor_position = log_pos;
 
     let result = update(&mut model, Message::ShowPreview);
@@ -138,10 +113,7 @@ fn test_show_preview_on_graph_only_log_line_is_noop() {
     use magi::model::log_view::LogEntry;
 
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -166,21 +138,12 @@ fn test_show_preview_on_graph_only_log_line_is_noop() {
 #[test]
 fn test_exit_preview_returns_to_status() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
     // Enter preview
-    let commit_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| matches!(&l.content, LineContent::Commit(_)))
-        .expect("No commit line found");
-    model.ui_model.cursor_position = commit_pos;
+    cursor_to_commit(&mut model);
     update(&mut model, Message::ShowPreview);
     assert_eq!(model.view_mode, ViewMode::Preview);
 
@@ -195,10 +158,7 @@ fn test_exit_preview_returns_to_status() {
 #[test]
 fn test_exit_preview_returns_to_log() {
     let test_repo = TestRepo::new();
-    test_repo
-        .write_file_content("file.txt", "content")
-        .stage_files(&["file.txt"])
-        .commit("Initial commit");
+    test_repo.commit_file("file.txt", "content", "Initial commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
 
@@ -207,18 +167,11 @@ fn test_exit_preview_returns_to_log() {
     assert!(matches!(model.view_mode, ViewMode::Log(_, false)));
 
     // Enter preview from log
-    let log_pos = model
-        .ui_model
-        .lines
-        .iter()
-        .position(|l| {
-            if let LineContent::LogLine(e) = &l.content {
-                e.hash.is_some()
-            } else {
-                false
-            }
-        })
-        .expect("No log line with hash found");
+    let log_pos = find_line(
+        &model,
+        |c| matches!(c, LineContent::LogLine(e) if e.hash.is_some()),
+    )
+    .expect("No log line with hash found");
     let saved_cursor = log_pos;
     model.ui_model.cursor_position = log_pos;
     update(&mut model, Message::ShowPreview);
