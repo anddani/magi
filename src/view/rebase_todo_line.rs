@@ -1,5 +1,5 @@
 use ratatui::{
-    style::Style,
+    style::{Modifier, Style},
     text::{Line as TextLine, Span},
 };
 
@@ -37,6 +37,22 @@ pub fn get_lines(entry: &RebaseTodoEntry, theme: &Theme) -> Vec<TextLine<'static
     }
 
     vec![TextLine::from(spans)]
+}
+
+/// Render a keybinding hint line shown below the todo entries.
+pub fn get_hint_lines(
+    key: &'static str,
+    description: &'static str,
+    theme: &Theme,
+) -> Vec<TextLine<'static>> {
+    let key_style = Style::default()
+        .fg(theme.local_branch)
+        .add_modifier(Modifier::BOLD);
+    vec![TextLine::from(vec![
+        Span::raw(" "),
+        Span::styled(format!("{:<4}", key), key_style),
+        Span::styled(description, Style::default()),
+    ])]
 }
 
 #[cfg(test)]

@@ -59,7 +59,7 @@ pub fn show_select_rebase_elsewhere_commit(model: &mut Model) -> Option<Message>
 pub fn show_select_rebase_interactive_commit(model: &mut Model) -> Option<Message> {
     let cursor_pos = model.ui_model.cursor_position;
 
-    // If cursor is on a commit line, suggest it and ask for confirmation
+    // With the cursor on a commit line, open the todo editor for it directly
     if let Some(line) = model.ui_model.lines.get(cursor_pos) {
         let hash = match &line.content {
             LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
@@ -69,11 +69,7 @@ pub fn show_select_rebase_interactive_commit(model: &mut Model) -> Option<Messag
 
         if let Some(hash) = hash {
             model.popup = None;
-            model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
-                message: format!("Rebase interactively from {}?", hash),
-                on_confirm: ConfirmAction::RebaseInteractive(hash),
-            }));
-            return None;
+            return Some(Message::ShowRebaseTodo(hash));
         }
     }
 

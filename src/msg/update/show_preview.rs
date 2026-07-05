@@ -12,6 +12,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             get_commit_preview_lines(&model.workdir, hash)
         }
         LineContent::Stash(stash) => get_stash_preview_lines(&model.workdir, stash.index),
+        LineContent::RebaseTodoLine(entry) => get_commit_preview_lines(&model.workdir, &entry.hash),
         _ => return None,
     };
 

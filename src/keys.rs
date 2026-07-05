@@ -77,7 +77,6 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     ConfirmAction::RebaseElsewhere(target) => {
                         Message::Rebase(RebaseCommand::Elsewhere(target.clone()))
                     }
-                    ConfirmAction::RebaseInteractive(base) => Message::ShowRebaseTodo(base.clone()),
                     ConfirmAction::ReviseCommit(hash) => Message::ReviseCommit(hash.clone()),
                     ConfirmAction::ResetBranch {
                         branch,
@@ -249,7 +248,8 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
             (NONE, Char('u')) => return todo_msg(RebaseTodoMessage::Undo),
             (_, Char('K')) | (ALT, Up) => return todo_msg(RebaseTodoMessage::MoveEntryUp),
             (_, Char('J')) | (ALT, Down) => return todo_msg(RebaseTodoMessage::MoveEntryDown),
-            (_, Enter) => return Some(Message::Rebase(RebaseCommand::ExecuteInteractive)),
+            (_, Enter) => return Some(Message::ShowPreview),
+            (_, Char('R')) => return Some(Message::Rebase(RebaseCommand::ExecuteInteractive)),
             (_, Char('q')) | (_, Esc) | (CTRL, Char('g')) | (CTRL, Char('c')) => {
                 return todo_msg(RebaseTodoMessage::Abort);
             }

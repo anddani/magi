@@ -44,6 +44,7 @@ fn line_searchable_text(line: &Line) -> String {
         LineContent::RebaseTodoLine(entry) => {
             format!("{} {} {}", entry.action.as_str(), entry.hash, entry.message)
         }
+        LineContent::RebaseTodoHint { key, description } => format!("{} {}", key, description),
     }
 }
 

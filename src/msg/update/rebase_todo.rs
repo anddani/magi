@@ -2,6 +2,7 @@ use std::time::{Duration, Instant};
 
 use crate::{
     git::rebase::{self, RebaseAction, RebaseTodoEntry},
+    i18n,
     model::{
         Line, LineContent, Model, Toast, ToastStyle, ViewMode, popup::PopupContent,
         rebase_todo::RebaseTodoState,
@@ -55,11 +56,11 @@ fn set_action(model: &mut Model, action: RebaseAction) -> Option<Message> {
     let index = model.ui_model.cursor_position;
     let state = model.rebase_todo.as_mut()?;
     if state.set_action(index, action) {
-        model.ui_model.lines = todo_lines(&state.entries);
-        // Auto-advance to the next line, like Magit's rebase editor
-        if index + 1 < model.ui_model.lines.len() {
+        // Auto-advance to the next entry, like Magit's rebase editor
+        if index + 1 < state.entries.len() {
             model.ui_model.cursor_position = index + 1;
         }
+        model.ui_model.lines = todo_lines(&state.entries);
     } else if index == 0 && action.is_fold() {
         model.toast = Some(Toast {
             message: "Cannot squash/fixup without a previous commit".to_string(),
@@ -106,13 +107,40 @@ fn abort(model: &mut Model) -> Option<Message> {
     Some(Message::Refresh)
 }
 
-/// Builds the UI lines from the todo entries (one line per entry).
+/// Builds the UI lines from the todo entries (one line per entry), followed
+/// by a keybinding hint block (one line per key).
 pub fn todo_lines(entries: &[RebaseTodoEntry]) -> Vec<Line> {
-    entries
+    let t = i18n::t();
+    let mut lines: Vec<Line> = entries
         .iter()
         .map(|entry| Line {
             content: LineContent::RebaseTodoLine(entry.clone()),
             section: None,
         })
-        .collect()
+        .collect();
+
+    lines.push(Line {
+        content: LineContent::EmptyLine,
+        section: None,
+    });
+    let hints = [
+        ("p", t.rebase_hint_pick),
+        ("r", t.rebase_hint_reword),
+        ("e", t.rebase_hint_edit),
+        ("s", t.rebase_hint_squash),
+        ("f", t.rebase_hint_fixup),
+        ("d", t.rebase_hint_drop),
+        ("K/J", t.rebase_hint_move),
+        ("u", t.rebase_hint_undo),
+        ("RET", t.rebase_hint_show),
+        ("R", t.rebase_hint_confirm),
+        ("q", t.rebase_hint_abort),
+    ];
+    for (key, description) in hints {
+        lines.push(Line {
+            content: LineContent::RebaseTodoHint { key, description },
+            section: None,
+        });
+    }
+    lines
 }

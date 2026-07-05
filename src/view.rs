@@ -163,6 +163,9 @@ pub fn view(model: &Model, frame: &mut Frame) {
             crate::model::LineContent::RebaseTodoLine(entry) => {
                 rebase_todo_line::get_lines(entry, theme)
             }
+            crate::model::LineContent::RebaseTodoHint { key, description } => {
+                rebase_todo_line::get_hint_lines(key, description, theme)
+            }
             crate::model::LineContent::Stash(stash_entry) => stash::get_lines(stash_entry, theme),
             crate::model::LineContent::RevertingEntry {
                 hash,
@@ -247,13 +250,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
     };
 
     // Build bottom border: mode pill + optional search query
-    let bottom_title = if model.view_mode == ViewMode::RebaseTodo {
-        let hint_span = Span::styled(
-            format!(" {}", i18n::t().rebase_todo_hint),
-            Style::default().fg(ratatui::style::Color::DarkGray),
-        );
-        TextLine::from(vec![mode_pill, hint_span])
-    } else if model.ui_model.search_mode_active {
+    let bottom_title = if model.ui_model.search_mode_active {
         let search_span = Span::styled(
             format!("/{}", model.ui_model.search_query),
             Style::default().fg(theme.search_match_bg),

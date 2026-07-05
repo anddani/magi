@@ -227,8 +227,18 @@ pub struct Strings {
     pub mode_search: &'static str,
     pub mode_preview: &'static str,
 
-    // Keybinding hint shown in the rebase todo editor's bottom border
-    pub rebase_todo_hint: &'static str,
+    // Keybinding hint lines shown below the rebase todo entries
+    pub rebase_hint_pick: &'static str,
+    pub rebase_hint_reword: &'static str,
+    pub rebase_hint_edit: &'static str,
+    pub rebase_hint_squash: &'static str,
+    pub rebase_hint_fixup: &'static str,
+    pub rebase_hint_drop: &'static str,
+    pub rebase_hint_move: &'static str,
+    pub rebase_hint_undo: &'static str,
+    pub rebase_hint_show: &'static str,
+    pub rebase_hint_confirm: &'static str,
+    pub rebase_hint_abort: &'static str,
 
     // Popup hint lines
     pub hint_dismiss: &'static str,
@@ -439,7 +449,17 @@ static ENGLISH: Strings = Strings {
     mode_search: "SEARCH",
     mode_preview: "PREVIEW",
 
-    rebase_todo_hint: "p pick  r reword  e edit  s squash  f fixup  d drop  K/J move  u undo  ⏎ rebase  q abort",
+    rebase_hint_pick: "Pick",
+    rebase_hint_reword: "Reword",
+    rebase_hint_edit: "Edit",
+    rebase_hint_squash: "Squash",
+    rebase_hint_fixup: "Fixup",
+    rebase_hint_drop: "Drop",
+    rebase_hint_move: "Move entry",
+    rebase_hint_undo: "Undo",
+    rebase_hint_show: "Show commit",
+    rebase_hint_confirm: "Rebase",
+    rebase_hint_abort: "Abort",
 
     hint_dismiss: "Press Enter or Esc to dismiss",
     hint_confirm: "y/Enter to confirm, n/Esc to cancel",
@@ -639,7 +659,17 @@ static SWEDISH: Strings = Strings {
     mode_search: "SÖK",
     mode_preview: "FÖRHANDSGRANSKNING",
 
-    rebase_todo_hint: "p plocka  r omformulera  e redigera  s mosa  f fixup  d fimpa  K/J flytta  u ångra  ⏎ ympa  q avbryt",
+    rebase_hint_pick: "Plocka",
+    rebase_hint_reword: "Omformulera",
+    rebase_hint_edit: "Redigera",
+    rebase_hint_squash: "Mosa",
+    rebase_hint_fixup: "Fixup",
+    rebase_hint_drop: "Fimpa",
+    rebase_hint_move: "Flytta rad",
+    rebase_hint_undo: "Ångra",
+    rebase_hint_show: "Visa förbindelse",
+    rebase_hint_confirm: "Ympa",
+    rebase_hint_abort: "Avbryt",
 
     hint_dismiss: "Tryck Enter eller Esc för att stänga",
     hint_confirm: "y/Enter för att bekräfta, n/Esc för att avbryta",

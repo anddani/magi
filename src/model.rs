@@ -221,6 +221,11 @@ pub enum LineContent {
     LogLine(LogEntry),
     /// A line in the interactive rebase todo editor
     RebaseTodoLine(crate::git::rebase::RebaseTodoEntry),
+    /// A keybinding hint line shown below the rebase todo entries
+    RebaseTodoHint {
+        key: &'static str,
+        description: &'static str,
+    },
     /// A stash entry in the stash stack
     Stash(StashEntry),
     /// A line in commit/stash preview (git show output)

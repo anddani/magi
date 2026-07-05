@@ -416,24 +416,29 @@ fn test_i_key_has_no_effect_in_in_progress_popup() {
 }
 
 #[test]
-fn test_rebase_interactive_on_commit_shows_confirmation() {
+fn test_rebase_interactive_on_commit_opens_todo_editor_directly() {
     let test_repo = TestRepo::new();
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
     cursor_to_commit(&mut model);
 
+    let commit_line = find_commit_line(&model).unwrap();
+    let expected_hash =
+        if let LineContent::Commit(info) = &model.ui_model.lines[commit_line].content {
+            info.hash.clone()
+        } else {
+            panic!("Not a commit line");
+        };
+
     let result = update(
         &mut model,
         Message::ShowCommitSelect(CommitSelect::RebaseInteractive),
     );
 
-    assert_eq!(result, None);
-    let state = expect_confirm_popup(&model);
-    assert!(matches!(
-        &state.on_confirm,
-        ConfirmAction::RebaseInteractive(_)
-    ));
+    // No confirmation — the todo editor opens for the commit directly
+    assert_eq!(result, Some(Message::ShowRebaseTodo(expected_hash)));
+    assert!(model.popup.is_none());
 }
 
 #[test]
@@ -459,24 +464,6 @@ fn test_rebase_interactive_not_on_commit_shows_current_log_pick_view() {
         "Expected current-branch log pick view"
     );
     assert_eq!(model.log_pick_on_select, Some(OnSelect::RebaseInteractive));
-}
-
-#[test]
-fn test_confirm_rebase_interactive_returns_show_rebase_todo() {
-    let test_repo = TestRepo::new();
-    test_repo.commit_file("file1.txt", "content1", "First commit");
-    let hash = test_repo.head_hash();
-
-    let mut model = create_model_from_test_repo(&test_repo);
-    model.popup = Some(PopupContent::Confirm(
-        magi::model::popup::ConfirmPopupState {
-            message: format!("Rebase interactively from {}?", hash),
-            on_confirm: ConfirmAction::RebaseInteractive(hash.clone()),
-        },
-    ));
-
-    let result = handle_key(key(KeyCode::Enter), &model);
-    assert_eq!(result, Some(Message::ShowRebaseTodo(hash)));
 }
 
 // ── Interactive rebase — todo editor state ────────────────────────────────────
@@ -511,7 +498,6 @@ fn test_show_rebase_todo_opens_editor() {
 
     assert_eq!(model.view_mode, ViewMode::RebaseTodo);
     assert_eq!(model.ui_model.cursor_position, 0);
-    assert_eq!(model.ui_model.lines.len(), 2);
     assert!(matches!(
         &model.ui_model.lines[0].content,
         LineContent::RebaseTodoLine(entry) if entry.message == "Commit A"
@@ -521,6 +507,43 @@ fn test_show_rebase_todo_opens_editor() {
         LineContent::RebaseTodoLine(entry) if entry.message == "Commit B"
     ));
     assert_eq!(todo_actions(&model), vec![RebaseAction::Pick; 2]);
+
+    // Keybinding hints follow the entries, one line per key
+    assert!(matches!(
+        &model.ui_model.lines[2].content,
+        LineContent::EmptyLine
+    ));
+    let hint_keys: Vec<&str> = model.ui_model.lines[3..]
+        .iter()
+        .map(|l| match &l.content {
+            LineContent::RebaseTodoHint { key, .. } => *key,
+            other => panic!("Expected hint line, got {:?}", other),
+        })
+        .collect();
+    assert_eq!(
+        hint_keys,
+        vec!["p", "r", "e", "s", "f", "d", "K/J", "u", "RET", "q"]
+    );
+}
+
+#[test]
+fn test_rebase_todo_actions_on_hint_lines_are_inert() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    // Move the cursor past the entries onto the hint block
+    model.ui_model.cursor_position = 3;
+    update(
+        &mut model,
+        Message::RebaseTodo(RebaseTodoMessage::SetAction(RebaseAction::Drop)),
+    );
+    update(
+        &mut model,
+        Message::RebaseTodo(RebaseTodoMessage::MoveEntryUp),
+    );
+
+    assert_eq!(todo_actions(&model), vec![RebaseAction::Pick; 2]);
+    assert!(model.toast.is_none());
+    assert_eq!(model.ui_model.cursor_position, 3);
 }
 
 #[test]
@@ -661,6 +684,10 @@ fn test_keys_in_rebase_todo_view() {
     );
     assert_eq!(
         handle_key(key(KeyCode::Enter), &model),
+        Some(Message::ShowPreview)
+    );
+    assert_eq!(
+        handle_key(utils::shift_key(KeyCode::Char('R')), &model),
         Some(Message::Rebase(RebaseCommand::ExecuteInteractive))
     );
     // Navigation still works
@@ -670,6 +697,38 @@ fn test_keys_in_rebase_todo_view() {
     );
     // Keys that would open popups in the status view are inert here
     assert_eq!(handle_key(key(KeyCode::Char('c')), &model), None);
+}
+
+// ── Interactive rebase — commit preview from the todo editor ─────────────────
+
+#[test]
+fn test_rebase_todo_preview_commit_and_return() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+    let lines_before = model.ui_model.lines.len();
+
+    // Preview the entry under the cursor
+    update(&mut model, Message::ShowPreview);
+    assert_eq!(model.view_mode, ViewMode::Preview);
+    assert!(model.ui_model.lines.iter().any(
+        |l| matches!(&l.content, LineContent::PreviewLine { content, .. }
+                if content.contains("Commit A"))
+    ));
+
+    // Exiting the preview restores the todo editor
+    update(&mut model, Message::ExitPreview);
+    assert_eq!(model.view_mode, ViewMode::RebaseTodo);
+    assert_eq!(model.ui_model.lines.len(), lines_before);
+    assert!(model.rebase_todo.is_some());
+}
+
+#[test]
+fn test_rebase_todo_preview_on_hint_line_is_inert() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    model.ui_model.cursor_position = 3;
+    update(&mut model, Message::ShowPreview);
+
+    assert_eq!(model.view_mode, ViewMode::RebaseTodo);
 }
 
 // ── Interactive rebase — end-to-end execution ─────────────────────────────────
