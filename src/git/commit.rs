@@ -58,9 +58,6 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(
 pub fn list_authors<P: AsRef<Path>>(repo_path: P) -> MagiResult<Vec<String>> {
     let output = git_cmd(&repo_path, &["log", "-n9999", "--format=%aN <%aE>"]).output()?;
 
-    // The log prints one author line per commit (newest first); keeping only
-    // the first occurrence of each line yields the unique authors, ordered by
-    // when they last authored a commit.
     let mut seen = std::collections::HashSet::new();
     Ok(String::from_utf8_lossy(&output.stdout)
         .lines()

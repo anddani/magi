@@ -23,11 +23,8 @@ pub fn update(model: &mut Model) -> Option<Message> {
     }
 
     let authors = list_authors(&model.workdir).unwrap_or_default();
-    let select_state = SelectPopupState::new(
-        "Commit author".to_string(),
-        authors,
-        OnSelect::CommitAuthor,
-    );
+    let select_state =
+        SelectPopupState::new("Commit author".to_string(), authors, OnSelect::CommitAuthor);
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         select_state,
     )));
