@@ -7,7 +7,7 @@ use crossterm::event::{
 use crate::{
     model::{
         LineContent, Model, ViewMode,
-        popup::{ConfirmAction, PopupContent, PopupContentCommand},
+        popup::{CommitPopupState, ConfirmAction, PopupContent, PopupContentCommand},
     },
     msg::{Message, NavigationAction, RebaseCommand, SearchMessage, SelectMessage},
 };
@@ -25,7 +25,7 @@ fn command_popup_keys(c: char) -> Option<Message> {
         'f' => Some(Message::ShowFetchPopup),
         'F' => Some(Message::ShowPullPopup),
         'c' => Some(Message::ShowPopup(PopupContent::Command(
-            PopupContentCommand::Commit,
+            PopupContentCommand::Commit(CommitPopupState::default()),
         ))),
         'b' => Some(Message::ShowPopup(PopupContent::Command(
             PopupContentCommand::Branch,
@@ -445,7 +445,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowPopup(PopupContent::Command(
-                PopupContentCommand::Commit
+                PopupContentCommand::Commit(CommitPopupState::default())
             )))
         );
     }
@@ -453,7 +453,9 @@ mod tests {
     #[test]
     fn test_c_in_commit_popup_triggers_commit() {
         let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit(
+            CommitPopupState::default(),
+        )));
 
         let key = create_key_event(NONE, Char('c'));
         let result = handle_key(key, &model);
@@ -463,7 +465,9 @@ mod tests {
     #[test]
     fn test_esc_dismisses_commit_popup() {
         let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit(
+            CommitPopupState::default(),
+        )));
 
         let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);
@@ -473,7 +477,9 @@ mod tests {
     #[test]
     fn test_q_dismisses_commit_popup() {
         let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit(
+            CommitPopupState::default(),
+        )));
 
         let key = create_key_event(NONE, Char('q'));
         let result = handle_key(key, &model);
@@ -483,7 +489,9 @@ mod tests {
     #[test]
     fn test_a_in_commit_popup_triggers_amend() {
         let mut model = create_test_model();
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit));
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Commit(
+            CommitPopupState::default(),
+        )));
 
         let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);

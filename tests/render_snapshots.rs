@@ -6,9 +6,9 @@ use magi::{
         LineContent,
         arguments::{Arguments, PushArgument},
         popup::{
-            ApplyPopupState, ConfirmAction, ConfirmPopupState, CredentialPopupState,
-            FetchPopupState, InputContext, InputPopupState, MergePopupState, PopupContent,
-            PopupContentCommand, PullPopupState, PushPopupState, RebasePopupState,
+            ApplyPopupState, CommitPopupState, ConfirmAction, ConfirmPopupState,
+            CredentialPopupState, FetchPopupState, InputContext, InputPopupState, MergePopupState,
+            PopupContent, PopupContentCommand, PullPopupState, PushPopupState, RebasePopupState,
             RevertPopupState,
         },
         select_popup::{OnSelect, SelectPopupState},
@@ -116,7 +116,22 @@ fn create_command_popup_model(test_repo: &TestRepo, command: PopupContentCommand
 #[test]
 fn snapshot_commit_popup() {
     let test_repo = TestRepo::new();
-    let model = create_command_popup_model(&test_repo, PopupContentCommand::Commit);
+    let model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Commit(CommitPopupState::default()),
+    );
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_commit_popup_with_author() {
+    let test_repo = TestRepo::new();
+    let model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Commit(CommitPopupState {
+            author: Some("André Danielsson <andre@example.com>".to_string()),
+        }),
+    );
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 

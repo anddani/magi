@@ -3,7 +3,8 @@ use crate::{
     model::{
         LineContent, Model, ViewMode,
         popup::{
-            ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand, SelectResult,
+            CommitPopupState, ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand,
+            SelectResult,
         },
         select_popup::OnSelect,
     },
@@ -333,6 +334,14 @@ fn route_result(
         (Some(OnSelect::DeleteTag), SelectResult::Selected(tag)) => Some(Message::DeleteTag(tag)),
         (Some(OnSelect::PruneTagsRemotePick), SelectResult::Selected(remote)) => {
             Some(Message::ShowPruneTagsConfirm { remote })
+        }
+        (Some(OnSelect::CommitAuthor), SelectResult::Selected(author)) => {
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Commit(
+                CommitPopupState {
+                    author: Some(author),
+                },
+            )));
+            None
         }
         (
             Some(OnSelect::RevertMergeMainline { hashes, no_commit }),

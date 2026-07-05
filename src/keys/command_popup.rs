@@ -30,7 +30,7 @@ pub fn handle_command_popup_key(
     }
 
     match command {
-        PopupContentCommand::Commit => commit::keys(key, arg_mode),
+        PopupContentCommand::Commit(_) => commit::keys(key, arg_mode),
         PopupContentCommand::Branch => branch::keys(key),
         PopupContentCommand::Fetch(state) => fetch::keys(key, arg_mode, state),
         PopupContentCommand::Log => log::keys(key, arg_mode),

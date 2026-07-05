@@ -5,7 +5,7 @@ use crate::{
     model::{
         Model, Toast, ToastStyle,
         arguments::{Arguments::CommitArguments, CommitArgument, PopupArgument},
-        popup::PopupContent,
+        popup::{PopupContent, PopupContentCommand},
     },
     msg::Message,
 };
@@ -13,9 +13,18 @@ use crate::{
 /// Duration for toast notifications
 pub const TOAST_DURATION: Duration = Duration::from_secs(5);
 
+/// Dismisses the commit popup and returns the author override (`-A`) it held,
+/// if any.
+pub fn take_commit_author(model: &mut Model) -> Option<String> {
+    match model.popup.take() {
+        Some(PopupContent::Command(PopupContentCommand::Commit(state))) => state.author,
+        _ => None,
+    }
+}
+
 pub fn update(model: &mut Model) -> Option<Message> {
-    // Dismiss any open popup (e.g., commit popup)
-    model.popup = None;
+    // Dismiss the commit popup, keeping the author override it carries
+    let author = take_commit_author(model);
 
     let allow_no_staged: bool = if let Some(CommitArguments(ref args)) = model.arguments {
         args.contains(&CommitArgument::StageAll) || args.contains(&CommitArgument::AllowEmpty)
@@ -35,7 +44,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
 
     let repo_path = &model.workdir;
 
-    let flags = if let Some(CommitArguments(arguments)) = model.arguments.take() {
+    let mut flags: Vec<String> = if let Some(CommitArguments(arguments)) = model.arguments.take() {
         arguments
             .into_iter()
             .map(|a| a.flag().to_string())
@@ -43,6 +52,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
     } else {
         vec![]
     };
+    if let Some(author) = author {
+        flags.push(format!("--author={}", author));
+    }
 
     match commit::run_commit_with_editor(repo_path, flags) {
         Ok(CommitResult { success, message }) => {
