@@ -60,12 +60,11 @@ pub struct GitInfo {
 
 impl GitInfo {
     pub fn new() -> Result<Self, Git2Error> {
-        let repository = Repository::open(".")?;
-        Ok(Self { repository })
+        Self::new_from_path(".")
     }
 
     pub fn new_from_path<P: AsRef<Path>>(path: P) -> Result<Self, Git2Error> {
-        let repository = Repository::open(path)?;
+        let repository = Repository::discover(path)?;
         Ok(Self { repository })
     }
 
@@ -232,5 +231,31 @@ impl GitRef {
             commit_summary,
             ReferenceType::DetachedHead,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::GitInfo;
+    use crate::git::test_repo::TestRepo;
+    use std::fs;
+
+    #[test]
+    fn new_from_path_discovers_repo_from_subdirectory() {
+        let test_repo = TestRepo::new();
+        let subdir = test_repo.repo_path().join("nested").join("dir");
+        fs::create_dir_all(&subdir).unwrap();
+
+        let git_info = GitInfo::new_from_path(&subdir).unwrap();
+
+        assert_eq!(
+            git_info
+                .repository
+                .workdir()
+                .unwrap()
+                .canonicalize()
+                .unwrap(),
+            test_repo.repo_path().canonicalize().unwrap()
+        );
     }
 }
