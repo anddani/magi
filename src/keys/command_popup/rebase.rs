@@ -19,6 +19,7 @@ pub fn keys(key: KeyEvent, state: &RebasePopupState) -> Option<Message> {
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
         KeyCode::Char('e') => Some(Message::ShowCommitSelect(CommitSelect::RebaseElsewhere)),
+        KeyCode::Char('i') => Some(Message::ShowCommitSelect(CommitSelect::RebaseInteractive)),
         _ => None,
     }
 }

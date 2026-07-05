@@ -122,6 +122,7 @@ pub struct Strings {
     pub cmd_tag: &'static str,
     pub cmd_prune: &'static str,
     pub cmd_elsewhere: &'static str,
+    pub cmd_interactively: &'static str,
     pub cmd_all_remotes: &'static str,
     pub cmd_another_branch: &'static str,
     pub cmd_explicit_refspec: &'static str,
@@ -225,6 +226,9 @@ pub struct Strings {
     pub mode_visual: &'static str,
     pub mode_search: &'static str,
     pub mode_preview: &'static str,
+
+    // Keybinding hint shown in the rebase todo editor's bottom border
+    pub rebase_todo_hint: &'static str,
 
     // Popup hint lines
     pub hint_dismiss: &'static str,
@@ -335,6 +339,7 @@ static ENGLISH: Strings = Strings {
     cmd_tag: "Tag",
     cmd_prune: "Prune",
     cmd_elsewhere: "Elsewhere",
+    cmd_interactively: "Interactively",
     cmd_all_remotes: "All remotes",
     cmd_another_branch: "Another branch",
     cmd_explicit_refspec: "Explicit refspec",
@@ -434,6 +439,8 @@ static ENGLISH: Strings = Strings {
     mode_search: "SEARCH",
     mode_preview: "PREVIEW",
 
+    rebase_todo_hint: "p pick  r reword  e edit  s squash  f fixup  d drop  K/J move  u undo  ⏎ rebase  q abort",
+
     hint_dismiss: "Press Enter or Esc to dismiss",
     hint_confirm: "y/Enter to confirm, n/Esc to cancel",
 
@@ -532,6 +539,7 @@ static SWEDISH: Strings = Strings {
     cmd_tag: "Märka",
     cmd_prune: "Beskär",
     cmd_elsewhere: "Annanstans",
+    cmd_interactively: "Interaktivt",
     cmd_all_remotes: "Alla fjärrar",
     cmd_another_branch: "Annan gren",
     cmd_explicit_refspec: "Explicit refspec",
@@ -630,6 +638,8 @@ static SWEDISH: Strings = Strings {
     mode_visual: "VISUELL",
     mode_search: "SÖK",
     mode_preview: "FÖRHANDSGRANSKNING",
+
+    rebase_todo_hint: "p plocka  r omformulera  e redigera  s mosa  f fixup  d fimpa  K/J flytta  u ångra  ⏎ ympa  q avbryt",
 
     hint_dismiss: "Tryck Enter eller Esc för att stänga",
     hint_confirm: "y/Enter för att bekräfta, n/Esc för att avbryta",

@@ -5,11 +5,14 @@ use crossterm::event::{
 };
 
 use crate::{
+    git::rebase::RebaseAction,
     model::{
         LineContent, Model, ViewMode,
         popup::{CommitPopupState, ConfirmAction, PopupContent, PopupContentCommand},
     },
-    msg::{Message, NavigationAction, RebaseCommand, SearchMessage, SelectMessage},
+    msg::{
+        Message, NavigationAction, RebaseCommand, RebaseTodoMessage, SearchMessage, SelectMessage,
+    },
 };
 
 mod command_popup;
@@ -18,6 +21,7 @@ mod input_popup;
 
 const NONE: KeyModifiers = KeyModifiers::NONE;
 const CTRL: KeyModifiers = KeyModifiers::CONTROL;
+const ALT: KeyModifiers = KeyModifiers::ALT;
 
 fn command_popup_keys(c: char) -> Option<Message> {
     match c {
@@ -73,6 +77,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     ConfirmAction::RebaseElsewhere(target) => {
                         Message::Rebase(RebaseCommand::Elsewhere(target.clone()))
                     }
+                    ConfirmAction::RebaseInteractive(base) => Message::ShowRebaseTodo(base.clone()),
                     ConfirmAction::ReviseCommit(hash) => Message::ReviseCommit(hash.clone()),
                     ConfirmAction::ResetBranch {
                         branch,
@@ -216,6 +221,42 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         }
     }
 
+    // Interactive rebase todo editor: action keys, reordering, confirm/abort.
+    // Navigation keys fall through to the shared handler below.
+    if model.view_mode == ViewMode::RebaseTodo {
+        let todo_msg = |m| Some(Message::RebaseTodo(m));
+        match (key.modifiers, key.code) {
+            // Cursor movement and scrolling keep their normal behaviour
+            (CTRL, Char('u' | 'd' | 'e' | 'y'))
+            | (NONE, Up | Down | Char('j') | Char('k') | Char('g'))
+            | (_, Char('G')) => {}
+            (NONE, Char('p')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Pick));
+            }
+            (NONE, Char('r') | Char('w')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Reword));
+            }
+            (NONE, Char('e')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Edit));
+            }
+            (NONE, Char('s')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Squash));
+            }
+            (NONE, Char('f')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Fixup));
+            }
+            (NONE, Char('d')) => return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Drop)),
+            (NONE, Char('u')) => return todo_msg(RebaseTodoMessage::Undo),
+            (_, Char('K')) | (ALT, Up) => return todo_msg(RebaseTodoMessage::MoveEntryUp),
+            (_, Char('J')) | (ALT, Down) => return todo_msg(RebaseTodoMessage::MoveEntryDown),
+            (_, Enter) => return Some(Message::Rebase(RebaseCommand::ExecuteInteractive)),
+            (_, Char('q')) | (_, Esc) | (CTRL, Char('g')) | (CTRL, Char('c')) => {
+                return todo_msg(RebaseTodoMessage::Abort);
+            }
+            _ => return None,
+        }
+    }
+
     match (key.modifiers, key.code) {
         // Navigation
         (CTRL, Char('u')) => Some(Message::Navigation(NavigationAction::HalfPageUp)),
@@ -235,6 +276,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
             ViewMode::Log(_, _) => Some(Message::ExitLogView),
             ViewMode::Status => Some(Message::Quit),
             ViewMode::Preview => Some(Message::ExitPreview),
+            ViewMode::RebaseTodo => Some(Message::RebaseTodo(RebaseTodoMessage::Abort)),
         },
         (_, Char('V')) => Some(Message::EnterVisualMode),
         (_, Char('s')) => Some(Message::StageSelected),
@@ -306,6 +348,7 @@ mod tests {
             preview_return_mode: None,
             preview_return_ui_model: None,
             log_return_ui_model: None,
+            rebase_todo: None,
         }
     }
 

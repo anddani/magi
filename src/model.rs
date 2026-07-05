@@ -17,6 +17,7 @@ pub mod cursor_context;
 pub mod log_view;
 pub mod popup;
 pub mod pty_state;
+pub mod rebase_todo;
 pub mod select_popup;
 
 /// The whole state of the application, including the Git repository Handle
@@ -59,6 +60,8 @@ pub struct Model {
     pub preview_return_ui_model: Option<UiModel>,
     /// The UiModel to restore when exiting the Log view back to Status
     pub log_return_ui_model: Option<UiModel>,
+    /// State for the interactive rebase todo editor (ViewMode::RebaseTodo)
+    pub rebase_todo: Option<rebase_todo::RebaseTodoState>,
 }
 
 impl Model {
@@ -132,6 +135,8 @@ pub enum ViewMode {
     Log(crate::msg::LogType, bool),
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,
+    /// Interactive rebase todo editor (pick/reword/squash/... per commit).
+    RebaseTodo,
 }
 
 impl InputMode {
@@ -214,6 +219,8 @@ pub enum LineContent {
     Commit(CommitInfo),
     /// A line in the git log view (with graph)
     LogLine(LogEntry),
+    /// A line in the interactive rebase todo editor
+    RebaseTodoLine(crate::git::rebase::RebaseTodoEntry),
     /// A stash entry in the stash stack
     Stash(StashEntry),
     /// A line in commit/stash preview (git show output)

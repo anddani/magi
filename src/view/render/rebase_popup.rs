@@ -57,10 +57,25 @@ pub fn content<'a>(
         )],
     };
 
+    let rebase_col = PopupColumn {
+        title: Some(PopupColumnTitle::Raw(t.popup_rebase)),
+        content: vec![command_description(
+            theme,
+            model.arg_mode,
+            "i",
+            t.cmd_interactively,
+        )],
+    };
+
     CommandPopupContent {
         title: t.popup_rebase,
-        rows: vec![PopupRow {
-            columns: vec![rebase_onto_col],
-        }],
+        rows: vec![
+            PopupRow {
+                columns: vec![rebase_onto_col],
+            },
+            PopupRow {
+                columns: vec![rebase_col],
+            },
+        ],
     }
 }

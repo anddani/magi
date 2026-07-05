@@ -41,6 +41,9 @@ fn line_searchable_text(line: &Line) -> String {
         LineContent::RebasingEntry { hash, message, .. } => format!("{} {}", hash, message),
         LineContent::CherryPickingEntry { hash, message, .. } => format!("{} {}", hash, message),
         LineContent::PreviewLine { content, .. } => content.clone(),
+        LineContent::RebaseTodoLine(entry) => {
+            format!("{} {} {}", entry.action.as_str(), entry.hash, entry.message)
+        }
     }
 }
 
@@ -215,6 +218,7 @@ mod tests {
             preview_return_mode: None,
             preview_return_ui_model: None,
             log_return_ui_model: None,
+            rebase_todo: None,
         }
     }
 

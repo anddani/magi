@@ -10,6 +10,8 @@ pub fn update(model: &mut Model) -> Option<Message> {
         ViewMode::Log(log_type, _) => refresh_log(model, &log_type),
         // In preview mode, refresh is a no-op (preview content is static)
         ViewMode::Preview => {}
+        // The rebase todo editor holds in-memory state; nothing to refresh
+        ViewMode::RebaseTodo => {}
     }
     None
 }

@@ -188,6 +188,7 @@ pub fn create_test_model() -> Model {
         preview_return_mode: None,
         preview_return_ui_model: None,
         log_return_ui_model: None,
+        rebase_todo: None,
     }
 }
 

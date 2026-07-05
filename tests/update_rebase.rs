@@ -1,13 +1,20 @@
 use crossterm::event::KeyCode;
 use magi::{
-    git::{log::get_log_entries, rebase::rebase_in_progress, test_repo::TestRepo},
+    git::{
+        log::get_log_entries,
+        rebase::{RebaseAction, rebase_in_progress},
+        test_repo::TestRepo,
+    },
     keys::handle_key,
     model::{
-        Line, LineContent, SectionType, ViewMode,
+        Line, LineContent, Model, SectionType, ViewMode,
         popup::{ConfirmAction, PopupContent, PopupContentCommand, RebasePopupState},
         select_popup::OnSelect,
     },
-    msg::{CommitSelect, LogType, Message, RebaseCommand, SelectMessage, update::update},
+    msg::{
+        CommitSelect, LogType, Message, RebaseCommand, RebaseTodoMessage, SelectMessage,
+        update::update,
+    },
 };
 
 mod utils;
@@ -374,6 +381,323 @@ fn test_e_key_has_no_effect_in_in_progress_popup() {
     // 'e' should not trigger elsewhere in in_progress mode
     let result = handle_key(key(KeyCode::Char('e')), &model);
     assert_eq!(result, None);
+}
+
+// ── Interactive rebase — popup key and base selection ─────────────────────────
+
+fn rebase_popup(in_progress: bool) -> PopupContent {
+    PopupContent::Command(PopupContentCommand::Rebase(RebasePopupState {
+        branch: "main".to_string(),
+        in_progress,
+    }))
+}
+
+#[test]
+fn test_i_in_rebase_popup_shows_rebase_interactive_select() {
+    let test_repo = TestRepo::new();
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(rebase_popup(false));
+
+    let result = handle_key(key(KeyCode::Char('i')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowCommitSelect(CommitSelect::RebaseInteractive))
+    );
+}
+
+#[test]
+fn test_i_key_has_no_effect_in_in_progress_popup() {
+    let test_repo = TestRepo::new();
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(rebase_popup(true));
+
+    let result = handle_key(key(KeyCode::Char('i')), &model);
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_rebase_interactive_on_commit_shows_confirmation() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    cursor_to_commit(&mut model);
+
+    let result = update(
+        &mut model,
+        Message::ShowCommitSelect(CommitSelect::RebaseInteractive),
+    );
+
+    assert_eq!(result, None);
+    let state = expect_confirm_popup(&model);
+    assert!(matches!(
+        &state.on_confirm,
+        ConfirmAction::RebaseInteractive(_)
+    ));
+}
+
+#[test]
+fn test_rebase_interactive_not_on_commit_shows_current_log_pick_view() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let non_commit_pos = find_line(&model, |c| {
+        !matches!(c, LineContent::Commit(_) | LineContent::LogLine(_))
+    })
+    .expect("Expected at least one non-commit line");
+    model.ui_model.cursor_position = non_commit_pos;
+
+    let result = update(
+        &mut model,
+        Message::ShowCommitSelect(CommitSelect::RebaseInteractive),
+    );
+
+    assert_eq!(result, None);
+    assert!(
+        matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
+        "Expected current-branch log pick view"
+    );
+    assert_eq!(model.log_pick_on_select, Some(OnSelect::RebaseInteractive));
+}
+
+#[test]
+fn test_confirm_rebase_interactive_returns_show_rebase_todo() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    let hash = test_repo.head_hash();
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Confirm(
+        magi::model::popup::ConfirmPopupState {
+            message: format!("Rebase interactively from {}?", hash),
+            on_confirm: ConfirmAction::RebaseInteractive(hash.clone()),
+        },
+    ));
+
+    let result = handle_key(key(KeyCode::Enter), &model);
+    assert_eq!(result, Some(Message::ShowRebaseTodo(hash)));
+}
+
+// ── Interactive rebase — todo editor state ────────────────────────────────────
+
+/// Creates a repo with "Initial commit", "Commit A", "Commit B" and opens the
+/// todo editor with Commit A as base (so the todo lists A then B).
+fn model_with_todo_editor() -> (TestRepo, Model) {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "Commit A");
+    let base = test_repo.head_hash();
+    test_repo.commit_file("b.txt", "b", "Commit B");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    update(&mut model, Message::ShowRebaseTodo(base));
+    (test_repo, model)
+}
+
+fn todo_actions(model: &Model) -> Vec<RebaseAction> {
+    model
+        .rebase_todo
+        .as_ref()
+        .unwrap()
+        .entries
+        .iter()
+        .map(|e| e.action)
+        .collect()
+}
+
+#[test]
+fn test_show_rebase_todo_opens_editor() {
+    let (_test_repo, model) = model_with_todo_editor();
+
+    assert_eq!(model.view_mode, ViewMode::RebaseTodo);
+    assert_eq!(model.ui_model.cursor_position, 0);
+    assert_eq!(model.ui_model.lines.len(), 2);
+    assert!(matches!(
+        &model.ui_model.lines[0].content,
+        LineContent::RebaseTodoLine(entry) if entry.message == "Commit A"
+    ));
+    assert!(matches!(
+        &model.ui_model.lines[1].content,
+        LineContent::RebaseTodoLine(entry) if entry.message == "Commit B"
+    ));
+    assert_eq!(todo_actions(&model), vec![RebaseAction::Pick; 2]);
+}
+
+#[test]
+fn test_rebase_todo_set_action_updates_line_and_advances_cursor() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    update(
+        &mut model,
+        Message::RebaseTodo(RebaseTodoMessage::SetAction(RebaseAction::Reword)),
+    );
+
+    assert_eq!(
+        todo_actions(&model),
+        vec![RebaseAction::Reword, RebaseAction::Pick]
+    );
+    assert!(matches!(
+        &model.ui_model.lines[0].content,
+        LineContent::RebaseTodoLine(entry) if entry.action == RebaseAction::Reword
+    ));
+    // Auto-advanced to the next line
+    assert_eq!(model.ui_model.cursor_position, 1);
+}
+
+#[test]
+fn test_rebase_todo_squash_on_first_line_is_rejected_with_toast() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    update(
+        &mut model,
+        Message::RebaseTodo(RebaseTodoMessage::SetAction(RebaseAction::Squash)),
+    );
+
+    assert_eq!(todo_actions(&model), vec![RebaseAction::Pick; 2]);
+    assert_eq!(model.ui_model.cursor_position, 0);
+    assert!(model.toast.is_some(), "Expected a warning toast");
+}
+
+#[test]
+fn test_rebase_todo_move_entry_down_swaps_lines_and_follows_cursor() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    update(
+        &mut model,
+        Message::RebaseTodo(RebaseTodoMessage::MoveEntryDown),
+    );
+
+    assert!(matches!(
+        &model.ui_model.lines[0].content,
+        LineContent::RebaseTodoLine(entry) if entry.message == "Commit B"
+    ));
+    assert!(matches!(
+        &model.ui_model.lines[1].content,
+        LineContent::RebaseTodoLine(entry) if entry.message == "Commit A"
+    ));
+    assert_eq!(model.ui_model.cursor_position, 1);
+}
+
+#[test]
+fn test_rebase_todo_undo_restores_previous_state() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    update(
+        &mut model,
+        Message::RebaseTodo(RebaseTodoMessage::SetAction(RebaseAction::Drop)),
+    );
+    assert_eq!(
+        todo_actions(&model),
+        vec![RebaseAction::Drop, RebaseAction::Pick]
+    );
+
+    update(&mut model, Message::RebaseTodo(RebaseTodoMessage::Undo));
+    assert_eq!(todo_actions(&model), vec![RebaseAction::Pick; 2]);
+}
+
+#[test]
+fn test_rebase_todo_abort_returns_to_status_without_rebasing() {
+    let (test_repo, mut model) = model_with_todo_editor();
+
+    let result = update(&mut model, Message::RebaseTodo(RebaseTodoMessage::Abort));
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert_eq!(model.view_mode, ViewMode::Status);
+    assert!(model.rebase_todo.is_none());
+    assert!(!rebase_in_progress(test_repo.repo_path()));
+}
+
+// ── Interactive rebase — todo editor keys ─────────────────────────────────────
+
+#[test]
+fn test_keys_in_rebase_todo_view() {
+    let (_test_repo, model) = model_with_todo_editor();
+
+    let cases = [
+        (
+            KeyCode::Char('p'),
+            RebaseTodoMessage::SetAction(RebaseAction::Pick),
+        ),
+        (
+            KeyCode::Char('r'),
+            RebaseTodoMessage::SetAction(RebaseAction::Reword),
+        ),
+        (
+            KeyCode::Char('e'),
+            RebaseTodoMessage::SetAction(RebaseAction::Edit),
+        ),
+        (
+            KeyCode::Char('s'),
+            RebaseTodoMessage::SetAction(RebaseAction::Squash),
+        ),
+        (
+            KeyCode::Char('f'),
+            RebaseTodoMessage::SetAction(RebaseAction::Fixup),
+        ),
+        (
+            KeyCode::Char('d'),
+            RebaseTodoMessage::SetAction(RebaseAction::Drop),
+        ),
+        (KeyCode::Char('u'), RebaseTodoMessage::Undo),
+        (KeyCode::Char('q'), RebaseTodoMessage::Abort),
+        (KeyCode::Esc, RebaseTodoMessage::Abort),
+    ];
+    for (code, expected) in cases {
+        assert_eq!(
+            handle_key(key(code), &model),
+            Some(Message::RebaseTodo(expected)),
+            "key {:?}",
+            code
+        );
+    }
+
+    assert_eq!(
+        handle_key(utils::shift_key(KeyCode::Char('K')), &model),
+        Some(Message::RebaseTodo(RebaseTodoMessage::MoveEntryUp))
+    );
+    assert_eq!(
+        handle_key(utils::shift_key(KeyCode::Char('J')), &model),
+        Some(Message::RebaseTodo(RebaseTodoMessage::MoveEntryDown))
+    );
+    assert_eq!(
+        handle_key(key(KeyCode::Enter), &model),
+        Some(Message::Rebase(RebaseCommand::ExecuteInteractive))
+    );
+    // Navigation still works
+    assert_eq!(
+        handle_key(key(KeyCode::Char('j')), &model),
+        Some(Message::Navigation(magi::msg::NavigationAction::MoveDown))
+    );
+    // Keys that would open popups in the status view are inert here
+    assert_eq!(handle_key(key(KeyCode::Char('c')), &model), None);
+}
+
+// ── Interactive rebase — end-to-end execution ─────────────────────────────────
+
+#[test]
+fn test_execute_interactive_rebase_drops_commit() {
+    let (test_repo, mut model) = model_with_todo_editor();
+
+    // Move cursor to Commit B and drop it
+    model.ui_model.cursor_position = 1;
+    update(
+        &mut model,
+        Message::RebaseTodo(RebaseTodoMessage::SetAction(RebaseAction::Drop)),
+    );
+
+    let result = update(
+        &mut model,
+        Message::Rebase(RebaseCommand::ExecuteInteractive),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert_eq!(model.view_mode, ViewMode::Status);
+    assert!(model.rebase_todo.is_none());
+    assert!(!rebase_in_progress(test_repo.repo_path()));
+
+    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+    let head_commit = repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head_commit.summary().unwrap(), Some("Commit A"));
 }
 
 // ── Rebasing section shown in status view when rebase in progress ─────────────

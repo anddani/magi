@@ -252,6 +252,41 @@ fn snapshot_rebase_popup_in_progress() {
 }
 
 #[test]
+fn snapshot_rebase_todo_view() {
+    use magi::git::rebase::RebaseAction;
+    use magi::msg::RebaseTodoMessage;
+
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "Add feature A");
+    let base = test_repo.head_hash();
+    test_repo
+        .commit_file("b.txt", "b", "Fix typo in A")
+        .commit_file("c.txt", "c", "Add feature C")
+        .commit_file("d.txt", "d", "WIP experiment");
+
+    // Open the editor with the real workdir (it runs git), then pin the
+    // workdir so the title bar stays deterministic.
+    let mut model = create_model_from_test_repo(&test_repo);
+    update(&mut model, Message::ShowRebaseTodo(base));
+    model.workdir = std::path::PathBuf::from("/repo/magi/");
+
+    // Entry 0 stays pick; set actions on the rest (cursor auto-advances)
+    model.ui_model.cursor_position = 1;
+    for action in [
+        RebaseAction::Fixup,
+        RebaseAction::Reword,
+        RebaseAction::Drop,
+    ] {
+        update(
+            &mut model,
+            Message::RebaseTodo(RebaseTodoMessage::SetAction(action)),
+        );
+    }
+
+    assert_frame_snapshot!(render_to_string(&model, 100, 24));
+}
+
+#[test]
 fn snapshot_revert_popup() {
     let test_repo = TestRepo::new();
     let model = create_command_popup_model(
