@@ -4,20 +4,32 @@ use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
     i18n,
-    model::{Model, arguments::CommitArgument},
+    model::{Model, arguments::CommitArgument, popup::CommitPopupState},
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::{argument_lines, command_description},
+        util::{argument_lines, argument_value_line, command_description},
     },
 };
 
-pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
+pub fn content<'a>(
+    theme: &Theme,
+    model: &Model,
+    state: &'a CommitPopupState,
+) -> CommandPopupContent<'a> {
     let t = i18n::t();
-    let arguments: Vec<Line<'_>> = argument_lines::<CommitArgument>(
+    let mut arguments: Vec<Line<'_>> = argument_lines::<CommitArgument>(
         theme,
         model.arg_mode,
         model.arguments.as_ref().and_then(|a| a.commit()),
     );
+    arguments.push(argument_value_line(
+        theme,
+        'A',
+        t.arg_commit_author,
+        "--author=",
+        state.author.as_deref(),
+        model.arg_mode,
+    ));
 
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),

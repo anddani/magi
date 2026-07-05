@@ -97,7 +97,7 @@ pub fn render_popup(
         }
         PopupContent::Command(command) => {
             let content = match command {
-                PopupContentCommand::Commit => commit_popup::content(theme, model),
+                PopupContentCommand::Commit(state) => commit_popup::content(theme, model, state),
                 PopupContentCommand::Push(state) => push_popup::content(theme, model, state),
                 PopupContentCommand::Fetch(state) => fetch_popup::content(theme, model, state),
                 PopupContentCommand::Pull(state) => pull_popup::content(theme, model, state),

@@ -126,6 +126,8 @@ pub enum OnSelect {
     DeleteTag,
     /// Select a remote to prune tags against
     PruneTagsRemotePick,
+    /// Select an author to override the commit author with (`--author=`)
+    CommitAuthor,
     /// Select the mainline parent number when reverting a merge commit
     RevertMergeMainline {
         hashes: Vec<String>,

@@ -124,6 +124,9 @@ pub enum Message {
 
     /// Open commit in user's default EDITOR
     Commit,
+    /// Show the author picker for the commit `-A` argument, or clear the
+    /// author override if one is already set
+    ShowCommitAuthorSelect,
     /// Amend the last commit
     Amend(Vec<String>),
     /// Create a fixup or squash commit for the specified commit hash

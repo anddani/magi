@@ -273,6 +273,13 @@ pub struct RebasePopupState {
     pub in_progress: bool,
 }
 
+/// State for the Commit popup
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct CommitPopupState {
+    /// Author override set via the `-A` argument (`--author=<value>`)
+    pub author: Option<String>,
+}
+
 /// State for the Revert popup
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RevertPopupState {
@@ -302,7 +309,7 @@ pub struct MergePopupState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupContentCommand {
-    Commit,
+    Commit(CommitPopupState),
     Push(PushPopupState),
     Fetch(FetchPopupState),
     Pull(PullPopupState),

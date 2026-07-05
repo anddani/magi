@@ -59,6 +59,7 @@ mod select_move_up;
 mod selection;
 mod show_apply_popup;
 mod show_checkout_new_branch_input;
+mod show_commit_author_select;
 mod show_commit_select;
 mod show_fetch_popup;
 mod show_input_popup;
@@ -103,6 +104,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Navigation(action) => navigation::update(model, action),
         Message::PendingG => pending_g::update(model),
         Message::Commit => commit::update(model),
+        Message::ShowCommitAuthorSelect => show_commit_author_select::update(model),
         Message::Amend(extra_args) => amend::update(model, extra_args),
         Message::FixupCommit(commit_hash, fixup_type) => {
             fixup_commit::update(model, commit_hash, fixup_type)

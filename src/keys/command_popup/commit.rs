@@ -8,6 +8,7 @@ use crate::{
 pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
     if arg_mode {
         return match key.code {
+            KeyCode::Char('A') => Some(Message::ShowCommitAuthorSelect),
             KeyCode::Char(c) => CommitArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Commit(arg)))
                 .or(Some(Message::ExitArgMode)),

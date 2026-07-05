@@ -10,11 +10,11 @@ use crate::{
     msg::Message,
 };
 
-use super::commit::TOAST_DURATION;
+use super::commit::{TOAST_DURATION, take_commit_author};
 
 pub fn update(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
-    // Dismiss any open popup (e.g., commit popup)
-    model.popup = None;
+    // Dismiss the commit popup, keeping the author override it carries
+    let author = take_commit_author(model);
 
     let mut flags: Vec<String> = vec![];
 
@@ -23,6 +23,9 @@ pub fn update(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
     if let Some(CommitArguments(arguments)) = model.arguments.take() {
         flags.extend(arguments.into_iter().map(|a| a.flag().to_string()))
     };
+    if let Some(author) = author {
+        flags.push(format!("--author={}", author));
+    }
 
     match commit::run_amend_commit_with_editor(&model.workdir, flags) {
         Ok(CommitResult { success, message }) => {

@@ -53,6 +53,21 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(
     get_commit_result(repo_path, status, "Commit")
 }
 
+/// Lists authors from the commit history as `Name <email>` strings,
+/// deduplicated and ordered from most recent commit to oldest.
+pub fn list_authors<P: AsRef<Path>>(repo_path: P) -> MagiResult<Vec<String>> {
+    let output = git_cmd(&repo_path, &["log", "-n9999", "--format=%aN <%aE>"]).output()?;
+
+    let mut seen = std::collections::HashSet::new();
+    Ok(String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .filter(|line| seen.insert(line.to_string()))
+        .map(str::to_string)
+        .collect())
+}
+
 /// Runs `git commit --amend` to amend the last commit.
 /// Opens the user's configured editor with the previous commit message.
 pub fn run_amend_commit_with_editor<P: AsRef<Path>>(
