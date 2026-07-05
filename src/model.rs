@@ -57,6 +57,27 @@ pub struct Model {
     pub preview_return_mode: Option<ViewMode>,
     /// The UiModel to restore when exiting Preview
     pub preview_return_ui_model: Option<UiModel>,
+    /// The UiModel to restore when exiting the Log view back to Status
+    pub log_return_ui_model: Option<UiModel>,
+}
+
+impl Model {
+    /// Save the current UI state so it can be restored when exiting the log
+    /// view. Only saves when coming from another view mode, so switching log
+    /// types from within the log view doesn't overwrite the saved state.
+    pub fn save_log_return_state(&mut self) {
+        if !matches!(self.view_mode, ViewMode::Log(_, _)) {
+            self.log_return_ui_model = Some(self.ui_model.clone());
+        }
+    }
+
+    /// Restore the UI state (cursor and scroll position) from before
+    /// entering the log view, if one was saved.
+    pub fn restore_log_return_state(&mut self) {
+        if let Some(ui_model) = self.log_return_ui_model.take() {
+            self.ui_model = ui_model;
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

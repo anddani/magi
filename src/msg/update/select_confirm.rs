@@ -29,6 +29,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             None => SelectResult::NoneSelected,
         };
         model.view_mode = ViewMode::Status;
+        model.restore_log_return_state();
         model.select_result = Some(result.clone());
         let on_select = model.log_pick_on_select.take();
         return route_result(on_select, result, model);
@@ -387,6 +388,7 @@ mod tests {
             cursor_reposition_context: None,
             preview_return_mode: None,
             preview_return_ui_model: None,
+            log_return_ui_model: None,
         }
     }
 

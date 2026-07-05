@@ -99,6 +99,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
                         section: None,
                     })
                     .collect();
+                model.save_log_return_state();
                 model.ui_model.lines = lines;
                 model.ui_model.cursor_position = 0;
                 model.ui_model.scroll_offset = 0;

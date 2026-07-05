@@ -305,6 +305,7 @@ mod tests {
             cursor_reposition_context: None,
             preview_return_mode: None,
             preview_return_ui_model: None,
+            log_return_ui_model: None,
         }
     }
 
