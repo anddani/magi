@@ -1,3 +1,4 @@
+use crate::model::InputField;
 use crate::msg::{FixupType, ResetMode};
 
 /// Result returned when select popup closes
@@ -176,7 +177,7 @@ pub struct SelectPopupState {
     /// Indices of options matching current filter
     pub filtered_indices: Vec<usize>,
     /// Current filter text
-    pub input_text: String,
+    pub input: InputField,
     /// Currently selected index in the filtered list (0-based)
     pub selected_index: usize,
     /// What to do when the user confirms a selection
@@ -191,7 +192,7 @@ impl SelectPopupState {
             title,
             all_options: options,
             filtered_indices,
-            input_text: String::new(),
+            input: InputField::new(),
             selected_index: 0,
             on_select,
         }
@@ -205,9 +206,9 @@ impl SelectPopupState {
             .map(|s| s.as_str())
     }
 
-    /// Updates filtered_indices based on current input_text (case-insensitive substring)
+    /// Updates filtered_indices based on the current filter text (case-insensitive substring)
     pub fn update_filter(&mut self) {
-        let query = self.input_text.to_lowercase();
+        let query = self.input.as_str().to_lowercase();
         self.filtered_indices = self
             .all_options
             .iter()
@@ -260,7 +261,7 @@ mod tests {
         assert_eq!(state.title, "Checkout");
         assert_eq!(state.all_options, options);
         assert_eq!(state.filtered_indices, vec![0, 1, 2]);
-        assert_eq!(state.input_text, "");
+        assert_eq!(state.input.as_str(), "");
         assert_eq!(state.selected_index, 0);
     }
 
@@ -301,7 +302,7 @@ mod tests {
         let mut state = SelectPopupState::new("Checkout".to_string(), options, dummy_on_select());
 
         // Filter for "feature"
-        state.input_text = "feature".to_string();
+        state.input = InputField::from_text("feature");
         state.update_filter();
         assert_eq!(state.filtered_indices, vec![1, 2]);
         assert_eq!(state.selected_index, 0);
@@ -318,13 +319,13 @@ mod tests {
         let mut state = SelectPopupState::new("Checkout".to_string(), options, dummy_on_select());
 
         // Filter for "main" (lowercase) should match "Main"
-        state.input_text = "main".to_string();
+        state.input = InputField::from_text("main");
         state.update_filter();
         assert_eq!(state.filtered_indices, vec![0]);
         assert_eq!(state.selected_item(), Some("Main"));
 
         // Filter for "DEVELOP" (uppercase) should match "develop"
-        state.input_text = "DEVELOP".to_string();
+        state.input = InputField::from_text("DEVELOP");
         state.update_filter();
         assert_eq!(state.filtered_indices, vec![2]);
         assert_eq!(state.selected_item(), Some("develop"));
@@ -335,7 +336,7 @@ mod tests {
         let options = vec!["main".to_string(), "feature".to_string()];
         let mut state = SelectPopupState::new("Checkout".to_string(), options, dummy_on_select());
 
-        state.input_text = "nonexistent".to_string();
+        state.input = InputField::from_text("nonexistent");
         state.update_filter();
         assert!(state.filtered_indices.is_empty());
         assert_eq!(state.selected_item(), None);
@@ -386,11 +387,11 @@ mod tests {
 
         assert_eq!(state.filtered_count(), 3);
 
-        state.input_text = "feature".to_string();
+        state.input = InputField::from_text("feature");
         state.update_filter();
         assert_eq!(state.filtered_count(), 2);
 
-        state.input_text = "xyz".to_string();
+        state.input = InputField::from_text("xyz");
         state.update_filter();
         assert_eq!(state.filtered_count(), 0);
     }
@@ -401,7 +402,7 @@ mod tests {
         let mut state = SelectPopupState::new("Test".to_string(), options, dummy_on_select());
 
         state.selected_index = 2;
-        state.input_text = "b".to_string();
+        state.input = InputField::from_text("b");
         state.update_filter();
 
         // Selection should reset to 0 after filter

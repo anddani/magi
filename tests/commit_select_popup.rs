@@ -1,3 +1,4 @@
+use magi::model::InputField;
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     model::{ViewMode, popup::CommitSelectPopupState, select_popup::OnSelect},
@@ -226,7 +227,7 @@ fn test_commit_select_popup_state_new() {
     assert_eq!(state.title, "Test");
     assert_eq!(state.all_commits, commits);
     assert_eq!(state.filtered_indices.len(), commits.len());
-    assert_eq!(state.input_text, "");
+    assert_eq!(state.input.as_str(), "");
     assert_eq!(state.selected_index, 0);
 }
 
@@ -241,7 +242,7 @@ fn test_commit_select_popup_state_filter() {
     let mut state = CommitSelectPopupState::new("Test".to_string(), commits);
 
     // Filter by "feature"
-    state.input_text = "feature".to_string();
+    state.input = InputField::from_text("feature");
     state.update_filter();
 
     assert_eq!(state.filtered_count(), 1);

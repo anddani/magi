@@ -1,6 +1,6 @@
 use crossterm::event::{
     self,
-    KeyCode::{Backspace, Char, Down, Enter, Esc, Tab, Up},
+    KeyCode::{Char, Down, Enter, Esc, Tab, Up},
     KeyModifiers,
 };
 
@@ -14,6 +14,7 @@ use crate::{
 
 mod command_popup;
 mod credentials_popup;
+mod edit;
 mod input_popup;
 
 const NONE: KeyModifiers = KeyModifiers::NONE;
@@ -155,17 +156,12 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                 Some(Message::Search(SearchMessage::Cancel))
             }
             (_, Enter) => Some(Message::Search(SearchMessage::Confirm)),
-            (_, Backspace) => Some(Message::Search(SearchMessage::InputBackspace)),
             // Allow navigation during typing
-            (CTRL, Char('u')) => Some(Message::Navigation(NavigationAction::HalfPageUp)),
-            (CTRL, Char('d')) => Some(Message::Navigation(NavigationAction::HalfPageDown)),
-            (CTRL, Char('e')) => Some(Message::Navigation(NavigationAction::ScrollLineDown)),
             (CTRL, Char('y')) => Some(Message::Navigation(NavigationAction::ScrollLineUp)),
             (_, Up) => Some(Message::Navigation(NavigationAction::MoveUp)),
             (_, Down) => Some(Message::Navigation(NavigationAction::MoveDown)),
-            // All other chars go into the search field
-            (_, Char(c)) => Some(Message::Search(SearchMessage::InputChar(c))),
-            _ => None,
+            // Everything else is treated as text editing in the search field
+            _ => edit::edit_op_for_key(key).map(|op| Message::Search(SearchMessage::Edit(op))),
         };
     }
 
@@ -263,7 +259,7 @@ mod tests {
     use crate::model::arguments::{FetchArgument, PushArgument};
     use crate::model::popup::PopupContentCommand;
     use crate::model::select_popup::OnSelect;
-    use crate::model::{RunningState, UiModel};
+    use crate::model::{EditOp, InputField, RunningState, UiModel};
     use crate::msg::{
         FetchCommand, NavigationAction, OptionsSource, PullCommand, PushCommand, SelectMessage,
         ShowSelectPopupConfig,
@@ -816,7 +812,10 @@ mod tests {
 
         let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::Select(SelectMessage::InputChar('a'))));
+        assert_eq!(
+            result,
+            Some(Message::Select(SelectMessage::Edit(EditOp::Insert('a'))))
+        );
     }
 
     #[test]
@@ -825,7 +824,10 @@ mod tests {
 
         let key = create_key_event(KeyModifiers::SHIFT, Char('A'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::Select(SelectMessage::InputChar('A'))));
+        assert_eq!(
+            result,
+            Some(Message::Select(SelectMessage::Edit(EditOp::Insert('A'))))
+        );
     }
 
     #[test]
@@ -834,7 +836,10 @@ mod tests {
 
         let key = create_key_event(NONE, KeyCode::Backspace);
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::Select(SelectMessage::InputBackspace)));
+        assert_eq!(
+            result,
+            Some(Message::Select(SelectMessage::Edit(EditOp::DeleteBackward)))
+        );
     }
 
     #[test]
@@ -1016,7 +1021,10 @@ mod tests {
 
         let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::Input(InputMessage::InputChar('a'))));
+        assert_eq!(
+            result,
+            Some(Message::Input(InputMessage::Edit(EditOp::Insert('a'))))
+        );
     }
 
     #[test]
@@ -1027,7 +1035,10 @@ mod tests {
 
         let key = create_key_event(NONE, KeyCode::Backspace);
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::Input(InputMessage::InputBackspace)));
+        assert_eq!(
+            result,
+            Some(Message::Input(InputMessage::Edit(EditOp::DeleteBackward)))
+        );
     }
 
     #[test]
@@ -1915,7 +1926,10 @@ mod tests {
 
         let key = create_key_event(NONE, Char('a'));
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::Search(SearchMessage::InputChar('a'))));
+        assert_eq!(
+            result,
+            Some(Message::Search(SearchMessage::Edit(EditOp::Insert('a'))))
+        );
     }
 
     #[test]
@@ -1924,11 +1938,14 @@ mod tests {
 
         let mut model = create_test_model();
         model.ui_model.search_mode_active = true;
-        model.ui_model.search_query = "foo".to_string();
+        model.ui_model.search_query = InputField::from_text("foo");
 
         let key = create_key_event(NONE, KeyCode::Backspace);
         let result = handle_key(key, &model);
-        assert_eq!(result, Some(Message::Search(SearchMessage::InputBackspace)));
+        assert_eq!(
+            result,
+            Some(Message::Search(SearchMessage::Edit(EditOp::DeleteBackward)))
+        );
     }
 
     #[test]
@@ -1960,18 +1977,54 @@ mod tests {
         let mut model = create_test_model();
         model.ui_model.search_mode_active = true;
 
+        let key = create_key_event(NONE, Up);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::Navigation(NavigationAction::MoveUp)));
+
+        let key = create_key_event(NONE, Down);
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::Navigation(NavigationAction::MoveDown))
+        );
+
+        let key = create_key_event(CTRL, Char('y'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::Navigation(NavigationAction::ScrollLineUp))
+        );
+    }
+
+    #[test]
+    fn test_search_mode_readline_editing_wins_over_scrolling() {
+        use crate::msg::SearchMessage;
+
+        let mut model = create_test_model();
+        model.ui_model.search_mode_active = true;
+        model.ui_model.search_query = InputField::from_text("foo");
+
         let key = create_key_event(CTRL, Char('u'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::Navigation(NavigationAction::HalfPageUp))
+            Some(Message::Search(SearchMessage::Edit(EditOp::DeleteToStart)))
         );
 
         let key = create_key_event(CTRL, Char('d'));
         let result = handle_key(key, &model);
         assert_eq!(
             result,
-            Some(Message::Navigation(NavigationAction::HalfPageDown))
+            Some(Message::Search(SearchMessage::Edit(EditOp::DeleteForward)))
+        );
+
+        let key = create_key_event(CTRL, Char('w'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::Search(SearchMessage::Edit(
+                EditOp::DeleteWordBackward
+            )))
         );
     }
 
@@ -2002,7 +2055,7 @@ mod tests {
         use crate::msg::SearchMessage;
 
         let mut model = create_test_model();
-        model.ui_model.search_query = "foo".to_string();
+        model.ui_model.search_query = InputField::from_text("foo");
 
         let key = create_key_event(NONE, KeyCode::Esc);
         let result = handle_key(key, &model);

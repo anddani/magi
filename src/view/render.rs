@@ -33,7 +33,7 @@ mod revert_popup;
 mod select_popup;
 mod stash_popup;
 mod tag_popup;
-mod util;
+pub mod util;
 
 /// Calculate a centered rectangle within the given area
 fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {

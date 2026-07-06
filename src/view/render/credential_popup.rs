@@ -3,13 +3,14 @@
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
 };
 
 use crate::config::Theme;
 use crate::model::popup::CredentialPopupState;
+use crate::view::render::util::input_spans;
 
 /// Render the credential input popup as a centered dialog.
 pub fn render(state: &CredentialPopupState, frame: &mut Frame, area: Rect, theme: &Theme) {
@@ -43,16 +44,13 @@ pub fn render(state: &CredentialPopupState, frame: &mut Frame, area: Rect, theme
 
     // Input line with cursor
     let display_text = if state.credential_type.should_mask() {
-        // Show dots for masked input
-        "*".repeat(state.input_text.len())
+        // Show dots for masked input (one per character, not per byte)
+        "*".repeat(state.input.as_str().chars().count())
     } else {
-        state.input_text.clone()
+        state.input.as_str().to_string()
     };
 
-    let input_line = Line::from(vec![
-        Span::styled(display_text, Style::default()),
-        Span::styled("_", Style::default().add_modifier(Modifier::SLOW_BLINK)),
-    ]);
+    let input_line = Line::from(input_spans(&display_text, state.input.cursor()));
 
     let input_area = Rect::new(inner.x, inner.y, inner.width, 1);
     frame.render_widget(Paragraph::new(input_line), input_area);

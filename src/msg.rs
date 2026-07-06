@@ -1,5 +1,6 @@
 use crate::i18n;
 use crate::model::arguments::Argument;
+use crate::model::input_field::EditOp;
 use crate::model::popup::PopupContent;
 pub use crate::model::select_popup::{OnSelect, OptionsSource};
 
@@ -391,10 +392,8 @@ pub enum NavigationAction {
 /// Messages for search mode
 #[derive(PartialEq, Eq, Debug)]
 pub enum SearchMessage {
-    /// Input a character into the search field
-    InputChar(char),
-    /// Delete last character from the search field
-    InputBackspace,
+    /// Apply a text editing operation to the search field
+    Edit(EditOp),
     /// Confirm the search query (press Enter)
     Confirm,
     /// Go to next match
@@ -612,10 +611,8 @@ pub struct ShowSelectPopupConfig {
 /// Messages for the select popup
 #[derive(PartialEq, Eq, Debug)]
 pub enum SelectMessage {
-    /// Input a character into select popup filter
-    InputChar(char),
-    /// Delete last character from select popup filter
-    InputBackspace,
+    /// Apply a text editing operation to the select popup filter
+    Edit(EditOp),
     /// Move selection up in select popup
     MoveUp,
     /// Move selection down in select popup
@@ -627,20 +624,16 @@ pub enum SelectMessage {
 /// Messages for text input popups (e.g., branch name input)
 #[derive(PartialEq, Eq, Debug)]
 pub enum InputMessage {
-    /// Input a character into the text field
-    InputChar(char),
-    /// Delete last character from text field
-    InputBackspace,
+    /// Apply a text editing operation to the text field
+    Edit(EditOp),
     /// Confirm the input
     Confirm,
 }
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum CredentialsMessage {
-    /// Handle text input in credential popup
-    CredentialInputChar(char),
-    /// Handle backspace in credential popup input
-    CredentialInputBackspace,
+    /// Apply a text editing operation to the credential input
+    Edit(EditOp),
     /// Confirm credential input (submit the credential)
     CredentialConfirm,
 }

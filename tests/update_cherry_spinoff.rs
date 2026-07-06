@@ -1,4 +1,5 @@
 use crossterm::event::KeyCode;
+use magi::model::InputField;
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     keys::handle_key,
@@ -170,7 +171,7 @@ fn test_spinoff_input_confirm_routes_to_cherry_spinoff() {
         commits: vec!["abc1234".to_string()],
         root: "main".to_string(),
     });
-    state.input_text = "topic".to_string();
+    state.input = InputField::from_text("topic");
     model.popup = Some(PopupContent::Input(state));
 
     let result = update(&mut model, Message::Input(InputMessage::Confirm));

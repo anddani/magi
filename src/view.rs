@@ -9,7 +9,7 @@ use crate::{
     i18n,
     model::{InputMode, Model, ViewMode},
     view::{
-        render::{render_popup, render_toast},
+        render::{render_popup, render_toast, util::input_spans},
         util::{apply_search_highlight, apply_selection_style, visible_scroll_offset},
     },
 };
@@ -188,7 +188,11 @@ pub fn view(model: &Model, frame: &mut Frame) {
                 .bg(theme.search_match_bg)
                 .fg(theme.search_match_fg);
             for text_line in &mut line_texts {
-                apply_search_highlight(text_line, &model.ui_model.search_query, highlight_style);
+                apply_search_highlight(
+                    text_line,
+                    model.ui_model.search_query.as_str(),
+                    highlight_style,
+                );
             }
         }
 
@@ -243,14 +247,25 @@ pub fn view(model: &Model, frame: &mut Frame) {
 
     // Build bottom border: mode pill + optional search query
     let bottom_title = if model.ui_model.search_mode_active {
-        let search_span = Span::styled(
-            format!("/{}", model.ui_model.search_query),
-            Style::default().fg(theme.search_match_bg),
+        let search_style = Style::default().fg(theme.search_match_bg);
+        let mut spans = vec![mode_pill, Span::raw(" "), Span::styled("/", search_style)];
+        // Show the query with a visible cursor while typing, keeping the
+        // search color and the cursor's own modifiers
+        spans.extend(
+            input_spans(
+                model.ui_model.search_query.as_str(),
+                model.ui_model.search_query.cursor(),
+            )
+            .into_iter()
+            .map(|mut span| {
+                span.style = search_style.patch(span.style);
+                span
+            }),
         );
-        TextLine::from(vec![mode_pill, Span::raw(" "), search_span])
+        TextLine::from(spans)
     } else if !model.ui_model.search_query.is_empty() {
         let search_span = Span::styled(
-            format!("/{}", model.ui_model.search_query),
+            format!("/{}", model.ui_model.search_query.as_str()),
             Style::default().fg(ratatui::style::Color::DarkGray),
         );
         TextLine::from(vec![mode_pill, Span::raw(" "), search_span])

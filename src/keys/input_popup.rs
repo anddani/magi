@@ -1,5 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+use crate::keys::edit::edit_op_for_key;
 use crate::msg::{InputMessage, Message};
 
 pub fn handle_input_popup_key(key: KeyEvent) -> Option<Message> {
@@ -8,8 +9,6 @@ pub fn handle_input_popup_key(key: KeyEvent) -> Option<Message> {
             Some(Message::DismissPopup)
         }
         (_, KeyCode::Enter) => Some(Message::Input(InputMessage::Confirm)),
-        (_, KeyCode::Backspace) => Some(Message::Input(InputMessage::InputBackspace)),
-        (_, KeyCode::Char(c)) => Some(Message::Input(InputMessage::InputChar(c))),
-        _ => None,
+        _ => edit_op_for_key(key).map(|op| Message::Input(InputMessage::Edit(op))),
     }
 }

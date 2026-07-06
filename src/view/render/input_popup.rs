@@ -3,13 +3,14 @@
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
 };
 
 use crate::config::Theme;
 use crate::model::popup::InputPopupState;
+use crate::view::render::util::input_spans;
 
 /// Render the text input popup as a centered dialog.
 pub fn render(state: &InputPopupState, frame: &mut Frame, area: Rect, theme: &Theme) {
@@ -42,10 +43,7 @@ pub fn render(state: &InputPopupState, frame: &mut Frame, area: Rect, theme: &Th
     );
 
     // Input line with cursor
-    let input_line = Line::from(vec![
-        Span::styled(&state.input_text, Style::default()),
-        Span::styled("_", Style::default().add_modifier(Modifier::SLOW_BLINK)),
-    ]);
+    let input_line = Line::from(input_spans(state.input.as_str(), state.input.cursor()));
 
     let input_area = Rect::new(inner.x, inner.y, inner.width, 1);
     frame.render_widget(Paragraph::new(input_line), input_area);

@@ -11,6 +11,34 @@ use crate::{
     model::{Model, arguments::PopupArgument},
 };
 
+/// Renders input text with a visible cursor. At the end of the text the
+/// cursor is a blinking `_` (matching the classic rendering); mid-text the
+/// character under the cursor is shown reversed.
+pub fn input_spans(text: &str, cursor: usize) -> Vec<Span<'static>> {
+    let char_count = text.chars().count();
+    if cursor >= char_count {
+        return vec![
+            Span::raw(text.to_string()),
+            Span::styled("_", Style::default().add_modifier(Modifier::SLOW_BLINK)),
+        ];
+    }
+    let cursor_byte = text
+        .char_indices()
+        .nth(cursor)
+        .map(|(byte, _)| byte)
+        .unwrap_or(text.len());
+    let cursor_char = text[cursor_byte..].chars().next().unwrap_or(' ');
+    let after_byte = cursor_byte + cursor_char.len_utf8();
+    vec![
+        Span::raw(text[..cursor_byte].to_string()),
+        Span::styled(
+            cursor_char.to_string(),
+            Style::default().add_modifier(Modifier::REVERSED),
+        ),
+        Span::raw(text[after_byte..].to_string()),
+    ]
+}
+
 pub fn argument_lines<'a, A: PopupArgument>(
     theme: &Theme,
     arg_mode: bool,
