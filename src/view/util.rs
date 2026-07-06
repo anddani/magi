@@ -214,6 +214,7 @@ pub fn format_file_change(
         FileStatus::Renamed => "renamed",
         FileStatus::Copied => "copied",
         FileStatus::TypeChange => "typechange",
+        FileStatus::Unmerged => "unmerged",
     };
 
     // Use '>' when collapsed, '∨' when expanded

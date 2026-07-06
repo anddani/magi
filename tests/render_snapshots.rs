@@ -79,6 +79,22 @@ fn snapshot_status_view_with_all_sections() {
 }
 
 #[test]
+fn snapshot_status_view_with_merge_conflict() {
+    let test_repo = TestRepo::new();
+    test_repo.create_merge_conflict("conflict.txt");
+
+    let mut model = create_snapshot_model(&test_repo);
+    // Expand the unmerged file so the combined diff with conflict markers is visible
+    model
+        .ui_model
+        .collapsed_sections
+        .remove(&magi::model::SectionType::UnstagedFile {
+            path: "conflict.txt".to_string(),
+        });
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_help_popup() {
     let test_repo = TestRepo::new();
     let mut model = create_snapshot_model(&test_repo);
