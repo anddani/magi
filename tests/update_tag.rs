@@ -1,4 +1,5 @@
 use crossterm::event::KeyCode;
+use magi::model::InputField;
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
@@ -111,7 +112,7 @@ fn test_create_tag_input_confirm_shows_ref_select() {
     // Set up an input popup with CreateTag context and a tag name typed
     model.popup = Some(PopupContent::input_popup(InputContext::CreateTag));
     if let Some(PopupContent::Input(ref mut state)) = model.popup {
-        state.input_text = "v1.0.0".to_string();
+        state.input = InputField::from_text("v1.0.0");
     }
 
     let result = update(&mut model, Message::Input(magi::msg::InputMessage::Confirm));

@@ -1,4 +1,5 @@
 use crossterm::event::KeyCode;
+use magi::model::EditOp;
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
@@ -70,10 +71,22 @@ fn test_confirm_input_dispatches_spinoff_branch_message() {
     update(&mut model, Message::ShowSpinoffBranchInput);
 
     // Type a branch name
-    update(&mut model, Message::Input(InputMessage::InputChar('f')));
-    update(&mut model, Message::Input(InputMessage::InputChar('e')));
-    update(&mut model, Message::Input(InputMessage::InputChar('a')));
-    update(&mut model, Message::Input(InputMessage::InputChar('t')));
+    update(
+        &mut model,
+        Message::Input(InputMessage::Edit(EditOp::Insert('f'))),
+    );
+    update(
+        &mut model,
+        Message::Input(InputMessage::Edit(EditOp::Insert('e'))),
+    );
+    update(
+        &mut model,
+        Message::Input(InputMessage::Edit(EditOp::Insert('a'))),
+    );
+    update(
+        &mut model,
+        Message::Input(InputMessage::Edit(EditOp::Insert('t'))),
+    );
 
     let result = update(&mut model, Message::Input(InputMessage::Confirm));
     assert_eq!(result, Some(Message::SpinoffBranch("feat".to_string())));

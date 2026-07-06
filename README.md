@@ -47,6 +47,27 @@ yay -S magi
     
 ```
 
+## Text editing keys
+
+All text inputs (branch names, search, filters, credentials) support readline-style editing:
+
+| Keys | Action |
+|---|---|
+| `Left`/`Right`, `Ctrl+b`/`Ctrl+f` | Move by character |
+| `Alt+Left`/`Alt+Right`, `Alt+b`/`Alt+f` | Move by word |
+| `Home`/`End`, `Ctrl+a`/`Ctrl+e` | Start/end of line |
+| `Backspace`, `Ctrl+h` | Delete character backward |
+| `Delete`, `Ctrl+d` | Delete character forward |
+| `Alt+Backspace`, `Ctrl+w`, `Ctrl+Backspace` | Delete word backward |
+| `Alt+d` | Delete word forward |
+| `Cmd+Backspace`, `Ctrl+u` | Delete to start of line |
+| `Ctrl+k` | Delete to end of line |
+
+Notes for macOS users:
+
+- `Cmd+Backspace` requires a terminal that supports the kitty keyboard protocol (kitty, Ghostty, WezTerm, recent iTerm2). `Ctrl+u` works everywhere.
+- The `Alt` (Option) bindings require "Use Option as Meta key" to be enabled in Terminal.app/iTerm2.
+
 ## Motivation
 
 There are many Git TUIs out there. Here are a couple:

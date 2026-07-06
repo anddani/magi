@@ -7,6 +7,7 @@ use crate::git::{CommitInfo, CommitRefType, GitInfo, GitRef, StashEntry, TagInfo
 use crate::model::arguments::Arguments;
 use crate::msg::Message;
 
+pub use input_field::{EditOp, InputField};
 pub use log_view::LogEntry;
 pub use popup::{CredentialPopupState, InputContext, InputPopupState, PopupContent};
 pub use pty_state::PtyState;
@@ -14,6 +15,7 @@ use select_popup::SelectResult;
 
 pub mod arguments;
 pub mod cursor_context;
+pub mod input_field;
 pub mod log_view;
 pub mod popup;
 pub mod pty_state;
@@ -157,7 +159,7 @@ pub struct UiModel {
     /// this anchor to the current cursor_position.
     pub visual_mode_anchor: Option<usize>,
     /// The current search query text (only visible in Search mode)
-    pub search_query: String,
+    pub search_query: InputField,
     /// Whether we are currently in search input mode
     pub search_mode_active: bool,
 }

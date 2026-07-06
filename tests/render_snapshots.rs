@@ -1,3 +1,4 @@
+use magi::model::InputField;
 use std::collections::HashSet;
 
 use magi::{
@@ -308,7 +309,7 @@ fn snapshot_select_popup() {
         ],
         OnSelect::CheckoutBranch,
     );
-    state.input_text = "feature".to_string();
+    state.input = InputField::from_text("feature");
     state.update_filter();
     let model = create_command_popup_model(&test_repo, PopupContentCommand::Select(state));
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
@@ -343,7 +344,7 @@ fn snapshot_credential_popup() {
     let mut model = create_snapshot_model(&test_repo);
     model.popup = Some(PopupContent::Credential(CredentialPopupState {
         credential_type: CredentialType::Password,
-        input_text: "hunter2".to_string(),
+        input: InputField::from_text("hunter2"),
     }));
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
@@ -353,7 +354,27 @@ fn snapshot_input_popup() {
     let test_repo = TestRepo::new();
     let mut model = create_snapshot_model(&test_repo);
     model.popup = Some(PopupContent::Input(InputPopupState {
-        input_text: "feature/new-thing".to_string(),
+        input: InputField::from_text("feature/new-thing"),
+        context: InputContext::CreateNewBranch {
+            starting_point: "main".to_string(),
+            checkout: true,
+        },
+    }));
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_input_popup_mid_text_cursor() {
+    use magi::model::EditOp;
+
+    let test_repo = TestRepo::new();
+    let mut model = create_snapshot_model(&test_repo);
+    let mut input = InputField::from_text("feature/new-thing");
+    // Move the cursor to just after "feature/" to exercise mid-text rendering
+    input.apply(EditOp::MoveWordLeft);
+    input.apply(EditOp::MoveWordLeft);
+    model.popup = Some(PopupContent::Input(InputPopupState {
+        input,
         context: InputContext::CreateNewBranch {
             starting_point: "main".to_string(),
             checkout: true,

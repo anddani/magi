@@ -1,6 +1,6 @@
 use crate::{
     model::{
-        Model,
+        EditOp, Model,
         popup::{InputContext, PopupContent, PopupContentCommand},
     },
     msg::{
@@ -9,18 +9,10 @@ use crate::{
     },
 };
 
-/// Handle a character input in the input popup
-pub fn input_char(model: &mut Model, c: char) -> Option<Message> {
+/// Handle a text editing operation in the input popup
+pub fn edit(model: &mut Model, op: EditOp) -> Option<Message> {
     if let Some(PopupContent::Input(ref mut state)) = model.popup {
-        state.input_text.push(c);
-    }
-    None
-}
-
-/// Handle backspace in the input popup
-pub fn input_backspace(model: &mut Model) -> Option<Message> {
-    if let Some(PopupContent::Input(ref mut state)) = model.popup {
-        state.input_text.pop();
+        state.input.apply(op);
     }
     None
 }
@@ -35,13 +27,13 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
     if let InputContext::Stash(stash_type) = state.context {
         return Some(Message::Stash(StashCommand::Push(
             stash_type,
-            state.input_text.trim().to_string(),
+            state.input.as_str().trim().to_string(),
         )));
     }
 
     // RevertMainline allows empty input (empty = clear the mainline value)
     if let InputContext::RevertMainline { mut revert_state } = state.context {
-        let input = state.input_text.trim().to_string();
+        let input = state.input.as_str().trim().to_string();
         revert_state.mainline = if input.is_empty() { None } else { Some(input) };
         model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
             revert_state,
@@ -50,7 +42,7 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         return None;
     }
 
-    let input = state.input_text.trim().to_string();
+    let input = state.input.as_str().trim().to_string();
     if input.is_empty() {
         // Restore the popup if input is empty
         model.popup = Some(PopupContent::Input(state));

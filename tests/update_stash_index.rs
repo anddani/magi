@@ -1,3 +1,4 @@
+use magi::model::EditOp;
 use magi::{
     git::test_repo::TestRepo,
     model::popup::{InputContext, PopupContent},
@@ -33,35 +34,35 @@ fn test_confirm_stash_index_input_with_message_triggers_stash_index() {
 
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('m')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('m'))),
     );
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('y')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('y'))),
     );
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar(' ')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert(' '))),
     );
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('s')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('s'))),
     );
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('t')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('t'))),
     );
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('a')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('a'))),
     );
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('s')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('s'))),
     );
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('h')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('h'))),
     );
 
     let result = update(&mut model, Message::Input(magi::msg::InputMessage::Confirm));

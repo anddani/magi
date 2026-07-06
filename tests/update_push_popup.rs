@@ -1,3 +1,4 @@
+use magi::model::InputField;
 use std::collections::HashSet;
 
 use magi::model::Model;
@@ -370,7 +371,7 @@ fn test_push_refspec_input_confirm_dispatches_push() {
 
     let mut model = create_test_model();
     model.popup = Some(PopupContent::Input(InputPopupState {
-        input_text: "HEAD:refs/heads/main".to_string(),
+        input: InputField::from_text("HEAD:refs/heads/main"),
         context: InputContext::PushRefspec {
             remote: "origin".to_string(),
         },
