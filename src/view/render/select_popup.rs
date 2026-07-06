@@ -8,6 +8,7 @@ use ratatui::{
 
 use crate::config::Theme;
 use crate::model::popup::SelectPopupState;
+use crate::view::render::util::input_spans;
 
 /// Render the select popup as a bottom sheet (like command popups)
 pub fn render(state: &SelectPopupState, frame: &mut Frame, area: Rect, theme: &Theme) {
@@ -47,17 +48,15 @@ pub fn render(state: &SelectPopupState, frame: &mut Frame, area: Rect, theme: &T
     } else {
         0
     };
-    let header_text = format!(
-        "[{}]/[{}] {}: {}",
+    let header_prefix = format!(
+        "[{}]/[{}] {}: ",
         display_index,
         state.filtered_count(),
         state.title,
-        state.input_text
     );
-    let header_line = Line::from(vec![
-        Span::styled(header_text, Style::default()),
-        Span::styled("_", Style::default().add_modifier(Modifier::SLOW_BLINK)),
-    ]);
+    let mut header_spans = vec![Span::styled(header_prefix, Style::default())];
+    header_spans.extend(input_spans(state.input.as_str(), state.input.cursor()));
+    let header_line = Line::from(header_spans);
     let header_area = Rect::new(inner.x, inner.y, inner.width, 1);
     frame.render_widget(Paragraph::new(header_line), header_area);
 

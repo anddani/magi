@@ -1,7 +1,7 @@
 use crate::{
     git::checkout::get_local_branches,
     model::{
-        Model,
+        InputField, Model,
         popup::{InputContext, InputPopupState, PopupContent},
     },
     msg::Message,
@@ -45,7 +45,7 @@ pub fn update(model: &mut Model, starting_point: String, checkout: bool) -> Opti
 
     // Pre-fill with suggested name if available
     if let Some(name) = suggested_name {
-        state.input_text = name;
+        state.input = InputField::from_text(name);
     }
 
     model.popup = Some(PopupContent::Input(state));

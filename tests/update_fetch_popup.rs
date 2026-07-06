@@ -1,3 +1,4 @@
+use magi::model::InputField;
 use magi::model::popup::{InputContext, InputPopupState, PopupContent, PopupContentCommand};
 use magi::model::select_popup::{OnSelect, SelectPopupState};
 use magi::msg::update::update;
@@ -57,7 +58,7 @@ fn test_show_fetch_refspec_input_opens_popup() {
 fn test_fetch_refspec_input_confirm_dispatches_fetch() {
     let mut model = create_test_model();
     model.popup = Some(PopupContent::Input(InputPopupState {
-        input_text: "refs/heads/main:refs/remotes/origin/main".to_string(),
+        input: InputField::from_text("refs/heads/main:refs/remotes/origin/main"),
         context: InputContext::FetchRefspec {
             remote: "origin".to_string(),
         },

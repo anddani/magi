@@ -1,5 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+use crate::keys::edit::edit_op_for_key;
 use crate::msg::{CredentialsMessage, Message};
 
 pub fn handle_credentials_popup_key(key: KeyEvent) -> Option<Message> {
@@ -8,12 +9,6 @@ pub fn handle_credentials_popup_key(key: KeyEvent) -> Option<Message> {
             Some(Message::DismissPopup)
         }
         (_, KeyCode::Enter) => Some(Message::Credentials(CredentialsMessage::CredentialConfirm)),
-        (_, KeyCode::Backspace) => Some(Message::Credentials(
-            CredentialsMessage::CredentialInputBackspace,
-        )),
-        (_, KeyCode::Char(c)) => Some(Message::Credentials(
-            CredentialsMessage::CredentialInputChar(c),
-        )),
-        _ => None,
+        _ => edit_op_for_key(key).map(|op| Message::Credentials(CredentialsMessage::Edit(op))),
     }
 }

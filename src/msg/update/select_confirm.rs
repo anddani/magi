@@ -41,9 +41,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
         Some(PopupContent::Command(PopupContentCommand::Select(state))) => {
             let result = if let Some(item) = state.selected_item() {
                 SelectResult::Selected(item.to_string())
-            } else if !state.input_text.is_empty() {
+            } else if !state.input.is_empty() {
                 // No matches but user typed text — use it directly (allows git hashes)
-                SelectResult::Selected(state.input_text.clone())
+                SelectResult::Selected(state.input.as_str().to_string())
             } else {
                 SelectResult::NoneSelected
             };

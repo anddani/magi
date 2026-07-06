@@ -18,8 +18,8 @@ use crate::{
     errors::MagiResult,
     git::{GitInfo, pty_command::PtyCommandResult},
     model::{
-        CredentialPopupState, Model, PopupContent, RunningState, Toast, ToastStyle, UiModel,
-        ViewMode,
+        CredentialPopupState, InputField, Model, PopupContent, RunningState, Toast, ToastStyle,
+        UiModel, ViewMode,
     },
     msg::Message,
     view::view,
@@ -27,10 +27,38 @@ use crate::{
 
 const EVENT_POLL_TIMEOUT_MILLIS: u64 = 250;
 
-pub fn run(workdir: Option<PathBuf>, language_override: Option<String>) -> MagiResult<()> {
+/// Initialises the terminal and, where supported, enables the kitty keyboard
+/// protocol so modifiers like Cmd (SUPER) and Alt are reported for keys such
+/// as Backspace (used by the text editing bindings).
+fn init_terminal() -> DefaultTerminal {
     let terminal = ratatui::init();
-    let result = run_loop(terminal, workdir, language_override);
+    // Must be queried after raw mode is enabled (it talks to the terminal)
+    if crossterm::terminal::supports_keyboard_enhancement().unwrap_or(false) {
+        let _ = crossterm::execute!(
+            std::io::stdout(),
+            crossterm::event::PushKeyboardEnhancementFlags(
+                crossterm::event::KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES
+            )
+        );
+    }
+    terminal
+}
+
+/// Restores the terminal, popping the kitty keyboard flags first so external
+/// programs (e.g. $EDITOR) and the shell aren't left in the enhanced mode.
+/// Popping is harmless if the flags were never pushed.
+fn restore_terminal() {
+    let _ = crossterm::execute!(
+        std::io::stdout(),
+        crossterm::event::PopKeyboardEnhancementFlags
+    );
     ratatui::restore();
+}
+
+pub fn run(workdir: Option<PathBuf>, language_override: Option<String>) -> MagiResult<()> {
+    let terminal = init_terminal();
+    let result = run_loop(terminal, workdir, language_override);
+    restore_terminal();
     result
 }
 
@@ -78,7 +106,7 @@ fn run_loop(
         viewport_height: 0,
         collapsed_sections,
         visual_mode_anchor: None,
-        search_query: String::new(),
+        search_query: InputField::new(),
         search_mode_active: false,
     };
 
@@ -120,10 +148,9 @@ fn run_loop(
                 && let Some(cred_type) =
                     model.pty_state.as_ref().unwrap().check_credential_request()
             {
-                model.popup = Some(PopupContent::Credential(CredentialPopupState {
-                    credential_type: cred_type,
-                    input_text: String::new(),
-                }));
+                model.popup = Some(PopupContent::Credential(CredentialPopupState::new(
+                    cred_type,
+                )));
             }
 
             // Check for command completion
@@ -142,13 +169,13 @@ fn run_loop(
 
             // Suspend TUI to allow external command to be run without
             // Ratatui being rendered.
-            ratatui::restore();
+            restore_terminal();
 
             // Process external command (blocking)
             let mut current_msg = update(&mut model, msg);
 
             // Resume TUI
-            terminal = ratatui::init();
+            terminal = init_terminal();
             terminal.clear()?;
 
             // Process the commit result message(s)

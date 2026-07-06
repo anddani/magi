@@ -53,8 +53,7 @@ mod revert;
 mod revise_commit;
 mod search;
 mod select_confirm;
-mod select_input_backspace;
-mod select_input_char;
+mod select_edit;
 mod select_move_down;
 mod select_move_up;
 mod selection;
@@ -164,15 +163,13 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),
         Message::Select(select_msg) => match select_msg {
-            SelectMessage::InputChar(c) => select_input_char::update(model, c),
-            SelectMessage::InputBackspace => select_input_backspace::update(model),
+            SelectMessage::Edit(op) => select_edit::update(model, op),
             SelectMessage::MoveUp => select_move_up::update(model),
             SelectMessage::MoveDown => select_move_down::update(model),
             SelectMessage::Confirm => select_confirm::update(model),
         },
         Message::Input(input_msg) => match input_msg {
-            InputMessage::InputChar(c) => input_input::input_char(model, c),
-            InputMessage::InputBackspace => input_input::input_backspace(model),
+            InputMessage::Edit(op) => input_input::edit(model, op),
             InputMessage::Confirm => input_input::confirm(model),
         },
         Message::Credentials(credentials_msg) => credentials_input::update(model, credentials_msg),
@@ -182,8 +179,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
 
         Message::EnterSearchMode => enter_search_mode::update(model),
         Message::Search(search_msg) => match search_msg {
-            SearchMessage::InputChar(c) => search::input_char(model, c),
-            SearchMessage::InputBackspace => search::input_backspace(model),
+            SearchMessage::Edit(op) => search::edit(model, op),
             SearchMessage::Confirm => search::confirm(model),
             SearchMessage::Next => search::next(model),
             SearchMessage::Prev => search::prev(model),

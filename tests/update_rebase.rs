@@ -741,13 +741,16 @@ fn test_rebase_todo_search_moves_cursor_to_match() {
 
     update(&mut model, Message::EnterSearchMode);
     for c in "Commit B".chars() {
-        update(&mut model, Message::Search(SearchMessage::InputChar(c)));
+        update(
+            &mut model,
+            Message::Search(SearchMessage::Edit(magi::model::EditOp::Insert(c))),
+        );
     }
     update(&mut model, Message::Search(SearchMessage::Confirm));
 
     assert_eq!(model.view_mode, ViewMode::RebaseTodo);
     assert_eq!(model.ui_model.cursor_position, 1);
-    assert_eq!(model.ui_model.search_query, "Commit B");
+    assert_eq!(model.ui_model.search_query.as_str(), "Commit B");
 
     // Cancelling the search keeps the editor state intact
     update(&mut model, Message::Search(SearchMessage::Cancel));

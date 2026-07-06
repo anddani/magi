@@ -1,3 +1,4 @@
+use magi::model::EditOp;
 use magi::{
     git::test_repo::TestRepo,
     model::popup::{InputContext, PopupContent},
@@ -33,15 +34,15 @@ fn test_confirm_stash_worktree_input_with_message_triggers_stash_worktree() {
 
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('w')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('w'))),
     );
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('i')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('i'))),
     );
     update(
         &mut model,
-        Message::Input(magi::msg::InputMessage::InputChar('p')),
+        Message::Input(magi::msg::InputMessage::Edit(EditOp::Insert('p'))),
     );
 
     let result = update(&mut model, Message::Input(magi::msg::InputMessage::Confirm));

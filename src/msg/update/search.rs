@@ -1,5 +1,5 @@
 use crate::{
-    model::{Line, LineContent, Model},
+    model::{EditOp, Line, LineContent, Model},
     msg::{Message, util::visible_lines_between},
 };
 
@@ -92,13 +92,8 @@ fn ensure_cursor_visible(model: &mut Model) {
     }
 }
 
-pub fn input_char(model: &mut Model, c: char) -> Option<Message> {
-    model.ui_model.search_query.push(c);
-    None
-}
-
-pub fn input_backspace(model: &mut Model) -> Option<Message> {
-    model.ui_model.search_query.pop();
+pub fn edit(model: &mut Model, op: EditOp) -> Option<Message> {
+    model.ui_model.search_query.apply(op);
     None
 }
 
@@ -139,7 +134,7 @@ pub fn cancel(model: &mut Model) -> Option<Message> {
 /// - `forward`: if true, search forward (wrap around); if false, search backward.
 /// - `include_current`: if true, also consider the current cursor line as a candidate.
 fn jump_to_match(model: &mut Model, forward: bool, include_current: bool) {
-    let query = model.ui_model.search_query.clone();
+    let query = model.ui_model.search_query.as_str().to_string();
     let total = model.ui_model.lines.len();
     let cursor = model.ui_model.cursor_position;
 
@@ -182,7 +177,7 @@ mod tests {
     use crate::git::GitInfo;
     use crate::git::test_repo::TestRepo;
     use crate::model::ViewMode;
-    use crate::model::{RunningState, UiModel};
+    use crate::model::{InputField, RunningState, UiModel};
 
     fn make_line(text: &str) -> Line {
         Line {
@@ -224,36 +219,44 @@ mod tests {
     }
 
     #[test]
-    fn test_input_char_appends_to_query() {
+    fn test_edit_insert_appends_to_query() {
         let mut model = create_test_model_with_lines(vec![]);
-        input_char(&mut model, 'f');
-        input_char(&mut model, 'o');
-        input_char(&mut model, 'o');
-        assert_eq!(model.ui_model.search_query, "foo");
+        edit(&mut model, EditOp::Insert('f'));
+        edit(&mut model, EditOp::Insert('o'));
+        edit(&mut model, EditOp::Insert('o'));
+        assert_eq!(model.ui_model.search_query.as_str(), "foo");
     }
 
     #[test]
-    fn test_input_backspace_removes_last_char() {
+    fn test_edit_delete_backward_removes_last_char() {
         let mut model = create_test_model_with_lines(vec![]);
-        model.ui_model.search_query = "foo".to_string();
-        input_backspace(&mut model);
-        assert_eq!(model.ui_model.search_query, "fo");
+        model.ui_model.search_query = InputField::from_text("foo");
+        edit(&mut model, EditOp::DeleteBackward);
+        assert_eq!(model.ui_model.search_query.as_str(), "fo");
+    }
+
+    #[test]
+    fn test_edit_delete_word_backward_clears_word() {
+        let mut model = create_test_model_with_lines(vec![]);
+        model.ui_model.search_query = InputField::from_text("foo bar");
+        edit(&mut model, EditOp::DeleteWordBackward);
+        assert_eq!(model.ui_model.search_query.as_str(), "foo ");
     }
 
     #[test]
     fn test_cancel_clears_query_and_mode() {
         let mut model = create_test_model_with_lines(vec![]);
-        model.ui_model.search_query = "foo".to_string();
+        model.ui_model.search_query = InputField::from_text("foo");
         model.ui_model.search_mode_active = true;
         cancel(&mut model);
-        assert_eq!(model.ui_model.search_query, "");
+        assert_eq!(model.ui_model.search_query.as_str(), "");
         assert!(!model.ui_model.search_mode_active);
     }
 
     #[test]
     fn test_confirm_disables_search_mode() {
         let mut model = create_test_model_with_lines(vec![make_line("hello")]);
-        model.ui_model.search_query = "hello".to_string();
+        model.ui_model.search_query = InputField::from_text("hello");
         model.ui_model.search_mode_active = true;
         confirm(&mut model);
         assert!(!model.ui_model.search_mode_active);
@@ -263,7 +266,7 @@ mod tests {
     fn test_next_jumps_to_match() {
         let lines = vec![make_line("apple"), make_line("banana"), make_line("cherry")];
         let mut model = create_test_model_with_lines(lines);
-        model.ui_model.search_query = "banana".to_string();
+        model.ui_model.search_query = InputField::from_text("banana");
         model.ui_model.cursor_position = 0;
         next(&mut model);
         assert_eq!(model.ui_model.cursor_position, 1);
@@ -273,7 +276,7 @@ mod tests {
     fn test_next_wraps_around() {
         let lines = vec![make_line("apple"), make_line("banana"), make_line("cherry")];
         let mut model = create_test_model_with_lines(lines);
-        model.ui_model.search_query = "apple".to_string();
+        model.ui_model.search_query = InputField::from_text("apple");
         model.ui_model.cursor_position = 2;
         next(&mut model);
         assert_eq!(model.ui_model.cursor_position, 0);
@@ -283,7 +286,7 @@ mod tests {
     fn test_prev_jumps_to_previous_match() {
         let lines = vec![make_line("apple"), make_line("banana"), make_line("cherry")];
         let mut model = create_test_model_with_lines(lines);
-        model.ui_model.search_query = "apple".to_string();
+        model.ui_model.search_query = InputField::from_text("apple");
         model.ui_model.cursor_position = 2;
         prev(&mut model);
         assert_eq!(model.ui_model.cursor_position, 0);
@@ -293,7 +296,7 @@ mod tests {
     fn test_prev_wraps_around() {
         let lines = vec![make_line("apple"), make_line("banana"), make_line("cherry")];
         let mut model = create_test_model_with_lines(lines);
-        model.ui_model.search_query = "cherry".to_string();
+        model.ui_model.search_query = InputField::from_text("cherry");
         model.ui_model.cursor_position = 0;
         prev(&mut model);
         assert_eq!(model.ui_model.cursor_position, 2);
@@ -303,7 +306,7 @@ mod tests {
     fn test_next_no_match_leaves_cursor_unchanged() {
         let lines = vec![make_line("apple"), make_line("banana")];
         let mut model = create_test_model_with_lines(lines);
-        model.ui_model.search_query = "xyz".to_string();
+        model.ui_model.search_query = InputField::from_text("xyz");
         model.ui_model.cursor_position = 0;
         next(&mut model);
         assert_eq!(model.ui_model.cursor_position, 0);
@@ -313,7 +316,7 @@ mod tests {
     fn test_confirm_jumps_to_first_match() {
         let lines = vec![make_line("apple"), make_line("banana"), make_line("cherry")];
         let mut model = create_test_model_with_lines(lines);
-        model.ui_model.search_query = "cherry".to_string();
+        model.ui_model.search_query = InputField::from_text("cherry");
         model.ui_model.search_mode_active = true;
         model.ui_model.cursor_position = 0;
         confirm(&mut model);

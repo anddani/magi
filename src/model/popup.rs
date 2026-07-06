@@ -2,7 +2,7 @@ pub use super::select_popup::{OnSelect, OptionsSource, SelectPopupState, SelectR
 
 use crate::git::credential::CredentialType;
 use crate::i18n;
-use crate::model::LogEntry;
+use crate::model::{InputField, LogEntry};
 use crate::msg::StashType;
 
 /// State for a confirmation popup (e.g., "Are you sure you want to delete?")
@@ -49,7 +49,16 @@ pub struct CredentialPopupState {
     /// The type of credential being requested.
     pub credential_type: CredentialType,
     /// The text the user has entered so far.
-    pub input_text: String,
+    pub input: InputField,
+}
+
+impl CredentialPopupState {
+    pub fn new(credential_type: CredentialType) -> Self {
+        Self {
+            credential_type,
+            input: InputField::new(),
+        }
+    }
 }
 
 /// State for the Push popup
@@ -137,7 +146,7 @@ pub enum InputContext {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InputPopupState {
     /// The text the user has entered so far
-    pub input_text: String,
+    pub input: InputField,
     /// Context for what action to perform when input is confirmed
     pub context: InputContext,
 }
@@ -146,7 +155,7 @@ impl InputPopupState {
     /// Create a new input popup state
     pub fn new(context: InputContext) -> Self {
         Self {
-            input_text: String::new(),
+            input: InputField::new(),
             context,
         }
     }
@@ -180,7 +189,7 @@ pub struct CommitSelectPopupState {
     /// Indices of commits matching current filter
     pub filtered_indices: Vec<usize>,
     /// Current filter text
-    pub input_text: String,
+    pub input: InputField,
     /// Currently selected index in the filtered list (0-based)
     pub selected_index: usize,
 }
@@ -193,7 +202,7 @@ impl CommitSelectPopupState {
             title,
             all_commits: commits,
             filtered_indices,
-            input_text: String::new(),
+            input: InputField::new(),
             selected_index: 0,
         }
     }
@@ -213,10 +222,10 @@ impl CommitSelectPopupState {
             .and_then(|&idx| self.all_commits.get(idx))
     }
 
-    /// Updates filtered_indices based on current input_text (case-insensitive substring)
+    /// Updates filtered_indices based on the current filter text (case-insensitive substring)
     /// Searches in hash, message, and author
     pub fn update_filter(&mut self) {
-        let query = self.input_text.to_lowercase();
+        let query = self.input.as_str().to_lowercase();
         self.filtered_indices = self
             .all_commits
             .iter()
