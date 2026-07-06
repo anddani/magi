@@ -13,6 +13,9 @@ pub struct RebaseTodoState {
     pub base_has_parent: bool,
     /// The todo entries, oldest commit first (same order as the todo file)
     pub entries: Vec<RebaseTodoEntry>,
+    /// Vim-style command line buffer; `Some` while the user is typing after
+    /// `:` (e.g. `:wq` to confirm the rebase)
+    pub command_input: Option<String>,
     /// Snapshots of `entries` for undo, most recent last
     undo_stack: Vec<Vec<RebaseTodoEntry>>,
 }
@@ -23,6 +26,7 @@ impl RebaseTodoState {
             base,
             base_has_parent,
             entries,
+            command_input: None,
             undo_stack: Vec::new(),
         }
     }

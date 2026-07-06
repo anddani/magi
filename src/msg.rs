@@ -493,6 +493,16 @@ pub enum RebaseTodoMessage {
     Undo,
     /// Close the editor without rebasing
     Abort,
+    /// Enter vim-style command mode (`:`)
+    CommandStart,
+    /// Type a character into the command line
+    CommandChar(char),
+    /// Delete the last character from the command line (exits on empty)
+    CommandBackspace,
+    /// Leave command mode without running anything
+    CommandCancel,
+    /// Confirmed an unrecognised command — show an error and leave command mode
+    CommandInvalid,
 }
 
 /// Messages for merge commands

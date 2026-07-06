@@ -458,7 +458,7 @@ static ENGLISH: Strings = Strings {
     rebase_hint_move: "Move entry",
     rebase_hint_undo: "Undo",
     rebase_hint_show: "Show commit",
-    rebase_hint_confirm: "Rebase",
+    rebase_hint_confirm: "Confirm rebase",
     rebase_hint_abort: "Abort",
 
     hint_dismiss: "Press Enter or Esc to dismiss",
@@ -668,7 +668,7 @@ static SWEDISH: Strings = Strings {
     rebase_hint_move: "Flytta rad",
     rebase_hint_undo: "Ångra",
     rebase_hint_show: "Visa förbindelse",
-    rebase_hint_confirm: "Ympa",
+    rebase_hint_confirm: "Bekräfta ympning",
     rebase_hint_abort: "Avbryt",
 
     hint_dismiss: "Tryck Enter eller Esc för att stänga",

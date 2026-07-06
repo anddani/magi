@@ -249,8 +249,24 @@ pub fn view(model: &Model, frame: &mut Frame) {
         ViewMode::RebaseTodo => "Rebase",
     };
 
-    // Build bottom border: mode pill + optional search query
-    let bottom_title = if model.ui_model.search_mode_active {
+    // Vim-style command line typed in the rebase todo editor (after ':')
+    let rebase_command_input = if model.view_mode == ViewMode::RebaseTodo {
+        model
+            .rebase_todo
+            .as_ref()
+            .and_then(|state| state.command_input.as_deref())
+    } else {
+        None
+    };
+
+    // Build bottom border: mode pill + optional command line or search query
+    let bottom_title = if let Some(cmd) = rebase_command_input {
+        let cmd_span = Span::styled(
+            format!(":{}", cmd),
+            Style::default().fg(theme.search_match_bg),
+        );
+        TextLine::from(vec![mode_pill, Span::raw(" "), cmd_span])
+    } else if model.ui_model.search_mode_active {
         let search_span = Span::styled(
             format!("/{}", model.ui_model.search_query),
             Style::default().fg(theme.search_match_bg),

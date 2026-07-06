@@ -221,14 +221,38 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     }
 
     // Interactive rebase todo editor: action keys, reordering, confirm/abort.
-    // Navigation keys fall through to the shared handler below.
+    // Navigation and search keys fall through to the shared handler below.
     if model.view_mode == ViewMode::RebaseTodo {
         let todo_msg = |m| Some(Message::RebaseTodo(m));
+
+        // Vim-style command line (after ':'). Commands are resolved here so
+        // that ExecuteInteractive reaches the main loop as a top-level
+        // message, which is what triggers the TUI suspension.
+        if let Some(cmd) = model
+            .rebase_todo
+            .as_ref()
+            .and_then(|state| state.command_input.as_deref())
+        {
+            return match (key.modifiers, key.code) {
+                (_, Enter) => match cmd {
+                    "wq" | "wq!" | "x" => Some(Message::Rebase(RebaseCommand::ExecuteInteractive)),
+                    "q" | "q!" => todo_msg(RebaseTodoMessage::Abort),
+                    _ => todo_msg(RebaseTodoMessage::CommandInvalid),
+                },
+                (_, Esc) | (CTRL, Char('g') | Char('c')) => {
+                    todo_msg(RebaseTodoMessage::CommandCancel)
+                }
+                (_, Backspace) => todo_msg(RebaseTodoMessage::CommandBackspace),
+                (_, Char(c)) => todo_msg(RebaseTodoMessage::CommandChar(c)),
+                _ => None,
+            };
+        }
+
         match (key.modifiers, key.code) {
-            // Cursor movement and scrolling keep their normal behaviour
+            // Cursor movement, scrolling, and search keep their normal behaviour
             (CTRL, Char('u' | 'd' | 'e' | 'y'))
-            | (NONE, Up | Down | Char('j') | Char('k') | Char('g'))
-            | (_, Char('G')) => {}
+            | (NONE, Up | Down | Char('j') | Char('k') | Char('g') | Char('/') | Char('n'))
+            | (_, Char('G') | Char('N')) => {}
             (NONE, Char('p')) => {
                 return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Pick));
             }
@@ -250,6 +274,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
             (_, Char('J')) | (ALT, Down) => return todo_msg(RebaseTodoMessage::MoveEntryDown),
             (_, Enter) => return Some(Message::ShowPreview),
             (_, Char('R')) => return Some(Message::Rebase(RebaseCommand::ExecuteInteractive)),
+            (_, Char(':')) => return todo_msg(RebaseTodoMessage::CommandStart),
             (_, Char('q')) | (_, Esc) | (CTRL, Char('g')) | (CTRL, Char('c')) => {
                 return todo_msg(RebaseTodoMessage::Abort);
             }

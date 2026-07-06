@@ -12,8 +12,8 @@ use magi::{
         select_popup::OnSelect,
     },
     msg::{
-        CommitSelect, LogType, Message, RebaseCommand, RebaseTodoMessage, SelectMessage,
-        update::update,
+        CommitSelect, LogType, Message, RebaseCommand, RebaseTodoMessage, SearchMessage,
+        SelectMessage, update::update,
     },
 };
 
@@ -513,17 +513,34 @@ fn test_show_rebase_todo_opens_editor() {
         &model.ui_model.lines[2].content,
         LineContent::EmptyLine
     ));
-    let hint_keys: Vec<&str> = model.ui_model.lines[3..]
+    let hint_keys: Vec<&str> = model
+        .ui_model
+        .lines
         .iter()
-        .map(|l| match &l.content {
-            LineContent::RebaseTodoHint { key, .. } => *key,
-            other => panic!("Expected hint line, got {:?}", other),
+        .filter_map(|l| match &l.content {
+            LineContent::RebaseTodoHint { key, .. } => Some(*key),
+            _ => None,
         })
         .collect();
     assert_eq!(
         hint_keys,
-        vec!["p", "r", "e", "s", "f", "d", "K/J", "u", "RET", "q"]
+        vec!["p", "r", "e", "s", "f", "d", "K/J", "u", "RET", "R", "q"]
     );
+
+    // Confirm rebase and Abort are grouped, separated by an empty line
+    let last = model.ui_model.lines.len() - 1;
+    assert!(matches!(
+        &model.ui_model.lines[last].content,
+        LineContent::RebaseTodoHint { key: "q", .. }
+    ));
+    assert!(matches!(
+        &model.ui_model.lines[last - 1].content,
+        LineContent::RebaseTodoHint { key: "R", .. }
+    ));
+    assert!(matches!(
+        &model.ui_model.lines[last - 2].content,
+        LineContent::EmptyLine
+    ));
 }
 
 #[test]
@@ -690,13 +707,161 @@ fn test_keys_in_rebase_todo_view() {
         handle_key(utils::shift_key(KeyCode::Char('R')), &model),
         Some(Message::Rebase(RebaseCommand::ExecuteInteractive))
     );
+    assert_eq!(
+        handle_key(key(KeyCode::Char(':')), &model),
+        Some(Message::RebaseTodo(RebaseTodoMessage::CommandStart))
+    );
     // Navigation still works
     assert_eq!(
         handle_key(key(KeyCode::Char('j')), &model),
         Some(Message::Navigation(magi::msg::NavigationAction::MoveDown))
     );
+    // Search works like in other views
+    assert_eq!(
+        handle_key(key(KeyCode::Char('/')), &model),
+        Some(Message::EnterSearchMode)
+    );
+    assert_eq!(
+        handle_key(key(KeyCode::Char('n')), &model),
+        Some(Message::Search(magi::msg::SearchMessage::Next))
+    );
+    assert_eq!(
+        handle_key(utils::shift_key(KeyCode::Char('N')), &model),
+        Some(Message::Search(magi::msg::SearchMessage::Prev))
+    );
     // Keys that would open popups in the status view are inert here
     assert_eq!(handle_key(key(KeyCode::Char('c')), &model), None);
+}
+
+// ── Interactive rebase — search in the todo editor ───────────────────────────
+
+#[test]
+fn test_rebase_todo_search_moves_cursor_to_match() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    update(&mut model, Message::EnterSearchMode);
+    for c in "Commit B".chars() {
+        update(&mut model, Message::Search(SearchMessage::InputChar(c)));
+    }
+    update(&mut model, Message::Search(SearchMessage::Confirm));
+
+    assert_eq!(model.view_mode, ViewMode::RebaseTodo);
+    assert_eq!(model.ui_model.cursor_position, 1);
+    assert_eq!(model.ui_model.search_query, "Commit B");
+
+    // Cancelling the search keeps the editor state intact
+    update(&mut model, Message::Search(SearchMessage::Cancel));
+    assert!(model.ui_model.search_query.is_empty());
+    assert!(model.rebase_todo.is_some());
+}
+
+// ── Interactive rebase — vim-style command line ──────────────────────────────
+
+/// Type the given command-line text through the real key handler.
+fn type_command(model: &mut Model, text: &str) {
+    for c in text.chars() {
+        let msg = handle_key(key(KeyCode::Char(c)), model).expect("key should map to a message");
+        update(model, msg);
+    }
+}
+
+fn command_buffer(model: &Model) -> Option<&str> {
+    model
+        .rebase_todo
+        .as_ref()
+        .and_then(|s| s.command_input.as_deref())
+}
+
+#[test]
+fn test_colon_wq_maps_to_execute_interactive() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    type_command(&mut model, ":wq");
+    assert_eq!(command_buffer(&model), Some("wq"));
+
+    // Action keys go into the buffer instead of editing entries
+    assert_eq!(todo_actions(&model), vec![RebaseAction::Pick; 2]);
+
+    assert_eq!(
+        handle_key(key(KeyCode::Enter), &model),
+        Some(Message::Rebase(RebaseCommand::ExecuteInteractive))
+    );
+}
+
+#[test]
+fn test_colon_x_maps_to_execute_interactive() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    type_command(&mut model, ":x");
+    assert_eq!(
+        handle_key(key(KeyCode::Enter), &model),
+        Some(Message::Rebase(RebaseCommand::ExecuteInteractive))
+    );
+}
+
+#[test]
+fn test_colon_q_maps_to_abort() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    type_command(&mut model, ":q");
+    assert_eq!(
+        handle_key(key(KeyCode::Enter), &model),
+        Some(Message::RebaseTodo(RebaseTodoMessage::Abort))
+    );
+}
+
+#[test]
+fn test_unknown_command_shows_toast_and_leaves_command_mode() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    type_command(&mut model, ":foo");
+    let msg = handle_key(key(KeyCode::Enter), &model).unwrap();
+    assert_eq!(msg, Message::RebaseTodo(RebaseTodoMessage::CommandInvalid));
+
+    update(&mut model, msg);
+    assert_eq!(command_buffer(&model), None);
+    let toast = model.toast.as_ref().expect("Expected a warning toast");
+    assert!(toast.message.contains(":foo"));
+    assert_eq!(model.view_mode, ViewMode::RebaseTodo);
+}
+
+#[test]
+fn test_command_mode_escape_cancels() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    type_command(&mut model, ":wq");
+    let msg = handle_key(key(KeyCode::Esc), &model).unwrap();
+    update(&mut model, msg);
+
+    assert_eq!(command_buffer(&model), None);
+    assert_eq!(model.view_mode, ViewMode::RebaseTodo);
+}
+
+#[test]
+fn test_command_mode_backspace_edits_and_exits_when_empty() {
+    let (_test_repo, mut model) = model_with_todo_editor();
+
+    type_command(&mut model, ":w");
+
+    let backspace = |model: &mut Model| {
+        let msg = handle_key(key(KeyCode::Backspace), model).unwrap();
+        update(model, msg);
+    };
+
+    backspace(&mut model);
+    assert_eq!(command_buffer(&model), Some(""));
+
+    // Backspacing past the ':' leaves command mode, like in vim
+    backspace(&mut model);
+    assert_eq!(command_buffer(&model), None);
+
+    // Keys act on entries again
+    assert_eq!(
+        handle_key(key(KeyCode::Char('d')), &model),
+        Some(Message::RebaseTodo(RebaseTodoMessage::SetAction(
+            RebaseAction::Drop
+        )))
+    );
 }
 
 // ── Interactive rebase — commit preview from the todo editor ─────────────────

@@ -49,7 +49,49 @@ pub fn update(model: &mut Model, msg: RebaseTodoMessage) -> Option<Message> {
         RebaseTodoMessage::MoveEntryDown => move_entry(model, false),
         RebaseTodoMessage::Undo => undo(model),
         RebaseTodoMessage::Abort => abort(model),
+        RebaseTodoMessage::CommandStart => {
+            let state = model.rebase_todo.as_mut()?;
+            state.command_input = Some(String::new());
+            None
+        }
+        RebaseTodoMessage::CommandChar(c) => {
+            let state = model.rebase_todo.as_mut()?;
+            if let Some(input) = state.command_input.as_mut() {
+                input.push(c);
+            }
+            None
+        }
+        RebaseTodoMessage::CommandBackspace => {
+            let state = model.rebase_todo.as_mut()?;
+            // Backspacing past the ':' leaves command mode, like in vim
+            match state.command_input.as_mut() {
+                Some(input) if input.is_empty() => state.command_input = None,
+                Some(input) => {
+                    input.pop();
+                }
+                None => {}
+            }
+            None
+        }
+        RebaseTodoMessage::CommandCancel => {
+            let state = model.rebase_todo.as_mut()?;
+            state.command_input = None;
+            None
+        }
+        RebaseTodoMessage::CommandInvalid => command_invalid(model),
     }
+}
+
+fn command_invalid(model: &mut Model) -> Option<Message> {
+    let state = model.rebase_todo.as_mut()?;
+    if let Some(cmd) = state.command_input.take() {
+        model.toast = Some(Toast {
+            message: format!("Not an editor command: :{}", cmd),
+            style: ToastStyle::Warning,
+            expires_at: Instant::now() + TOAST_DURATION,
+        });
+    }
+    None
 }
 
 fn set_action(model: &mut Model, action: RebaseAction) -> Option<Message> {
@@ -123,7 +165,7 @@ pub fn todo_lines(entries: &[RebaseTodoEntry]) -> Vec<Line> {
         content: LineContent::EmptyLine,
         section: None,
     });
-    let hints = [
+    let edit_hints = [
         ("p", t.rebase_hint_pick),
         ("r", t.rebase_hint_reword),
         ("e", t.rebase_hint_edit),
@@ -133,10 +175,20 @@ pub fn todo_lines(entries: &[RebaseTodoEntry]) -> Vec<Line> {
         ("K/J", t.rebase_hint_move),
         ("u", t.rebase_hint_undo),
         ("RET", t.rebase_hint_show),
-        ("R", t.rebase_hint_confirm),
-        ("q", t.rebase_hint_abort),
     ];
-    for (key, description) in hints {
+    for (key, description) in edit_hints {
+        lines.push(Line {
+            content: LineContent::RebaseTodoHint { key, description },
+            section: None,
+        });
+    }
+
+    // Leaving the editor (confirm/abort) is set apart from the editing commands
+    lines.push(Line {
+        content: LineContent::EmptyLine,
+        section: None,
+    });
+    for (key, description) in [("R", t.rebase_hint_confirm), ("q", t.rebase_hint_abort)] {
         lines.push(Line {
             content: LineContent::RebaseTodoHint { key, description },
             section: None,
