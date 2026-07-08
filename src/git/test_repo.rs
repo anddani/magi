@@ -208,6 +208,36 @@ impl TestRepo {
         self.repo.workdir().unwrap()
     }
 
+    /// Create a merge conflict in `file_name` by committing conflicting
+    /// changes on `main` and an `other` branch, then merging `other`.
+    /// Leaves the repository mid-merge with conflict markers in the file.
+    pub fn create_merge_conflict(&self, file_name: &str) -> &Self {
+        use crate::git::git_cmd;
+        let workdir = self.repo_path();
+
+        // Pin the conflict style so the markers don't depend on the
+        // machine's global git config (e.g. diff3/zdiff3)
+        let mut config = self.repo.config().unwrap();
+        config.set_str("merge.conflictStyle", "merge").unwrap();
+
+        self.commit_file(file_name, "base content\n", "Add base file");
+
+        let checkout_other = git_cmd(workdir, &["checkout", "-b", "other"])
+            .output()
+            .unwrap();
+        assert!(checkout_other.status.success());
+        self.commit_file(file_name, "other content\n", "Change on other");
+
+        let checkout_main = git_cmd(workdir, &["checkout", "main"]).output().unwrap();
+        assert!(checkout_main.status.success());
+        self.commit_file(file_name, "main content\n", "Change on main");
+
+        // The merge is expected to fail with a conflict
+        let merge = git_cmd(workdir, &["merge", "other"]).output().unwrap();
+        assert!(!merge.status.success());
+        self
+    }
+
     pub fn create_stash(&self, message: &str) -> &Self {
         use std::process::Command;
         let workdir = self.repo.workdir().unwrap();

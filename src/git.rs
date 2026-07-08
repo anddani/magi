@@ -49,6 +49,7 @@ pub mod stage;
 pub mod staged_changes;
 pub mod stashes;
 pub mod test_repo;
+pub mod unmerged_changes;
 pub mod unpulled_commits;
 pub mod unstaged_changes;
 pub mod untracked_files;

@@ -14,6 +14,12 @@ pub fn collect_file_changes(diff: &Diff) -> MagiResult<FileChangesWithDiffs> {
     let mut result: FileChangesWithDiffs = Vec::new();
 
     diff.print(git2::DiffFormat::Patch, |delta, hunk, line| {
+        // Conflicted files are collected separately with their combined diff
+        // (libgit2 emits them without hunk content)
+        if delta.status() == git2::Delta::Conflicted {
+            return true;
+        }
+
         let file_path = delta
             .new_file()
             .path()
