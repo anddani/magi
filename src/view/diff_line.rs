@@ -9,15 +9,20 @@ use crate::view::util::expand_tabs;
 
 /// Generate the view lines for a diff line
 pub fn get_lines(diff_line: &DiffLine, theme: &Theme) -> Vec<TextLine<'static>> {
+    // Combined-diff lines already carry their origin prefix in `content`
     let (prefix, color) = match diff_line.line_type {
         DiffLineType::Addition => ("+", theme.diff_addition),
         DiffLineType::Deletion => ("-", theme.diff_deletion),
         DiffLineType::Context => (" ", theme.diff_context),
+        DiffLineType::CombinedAddition => ("", theme.diff_addition),
+        DiffLineType::CombinedDeletion => ("", theme.diff_deletion),
+        DiffLineType::CombinedContext => ("", theme.diff_context),
+        DiffLineType::ConflictMarker => ("", theme.diff_hunk),
     };
 
-    // The prefix spans are 2 columns wide (" " + prefix char), so content
-    // tab stops should be calculated from column 2.
-    let content = expand_tabs(&diff_line.content, 2);
+    // Content tab stops are calculated from the column where the content
+    // starts: the leading space plus the prefix span.
+    let content = expand_tabs(&diff_line.content, 1 + prefix.len());
 
     let line = TextLine::from(vec![
         Span::raw(" "),

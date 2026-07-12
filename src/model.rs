@@ -322,6 +322,8 @@ pub enum FileStatus {
     Renamed,
     Copied,
     TypeChange,
+    /// A file with merge conflicts (both sides modified during merge/rebase/cherry-pick)
+    Unmerged,
 }
 
 /// Represents a diff hunk header (e.g., @@ -7,6 +7,7 @@)
@@ -341,11 +343,21 @@ pub struct DiffLine {
 
 /// Addition and Deletion lines should be prefixed
 /// with + and - and highlighted.
+///
+/// The Combined* variants are lines of a combined diff (`git diff` of an
+/// unmerged file). Their `content` already includes the multi-column origin
+/// prefix (e.g. `++`, `+ `, ` -`), so the view renders them without adding one.
 #[derive(Debug, Clone, PartialEq)]
 pub enum DiffLineType {
     Context,
     Addition,
     Deletion,
+    CombinedAddition,
+    CombinedDeletion,
+    CombinedContext,
+    /// A conflict marker line in a combined diff
+    /// (`<<<<<<<`, `|||||||`, `=======`, `>>>>>>>`)
+    ConflictMarker,
 }
 
 #[derive(Debug, Clone)]
