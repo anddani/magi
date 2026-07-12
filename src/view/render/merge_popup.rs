@@ -3,7 +3,7 @@ use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
 use crate::{
     config::Theme,
     i18n,
-    model::{popup::MergePopupState, Model},
+    model::{Model, popup::MergePopupState},
     view::render::util::command_description,
 };
 
