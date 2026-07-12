@@ -30,6 +30,7 @@ pub fn is_external_command(msg: &Message) -> bool {
             | Message::FixupCommit(_, _)
             | Message::Revert(RevertCommand::Continue)
             | Message::Rebase(RebaseCommand::Continue)
+            | Message::Rebase(RebaseCommand::ExecuteInteractive)
             | Message::Merge(MergeCommand::Continue)
             | Message::Merge(MergeCommand::Branch(_))
     )

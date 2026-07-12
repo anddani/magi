@@ -26,6 +26,7 @@ mod log_line;
 mod merge_ref;
 mod preview_line;
 mod push_ref;
+mod rebase_todo_line;
 mod rebasing_entry;
 mod render;
 mod reverting_entry;
@@ -159,6 +160,12 @@ pub fn view(model: &Model, frame: &mut Frame) {
                 is_detached_head,
                 model.git_info.current_branch().as_deref(),
             ),
+            crate::model::LineContent::RebaseTodoLine(entry) => {
+                rebase_todo_line::get_lines(entry, theme)
+            }
+            crate::model::LineContent::RebaseTodoHint { key, description } => {
+                rebase_todo_line::get_hint_lines(key, description, theme)
+            }
             crate::model::LineContent::Stash(stash_entry) => stash::get_lines(stash_entry, theme),
             crate::model::LineContent::RevertingEntry {
                 hash,
@@ -243,10 +250,27 @@ pub fn view(model: &Model, frame: &mut Frame) {
         ViewMode::Log(_, false) => "Log",
         ViewMode::Log(_, true) => "Pick commit",
         ViewMode::Preview => "Preview",
+        ViewMode::RebaseTodo => "Rebase",
     };
 
-    // Build bottom border: mode pill + optional search query
-    let bottom_title = if model.ui_model.search_mode_active {
+    // Vim-style command line typed in the rebase todo editor (after ':')
+    let rebase_command_input = if model.view_mode == ViewMode::RebaseTodo {
+        model
+            .rebase_todo
+            .as_ref()
+            .and_then(|state| state.command_input.as_deref())
+    } else {
+        None
+    };
+
+    // Build bottom border: mode pill + optional command line or search query
+    let bottom_title = if let Some(cmd) = rebase_command_input {
+        let cmd_span = Span::styled(
+            format!(":{}", cmd),
+            Style::default().fg(theme.search_match_bg),
+        );
+        TextLine::from(vec![mode_pill, Span::raw(" "), cmd_span])
+    } else if model.ui_model.search_mode_active {
         let search_style = Style::default().fg(theme.search_match_bg);
         let mut spans = vec![mode_pill, Span::raw(" "), Span::styled("/", search_style)];
         // Show the query with a visible cursor while typing, keeping the

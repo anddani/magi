@@ -23,7 +23,7 @@ pub fn content<'a>(
                     title: None,
                     content: vec![
                         command_description(theme, model.arg_mode, "m", t.cmd_continue),
-                        command_description(theme, model.arg_mode, "m", t.cmd_abort),
+                        command_description(theme, model.arg_mode, "a", t.cmd_abort),
                     ],
                 }],
             }],

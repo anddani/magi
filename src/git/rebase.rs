@@ -3,13 +3,157 @@ use std::path::Path;
 
 use super::git_cmd;
 use crate::{
-    errors::MagiResult,
+    errors::{MagiError, MagiResult},
     git::{commit::get_commit_result, read_commit_message},
     i18n,
     model::{LineContent, SectionType},
 };
 
 pub use super::commit::CommitResult;
+
+/// Action to perform on a commit in an interactive rebase todo list.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RebaseAction {
+    Pick,
+    Reword,
+    Edit,
+    Squash,
+    Fixup,
+    Drop,
+}
+
+impl RebaseAction {
+    /// The action word used in the git-rebase-todo file
+    pub fn as_str(self) -> &'static str {
+        match self {
+            RebaseAction::Pick => "pick",
+            RebaseAction::Reword => "reword",
+            RebaseAction::Edit => "edit",
+            RebaseAction::Squash => "squash",
+            RebaseAction::Fixup => "fixup",
+            RebaseAction::Drop => "drop",
+        }
+    }
+
+    /// Returns true if the action folds the commit into the previous one,
+    /// meaning it cannot be the first entry in the todo list.
+    pub fn is_fold(self) -> bool {
+        matches!(self, RebaseAction::Squash | RebaseAction::Fixup)
+    }
+}
+
+/// A single line of an interactive rebase todo list being edited.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RebaseTodoEntry {
+    pub action: RebaseAction,
+    /// Full commit hash
+    pub hash: String,
+    /// Commit subject line
+    pub message: String,
+}
+
+/// Returns true if the given commit has a parent (i.e. is not a root commit).
+pub fn commit_has_parent(workdir: &Path, commit: &str) -> bool {
+    git_cmd(
+        workdir,
+        &["rev-parse", "--verify", "--quiet", &format!("{commit}^")],
+    )
+    .output()
+    .is_ok_and(|output| output.status.success())
+}
+
+/// Returns the initial todo entries for an interactive rebase that includes
+/// `base` and every commit after it up to HEAD (oldest first, all `pick`).
+/// Merge commits are excluded, matching what `git rebase -i` generates
+/// without `--rebase-merges`.
+pub fn get_interactive_rebase_commits(
+    workdir: &Path,
+    base: &str,
+    base_has_parent: bool,
+) -> MagiResult<Vec<RebaseTodoEntry>> {
+    let range = if base_has_parent {
+        format!("{base}^..HEAD")
+    } else {
+        "HEAD".to_string()
+    };
+    let output = git_cmd(
+        workdir,
+        &[
+            "log",
+            "--reverse",
+            "--no-merges",
+            "--format=%H%x09%s",
+            &range,
+        ],
+    )
+    .output()?;
+
+    if !output.status.success() {
+        return Err(MagiError::Generic(format!(
+            "Failed to list commits: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        )));
+    }
+
+    let entries = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| {
+            let (hash, message) = line.split_once('\t')?;
+            Some(RebaseTodoEntry {
+                action: RebaseAction::Pick,
+                hash: hash.to_string(),
+                message: message.to_string(),
+            })
+        })
+        .collect();
+
+    Ok(entries)
+}
+
+/// Starts an interactive rebase with a pre-built todo list.
+///
+/// The entries are written to a file inside `.git/`, and `sequence.editor`
+/// is set to a command that copies that file over git's generated todo.
+/// Git stays authoritative for executing the rebase; reword/squash may open
+/// the user's `$GIT_EDITOR`, so the caller must run this while the TUI is
+/// suspended (via `RunningState::LaunchExternalCommand`).
+pub fn start_interactive_rebase(
+    workdir: &Path,
+    base: &str,
+    base_has_parent: bool,
+    entries: &[RebaseTodoEntry],
+) -> MagiResult<CommitResult> {
+    let todo_path = workdir.join(".git").join("magi-rebase-todo");
+    let content: String = entries
+        .iter()
+        .map(|e| format!("{} {} {}\n", e.action.as_str(), e.hash, e.message))
+        .collect();
+    fs::write(&todo_path, content)?;
+
+    // Git runs the sequence editor through the shell with the todo file path
+    // appended, so this becomes `cp '<our file>' <git's todo file>`.
+    let quoted_path = todo_path.display().to_string().replace('\'', "'\\''");
+    let sequence_editor = format!("sequence.editor=cp '{quoted_path}'");
+
+    let mut args = vec![
+        "-c",
+        sequence_editor.as_str(),
+        "rebase",
+        "--interactive",
+        "--autostash",
+    ];
+    let parent = format!("{base}^");
+    if base_has_parent {
+        args.push(&parent);
+    } else {
+        args.push("--root");
+    }
+
+    let status = git_cmd(workdir, &args).status();
+    let _ = fs::remove_file(&todo_path);
+
+    get_commit_result(workdir, status?, "Rebase")
+}
 
 /// Returns true if a rebase sequence is currently in progress.
 /// Checks for `rebase-merge/` directory (interactive) or `rebase-apply/onto` (patch-based).
@@ -135,6 +279,131 @@ pub fn run_rebase_continue_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResu
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::git::test_repo::TestRepo;
+
+    /// Commit subjects, newest first.
+    fn log_subjects(workdir: &Path) -> Vec<String> {
+        let output = git_cmd(workdir, &["log", "--format=%s"]).output().unwrap();
+        String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(str::to_string)
+            .collect()
+    }
+
+    #[test]
+    fn test_commit_has_parent() {
+        let test_repo = TestRepo::new();
+        let root_hash = test_repo.head_hash();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let second_hash = test_repo.head_hash();
+        let workdir = test_repo.repo_path();
+
+        assert!(!commit_has_parent(workdir, &root_hash));
+        assert!(commit_has_parent(workdir, &second_hash));
+    }
+
+    #[test]
+    fn test_get_interactive_rebase_commits_lists_base_to_head_oldest_first() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let base_hash = test_repo.head_hash();
+        test_repo.commit_file("b.txt", "b", "Commit B");
+
+        let entries =
+            get_interactive_rebase_commits(test_repo.repo_path(), &base_hash, true).unwrap();
+
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].message, "Commit A");
+        assert_eq!(entries[0].hash, base_hash);
+        assert_eq!(entries[0].action, RebaseAction::Pick);
+        assert_eq!(entries[1].message, "Commit B");
+        assert_eq!(entries[1].action, RebaseAction::Pick);
+    }
+
+    #[test]
+    fn test_get_interactive_rebase_commits_from_root() {
+        let test_repo = TestRepo::new();
+        let root_hash = test_repo.head_hash();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+
+        let entries =
+            get_interactive_rebase_commits(test_repo.repo_path(), &root_hash, false).unwrap();
+
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].message, "Initial commit");
+        assert_eq!(entries[1].message, "Commit A");
+    }
+
+    #[test]
+    fn test_start_interactive_rebase_drop_removes_commit() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let base_hash = test_repo.head_hash();
+        test_repo.commit_file("b.txt", "b", "Commit B");
+        let workdir = test_repo.repo_path();
+
+        let mut entries = get_interactive_rebase_commits(workdir, &base_hash, true).unwrap();
+        entries[0].action = RebaseAction::Drop;
+
+        let result = start_interactive_rebase(workdir, &base_hash, true, &entries).unwrap();
+
+        assert!(result.success);
+        assert_eq!(log_subjects(workdir), vec!["Commit B", "Initial commit"]);
+        assert!(!workdir.join("a.txt").exists());
+        assert!(workdir.join("b.txt").exists());
+    }
+
+    #[test]
+    fn test_start_interactive_rebase_fixup_folds_commit() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let base_hash = test_repo.head_hash();
+        test_repo.commit_file("b.txt", "b", "Commit B");
+        let workdir = test_repo.repo_path();
+
+        let mut entries = get_interactive_rebase_commits(workdir, &base_hash, true).unwrap();
+        entries[1].action = RebaseAction::Fixup;
+
+        let result = start_interactive_rebase(workdir, &base_hash, true, &entries).unwrap();
+
+        assert!(result.success);
+        // Commit B is folded into Commit A; its file changes survive
+        assert_eq!(log_subjects(workdir), vec!["Commit A", "Initial commit"]);
+        assert!(workdir.join("b.txt").exists());
+    }
+
+    #[test]
+    fn test_start_interactive_rebase_reorders_commits() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let base_hash = test_repo.head_hash();
+        test_repo.commit_file("b.txt", "b", "Commit B");
+        let workdir = test_repo.repo_path();
+
+        let mut entries = get_interactive_rebase_commits(workdir, &base_hash, true).unwrap();
+        entries.swap(0, 1);
+
+        let result = start_interactive_rebase(workdir, &base_hash, true, &entries).unwrap();
+
+        assert!(result.success);
+        assert_eq!(
+            log_subjects(workdir),
+            vec!["Commit A", "Commit B", "Initial commit"]
+        );
+    }
+
+    #[test]
+    fn test_start_interactive_rebase_cleans_up_todo_file() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let base_hash = test_repo.head_hash();
+        let workdir = test_repo.repo_path();
+
+        let entries = get_interactive_rebase_commits(workdir, &base_hash, true).unwrap();
+        start_interactive_rebase(workdir, &base_hash, true, &entries).unwrap();
+
+        assert!(!workdir.join(".git").join("magi-rebase-todo").exists());
+    }
 
     #[test]
     fn test_rebase_in_progress_no_files() {

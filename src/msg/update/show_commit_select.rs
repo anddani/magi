@@ -14,6 +14,7 @@ pub fn update(model: &mut Model, commit_select: CommitSelect) -> Option<Message>
     match commit_select {
         CommitSelect::FixupCommit(fixup_type) => show_select_fixup_commit(model, fixup_type),
         CommitSelect::RebaseElsewhere => show_select_rebase_elsewhere_commit(model),
+        CommitSelect::RebaseInteractive => show_select_rebase_interactive_commit(model),
         CommitSelect::ReviseCommit => show_select_revise_commit(model),
     }
 }
@@ -53,6 +54,26 @@ pub fn show_select_rebase_elsewhere_commit(model: &mut Model) -> Option<Message>
     }
 
     show_log_select(model, LogType::AllReferences, OnSelect::RebaseElsewhere)
+}
+
+pub fn show_select_rebase_interactive_commit(model: &mut Model) -> Option<Message> {
+    let cursor_pos = model.ui_model.cursor_position;
+
+    // With the cursor on a commit line, open the todo editor for it directly
+    if let Some(line) = model.ui_model.lines.get(cursor_pos) {
+        let hash = match &line.content {
+            LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
+            LineContent::LogLine(entry) => entry.hash.clone(),
+            _ => None,
+        };
+
+        if let Some(hash) = hash {
+            model.popup = None;
+            return Some(Message::ShowRebaseTodo(hash));
+        }
+    }
+
+    show_log_select(model, LogType::Current, OnSelect::RebaseInteractive)
 }
 
 pub fn show_select_revise_commit(model: &mut Model) -> Option<Message> {

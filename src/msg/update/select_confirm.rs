@@ -125,6 +125,9 @@ fn route_result(
         (Some(OnSelect::RebaseElsewhere), SelectResult::Selected(commit)) => {
             Some(Message::Rebase(RebaseCommand::Elsewhere(commit)))
         }
+        (Some(OnSelect::RebaseInteractive), SelectResult::Selected(commit)) => {
+            Some(Message::ShowRebaseTodo(commit))
+        }
         (Some(OnSelect::ReviseCommit), SelectResult::Selected(hash)) => {
             Some(Message::ReviseCommit(hash))
         }
@@ -398,6 +401,7 @@ mod tests {
             preview_return_mode: None,
             preview_return_ui_model: None,
             log_return_ui_model: None,
+            rebase_todo: None,
         }
     }
 

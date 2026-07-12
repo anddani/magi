@@ -130,6 +130,7 @@ fn run_loop(
         preview_return_mode: None,
         preview_return_ui_model: None,
         log_return_ui_model: None,
+        rebase_todo: None,
     };
 
     while model.running_state != RunningState::Done {

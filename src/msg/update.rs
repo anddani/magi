@@ -43,6 +43,7 @@ mod pull;
 mod push;
 mod quit;
 mod rebase;
+mod rebase_todo;
 mod refresh;
 mod rename_branch;
 mod reset_branch;
@@ -190,6 +191,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Stash(stash_command) => stash::update(model, stash_command),
         Message::Push(push_command) => push::update(model, push_command),
         Message::ShowRebasePopup => show_rebase_popup::update(model),
+        Message::ShowRebaseTodo(base) => rebase_todo::show(model, base),
+        Message::RebaseTodo(msg) => rebase_todo::update(model, msg),
         Message::Rebase(rebase_command) => rebase::update(model, rebase_command),
         Message::ShowRevertPopup => show_revert_popup::update(model),
         Message::ShowRevertMainlineInput => show_revert_mainline_input::update(model),

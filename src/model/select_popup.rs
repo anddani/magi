@@ -67,6 +67,8 @@ pub enum OnSelect {
     DropStash,
     /// Select a commit to rebase onto (rebase elsewhere)
     RebaseElsewhere,
+    /// Select the base commit for an interactive rebase (base inclusive)
+    RebaseInteractive,
     /// Select a local branch to reset (step 1 of 2)
     ResetBranchPick,
     /// Select a target to reset the given branch to (step 2 of 2, carries branch name)

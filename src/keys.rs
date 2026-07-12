@@ -1,15 +1,18 @@
 use crossterm::event::{
     self,
-    KeyCode::{Char, Down, Enter, Esc, Tab, Up},
+    KeyCode::{Backspace, Char, Down, Enter, Esc, Tab, Up},
     KeyModifiers,
 };
 
 use crate::{
+    git::rebase::RebaseAction,
     model::{
         LineContent, Model, ViewMode,
         popup::{CommitPopupState, ConfirmAction, PopupContent, PopupContentCommand},
     },
-    msg::{Message, NavigationAction, RebaseCommand, SearchMessage, SelectMessage},
+    msg::{
+        Message, NavigationAction, RebaseCommand, RebaseTodoMessage, SearchMessage, SelectMessage,
+    },
 };
 
 mod command_popup;
@@ -19,6 +22,7 @@ mod input_popup;
 
 const NONE: KeyModifiers = KeyModifiers::NONE;
 const CTRL: KeyModifiers = KeyModifiers::CONTROL;
+const ALT: KeyModifiers = KeyModifiers::ALT;
 
 fn command_popup_keys(c: char) -> Option<Message> {
     match c {
@@ -212,6 +216,68 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         }
     }
 
+    // Interactive rebase todo editor: action keys, reordering, confirm/abort.
+    // Navigation and search keys fall through to the shared handler below.
+    if model.view_mode == ViewMode::RebaseTodo {
+        let todo_msg = |m| Some(Message::RebaseTodo(m));
+
+        // Vim-style command line (after ':'). Commands are resolved here so
+        // that ExecuteInteractive reaches the main loop as a top-level
+        // message, which is what triggers the TUI suspension.
+        if let Some(cmd) = model
+            .rebase_todo
+            .as_ref()
+            .and_then(|state| state.command_input.as_deref())
+        {
+            return match (key.modifiers, key.code) {
+                (_, Enter) => match cmd {
+                    "wq" | "wq!" | "x" => Some(Message::Rebase(RebaseCommand::ExecuteInteractive)),
+                    "q" | "q!" => todo_msg(RebaseTodoMessage::Abort),
+                    _ => todo_msg(RebaseTodoMessage::CommandInvalid),
+                },
+                (_, Esc) | (CTRL, Char('g') | Char('c')) => {
+                    todo_msg(RebaseTodoMessage::CommandCancel)
+                }
+                (_, Backspace) => todo_msg(RebaseTodoMessage::CommandBackspace),
+                (_, Char(c)) => todo_msg(RebaseTodoMessage::CommandChar(c)),
+                _ => None,
+            };
+        }
+
+        match (key.modifiers, key.code) {
+            // Cursor movement, scrolling, and search keep their normal behaviour
+            (CTRL, Char('u' | 'd' | 'e' | 'y'))
+            | (NONE, Up | Down | Char('j') | Char('k') | Char('g') | Char('/') | Char('n'))
+            | (_, Char('G') | Char('N')) => {}
+            (NONE, Char('p')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Pick));
+            }
+            (NONE, Char('r') | Char('w')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Reword));
+            }
+            (NONE, Char('e')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Edit));
+            }
+            (NONE, Char('s')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Squash));
+            }
+            (NONE, Char('f')) => {
+                return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Fixup));
+            }
+            (NONE, Char('d')) => return todo_msg(RebaseTodoMessage::SetAction(RebaseAction::Drop)),
+            (NONE, Char('u')) => return todo_msg(RebaseTodoMessage::Undo),
+            (_, Char('K')) | (ALT, Up) => return todo_msg(RebaseTodoMessage::MoveEntryUp),
+            (_, Char('J')) | (ALT, Down) => return todo_msg(RebaseTodoMessage::MoveEntryDown),
+            (_, Enter) => return Some(Message::ShowPreview),
+            (_, Char('R')) => return Some(Message::Rebase(RebaseCommand::ExecuteInteractive)),
+            (_, Char(':')) => return todo_msg(RebaseTodoMessage::CommandStart),
+            (_, Char('q')) | (_, Esc) | (CTRL, Char('g')) | (CTRL, Char('c')) => {
+                return todo_msg(RebaseTodoMessage::Abort);
+            }
+            _ => return None,
+        }
+    }
+
     match (key.modifiers, key.code) {
         // Navigation
         (CTRL, Char('u')) => Some(Message::Navigation(NavigationAction::HalfPageUp)),
@@ -231,6 +297,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
             ViewMode::Log(_, _) => Some(Message::ExitLogView),
             ViewMode::Status => Some(Message::Quit),
             ViewMode::Preview => Some(Message::ExitPreview),
+            ViewMode::RebaseTodo => Some(Message::RebaseTodo(RebaseTodoMessage::Abort)),
         },
         (_, Char('V')) => Some(Message::EnterVisualMode),
         (_, Char('s')) => Some(Message::StageSelected),
@@ -302,6 +369,7 @@ mod tests {
             preview_return_mode: None,
             preview_return_ui_model: None,
             log_return_ui_model: None,
+            rebase_todo: None,
         }
     }
 

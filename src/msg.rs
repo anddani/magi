@@ -224,6 +224,10 @@ pub enum Message {
 
     /// Show rebase popup
     ShowRebasePopup,
+    /// Open the interactive rebase todo editor for `base..HEAD` (base inclusive)
+    ShowRebaseTodo(String),
+    /// Interactive rebase todo editor messages
+    RebaseTodo(RebaseTodoMessage),
 
     /// Show revert popup
     ShowRevertPopup,
@@ -465,12 +469,39 @@ pub enum PushCommand {
 pub enum RebaseCommand {
     /// Rebase the current branch onto the given target ref/commit
     Elsewhere(String),
+    /// Run the interactive rebase using the todo list in `model.rebase_todo`
+    ExecuteInteractive,
     /// Continue after resolving conflicts
     Continue,
     /// Skip the current conflicting commit
     Skip,
     /// Abort the rebase sequence
     Abort,
+}
+
+/// Messages for the interactive rebase todo editor
+#[derive(PartialEq, Eq, Debug)]
+pub enum RebaseTodoMessage {
+    /// Set the action of the entry under the cursor
+    SetAction(crate::git::rebase::RebaseAction),
+    /// Move the entry under the cursor up one line
+    MoveEntryUp,
+    /// Move the entry under the cursor down one line
+    MoveEntryDown,
+    /// Undo the last edit
+    Undo,
+    /// Close the editor without rebasing
+    Abort,
+    /// Enter vim-style command mode (`:`)
+    CommandStart,
+    /// Type a character into the command line
+    CommandChar(char),
+    /// Delete the last character from the command line (exits on empty)
+    CommandBackspace,
+    /// Leave command mode without running anything
+    CommandCancel,
+    /// Confirmed an unrecognised command — show an error and leave command mode
+    CommandInvalid,
 }
 
 /// Messages for merge commands
@@ -592,6 +623,9 @@ pub enum CommitSelect {
     // Rebase-related
     /// Show select popup (or confirm) to pick a commit/ref to rebase onto
     RebaseElsewhere,
+    /// Show select popup (or confirm) to pick the base commit for an
+    /// interactive rebase
+    RebaseInteractive,
 
     // Revise-related
     /// Show select popup (or confirm) to pick a commit to revise (reword)
