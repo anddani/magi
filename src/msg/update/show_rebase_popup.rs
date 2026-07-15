@@ -1,7 +1,7 @@
 use crate::{
     git::{
         config::get_push_remote,
-        push::{get_current_branch, get_remotes},
+        push::{get_current_branch, get_remotes, get_upstream_branch},
         rebase::rebase_in_progress,
     },
     model::{
@@ -19,6 +19,8 @@ pub fn update(model: &mut Model) -> Option<Message> {
 
     let in_progress = rebase_in_progress(&model.workdir);
 
+    let upstream = get_upstream_branch(&model.workdir).ok().flatten();
+
     let push_remote = get_current_branch(&model.workdir)
         .ok()
         .flatten()
@@ -34,6 +36,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
     let state = RebasePopupState {
         branch,
         in_progress,
+        upstream,
         push_remote,
         sole_remote,
     };

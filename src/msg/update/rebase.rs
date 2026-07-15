@@ -3,16 +3,21 @@ use std::time::{Duration, Instant};
 use crate::{
     git::{
         config::set_push_remote,
-        push::get_current_branch,
+        push::{get_current_branch, set_upstream_branch},
         rebase::{self, CommitResult},
     },
-    model::{Model, Toast, ToastStyle, ViewMode, popup::PopupContent},
+    model::{
+        Model, Toast, ToastStyle, ViewMode,
+        popup::{PopupContent, PopupContentCommand},
+    },
     msg::{Message, RebaseCommand, update::pty_helper::execute_pty_command},
 };
 
 pub fn update(model: &mut Model, rebase_command: RebaseCommand) -> Option<Message> {
     match rebase_command {
         RebaseCommand::OntoPushRemote(remote) => onto_push_remote(model, remote),
+        RebaseCommand::OntoUpstream => onto_upstream(model),
+        RebaseCommand::OntoUpstreamSetting(upstream) => onto_upstream_setting(model, upstream),
         RebaseCommand::Elsewhere(target) => elsewhere(model, target),
         RebaseCommand::ExecuteInteractive => execute_interactive(model),
         RebaseCommand::Continue => continue_rebase(model),
@@ -86,6 +91,34 @@ fn onto_push_remote(model: &mut Model, remote: String) -> Option<Message> {
     let args = vec!["rebase".to_string(), target.clone()];
 
     execute_pty_command(model, args, format!("Rebase onto {}", target))
+}
+
+/// Rebase the current branch onto its configured upstream branch.
+/// The upstream is read from the rebase popup state.
+fn onto_upstream(model: &mut Model) -> Option<Message> {
+    let upstream =
+        if let Some(PopupContent::Command(PopupContentCommand::Rebase(ref state))) = model.popup {
+            state.upstream.clone()
+        } else {
+            return None;
+        }?;
+
+    let args = vec!["rebase".to_string(), upstream.clone()];
+    execute_pty_command(model, args, format!("Rebase onto {}", upstream))
+}
+
+/// Rebase the current branch onto the given remote branch (e.g. "origin/main"),
+/// setting it as the upstream first.
+fn onto_upstream_setting(model: &mut Model, upstream: String) -> Option<Message> {
+    if let Err(e) = set_upstream_branch(&model.git_info.repository, &upstream) {
+        model.popup = Some(PopupContent::Error {
+            message: format!("Failed to set upstream: {}", e),
+        });
+        return None;
+    }
+
+    let args = vec!["rebase".to_string(), upstream.clone()];
+    execute_pty_command(model, args, format!("Rebase onto {}", upstream))
 }
 
 const TOAST_DURATION: Duration = Duration::from_secs(5);
