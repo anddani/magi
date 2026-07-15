@@ -32,6 +32,11 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         ],
     };
 
+    let snapshot = PopupColumn {
+        title: Some(t.col_snapshot.into()),
+        content: vec![command_description(theme, model.arg_mode, "Z", t.cmd_both)],
+    };
+
     let use_col = PopupColumn {
         title: Some(t.col_use.into()),
         content: vec![
@@ -48,7 +53,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
                 columns: vec![arguments_col],
             },
             PopupRow {
-                columns: vec![stash, use_col],
+                columns: vec![stash, snapshot, use_col],
             },
         ],
     }

@@ -1,6 +1,7 @@
 use crate::model::arguments::{Arguments::StashArguments, PopupArgument};
 use crate::{
-    model::Model,
+    git::snapshot::create_snapshot,
+    model::{Model, popup::PopupContent},
     msg::{Message, StashCommand, StashType, update::pty_helper::execute_pty_command},
 };
 
@@ -18,6 +19,19 @@ pub fn update(model: &mut Model, stash_command: StashCommand) -> Option<Message>
         StashCommand::Apply(stash_ref) => apply(model, stash_ref, extra_args),
         StashCommand::Pop(stash_ref) => pop(model, stash_ref, extra_args),
         StashCommand::Drop(stash_ref) => drop(model, stash_ref),
+        StashCommand::Snapshot => snapshot(model),
+    }
+}
+
+fn snapshot(model: &mut Model) -> Option<Message> {
+    model.popup = None;
+
+    match create_snapshot(&model.workdir) {
+        Ok(()) => Some(Message::Refresh),
+        Err(message) => {
+            model.popup = Some(PopupContent::Error { message });
+            None
+        }
     }
 }
 

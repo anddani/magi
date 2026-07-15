@@ -614,6 +614,8 @@ pub enum StashCommand {
     Pop(String),
     /// Drop a stash by its reference (e.g. "stash@{0}"), or "all" to drop all stashes
     Drop(String),
+    /// Create a snapshot stash of index + working tree without resetting them
+    Snapshot,
 }
 
 /// Messages for commit select
