@@ -525,6 +525,7 @@ fn rebase_popup(in_progress: bool) -> PopupContent {
     PopupContent::Command(PopupContentCommand::Rebase(RebasePopupState {
         branch: "main".to_string(),
         in_progress,
+        upstream: None,
         push_remote: None,
         sole_remote: None,
     }))
