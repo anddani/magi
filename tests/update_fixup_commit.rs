@@ -57,7 +57,14 @@ fn test_show_fixup_commit_select_shows_log_pick_view() {
     assert_eq!(result, None);
     assert!(model.popup.is_none(), "No popup expected — using log view");
     assert!(
-        matches!(model.view_mode, ViewMode::Log { log_type: LogType::Current, picking: true, .. }),
+        matches!(
+            model.view_mode,
+            ViewMode::Log {
+                log_type: LogType::Current,
+                picking: true,
+                ..
+            }
+        ),
         "Expected log pick view"
     );
     assert_eq!(
@@ -191,7 +198,14 @@ fn test_show_squash_commit_select_shows_log_pick_view() {
     assert_eq!(result, None);
     assert!(model.popup.is_none(), "No popup expected — using log view");
     assert!(
-        matches!(model.view_mode, ViewMode::Log { log_type: LogType::Current, picking: true, .. }),
+        matches!(
+            model.view_mode,
+            ViewMode::Log {
+                log_type: LogType::Current,
+                picking: true,
+                ..
+            }
+        ),
         "Expected log pick view"
     );
     assert_eq!(

@@ -187,7 +187,11 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     }
 
     // Enter to preview commit/stash (Status or Log browse mode)
-    if matches!(model.view_mode, ViewMode::Status | ViewMode::Log { picking: false, .. }) && key.code == Enter {
+    if matches!(
+        model.view_mode,
+        ViewMode::Status | ViewMode::Log { picking: false, .. }
+    ) && key.code == Enter
+    {
         let cursor_content = model
             .ui_model
             .lines
@@ -1772,7 +1776,12 @@ mod tests {
         use crate::msg::LogType;
 
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: false, graph: true, color: false };
+        model.view_mode = ViewMode::Log {
+            log_type: LogType::Current,
+            picking: false,
+            graph: true,
+            color: false,
+        };
         model
     }
 
@@ -1847,7 +1856,12 @@ mod tests {
         use crate::msg::LogType;
 
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: true, graph: true, color: false };
+        model.view_mode = ViewMode::Log {
+            log_type: LogType::Current,
+            picking: true,
+            graph: true,
+            color: false,
+        };
         model
     }
 
@@ -2258,7 +2272,12 @@ mod tests {
         use crate::msg::LogType;
 
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: false, graph: true, color: false };
+        model.view_mode = ViewMode::Log {
+            log_type: LogType::Current,
+            picking: false,
+            graph: true,
+            color: false,
+        };
         model.ui_model.lines = vec![crate::model::Line {
             content: crate::model::LineContent::LogLine(LogEntry::new(
                 "* ".to_string(),

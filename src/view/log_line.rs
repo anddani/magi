@@ -205,7 +205,9 @@ mod tests {
         assert_eq!(spans[2].content, "*");
         assert_eq!(
             spans[2].style,
-            default_style().fg(Color::Green).add_modifier(Modifier::BOLD)
+            default_style()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD)
         );
         assert_eq!(spans[3].content, " ");
         assert_eq!(spans[3].style, default_style());
@@ -213,7 +215,10 @@ mod tests {
 
     #[test]
     fn test_graph_spans_256_and_rgb_colors() {
-        let spans = graph_spans("\x1b[38;5;208m|\x1b[m\x1b[38;2;1;2;3m/\x1b[m", default_style());
+        let spans = graph_spans(
+            "\x1b[38;5;208m|\x1b[m\x1b[38;2;1;2;3m/\x1b[m",
+            default_style(),
+        );
         assert_eq!(spans.len(), 2);
         assert_eq!(spans[0].style, default_style().fg(Color::Indexed(208)));
         assert_eq!(spans[1].style, default_style().fg(Color::Rgb(1, 2, 3)));

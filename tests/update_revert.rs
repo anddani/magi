@@ -183,7 +183,12 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
     };
 
     model.ui_model.lines = log_lines;
-    model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: false, graph: true, color: false };
+    model.view_mode = ViewMode::Log {
+        log_type: LogType::Current,
+        picking: false,
+        graph: true,
+        color: false,
+    };
     model.ui_model.cursor_position = log_commit_pos;
 
     update(&mut model, Message::ShowRevertPopup);

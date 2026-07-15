@@ -40,7 +40,14 @@ fn test_commit_select_popup_displays_log_entries() {
 
     // Verify we switched to log pick mode (not a popup)
     assert!(
-        matches!(model.view_mode, ViewMode::Log { log_type: LogType::Current, picking: true, .. }),
+        matches!(
+            model.view_mode,
+            ViewMode::Log {
+                log_type: LogType::Current,
+                picking: true,
+                ..
+            }
+        ),
         "Expected log pick view, got {:?}",
         model.view_mode
     );
@@ -76,7 +83,12 @@ fn test_commit_select_popup_confirm_returns_hash() {
 
     assert!(matches!(
         model.view_mode,
-        ViewMode::Log { log_type: LogType::Current, picking: true, graph: true, color: false }
+        ViewMode::Log {
+            log_type: LogType::Current,
+            picking: true,
+            graph: true,
+            color: false
+        }
     ));
 
     // Get the expected hash from the cursor line (position 0)
@@ -120,7 +132,12 @@ fn test_commit_select_popup_navigation() {
 
     assert!(matches!(
         model.view_mode,
-        ViewMode::Log { log_type: LogType::Current, picking: true, graph: true, color: false }
+        ViewMode::Log {
+            log_type: LogType::Current,
+            picking: true,
+            graph: true,
+            color: false
+        }
     ));
     assert_eq!(model.ui_model.cursor_position, 0);
 
@@ -186,7 +203,10 @@ fn test_commit_select_popup_escape_cancels() {
         Message::ShowCommitSelect(CommitSelect::FixupCommit(FixupType::Fixup)),
     );
 
-    assert!(matches!(model.view_mode, ViewMode::Log { picking: true, .. }));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log { picking: true, .. }
+    ));
     assert!(model.log_pick_on_select.is_some());
 
     // Escape via ExitLogView
@@ -212,7 +232,14 @@ fn test_rebase_elsewhere_opens_log_pick_all_references() {
     );
 
     assert!(
-        matches!(model.view_mode, ViewMode::Log { log_type: LogType::AllReferences, picking: true, .. }),
+        matches!(
+            model.view_mode,
+            ViewMode::Log {
+                log_type: LogType::AllReferences,
+                picking: true,
+                ..
+            }
+        ),
         "Expected AllReferences log pick view"
     );
     assert!(model.popup.is_none());
