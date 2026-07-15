@@ -10,7 +10,7 @@ use crate::{
     model::{Model, popup::RebasePopupState},
     view::render::{
         popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
-        util::command_description,
+        util::{command_description, push_remote_description},
     },
 };
 
@@ -49,12 +49,10 @@ pub fn content<'a>(
     ]);
     let rebase_onto_col = PopupColumn {
         title: Some(PopupColumnTitle::Styled(rebase_onto_title)),
-        content: vec![command_description(
-            theme,
-            model.arg_mode,
-            "e",
-            t.cmd_elsewhere,
-        )],
+        content: vec![
+            push_remote_description(model, theme, &state.push_remote),
+            command_description(theme, model.arg_mode, "e", t.cmd_elsewhere),
+        ],
     };
 
     let rebase_col = PopupColumn {

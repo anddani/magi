@@ -467,6 +467,9 @@ pub enum PushCommand {
 /// Messages for rebase commands
 #[derive(PartialEq, Eq, Debug)]
 pub enum RebaseCommand {
+    /// Rebase the current branch onto its push remote branch
+    /// (sets `branch.<name>.pushRemote` to the given remote)
+    OntoPushRemote(String),
     /// Rebase the current branch onto the given target ref/commit
     Elsewhere(String),
     /// Run the interactive rebase using the todo list in `model.rebase_todo`

@@ -250,6 +250,23 @@ fn snapshot_rebase_popup() {
         PopupContentCommand::Rebase(RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            push_remote: None,
+            sole_remote: None,
+        }),
+    );
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_rebase_popup_with_push_remote() {
+    let test_repo = TestRepo::new();
+    let model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Rebase(RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            push_remote: Some("origin".to_string()),
+            sole_remote: None,
         }),
     );
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
@@ -263,6 +280,8 @@ fn snapshot_rebase_popup_in_progress() {
         PopupContentCommand::Rebase(RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            push_remote: None,
+            sole_remote: None,
         }),
     );
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
