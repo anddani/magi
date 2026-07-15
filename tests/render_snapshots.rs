@@ -250,6 +250,7 @@ fn snapshot_rebase_popup() {
         PopupContentCommand::Rebase(RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         }),
@@ -265,6 +266,7 @@ fn snapshot_rebase_popup_with_push_remote() {
         PopupContentCommand::Rebase(RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            upstream: None,
             push_remote: Some("origin".to_string()),
             sole_remote: None,
         }),
@@ -280,6 +282,7 @@ fn snapshot_rebase_popup_in_progress() {
         PopupContentCommand::Rebase(RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         }),

@@ -280,6 +280,8 @@ pub struct RebasePopupState {
     pub branch: String,
     /// Whether a rebase sequence is currently in progress (conflict stopped)
     pub in_progress: bool,
+    /// The configured upstream branch (e.g. "origin/main"), if set
+    pub upstream: Option<String>,
     /// The configured push remote name (branch.<name>.pushRemote), if set
     pub push_remote: Option<String>,
     /// The sole remote name, if exactly one remote is configured

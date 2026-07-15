@@ -31,6 +31,17 @@ pub fn keys(key: KeyEvent, state: &RebasePopupState) -> Option<Message> {
                 }))
             }
         }
+        KeyCode::Char('u') => {
+            if state.upstream.is_some() {
+                Some(Message::Rebase(RebaseCommand::OntoUpstream))
+            } else {
+                Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                    title: "Rebase onto".to_string(),
+                    source: OptionsSource::UpstreamBranches,
+                    on_select: OnSelect::RebaseUpstream,
+                }))
+            }
+        }
         KeyCode::Char('e') => Some(Message::ShowCommitSelect(CommitSelect::RebaseElsewhere)),
         KeyCode::Char('i') => Some(Message::ShowCommitSelect(CommitSelect::RebaseInteractive)),
         _ => None,

@@ -181,6 +181,7 @@ fn test_e_in_rebase_popup_shows_rebase_elsewhere() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         },
@@ -203,6 +204,7 @@ fn test_p_in_rebase_popup_with_push_remote_rebases_onto_push_remote() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            upstream: None,
             push_remote: Some("origin".to_string()),
             sole_remote: None,
         },
@@ -227,6 +229,7 @@ fn test_p_in_rebase_popup_with_sole_remote_rebases_directly() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            upstream: None,
             push_remote: None,
             sole_remote: Some("origin".to_string()),
         },
@@ -251,6 +254,7 @@ fn test_p_in_rebase_popup_without_push_remote_shows_select() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         },
@@ -303,6 +307,7 @@ fn test_esc_dismisses_rebase_popup() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         },
@@ -322,6 +327,7 @@ fn test_q_dismisses_rebase_popup() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         },
@@ -442,6 +448,7 @@ fn test_r_key_in_in_progress_popup_continues_rebase() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         },
@@ -461,6 +468,7 @@ fn test_s_key_in_in_progress_popup_skips_rebase() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         },
@@ -480,6 +488,7 @@ fn test_a_key_in_in_progress_popup_aborts_rebase() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         },
@@ -499,6 +508,7 @@ fn test_e_key_has_no_effect_in_in_progress_popup() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            upstream: None,
             push_remote: None,
             sole_remote: None,
         },

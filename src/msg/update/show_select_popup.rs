@@ -582,6 +582,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         OnSelect::FetchUpstream
         | OnSelect::PullUpstream
         | OnSelect::PushUpstream
+        | OnSelect::RebaseUpstream
         | OnSelect::PullElsewhere
         | OnSelect::PushElsewhere
         | OnSelect::PushOtherBranchTarget { .. } => "No remote branches found".to_string(),
