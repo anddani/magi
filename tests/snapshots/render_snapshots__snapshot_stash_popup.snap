@@ -1,5 +1,6 @@
 ---
 source: tests/render_snapshots.rs
+assertion_line: 235
 expression: "render_to_string(&model, 80, 24)"
 ---
 "┌Magi───────────────────────────────────────────────────────────────/repo/magi/┐"
@@ -21,8 +22,8 @@ expression: "render_to_string(&model, 80, 24)"
 "│ -u Also save untracked files (--include-untracked)                           │"
 "│ -a Also save untracked and ignored files (--all)                             │"
 "│                                                                              │"
-"│Stash        Use                                                              │"
-"│ z Both       a Apply                                                         │"
-"│ i Index      p Pop                                                           │"
-"│ w Worktree   k Drop                                                          │"
+"│Stash        Snapshot  Use                                                    │"
+"│ z Both       Z Both    a Apply                                               │"
+"│ i Index                p Pop                                                 │"
+"│ w Worktree             k Drop                                                │"
 "└──────────────────────────────────────────────────────────────────────────────┘"
