@@ -161,7 +161,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
 
     // Populate the model with log-view lines (as ShowLog does)
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let log_lines: Vec<Line> = get_log_entries(&repo, &LogType::Current, true)
+    let log_lines: Vec<Line> = get_log_entries(&repo, &LogType::Current, true, false)
         .unwrap()
         .into_iter()
         .map(|entry| Line {
@@ -183,7 +183,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
     };
 
     model.ui_model.lines = log_lines;
-    model.view_mode = ViewMode::Log(LogType::Current, false);
+    model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: false, graph: true, color: false };
     model.ui_model.cursor_position = log_commit_pos;
 
     update(&mut model, Message::ShowRevertPopup);

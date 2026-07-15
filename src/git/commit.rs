@@ -172,7 +172,7 @@ mod tests {
     fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<crate::model::LogEntry> {
         let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
         let mut entries =
-            super::super::log::get_log_entries(&repo, &crate::msg::LogType::Current, true).unwrap();
+            super::super::log::get_log_entries(&repo, &crate::msg::LogType::Current, true, false).unwrap();
         entries.retain(|e| e.is_commit());
         entries
     }

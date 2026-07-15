@@ -125,7 +125,6 @@ fn run_loop(
         pending_g: false,
         arguments: None,
         view_mode: ViewMode::Status,
-        log_graph: true,
         cursor_reposition_context: None,
         preview_return_mode: None,
         preview_return_ui_model: None,

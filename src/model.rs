@@ -40,7 +40,7 @@ pub struct Model {
     pub toast: Option<Toast>,
     /// Result from the most recent select popup (cleared when consumed)
     pub select_result: Option<SelectResult>,
-    /// Context for what action to perform after a log-pick selection (ViewMode::Log(_, true))
+    /// Context for what action to perform after a log-pick selection (ViewMode::Log { picking: true, .. })
     pub log_pick_on_select: Option<crate::model::select_popup::OnSelect>,
     /// State for an ongoing PTY command that may require credentials
     pub pty_state: Option<PtyState>,
@@ -52,8 +52,6 @@ pub struct Model {
     pub arguments: Option<Arguments>,
     /// Current view mode (status view, log view, etc.)
     pub view_mode: ViewMode,
-    /// Whether the log view shows the commit graph (--graph); used when refreshing
-    pub log_graph: bool,
     /// Cursor context for smart repositioning after refresh (consumed by refresh)
     pub cursor_reposition_context: Option<cursor_context::CursorContext>,
     /// The view mode to return to when exiting Preview
@@ -71,7 +69,7 @@ impl Model {
     /// view. Only saves when coming from another view mode, so switching log
     /// types from within the log view doesn't overwrite the saved state.
     pub fn save_log_return_state(&mut self) {
-        if !matches!(self.view_mode, ViewMode::Log(_, _)) {
+        if !matches!(self.view_mode, ViewMode::Log { .. }) {
             self.log_return_ui_model = Some(self.ui_model.clone());
         }
     }
@@ -132,9 +130,16 @@ pub enum ViewMode {
     /// Default status view showing staged/unstaged changes, commits, etc.
     #[default]
     Status,
-    /// Log view showing git commit history with graph.
-    /// The bool indicates whether the view is in "picking" mode (selecting a commit).
-    Log(crate::msg::LogType, bool),
+    /// Log view showing git commit history.
+    Log {
+        log_type: crate::msg::LogType,
+        /// Whether the view is in "picking" mode (selecting a commit)
+        picking: bool,
+        /// Whether the commit graph is shown (--graph); used when refreshing
+        graph: bool,
+        /// Whether git colors the graph (--color); used when refreshing
+        color: bool,
+    },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,
     /// Interactive rebase todo editor (pick/reword/squash/... per commit).

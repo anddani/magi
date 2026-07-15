@@ -16,7 +16,7 @@ use crate::{
 
 pub fn update(model: &mut Model) -> Option<Message> {
     // Handle log pick mode: Enter extracts hash from cursor line
-    if let ViewMode::Log(_, true) = model.view_mode {
+    if let ViewMode::Log { picking: true, .. } = model.view_mode {
         let hash = model
             .ui_model
             .lines
@@ -396,7 +396,6 @@ mod tests {
             pending_g: false,
             arguments: None,
             view_mode: ViewMode::Status,
-            log_graph: true,
             cursor_reposition_context: None,
             preview_return_mode: None,
             preview_return_ui_model: None,
@@ -422,7 +421,7 @@ mod tests {
     #[test]
     fn test_log_pick_mode_extracts_hash_from_cursor() {
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log(LogType::Current, true);
+        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: true, graph: true, color: false };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
             make_log_line("def5678", "Second commit"),
@@ -446,7 +445,7 @@ mod tests {
     #[test]
     fn test_log_pick_mode_second_cursor_position() {
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log(LogType::Current, true);
+        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: true, graph: true, color: false };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
             make_log_line("def5678", "Second commit"),
@@ -469,7 +468,7 @@ mod tests {
     #[test]
     fn test_log_pick_mode_no_hash_returns_none() {
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log(LogType::Current, true);
+        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: true, graph: true, color: false };
         model.ui_model.lines = vec![Line {
             content: LineContent::LogLine(LogEntry {
                 hash: None,
@@ -496,7 +495,7 @@ mod tests {
         use crate::msg::RebaseCommand;
 
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log(LogType::AllReferences, true);
+        model.view_mode = ViewMode::Log { log_type: LogType::AllReferences, picking: true, graph: true, color: false };
         model.ui_model.lines = vec![make_log_line("deadbeef", "Some commit")];
         model.ui_model.cursor_position = 0;
         model.log_pick_on_select = Some(OnSelect::RebaseElsewhere);
@@ -538,7 +537,7 @@ mod tests {
     fn test_browse_log_mode_does_not_trigger_pick() {
         let mut model = create_test_model();
         // picking = false → should fall through to popup check and return None (no popup)
-        model.view_mode = ViewMode::Log(LogType::Current, false);
+        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: false, graph: true, color: false };
         model.ui_model.lines = vec![make_log_line("abc1234", "First commit")];
         model.log_pick_on_select = Some(OnSelect::FixupCommit(FixupType::Fixup));
 
@@ -547,7 +546,7 @@ mod tests {
         // No popup → returns None without changing state
         assert_eq!(result, None);
         // view_mode unchanged
-        assert_eq!(model.view_mode, ViewMode::Log(LogType::Current, false));
+        assert_eq!(model.view_mode, ViewMode::Log { log_type: LogType::Current, picking: false, graph: true, color: false });
         // log_pick_on_select still set (not consumed)
         assert!(model.log_pick_on_select.is_some());
     }

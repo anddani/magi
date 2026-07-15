@@ -15,7 +15,7 @@ use utils::create_model_from_test_repo;
 /// Helper to get log entries for testing (filters out graph-only entries)
 fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> {
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut entries = get_log_entries(&repo, &LogType::Current, true).unwrap();
+    let mut entries = get_log_entries(&repo, &LogType::Current, true, false).unwrap();
     entries.retain(|e| e.is_commit());
     entries
 }
@@ -97,7 +97,7 @@ fn test_show_revise_commit_cursor_not_on_commit_shows_log_pick() {
     assert_eq!(result, None);
     assert!(model.popup.is_none(), "No popup expected — using log view");
     assert!(
-        matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
+        matches!(model.view_mode, ViewMode::Log { log_type: LogType::Current, picking: true, .. }),
         "Expected log pick view"
     );
     assert_eq!(model.log_pick_on_select, Some(OnSelect::ReviseCommit));
@@ -127,7 +127,7 @@ fn test_show_revise_commit_no_staged_changes_still_shows_log_pick() {
     assert_eq!(result, None);
     assert!(model.popup.is_none());
     assert!(
-        matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
+        matches!(model.view_mode, ViewMode::Log { log_type: LogType::Current, picking: true, .. }),
         "Expected log pick view even without staged changes"
     );
 }
@@ -142,7 +142,7 @@ fn test_revise_commit_select_confirm_routes_to_revise() {
 
     let mut model = create_model_from_test_repo(&test_repo);
     // Simulate log pick mode with the cursor on a commit
-    model.view_mode = ViewMode::Log(LogType::Current, true);
+    model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: true, graph: true, color: false };
     model.ui_model.lines = vec![make_log_line(&commit_hash, "First commit")];
     model.ui_model.cursor_position = 0;
     model.log_pick_on_select = Some(OnSelect::ReviseCommit);

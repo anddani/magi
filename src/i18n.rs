@@ -218,6 +218,7 @@ pub struct Strings {
     pub arg_upstream_setting_it: &'static str,
     pub arg_revert_no_edit: &'static str,
     pub arg_log_graph: &'static str,
+    pub arg_log_color: &'static str,
     pub arg_revert_mainline: &'static str,
     pub input_revert_mainline: &'static str,
 
@@ -441,6 +442,7 @@ static ENGLISH: Strings = Strings {
     arg_upstream_setting_it: "${upstream}, setting it",
     arg_revert_no_edit: "Don't edit commit message",
     arg_log_graph: "Show graph",
+    arg_log_color: "Show graph in color",
     arg_revert_mainline: "Replay merge relative to parent",
     input_revert_mainline: "Mainline parent number",
 
@@ -651,6 +653,7 @@ static SWEDISH: Strings = Strings {
     arg_upstream_setting_it: "${uppström}, och sätt den",
     arg_revert_no_edit: "Ändra inte förbindelsemeddelandet",
     arg_log_graph: "Visa graf",
+    arg_log_color: "Visa graf i färg",
     arg_revert_mainline: "Spela upp sammanslagning relativt förälder",
     input_revert_mainline: "Förälderantalsnummer",
 

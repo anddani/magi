@@ -187,7 +187,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     }
 
     // Enter to preview commit/stash (Status or Log browse mode)
-    if matches!(model.view_mode, ViewMode::Status | ViewMode::Log(_, false)) && key.code == Enter {
+    if matches!(model.view_mode, ViewMode::Status | ViewMode::Log { picking: false, .. }) && key.code == Enter {
         let cursor_content = model
             .ui_model
             .lines
@@ -206,7 +206,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     }
 
     // Enter/Esc in log pick mode
-    if let ViewMode::Log(_, true) = model.view_mode {
+    if let ViewMode::Log { picking: true, .. } = model.view_mode {
         match (key.modifiers, key.code) {
             (_, Enter) => return Some(Message::Select(SelectMessage::Confirm)),
             (_, Esc) | (CTRL, Char('g')) | (CTRL, Char('c')) => {
@@ -294,7 +294,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (_, Tab) => Some(Message::ToggleSection),
         (_, Char('?') | Char('h')) => Some(Message::ShowPopup(PopupContent::Help)),
         (_, Char('q')) => match model.view_mode {
-            ViewMode::Log(_, _) => Some(Message::ExitLogView),
+            ViewMode::Log { .. } => Some(Message::ExitLogView),
             ViewMode::Status => Some(Message::Quit),
             ViewMode::Preview => Some(Message::ExitPreview),
             ViewMode::RebaseTodo => Some(Message::RebaseTodo(RebaseTodoMessage::Abort)),
@@ -364,7 +364,6 @@ mod tests {
             pending_g: false,
             arguments: None,
             view_mode: ViewMode::Status,
-            log_graph: true,
             cursor_reposition_context: None,
             preview_return_mode: None,
             preview_return_ui_model: None,
@@ -1724,6 +1723,21 @@ mod tests {
     }
 
     #[test]
+    fn test_c_in_log_arg_mode_toggles_color() {
+        use crate::model::arguments::{Argument::Log, LogArgument};
+
+        let mut model = create_log_popup_model();
+        model.arg_mode = true;
+
+        let key = create_key_event(NONE, Char('c'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Log(LogArgument::Color)))
+        );
+    }
+
+    #[test]
     fn test_other_key_in_log_arg_mode_exits_arg_mode() {
         let mut model = create_log_popup_model();
         model.arg_mode = true;
@@ -1758,7 +1772,7 @@ mod tests {
         use crate::msg::LogType;
 
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log(LogType::Current, false);
+        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: false, graph: true, color: false };
         model
     }
 
@@ -1833,7 +1847,7 @@ mod tests {
         use crate::msg::LogType;
 
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log(LogType::Current, true);
+        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: true, graph: true, color: false };
         model
     }
 
@@ -2244,7 +2258,7 @@ mod tests {
         use crate::msg::LogType;
 
         let mut model = create_test_model();
-        model.view_mode = ViewMode::Log(LogType::Current, false);
+        model.view_mode = ViewMode::Log { log_type: LogType::Current, picking: false, graph: true, color: false };
         model.ui_model.lines = vec![crate::model::Line {
             content: crate::model::LineContent::LogLine(LogEntry::new(
                 "* ".to_string(),

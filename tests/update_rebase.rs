@@ -145,7 +145,7 @@ fn test_rebase_elsewhere_not_on_commit_shows_log_pick_view() {
     assert_eq!(result, None);
     assert!(model.popup.is_none(), "No popup expected — using log view");
     assert!(
-        matches!(model.view_mode, ViewMode::Log(LogType::AllReferences, true)),
+        matches!(model.view_mode, ViewMode::Log { log_type: LogType::AllReferences, picking: true, .. }),
         "Expected AllReferences log pick view"
     );
     assert_eq!(model.log_pick_on_select, Some(OnSelect::RebaseElsewhere));
@@ -226,7 +226,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(&repo, &LogType::Current, true).unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, true, false).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -242,7 +242,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
         })
         .collect();
     model.ui_model.cursor_position = 0;
-    model.view_mode = ViewMode::Log(LogType::AllReferences, true);
+    model.view_mode = ViewMode::Log { log_type: LogType::AllReferences, picking: true, graph: true, color: false };
     model.log_pick_on_select = Some(OnSelect::RebaseElsewhere);
 
     let result = update(&mut model, Message::Select(SelectMessage::Confirm));
@@ -460,7 +460,7 @@ fn test_rebase_interactive_not_on_commit_shows_current_log_pick_view() {
 
     assert_eq!(result, None);
     assert!(
-        matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
+        matches!(model.view_mode, ViewMode::Log { log_type: LogType::Current, picking: true, .. }),
         "Expected current-branch log pick view"
     );
     assert_eq!(model.log_pick_on_select, Some(OnSelect::RebaseInteractive));

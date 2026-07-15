@@ -9,13 +9,14 @@ use crate::{
 
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
     // Graph is shown by default; only disabled when toggled off in the log popup
-    let graph = match model.arguments.take() {
-        Some(LogArguments(args)) => args.contains(&LogArgument::Graph),
-        _ => true,
+    let (graph, color) = match model.arguments.take() {
+        Some(LogArguments(args)) => (
+            args.contains(&LogArgument::Graph),
+            args.contains(&LogArgument::Color),
+        ),
+        _ => (true, false),
     };
-    model.log_graph = graph;
-
-    match get_log_entries(&model.git_info.repository, &log_type, graph) {
+    match get_log_entries(&model.git_info.repository, &log_type, graph, color) {
         Ok(entries) => {
             // Convert log entries to lines
             let lines: Vec<Line> = entries
@@ -36,7 +37,12 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             model.ui_model.visual_mode_anchor = None;
 
             // Switch to log view mode
-            model.view_mode = ViewMode::Log(log_type, false);
+            model.view_mode = ViewMode::Log {
+                log_type,
+                picking: false,
+                graph,
+                color,
+            };
 
             // Dismiss the log popup
             model.popup = None;
