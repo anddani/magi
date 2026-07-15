@@ -155,10 +155,8 @@ fn run_loop(
             // Check for command completion
             if let Some(result) = model.pty_state.as_ref().unwrap().check_result() {
                 // Command finished, handle result
-                let mut current_msg = handle_pty_result(&mut model, result);
-                while let Some(msg) = current_msg {
-                    current_msg = update(&mut model, msg);
-                }
+                let msg = handle_pty_result(&mut model, result);
+                process_messages(&mut model, msg);
             }
         }
 
@@ -170,17 +168,17 @@ fn run_loop(
             // Ratatui being rendered.
             restore_terminal();
 
-            // Process external command (blocking)
-            let mut current_msg = update(&mut model, msg);
+            // Process external command (blocking). Dispatched directly to
+            // `update` (not `process_messages`) so the message that triggered
+            // the suspension is not re-suspended.
+            let follow_up = update(&mut model, msg);
 
             // Resume TUI
             terminal = init_terminal();
             terminal.clear()?;
 
-            // Process the commit result message(s)
-            while let Some(m) = current_msg {
-                current_msg = update(&mut model, m);
-            }
+            // Process the result message(s)
+            process_messages(&mut model, follow_up);
             continue;
         }
 
@@ -192,21 +190,26 @@ fn run_loop(
         terminal.draw(|f| view(&model, f))?;
 
         // Handle event
-        let mut current_msg = handle_event(&model)?;
-
-        // If the message is an external command, we want to update the running state and skip the
-        // update processing below in order to pause Ratatui rendering.
-        if let Some(msg) = current_msg.take_if(|msg| is_external_command(msg)) {
-            model.running_state = RunningState::LaunchExternalCommand(msg);
-            continue;
-        }
+        let msg = handle_event(&model)?;
 
         // Process updates
-        while let Some(msg) = current_msg {
-            current_msg = update(&mut model, msg);
-        }
+        process_messages(&mut model, msg);
     }
     Ok(())
+}
+
+/// Drives the update loop for a chain of messages. If a message requires the
+/// TUI to be suspended (external command such as opening $EDITOR), it is
+/// stored in [`RunningState::LaunchExternalCommand`] and processing stops.
+/// The main loop suspends Ratatui and dispatches it on the next iteration.
+pub fn process_messages(model: &mut Model, mut current_msg: Option<Message>) {
+    while let Some(msg) = current_msg {
+        if is_external_command(&msg) {
+            model.running_state = RunningState::LaunchExternalCommand(msg);
+            return;
+        }
+        current_msg = update(model, msg);
+    }
 }
 
 /// Blocks for [`EVENT_POLL_TIMEOUT_MILLIS`] waiting for a key event.
