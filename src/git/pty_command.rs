@@ -116,6 +116,10 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
         cmd.env(*key, *value);
     }
 
+    // Any editor git would open inside the hidden PTY would hang forever.
+    // `true` exits 0, so git accepts its prepared default message instead.
+    cmd.env("GIT_EDITOR", "true");
+
     // Spawn the child process in the PTY
     let mut child = match pair.slave.spawn_command(cmd) {
         Ok(child) => child,
@@ -290,4 +294,65 @@ pub fn spawn_git_with_pty(
     });
 
     (result_rx, ui_channels)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::git::{git_cmd, test_repo::TestRepo};
+
+    /// `git merge --no-ff` opens the configured editor for the merge commit
+    /// message. Since the command runs inside a hidden PTY, git believes it is
+    /// interactive and a real editor would hang forever. The `GIT_EDITOR=true`
+    /// override must win over `core.editor`, so even with an editor that
+    /// blocks, the command completes with git's default message.
+    #[test]
+    fn test_pty_command_does_not_hang_when_git_opens_editor() {
+        let test_repo = TestRepo::new();
+        test_repo
+            .repo
+            .config()
+            .unwrap()
+            .set_str("core.editor", "sleep 60")
+            .unwrap();
+
+        test_repo.commit_file("base.txt", "base\n", "Base commit");
+        assert!(
+            git_cmd(test_repo.repo_path(), &["checkout", "-b", "feature"])
+                .output()
+                .unwrap()
+                .status
+                .success()
+        );
+        test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+        assert!(
+            git_cmd(test_repo.repo_path(), &["checkout", "main"])
+                .output()
+                .unwrap()
+                .status
+                .success()
+        );
+
+        let (result_rx, _) = spawn_git_with_pty(
+            test_repo.repo_path().to_path_buf(),
+            vec![
+                "merge".to_string(),
+                "--no-ff".to_string(),
+                "feature".to_string(),
+            ],
+            CredentialStrategy::Fail,
+        );
+
+        let result = result_rx
+            .recv_timeout(Duration::from_secs(10))
+            .expect("merge in PTY timed out — the editor was opened and hung");
+
+        assert!(
+            matches!(result, PtyCommandResult::Success { .. }),
+            "unexpected result: {:?}",
+            result
+        );
+        let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+        assert_eq!(head.parent_count(), 2);
+    }
 }

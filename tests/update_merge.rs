@@ -1,9 +1,9 @@
 use crossterm::event::KeyCode;
 use magi::{
-    git::test_repo::TestRepo,
+    git::{git_cmd, test_repo::TestRepo},
     keys::handle_key,
     model::{
-        LineContent,
+        LineContent, ToastStyle,
         popup::{MergePopupState, PopupContent, PopupContentCommand},
         select_popup::OnSelect,
     },
@@ -212,4 +212,104 @@ fn test_merge_elsewhere_no_cursor_suggestion_shows_normal_order() {
         state.all_options.contains(&"other-branch".to_string()),
         "other-branch should be in the options"
     );
+}
+
+// ── MergeCommand::Branch — execution ──────────────────────────────────────────
+
+/// `git merge` opens an editor for the merge commit message.
+/// Point core.editor at `true` so the test does not hang waiting for input.
+fn disable_editor(test_repo: &TestRepo) {
+    test_repo
+        .repo
+        .config()
+        .unwrap()
+        .set_str("core.editor", "true")
+        .unwrap();
+}
+
+/// Creates `feature` diverging from `main`: both branches get one commit
+/// after the shared base. Leaves the repo checked out on `main`.
+fn setup_divergent_branches(
+    test_repo: &TestRepo,
+    main_file: (&str, &str),
+    feature_file: (&str, &str),
+) {
+    test_repo.commit_file("base.txt", "base\n", "Base commit");
+    test_repo.create_branch("feature");
+    test_repo.commit_file(main_file.0, main_file.1, "Main commit");
+    let checkout = |branch: &str| {
+        assert!(
+            git_cmd(test_repo.repo_path(), &["checkout", branch])
+                .output()
+                .unwrap()
+                .status
+                .success()
+        );
+    };
+    checkout("feature");
+    test_repo.commit_file(feature_file.0, feature_file.1, "Feature commit");
+    checkout("main");
+}
+
+#[test]
+fn test_merge_branch_message_creates_merge_commit() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    // Divergent branches touching different files: merges cleanly.
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Branch("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(model.popup.is_none());
+    // The merge runs directly (TUI suspended), not in a background PTY.
+    assert!(model.pty_state.is_none());
+    let toast = model.toast.expect("Expected a toast after merging");
+    assert_eq!(toast.style, ToastStyle::Success);
+    assert!(
+        toast.message.starts_with("Merge: Merge branch 'feature'"),
+        "unexpected toast message: {}",
+        toast.message
+    );
+
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head.parent_count(), 2);
+    assert!(test_repo.repo_path().join("main.txt").exists());
+    assert!(test_repo.repo_path().join("feature.txt").exists());
+}
+
+#[test]
+fn test_merge_branch_message_with_conflicts_shows_warning_toast() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    // Both branches modify the same file: merging conflicts.
+    setup_divergent_branches(
+        &test_repo,
+        ("base.txt", "main change\n"),
+        ("base.txt", "feature change\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Branch("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(model.pty_state.is_none());
+    let toast = model.toast.expect("Expected a toast after failed merge");
+    assert_eq!(toast.style, ToastStyle::Warning);
+    assert_eq!(toast.message, "Merge aborted");
+    // The merge stays in progress so it can be resolved or aborted.
+    assert!(test_repo.repo.path().join("MERGE_HEAD").exists());
 }

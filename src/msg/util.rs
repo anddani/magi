@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::{
     model::{Line, SectionType},
-    msg::{MergeCommand, Message, RebaseCommand, RevertCommand},
+    msg::{FixupType, MergeCommand, Message, RebaseCommand, RevertCommand},
 };
 
 /// Count visible lines between two raw line indices (exclusive of end).
@@ -27,7 +27,8 @@ pub fn is_external_command(msg: &Message) -> bool {
         msg,
         Message::Commit
             | Message::Amend(_)
-            | Message::FixupCommit(_, _)
+            | Message::FixupCommit(_, FixupType::Alter | FixupType::Augment)
+            | Message::ReviseCommit(_)
             | Message::Revert(RevertCommand::Continue)
             | Message::Rebase(RebaseCommand::Continue)
             | Message::Rebase(RebaseCommand::ExecuteInteractive)

@@ -19,11 +19,25 @@ pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
 
 fn merge_branch(model: &mut Model, branch: String) -> Option<Message> {
     model.popup = None;
-    execute_pty_command(
-        model,
-        vec!["merge".to_string(), branch],
-        "Merge".to_string(),
-    )
+    match merge::run_merge_with_editor(&model.workdir, &branch) {
+        Ok(CommitResult { success, message }) => {
+            model.toast = Some(Toast {
+                message,
+                style: if success {
+                    ToastStyle::Success
+                } else {
+                    ToastStyle::Warning
+                },
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
 }
 
 fn continue_merge(model: &mut Model) -> Option<Message> {
