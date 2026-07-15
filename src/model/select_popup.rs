@@ -69,6 +69,8 @@ pub enum OnSelect {
     RebaseElsewhere,
     /// Select the base commit for an interactive rebase (base inclusive)
     RebaseInteractive,
+    /// Select a push remote to rebase onto (sets branch.<name>.pushRemote)
+    RebasePushRemote,
     /// Select a local branch to reset (step 1 of 2)
     ResetBranchPick,
     /// Select a target to reset the given branch to (step 2 of 2, carries branch name)

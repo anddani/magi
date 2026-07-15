@@ -280,6 +280,10 @@ pub struct RebasePopupState {
     pub branch: String,
     /// Whether a rebase sequence is currently in progress (conflict stopped)
     pub in_progress: bool,
+    /// The configured push remote name (branch.<name>.pushRemote), if set
+    pub push_remote: Option<String>,
+    /// The sole remote name, if exactly one remote is configured
+    pub sole_remote: Option<String>,
 }
 
 /// State for the Commit popup

@@ -190,6 +190,9 @@ fn route_result(
         (Some(OnSelect::PullPushRemote), SelectResult::Selected(remote)) => {
             Some(Message::Pull(PullCommand::PullFromPushRemote(remote)))
         }
+        (Some(OnSelect::RebasePushRemote), SelectResult::Selected(remote)) => {
+            Some(Message::Rebase(RebaseCommand::OntoPushRemote(remote)))
+        }
         (Some(OnSelect::PullElsewhere), SelectResult::Selected(upstream)) => {
             Some(Message::Pull(PullCommand::PullFromElsewhere(upstream)))
         }

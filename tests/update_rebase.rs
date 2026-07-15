@@ -9,11 +9,11 @@ use magi::{
     model::{
         Line, LineContent, Model, SectionType, ViewMode,
         popup::{ConfirmAction, PopupContent, PopupContentCommand, RebasePopupState},
-        select_popup::OnSelect,
+        select_popup::{OnSelect, SelectPopupState},
     },
     msg::{
-        CommitSelect, LogType, Message, RebaseCommand, RebaseTodoMessage, SearchMessage,
-        SelectMessage, update::update,
+        CommitSelect, LogType, Message, OptionsSource, RebaseCommand, RebaseTodoMessage,
+        SearchMessage, SelectMessage, ShowSelectPopupConfig, update::update,
     },
 };
 
@@ -174,6 +174,8 @@ fn test_e_in_rebase_popup_shows_rebase_elsewhere() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            push_remote: None,
+            sole_remote: None,
         },
     )));
 
@@ -181,6 +183,106 @@ fn test_e_in_rebase_popup_shows_rebase_elsewhere() {
     assert_eq!(
         result,
         Some(Message::ShowCommitSelect(CommitSelect::RebaseElsewhere))
+    );
+}
+
+#[test]
+fn test_p_in_rebase_popup_with_push_remote_rebases_onto_push_remote() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            push_remote: Some("origin".to_string()),
+            sole_remote: None,
+        },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('p')), &model);
+    assert_eq!(
+        result,
+        Some(Message::Rebase(RebaseCommand::OntoPushRemote(
+            "origin".to_string()
+        )))
+    );
+}
+
+#[test]
+fn test_p_in_rebase_popup_with_sole_remote_rebases_directly() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            push_remote: None,
+            sole_remote: Some("origin".to_string()),
+        },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('p')), &model);
+    assert_eq!(
+        result,
+        Some(Message::Rebase(RebaseCommand::OntoPushRemote(
+            "origin".to_string()
+        )))
+    );
+}
+
+#[test]
+fn test_p_in_rebase_popup_without_push_remote_shows_select() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            push_remote: None,
+            sole_remote: None,
+        },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('p')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Rebase onto push remote".to_string(),
+            source: OptionsSource::Remotes,
+            on_select: OnSelect::RebasePushRemote,
+        }))
+    );
+}
+
+// ── Select confirm → RebasePushRemote ─────────────────────────────────────────
+
+#[test]
+fn test_select_confirm_rebase_push_remote_routes_to_rebase_command() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Rebase onto push remote".to_string(),
+            vec!["origin".to_string(), "upstream".to_string()],
+            OnSelect::RebasePushRemote,
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::Rebase(RebaseCommand::OntoPushRemote(
+            "origin".to_string()
+        )))
     );
 }
 
@@ -194,6 +296,8 @@ fn test_esc_dismisses_rebase_popup() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            push_remote: None,
+            sole_remote: None,
         },
     )));
 
@@ -211,6 +315,8 @@ fn test_q_dismisses_rebase_popup() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: false,
+            push_remote: None,
+            sole_remote: None,
         },
     )));
 
@@ -324,6 +430,8 @@ fn test_r_key_in_in_progress_popup_continues_rebase() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            push_remote: None,
+            sole_remote: None,
         },
     )));
 
@@ -341,6 +449,8 @@ fn test_s_key_in_in_progress_popup_skips_rebase() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            push_remote: None,
+            sole_remote: None,
         },
     )));
 
@@ -358,6 +468,8 @@ fn test_a_key_in_in_progress_popup_aborts_rebase() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            push_remote: None,
+            sole_remote: None,
         },
     )));
 
@@ -375,6 +487,8 @@ fn test_e_key_has_no_effect_in_in_progress_popup() {
         RebasePopupState {
             branch: "main".to_string(),
             in_progress: true,
+            push_remote: None,
+            sole_remote: None,
         },
     )));
 
@@ -389,6 +503,8 @@ fn rebase_popup(in_progress: bool) -> PopupContent {
     PopupContent::Command(PopupContentCommand::Rebase(RebasePopupState {
         branch: "main".to_string(),
         in_progress,
+        push_remote: None,
+        sole_remote: None,
     }))
 }
 
