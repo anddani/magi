@@ -10,7 +10,7 @@ use utils::create_model_from_test_repo;
 /// Helper to get log entries for testing (filters out graph-only entries)
 fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> {
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut entries = get_log_entries(&repo, &LogType::Current, true).unwrap();
+    let mut entries = get_log_entries(&repo, &LogType::Current, true, false).unwrap();
     entries.retain(|e| e.is_commit());
     entries
 }
@@ -57,7 +57,14 @@ fn test_show_fixup_commit_select_shows_log_pick_view() {
     assert_eq!(result, None);
     assert!(model.popup.is_none(), "No popup expected — using log view");
     assert!(
-        matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
+        matches!(
+            model.view_mode,
+            ViewMode::Log {
+                log_type: LogType::Current,
+                picking: true,
+                ..
+            }
+        ),
         "Expected log pick view"
     );
     assert_eq!(
@@ -191,7 +198,14 @@ fn test_show_squash_commit_select_shows_log_pick_view() {
     assert_eq!(result, None);
     assert!(model.popup.is_none(), "No popup expected — using log view");
     assert!(
-        matches!(model.view_mode, ViewMode::Log(LogType::Current, true)),
+        matches!(
+            model.view_mode,
+            ViewMode::Log {
+                log_type: LogType::Current,
+                picking: true,
+                ..
+            }
+        ),
         "Expected log pick view"
     );
     assert_eq!(

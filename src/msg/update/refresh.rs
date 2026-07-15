@@ -7,7 +7,12 @@ use crate::{
 pub fn update(model: &mut Model) -> Option<Message> {
     match model.view_mode.clone() {
         ViewMode::Status => refresh_status(model),
-        ViewMode::Log(log_type, _) => refresh_log(model, &log_type),
+        ViewMode::Log {
+            log_type,
+            graph,
+            color,
+            ..
+        } => refresh_log(model, &log_type, graph, color),
         // In preview mode, refresh is a no-op (preview content is static)
         ViewMode::Preview => {}
         // The rebase todo editor holds in-memory state; nothing to refresh
@@ -79,8 +84,8 @@ fn refresh_status(model: &mut Model) {
     }
 }
 
-fn refresh_log(model: &mut Model, log_type: &crate::msg::LogType) {
-    if let Ok(entries) = get_log_entries(&model.git_info.repository, log_type, model.log_graph) {
+fn refresh_log(model: &mut Model, log_type: &crate::msg::LogType, graph: bool, color: bool) {
+    if let Ok(entries) = get_log_entries(&model.git_info.repository, log_type, graph, color) {
         let lines: Vec<Line> = entries
             .into_iter()
             .map(|entry| Line {

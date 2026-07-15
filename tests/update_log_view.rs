@@ -23,7 +23,10 @@ fn test_exit_log_view_restores_status_cursor_and_scroll() {
 
     // Enter log view — cursor and scroll reset for the log
     update(&mut model, Message::ShowLog(LogType::Current));
-    assert!(matches!(model.view_mode, ViewMode::Log(_, false)));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log { picking: false, .. }
+    ));
     assert_eq!(model.ui_model.cursor_position, 0);
     assert_eq!(model.ui_model.scroll_offset, 0);
 
@@ -80,7 +83,10 @@ fn test_log_pick_confirm_restores_status_cursor_and_scroll() {
         &mut model,
         Message::ShowCommitSelect(CommitSelect::FixupCommit(FixupType::Fixup)),
     );
-    assert!(matches!(model.view_mode, ViewMode::Log(_, true)));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log { picking: true, .. }
+    ));
     assert_eq!(model.ui_model.cursor_position, 0);
     assert_eq!(model.ui_model.scroll_offset, 0);
 

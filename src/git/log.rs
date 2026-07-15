@@ -12,11 +12,12 @@ use super::commit_utils::{build_push_remote_map, enrich_refs_with_push_remote, s
 const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
-/// Fetches git log entries, optionally with graph
+/// Fetches git log entries, optionally with graph and colored graph lines
 pub fn get_log_entries(
     repository: &Repository,
     log_type: &LogType,
     graph: bool,
+    color: bool,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
@@ -50,6 +51,13 @@ pub fn get_log_entries(
 
     if graph {
         args.push("--graph".to_string());
+    }
+
+    if color {
+        // Without a <when> value, --color defaults to `always`, so the graph
+        // is colored even though the output is piped. Only the graph gets
+        // ANSI codes since the --format fields don't use %C placeholders.
+        args.push("--color".to_string());
     }
 
     match log_type {
@@ -238,16 +246,30 @@ fn parse_refs(refs_str: &str, remotes: &[String]) -> Vec<CommitRef> {
 
 /// Find where the graph prefix ends in a log line
 /// Returns the byte index where the graph ends
+/// ANSI escape sequences (from --color) count as part of the graph
 fn find_graph_end(line: &str) -> usize {
     let graph_chars = ['|', '/', '\\', '*', '-', '_', '<', '>', '.', ' '];
 
     let mut end = 0;
-    for (i, c) in line.char_indices() {
-        if graph_chars.contains(&c) {
-            end = i + c.len_utf8();
+    let mut i = 0;
+    while i < line.len() {
+        if line.as_bytes()[i] == 0x1b {
+            // ANSI escape sequence (e.g. "\x1b[31m") coloring the graph
+            match line[i..].find('m') {
+                Some(m) => {
+                    i += m + 1;
+                    end = i;
+                }
+                None => break,
+            }
         } else {
-            // Found a non-graph character, stop here
-            break;
+            let c = line[i..].chars().next().unwrap();
+            if !graph_chars.contains(&c) {
+                // Found a non-graph character, stop here
+                break;
+            }
+            i += c.len_utf8();
+            end = i;
         }
     }
 
@@ -268,6 +290,16 @@ mod tests {
     #[test]
     fn test_find_graph_end_no_graph() {
         assert_eq!(find_graph_end("abc123"), 0);
+    }
+
+    #[test]
+    fn test_find_graph_end_with_ansi_codes() {
+        // Colored graph from git log --graph --color
+        let line = "\x1b[31m|\x1b[m \x1b[32m*\x1b[m abc123";
+        assert_eq!(find_graph_end(line), line.len() - "abc123".len());
+        // Graph-only line where the color codes cover the whole line
+        let line = "\x1b[31m|\x1b[m \x1b[32m|\x1b[m";
+        assert_eq!(find_graph_end(line), line.len());
     }
 
     #[test]
@@ -293,6 +325,7 @@ mod tests {
             &test_repo.repo,
             &LogType::Other("feature".to_string()),
             true,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -318,6 +351,39 @@ mod tests {
         assert_eq!(entry.author, Some("John Doe".to_string()));
         assert_eq!(entry.time, Some("2 hours".to_string()));
         assert_eq!(entry.message, Some("Fix bug".to_string()));
+    }
+
+    #[test]
+    fn test_parse_log_line_colored_graph() {
+        let remotes = vec!["origin".to_string()];
+        let line = format!(
+            "\x1b[31m|\x1b[m * abc1234{}main{}John Doe{}2 hours ago{}Fix bug",
+            SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
+        );
+        let entry = parse_log_line(&line, &remotes);
+
+        assert_eq!(entry.graph, "\x1b[31m|\x1b[m * ");
+        assert_eq!(entry.hash, Some("abc1234".to_string()));
+        assert_eq!(entry.message, Some("Fix bug".to_string()));
+    }
+
+    #[test]
+    fn test_get_log_entries_color() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Second commit");
+
+        let entries = get_log_entries(&test_repo.repo, &LogType::Current, true, true).unwrap();
+
+        // The graph is colored with ANSI codes, but the commit info is not
+        let entry = entries.first().unwrap();
+        assert!(entry.graph.contains('*'));
+        assert_eq!(entry.message, Some("Second commit".to_string()));
+        assert!(!entry.message.as_ref().unwrap().contains('\x1b'));
     }
 
     #[test]

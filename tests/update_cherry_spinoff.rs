@@ -34,7 +34,7 @@ fn current_branch(workdir: &std::path::Path) -> String {
 
 fn commit_hash(test_repo: &TestRepo, message: &str) -> String {
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let log = get_log_entries(&repo, &LogType::Current, true).unwrap();
+    let log = get_log_entries(&repo, &LogType::Current, true, false).unwrap();
     log.iter()
         .find(|e| e.hash.is_some() && e.message.as_deref() == Some(message))
         .and_then(|e| e.hash.clone())

@@ -83,7 +83,10 @@ fn test_show_preview_on_log_line_enters_preview_mode() {
 
     // Switch to log view
     update(&mut model, Message::ShowLog(LogType::Current));
-    assert!(matches!(model.view_mode, ViewMode::Log(_, false)));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log { picking: false, .. }
+    ));
 
     // Find a log line with a hash
     let log_pos = find_line(
@@ -124,13 +127,21 @@ fn test_show_preview_on_graph_only_log_line_is_noop() {
     };
     model.ui_model.lines = vec![graph_only_line];
     model.ui_model.cursor_position = 0;
-    model.view_mode = ViewMode::Log(LogType::Current, false);
+    model.view_mode = ViewMode::Log {
+        log_type: LogType::Current,
+        picking: false,
+        graph: true,
+        color: false,
+    };
 
     let result = update(&mut model, Message::ShowPreview);
 
     // Should be a no-op: None returned and view mode unchanged
     assert_eq!(result, None);
-    assert!(matches!(model.view_mode, ViewMode::Log(_, false)));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log { picking: false, .. }
+    ));
 }
 
 // ── ExitPreview returns to Status ─────────────────────────────────────────────
@@ -164,7 +175,10 @@ fn test_exit_preview_returns_to_log() {
 
     // Enter log
     update(&mut model, Message::ShowLog(LogType::Current));
-    assert!(matches!(model.view_mode, ViewMode::Log(_, false)));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log { picking: false, .. }
+    ));
 
     // Enter preview from log
     let log_pos = find_line(
@@ -180,7 +194,10 @@ fn test_exit_preview_returns_to_log() {
     // Exit preview
     let result = update(&mut model, Message::ExitPreview);
     assert_eq!(result, Some(Message::Refresh));
-    assert!(matches!(model.view_mode, ViewMode::Log(_, false)));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log { picking: false, .. }
+    ));
     // Cursor should be restored
     assert_eq!(model.ui_model.cursor_position, saved_cursor);
     // Lines should contain LogLines again

@@ -425,6 +425,7 @@ impl RevertArgument {
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum LogArgument {
     Graph,
+    Color,
 }
 
 impl LogArgument {
@@ -435,12 +436,13 @@ impl LogArgument {
 
 impl PopupArgument for LogArgument {
     fn all() -> Vec<LogArgument> {
-        vec![LogArgument::Graph]
+        vec![LogArgument::Graph, LogArgument::Color]
     }
 
     fn key(&self) -> char {
         match self {
             LogArgument::Graph => 'g',
+            LogArgument::Color => 'c',
         }
     }
 
@@ -448,12 +450,14 @@ impl PopupArgument for LogArgument {
         let t = i18n::t();
         match self {
             LogArgument::Graph => t.arg_log_graph,
+            LogArgument::Color => t.arg_log_color,
         }
     }
 
     fn flag(&self) -> &'static str {
         match self {
             LogArgument::Graph => "--graph",
+            LogArgument::Color => "--color",
         }
     }
 }
