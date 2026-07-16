@@ -22,6 +22,11 @@ pub fn keys(key: KeyEvent, state: &MergePopupState) -> Option<Message> {
             source: OptionsSource::LocalAndRemoteBranches,
             on_select: OnSelect::MergeElsewhere,
         })),
+        KeyCode::Char('e') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Merge branch (edit message)".to_string(),
+            source: OptionsSource::LocalAndRemoteBranches,
+            on_select: OnSelect::MergeEditMessage,
+        })),
         _ => None,
     }
 }

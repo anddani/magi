@@ -11,15 +11,21 @@ use crate::{
 
 pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
     match cmd {
-        MergeCommand::Branch(branch) => merge_branch(model, branch),
+        MergeCommand::Branch(branch) => merge_branch(model, branch, false),
+        MergeCommand::EditMessage(branch) => merge_branch(model, branch, true),
         MergeCommand::Continue => continue_merge(model),
         MergeCommand::Abort => abort_merge(model),
     }
 }
 
-fn merge_branch(model: &mut Model, branch: String) -> Option<Message> {
+fn merge_branch(model: &mut Model, branch: String, edit_message: bool) -> Option<Message> {
     model.popup = None;
-    match merge::run_merge_with_editor(&model.workdir, &branch) {
+    let result = if edit_message {
+        merge::run_merge_edit_with_editor(&model.workdir, &branch)
+    } else {
+        merge::run_merge_with_editor(&model.workdir, &branch)
+    };
+    match result {
         Ok(CommitResult { success, message }) => {
             model.toast = Some(Toast {
                 message,

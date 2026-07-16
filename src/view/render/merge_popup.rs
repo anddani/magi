@@ -32,7 +32,10 @@ pub fn content<'a>(
 
     let actions_col = PopupColumn {
         title: Some(t.col_actions.into()),
-        content: vec![command_description(theme, model.arg_mode, "m", t.cmd_merge)],
+        content: vec![
+            command_description(theme, model.arg_mode, "m", t.cmd_merge),
+            command_description(theme, model.arg_mode, "e", t.cmd_merge_edit_message),
+        ],
     };
 
     CommandPopupContent {
