@@ -160,6 +160,18 @@ pub fn run_revert_continue_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResu
     get_commit_result(repo_path, status, "Revert continue")
 }
 
+/// Runs a fully-built `git revert` command that opens the user's configured
+/// editor for the commit message. The caller must ensure the TUI is suspended.
+pub fn run_revert_with_editor<P: AsRef<Path>>(
+    repo_path: P,
+    args: &[String],
+) -> MagiResult<CommitResult> {
+    let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    let status = git_cmd(&repo_path, &arg_refs).status()?;
+
+    get_commit_result(repo_path, status, "Revert")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

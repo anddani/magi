@@ -413,6 +413,7 @@ impl PopupArgument for StashArgument {
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum RevertArgument {
+    Edit,
     NoEdit,
 }
 
@@ -464,11 +465,12 @@ impl PopupArgument for LogArgument {
 
 impl PopupArgument for RevertArgument {
     fn all() -> Vec<RevertArgument> {
-        vec![RevertArgument::NoEdit]
+        vec![RevertArgument::Edit, RevertArgument::NoEdit]
     }
 
     fn key(&self) -> char {
         match self {
+            RevertArgument::Edit => 'e',
             RevertArgument::NoEdit => 'E',
         }
     }
@@ -476,13 +478,43 @@ impl PopupArgument for RevertArgument {
     fn description(&self) -> &'static str {
         let t = i18n::t();
         match self {
+            RevertArgument::Edit => t.arg_revert_edit,
             RevertArgument::NoEdit => t.arg_revert_no_edit,
         }
     }
 
     fn flag(&self) -> &'static str {
         match self {
+            RevertArgument::Edit => "--edit",
             RevertArgument::NoEdit => "--no-edit",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_revert_argument_edit_listed_above_no_edit() {
+        assert_eq!(
+            RevertArgument::all(),
+            vec![RevertArgument::Edit, RevertArgument::NoEdit]
+        );
+    }
+
+    #[test]
+    fn test_revert_argument_keys_and_flags() {
+        assert_eq!(RevertArgument::Edit.key(), 'e');
+        assert_eq!(RevertArgument::Edit.flag(), "--edit");
+        assert_eq!(RevertArgument::NoEdit.key(), 'E');
+        assert_eq!(RevertArgument::NoEdit.flag(), "--no-edit");
+    }
+
+    #[test]
+    fn test_revert_argument_from_key() {
+        assert_eq!(RevertArgument::from_key('e'), Some(RevertArgument::Edit));
+        assert_eq!(RevertArgument::from_key('E'), Some(RevertArgument::NoEdit));
+        assert_eq!(RevertArgument::from_key('x'), None);
     }
 }

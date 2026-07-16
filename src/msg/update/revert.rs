@@ -4,6 +4,7 @@ use crate::{
     git::revert::{self, CommitResult, any_is_merge_commit, parent_count},
     model::{
         Model, Toast, ToastStyle,
+        arguments::{Arguments::RevertArguments, PopupArgument, RevertArgument},
         popup::{PopupContent, PopupContentCommand},
         select_popup::{OnSelect, SelectPopupState},
     },
@@ -15,6 +16,7 @@ const TOAST_DURATION: Duration = Duration::from_secs(5);
 pub fn update(model: &mut Model, cmd: RevertCommand) -> Option<Message> {
     match cmd {
         RevertCommand::Commits { hashes, mainline } => commits(model, hashes, mainline),
+        RevertCommand::WithEditor { args } => with_editor(model, args),
         RevertCommand::NoCommit { hashes, mainline } => no_commit(model, hashes, mainline),
         RevertCommand::CommitsWithMainline {
             hashes,
@@ -25,6 +27,26 @@ pub fn update(model: &mut Model, cmd: RevertCommand) -> Option<Message> {
         RevertCommand::Skip => skip_revert(model),
         RevertCommand::Abort => abort_revert(model),
     }
+}
+
+/// Consumes the revert popup arguments, returning their git flags in a
+/// stable order (--edit before --no-edit).
+fn take_revert_flags(model: &mut Model) -> Vec<String> {
+    if let Some(RevertArguments(arguments)) = model.arguments.take() {
+        RevertArgument::all()
+            .into_iter()
+            .filter(|arg| arguments.contains(arg))
+            .map(|arg| arg.flag().to_string())
+            .collect()
+    } else {
+        vec![]
+    }
+}
+
+/// Without --no-edit, `git revert` opens the editor for the commit message,
+/// so the command must run with the TUI suspended instead of in a PTY.
+fn opens_editor(flags: &[String]) -> bool {
+    !flags.iter().any(|flag| flag == "--no-edit")
 }
 
 fn commits(model: &mut Model, hashes: Vec<String>, mainline: Option<String>) -> Option<Message> {
@@ -38,9 +60,37 @@ fn commits(model: &mut Model, hashes: Vec<String>, mainline: Option<String>) -> 
         show_mainline_popup(model, hashes, false);
         return None;
     }
-    let mut args = vec!["revert".to_string(), "--no-edit".to_string()];
+    let flags = take_revert_flags(model);
+    let mut args = vec!["revert".to_string()];
+    args.extend(flags.iter().cloned());
     args.extend(hashes);
+    if opens_editor(&flags) {
+        return Some(Message::Revert(RevertCommand::WithEditor { args }));
+    }
     execute_pty_command(model, args, "Revert".to_string())
+}
+
+fn with_editor(model: &mut Model, args: Vec<String>) -> Option<Message> {
+    model.popup = None;
+    match revert::run_revert_with_editor(&model.workdir, &args) {
+        Ok(CommitResult { success, message }) => {
+            model.toast = Some(Toast {
+                message,
+                style: if success {
+                    ToastStyle::Success
+                } else {
+                    ToastStyle::Warning
+                },
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
 }
 
 fn no_commit(model: &mut Model, hashes: Vec<String>, mainline: Option<String>) -> Option<Message> {
@@ -68,19 +118,18 @@ fn commits_with_mainline(
     if hashes.is_empty() {
         return None;
     }
-    let mainline_str = mainline.to_string();
-    let flag = if no_commit {
-        "--no-commit"
-    } else {
-        "--no-edit"
-    };
-    let mut args = vec![
-        "revert".to_string(),
-        "-m".to_string(),
-        mainline_str,
-        flag.to_string(),
-    ];
+    let mut args = vec!["revert".to_string(), "-m".to_string(), mainline.to_string()];
+    if no_commit {
+        args.push("--no-commit".to_string());
+        args.extend(hashes);
+        return execute_pty_command(model, args, "Revert".to_string());
+    }
+    let flags = take_revert_flags(model);
+    args.extend(flags.iter().cloned());
     args.extend(hashes);
+    if opens_editor(&flags) {
+        return Some(Message::Revert(RevertCommand::WithEditor { args }));
+    }
     execute_pty_command(model, args, "Revert".to_string())
 }
 

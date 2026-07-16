@@ -2,6 +2,7 @@ use crate::{
     git::revert::revert_in_progress,
     model::{
         LineContent, Model,
+        arguments::{Arguments::RevertArguments, RevertArgument},
         popup::{PopupContent, PopupContentCommand, RevertPopupState},
     },
     msg::Message,
@@ -13,6 +14,10 @@ pub fn update(model: &mut Model) -> Option<Message> {
     let selected_commits = if in_progress {
         vec![]
     } else {
+        // --edit is enabled by default, like in Magit
+        model.arguments = Some(RevertArguments(
+            [RevertArgument::Edit].into_iter().collect(),
+        ));
         collect_selected_commits(model)
     };
 

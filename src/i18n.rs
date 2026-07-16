@@ -217,6 +217,7 @@ pub struct Strings {
     pub arg_push_remote_setting_it: &'static str,
     /// Shown when no upstream is configured: "${upstream}, setting it"
     pub arg_upstream_setting_it: &'static str,
+    pub arg_revert_edit: &'static str,
     pub arg_revert_no_edit: &'static str,
     pub arg_log_graph: &'static str,
     pub arg_log_color: &'static str,
@@ -442,6 +443,7 @@ static ENGLISH: Strings = Strings {
     arg_stash_all: "Also save untracked and ignored files",
     arg_push_remote_setting_it: "${push-remote}, setting it",
     arg_upstream_setting_it: "${upstream}, setting it",
+    arg_revert_edit: "Edit commit message",
     arg_revert_no_edit: "Don't edit commit message",
     arg_log_graph: "Show graph",
     arg_log_color: "Show graph in color",
@@ -654,6 +656,7 @@ static SWEDISH: Strings = Strings {
     arg_stash_all: "Spara även ospårade och bortsedda filer",
     arg_push_remote_setting_it: "${knuffjärr}, och sätt den",
     arg_upstream_setting_it: "${uppström}, och sätt den",
+    arg_revert_edit: "Ändra förbindelsemeddelandet",
     arg_revert_no_edit: "Ändra inte förbindelsemeddelandet",
     arg_log_graph: "Visa graf",
     arg_log_color: "Visa graf i färg",
