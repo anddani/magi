@@ -84,7 +84,7 @@ pub fn get_lines(
     {
         spans.push(Span::styled(
             format!(" - {} {}", author, time),
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(theme.dim_text),
         ));
     }
 

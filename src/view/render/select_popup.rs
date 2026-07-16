@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph},
 };
@@ -101,7 +101,7 @@ pub fn render(state: &SelectPopupState, frame: &mut Frame, area: Rect, theme: &T
     if items.is_empty() {
         let no_matches = Paragraph::new(Span::styled(
             "No matches",
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(theme.dim_text),
         ));
         frame.render_widget(no_matches, list_area);
     } else {

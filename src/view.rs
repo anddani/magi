@@ -290,7 +290,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
     } else if !model.ui_model.search_query.is_empty() {
         let search_span = Span::styled(
             format!("/{}", model.ui_model.search_query.as_str()),
-            Style::default().fg(ratatui::style::Color::DarkGray),
+            Style::default().fg(theme.dim_text),
         );
         TextLine::from(vec![mode_pill, Span::raw(" "), search_span])
     } else {

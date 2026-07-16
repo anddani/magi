@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line as TextLine, Span},
     widgets::{Block, Borders, Clear, Paragraph},
 };
@@ -163,7 +163,7 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
     popup_text.push(TextLine::from(""));
     popup_text.push(TextLine::from(Span::styled(
         hint,
-        Style::default().fg(Color::DarkGray),
+        Style::default().fg(theme.dim_text),
     )));
 
     let popup_block = Block::default()
@@ -206,7 +206,7 @@ fn render_confirm_popup(
     popup_text.push(TextLine::from(""));
     popup_text.push(TextLine::from(Span::styled(
         hint,
-        Style::default().fg(Color::DarkGray),
+        Style::default().fg(theme.dim_text),
     )));
 
     let popup_block = Block::default()
