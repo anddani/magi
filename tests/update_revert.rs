@@ -3,14 +3,15 @@ use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     keys::handle_key,
     model::{
-        Line, LineContent, ViewMode,
+        Line, LineContent, ToastStyle, ViewMode,
+        arguments::{Argument, Arguments, RevertArgument},
         popup::{PopupContent, PopupContentCommand, RevertPopupState},
     },
-    msg::{LogType, Message, RevertCommand, update::update},
+    msg::{LogType, Message, RevertCommand, update::update, util::is_external_command},
 };
 
 mod utils;
-use utils::{create_model_from_test_repo, find_commit_line, find_line, key};
+use utils::{create_model_from_test_repo, cursor_to_commit, find_commit_line, find_line, key};
 
 // ── ShowRevertPopup — key binding ──────────────────────────────────────────────
 
@@ -414,4 +415,198 @@ fn test_v_in_revert_popup_in_progress_does_nothing() {
     // 'v' is not a recognised key in in-progress mode
     let result = handle_key(key(KeyCode::Char('v')), &model);
     assert_eq!(result, None);
+}
+
+// ── -e / -E arguments ─────────────────────────────────────────────────────────
+
+fn revert_popup_model(test_repo: &TestRepo) -> magi::model::Model {
+    let mut model = create_model_from_test_repo(test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        RevertPopupState {
+            in_progress: false,
+            selected_commits: vec![],
+            mainline: None,
+        },
+    )));
+    model
+}
+
+#[test]
+fn test_show_revert_popup_enables_edit_argument_by_default() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    cursor_to_commit(&mut model);
+
+    update(&mut model, Message::ShowRevertPopup);
+
+    match &model.arguments {
+        Some(Arguments::RevertArguments(args)) => {
+            assert!(args.contains(&RevertArgument::Edit));
+            assert!(!args.contains(&RevertArgument::NoEdit));
+        }
+        _ => panic!("Expected RevertArguments with --edit enabled by default"),
+    }
+}
+
+#[test]
+fn test_e_in_arg_mode_toggles_edit_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = revert_popup_model(&test_repo);
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('e')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ToggleArgument(Argument::Revert(
+            RevertArgument::Edit
+        )))
+    );
+}
+
+#[test]
+fn test_toggle_edit_argument_disables_default() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    cursor_to_commit(&mut model);
+    update(&mut model, Message::ShowRevertPopup);
+    model.arg_mode = true;
+
+    update(
+        &mut model,
+        Message::ToggleArgument(Argument::Revert(RevertArgument::Edit)),
+    );
+
+    match &model.arguments {
+        Some(Arguments::RevertArguments(args)) => {
+            assert!(!args.contains(&RevertArgument::Edit));
+        }
+        _ => panic!("Expected RevertArguments"),
+    }
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_revert_commits_with_edit_returns_with_editor_command() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    test_repo.commit_file("file1.txt", "content2", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    cursor_to_commit(&mut model);
+    update(&mut model, Message::ShowRevertPopup);
+
+    let hash = test_repo.repo.head().unwrap().target().unwrap().to_string();
+    let result = update(
+        &mut model,
+        Message::Revert(RevertCommand::Commits {
+            hashes: vec![hash.clone()],
+            mainline: None,
+        }),
+    );
+
+    let expected = Message::Revert(RevertCommand::WithEditor {
+        args: vec!["revert".to_string(), "--edit".to_string(), hash],
+    });
+    assert_eq!(result, Some(expected));
+    // The editor command must run with the TUI suspended, not in a PTY
+    assert!(is_external_command(&result.unwrap()));
+    assert!(model.pty_state.is_none());
+}
+
+#[test]
+fn test_revert_commits_with_no_edit_runs_in_pty() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    test_repo.commit_file("file1.txt", "content2", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::RevertArguments(
+        [RevertArgument::NoEdit].into_iter().collect(),
+    ));
+
+    let hash = test_repo.repo.head().unwrap().target().unwrap().to_string();
+    let result = update(
+        &mut model,
+        Message::Revert(RevertCommand::Commits {
+            hashes: vec![hash],
+            mainline: None,
+        }),
+    );
+
+    assert_eq!(result, None);
+    assert!(model.pty_state.is_some());
+}
+
+#[test]
+fn test_revert_commits_with_both_edit_flags_favors_no_edit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    test_repo.commit_file("file1.txt", "content2", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::RevertArguments(
+        [RevertArgument::Edit, RevertArgument::NoEdit]
+            .into_iter()
+            .collect(),
+    ));
+
+    let hash = test_repo.repo.head().unwrap().target().unwrap().to_string();
+    let result = update(
+        &mut model,
+        Message::Revert(RevertCommand::Commits {
+            hashes: vec![hash],
+            mainline: None,
+        }),
+    );
+
+    // --no-edit is passed last, so git skips the editor: run in a PTY
+    assert_eq!(result, None);
+    assert!(model.pty_state.is_some());
+}
+
+#[test]
+fn test_revert_with_editor_creates_revert_commit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "one", "First commit");
+    test_repo.commit_file("file1.txt", "two", "Second commit");
+    // Use a no-op editor so the default revert message is kept
+    test_repo
+        .repo
+        .config()
+        .unwrap()
+        .set_str("core.editor", "true")
+        .unwrap();
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let hash = test_repo.repo.head().unwrap().target().unwrap().to_string();
+    let result = update(
+        &mut model,
+        Message::Revert(RevertCommand::WithEditor {
+            args: vec!["revert".to_string(), "--edit".to_string(), hash],
+        }),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    let toast = model.toast.expect("Expected a toast after reverting");
+    assert_eq!(toast.style, ToastStyle::Success);
+    assert!(
+        toast
+            .message
+            .starts_with("Revert: Revert \"Second commit\""),
+        "unexpected toast message: {}",
+        toast.message
+    );
+
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    let summary = head.summary().unwrap().unwrap();
+    assert!(summary.starts_with("Revert \"Second commit\""));
+    let content = std::fs::read_to_string(test_repo.repo_path().join("file1.txt")).unwrap();
+    assert_eq!(content, "one");
 }

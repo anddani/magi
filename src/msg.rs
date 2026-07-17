@@ -542,11 +542,15 @@ pub enum ApplyCommand {
 /// Messages for revert commands
 #[derive(PartialEq, Eq, Debug)]
 pub enum RevertCommand {
-    /// Revert the given commit hashes, creating a revert commit (--no-edit)
+    /// Revert the given commit hashes, creating a revert commit.
+    /// Honors the revert popup arguments (--edit / --no-edit).
     Commits {
         hashes: Vec<String>,
         mainline: Option<String>,
     },
+    /// Run a fully-built `git revert` command that opens the user's editor
+    /// for the commit message. Requires the TUI to be suspended.
+    WithEditor { args: Vec<String> },
     /// Revert the given commit hashes into the worktree without committing (--no-commit)
     NoCommit {
         hashes: Vec<String>,
