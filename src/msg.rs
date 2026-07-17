@@ -143,6 +143,10 @@ pub enum Message {
     UnstageSelected,
     /// Unstage all staged files
     UnstageAll,
+    /// Apply the change under the cursor (or visual selection) to the working
+    /// tree. Only meaningful in Preview mode, where the shown diff comes from
+    /// a commit or stash rather than the working tree.
+    ApplySelected,
 
     /// Discard changes under cursor (shows confirmation popup)
     DiscardSelected,
