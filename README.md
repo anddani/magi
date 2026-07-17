@@ -48,6 +48,87 @@ yay -S magi
     
 ```
 
+## Theming
+
+Magi is configured through a TOML file at `~/.config/magi/config.toml` (or `$XDG_CONFIG_HOME/magi/config.toml` if set).
+
+### Choosing a theme
+
+```toml
+theme = "catppuccin-mocha"
+```
+
+Built-in themes:
+
+| Name | Style |
+|---|---|
+| `default` | Dark |
+| `default-light` | Light |
+| `catppuccin-frappe` | Dark |
+| `catppuccin-mocha` | Dark |
+| `catppuccin-latte` | Light |
+
+### Automatic light/dark switching
+
+The default is `theme = "auto"`, which queries the terminal background at startup and picks a dark or light theme accordingly. You can choose which theme is used for each mode:
+
+```toml
+theme = "auto"
+theme_dark = "catppuccin-mocha"
+theme_light = "catppuccin-latte"
+```
+
+If `theme_dark`/`theme_light` are not set, `auto` falls back to `default` and `default-light`. If the terminal background cannot be detected (for example when the terminal does not support the OSC 11 query), the dark theme is used.
+
+### Overriding individual colors
+
+Any color can be overridden on top of the selected theme (including auto-resolved themes) in the `[colors]` section:
+
+```toml
+theme = "catppuccin-mocha"
+
+[colors]
+section_header = "#e5c890"
+diff_addition = "green"
+selection_bg = "rgb(60, 60, 80)"
+dim_text = "244"
+```
+
+Colors accept the following formats:
+
+- Named colors: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `gray`, `darkgray`, `lightred`, `lightgreen`, `lightyellow`, `lightblue`, `lightmagenta`, `lightcyan`, `white`, `reset` (terminal default)
+- Hex: `#ff0000` or `#f00`
+- RGB: `rgb(255, 0, 0)`
+- ANSI 256 index: `0`–`255`
+
+Available color keys:
+
+| Key | Used for |
+|---|---|
+| `section_header` | Section headings (Unstaged changes, Recent commits, ...) |
+| `ref_label` | Branch labels in the log |
+| `tag_label` | Tag labels |
+| `diff_addition` | Added lines in diffs |
+| `diff_deletion` | Removed lines in diffs |
+| `diff_context` | Unchanged lines in diffs |
+| `diff_hunk` | Hunk headers (`@@ ... @@`) |
+| `remote_branch` | Remote branch names |
+| `local_branch` | Local branch names |
+| `detached_head` | Detached HEAD indicator |
+| `untracked_file` | Untracked file paths |
+| `unstaged_status` | Unstaged file status |
+| `staged_status` | Staged file status |
+| `file_path` | File paths in diffs |
+| `commit_hash` | Commit hashes |
+| `text` | Regular text |
+| `dim_text` | Faded text (hints, log author/time) |
+| `selection_bg` | Background of the highlighted line |
+| `status_bar_bg` / `status_bar_fg` | Status bar |
+| `status_mode_normal_bg` / `status_mode_normal_fg` | NORMAL mode indicator |
+| `status_mode_visual_bg` / `status_mode_visual_fg` | VISUAL mode indicator |
+| `status_mode_search_bg` / `status_mode_search_fg` | SEARCH mode indicator |
+| `search_match_bg` / `search_match_fg` | Search match highlight |
+
 ## Text editing keys
 
 All text inputs (branch names, search, filters, credentials) support readline-style editing:

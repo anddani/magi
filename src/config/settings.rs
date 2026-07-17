@@ -145,9 +145,37 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Get the default config file path
+    /// Get the default config file path.
+    ///
+    /// `$XDG_CONFIG_HOME/magi/config.toml`, defaulting to
+    /// `~/.config/magi/config.toml`. On macOS, `dirs::config_dir()` points to
+    /// `~/Library/Application Support`, which terminal users don't expect, so
+    /// the XDG path is used there too; the old location is still read when
+    /// the XDG path doesn't exist, for configs created by older versions.
     pub fn default_path() -> Option<PathBuf> {
-        dirs::config_dir().map(|p| p.join("magi").join("config.toml"))
+        #[cfg(target_os = "macos")]
+        {
+            let preferred = std::env::var_os("XDG_CONFIG_HOME")
+                .map(PathBuf::from)
+                .filter(|p| p.is_absolute())
+                .or_else(|| dirs::home_dir().map(|h| h.join(".config")))
+                .map(|p| p.join("magi").join("config.toml"));
+            if let Some(ref path) = preferred
+                && !path.exists()
+            {
+                let legacy = dirs::config_dir()
+                    .map(|p| p.join("magi").join("config.toml"))
+                    .filter(|p| p.exists());
+                if legacy.is_some() {
+                    return legacy;
+                }
+            }
+            preferred
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            dirs::config_dir().map(|p| p.join("magi").join("config.toml"))
+        }
     }
 
     /// Load config from the default path, or return default config
