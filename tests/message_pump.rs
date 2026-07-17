@@ -42,6 +42,34 @@ fn test_select_confirm_merge_branch_suspends_tui() {
     assert!(model.pty_state.is_none());
 }
 
+/// Same as above but for "Merge and edit message": the confirmed branch must
+/// route to `MergeCommand::EditMessage(_)` and suspend the TUI, since the
+/// `--edit` flag always opens the editor.
+#[test]
+fn test_select_confirm_merge_edit_message_suspends_tui() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file.txt", "content", "Initial commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Merge branch (edit message)".to_string(),
+            vec!["feature".to_string()],
+            OnSelect::MergeEditMessage,
+        ),
+    )));
+
+    process_messages(&mut model, Some(Message::Select(SelectMessage::Confirm)));
+
+    assert_eq!(
+        model.running_state,
+        RunningState::LaunchExternalCommand(Message::Merge(MergeCommand::EditMessage(
+            "feature".to_string()
+        )))
+    );
+    assert!(model.pty_state.is_none());
+}
+
 #[test]
 fn test_process_messages_drains_non_external_chain() {
     let test_repo = TestRepo::new();

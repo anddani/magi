@@ -69,6 +69,27 @@ fn test_m_in_merge_popup_shows_select() {
 }
 
 #[test]
+fn test_e_in_merge_popup_shows_select_with_edit_message() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('e')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Merge branch (edit message)".to_string(),
+            source: OptionsSource::LocalAndRemoteBranches,
+            on_select: OnSelect::MergeEditMessage,
+        }))
+    );
+}
+
+#[test]
 fn test_q_dismisses_merge_popup() {
     let test_repo = TestRepo::new();
     test_repo.commit_file("file1.txt", "content1", "First commit");
@@ -285,6 +306,83 @@ fn test_merge_branch_message_creates_merge_commit() {
     assert_eq!(head.parent_count(), 2);
     assert!(test_repo.repo_path().join("main.txt").exists());
     assert!(test_repo.repo_path().join("feature.txt").exists());
+}
+
+// ── MergeCommand::EditMessage — execution ─────────────────────────────────────
+
+#[test]
+fn test_merge_edit_message_creates_merge_commit_even_when_fast_forward() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+    // Put a commit on feature only, so a plain merge would fast-forward.
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "-b", "feature"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "main"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::EditMessage("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(model.popup.is_none());
+    // The merge runs directly (TUI suspended), not in a background PTY.
+    assert!(model.pty_state.is_none());
+    let toast = model.toast.expect("Expected a toast after merging");
+    assert_eq!(toast.style, ToastStyle::Success);
+    assert!(
+        toast.message.starts_with("Merge: Merge branch 'feature'"),
+        "unexpected toast message: {}",
+        toast.message
+    );
+
+    // --no-ff forces a merge commit even when fast-forward is possible.
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head.parent_count(), 2);
+    assert!(test_repo.repo_path().join("feature.txt").exists());
+}
+
+#[test]
+fn test_merge_edit_message_with_conflicts_shows_warning_toast() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    // Both branches modify the same file: merging conflicts.
+    setup_divergent_branches(
+        &test_repo,
+        ("base.txt", "main change\n"),
+        ("base.txt", "feature change\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::EditMessage("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(model.pty_state.is_none());
+    let toast = model.toast.expect("Expected a toast after failed merge");
+    assert_eq!(toast.style, ToastStyle::Warning);
+    assert_eq!(toast.message, "Merge aborted");
+    // The merge stays in progress so it can be resolved or aborted.
+    assert!(test_repo.repo.path().join("MERGE_HEAD").exists());
 }
 
 #[test]

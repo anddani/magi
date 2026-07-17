@@ -26,6 +26,19 @@ pub fn run_merge_with_editor<P: AsRef<Path>>(
     get_commit_result(repo_path, status, "Merge")
 }
 
+/// Runs `git merge --edit --no-ff <branch>`, which always creates a merge
+/// commit and opens the user's configured editor for its message. The caller
+/// must ensure the TUI is suspended (via `RunningState::LaunchExternalCommand`)
+/// before calling this.
+pub fn run_merge_edit_with_editor<P: AsRef<Path>>(
+    repo_path: P,
+    branch: &str,
+) -> MagiResult<CommitResult> {
+    let status = git_cmd(&repo_path, &["merge", "--edit", "--no-ff", branch]).status()?;
+
+    get_commit_result(repo_path, status, "Merge")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -118,6 +131,80 @@ mod tests {
         assert!(test_repo.repo_path().join("main.txt").exists());
         assert!(test_repo.repo_path().join("feature.txt").exists());
         assert!(!merge_in_progress(&test_repo));
+    }
+
+    #[test]
+    fn test_merge_edit_fast_forward_still_creates_merge_commit() {
+        let test_repo = TestRepo::new();
+        disable_editor(&test_repo);
+        test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+        // Put a commit on feature only, so a plain merge would fast-forward.
+        assert!(
+            run_git(&test_repo, &["checkout", "-b", "feature"])
+                .status
+                .success()
+        );
+        test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+        assert!(run_git(&test_repo, &["checkout", "main"]).status.success());
+
+        let result = run_merge_edit_with_editor(test_repo.repo_path(), "feature").unwrap();
+
+        assert!(result.success);
+        assert!(
+            result.message.starts_with("Merge: Merge branch 'feature'"),
+            "unexpected message: {}",
+            result.message
+        );
+
+        // --no-ff forces a merge commit even when fast-forward is possible.
+        let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+        assert_eq!(head.parent_count(), 2);
+        assert!(test_repo.repo_path().join("feature.txt").exists());
+        assert!(!merge_in_progress(&test_repo));
+    }
+
+    #[test]
+    fn test_merge_edit_divergent_creates_merge_commit() {
+        let test_repo = TestRepo::new();
+        disable_editor(&test_repo);
+        setup_divergent_branches(
+            &test_repo,
+            ("main.txt", "main content\n"),
+            ("feature.txt", "feature content\n"),
+        );
+
+        let result = run_merge_edit_with_editor(test_repo.repo_path(), "feature").unwrap();
+
+        assert!(result.success);
+        assert!(
+            result.message.starts_with("Merge: Merge branch 'feature'"),
+            "unexpected message: {}",
+            result.message
+        );
+
+        let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+        assert_eq!(head.parent_count(), 2);
+        assert!(test_repo.repo_path().join("main.txt").exists());
+        assert!(test_repo.repo_path().join("feature.txt").exists());
+        assert!(!merge_in_progress(&test_repo));
+    }
+
+    #[test]
+    fn test_merge_edit_with_conflicts_fails() {
+        let test_repo = TestRepo::new();
+        disable_editor(&test_repo);
+        setup_divergent_branches(
+            &test_repo,
+            ("base.txt", "main change\n"),
+            ("base.txt", "feature change\n"),
+        );
+
+        let result = run_merge_edit_with_editor(test_repo.repo_path(), "feature").unwrap();
+
+        assert!(!result.success);
+        assert_eq!(result.message, "Merge aborted");
+        assert!(merge_in_progress(&test_repo));
     }
 
     #[test]

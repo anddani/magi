@@ -103,6 +103,8 @@ pub enum OnSelect {
     ReviseCommit,
     /// Select a branch to merge into the current branch
     MergeElsewhere,
+    /// Select a branch to merge into the current branch, editing the merge message
+    MergeEditMessage,
     /// Select a commit to cherry-pick onto the current branch
     ApplyPick,
     /// Select a commit to apply (--no-commit) onto the current branch
