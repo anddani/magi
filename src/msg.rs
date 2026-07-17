@@ -476,6 +476,9 @@ pub enum RebaseCommand {
     OntoUpstreamSetting(String),
     /// Rebase the current branch onto the given target ref/commit
     Elsewhere(String),
+    /// Rebase a subset of the current branch's history onto a new base:
+    /// commits from `start` (inclusive) to HEAD are rebased onto `newbase`
+    Subset { newbase: String, start: String },
     /// Run the interactive rebase using the todo list in `model.rebase_todo`
     ExecuteInteractive,
     /// Continue after resolving conflicts
@@ -642,6 +645,9 @@ pub enum CommitSelect {
     /// Show select popup (or confirm) to pick the base commit for an
     /// interactive rebase
     RebaseInteractive,
+    /// Show log pick to choose the start commit for a subset rebase
+    /// (the new base was already picked in a select popup)
+    RebaseSubset { newbase: String },
 
     // Revise-related
     /// Show select popup (or confirm) to pick a commit to revise (reword)

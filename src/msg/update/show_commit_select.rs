@@ -15,6 +15,11 @@ pub fn update(model: &mut Model, commit_select: CommitSelect) -> Option<Message>
         CommitSelect::FixupCommit(fixup_type) => show_select_fixup_commit(model, fixup_type),
         CommitSelect::RebaseElsewhere => show_select_rebase_elsewhere_commit(model),
         CommitSelect::RebaseInteractive => show_select_rebase_interactive_commit(model),
+        CommitSelect::RebaseSubset { newbase } => show_log_select(
+            model,
+            LogType::Current,
+            OnSelect::RebaseSubsetStart { newbase },
+        ),
         CommitSelect::ReviseCommit => show_select_revise_commit(model),
     }
 }

@@ -58,12 +58,10 @@ pub fn content<'a>(
 
     let rebase_col = PopupColumn {
         title: Some(PopupColumnTitle::Raw(t.popup_rebase)),
-        content: vec![command_description(
-            theme,
-            model.arg_mode,
-            "i",
-            t.cmd_interactively,
-        )],
+        content: vec![
+            command_description(theme, model.arg_mode, "i", t.cmd_interactively),
+            command_description(theme, model.arg_mode, "s", t.cmd_a_subset),
+        ],
     };
 
     CommandPopupContent {

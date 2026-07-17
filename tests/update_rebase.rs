@@ -554,6 +554,127 @@ fn test_i_key_has_no_effect_in_in_progress_popup() {
     assert_eq!(result, None);
 }
 
+// ── Subset rebase — popup key and two-step selection ──────────────────────────
+
+#[test]
+fn test_s_in_rebase_popup_shows_subset_onto_select() {
+    let test_repo = TestRepo::new();
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(rebase_popup(false));
+
+    let result = handle_key(key(KeyCode::Char('s')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Rebase subset onto".to_string(),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::RebaseSubsetOnto,
+        }))
+    );
+}
+
+#[test]
+fn test_select_confirm_rebase_subset_onto_routes_to_commit_select() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Rebase subset onto".to_string(),
+            vec!["main".to_string(), "origin/main".to_string()],
+            OnSelect::RebaseSubsetOnto,
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::ShowCommitSelect(CommitSelect::RebaseSubset {
+            newbase: "main".to_string(),
+        }))
+    );
+}
+
+#[test]
+fn test_rebase_subset_shows_current_log_pick_view() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::ShowCommitSelect(CommitSelect::RebaseSubset {
+            newbase: "main".to_string(),
+        }),
+    );
+
+    assert_eq!(result, None);
+    assert!(
+        matches!(
+            model.view_mode,
+            ViewMode::Log {
+                log_type: LogType::Current,
+                picking: true,
+                ..
+            }
+        ),
+        "Expected current-branch log pick view"
+    );
+    assert_eq!(
+        model.log_pick_on_select,
+        Some(OnSelect::RebaseSubsetStart {
+            newbase: "main".to_string(),
+        })
+    );
+}
+
+#[test]
+fn test_select_confirm_rebase_subset_start_returns_rebase_message() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, true, false).unwrap();
+    commits.retain(|e| e.is_commit());
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let expected_hash = commits[0].hash.as_ref().unwrap().clone();
+
+    model.ui_model.lines = commits
+        .into_iter()
+        .map(|entry| Line {
+            content: LineContent::LogLine(entry),
+            section: None,
+        })
+        .collect();
+    model.ui_model.cursor_position = 0;
+    model.view_mode = ViewMode::Log {
+        log_type: LogType::Current,
+        picking: true,
+        graph: true,
+        color: false,
+    };
+    model.log_pick_on_select = Some(OnSelect::RebaseSubsetStart {
+        newbase: "origin/main".to_string(),
+    });
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::Rebase(RebaseCommand::Subset {
+            newbase: "origin/main".to_string(),
+            start: expected_hash,
+        }))
+    );
+    assert_eq!(model.view_mode, ViewMode::Status);
+    assert!(model.log_pick_on_select.is_none());
+}
+
 #[test]
 fn test_rebase_interactive_on_commit_opens_todo_editor_directly() {
     let test_repo = TestRepo::new();

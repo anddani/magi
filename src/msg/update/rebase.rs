@@ -19,6 +19,7 @@ pub fn update(model: &mut Model, rebase_command: RebaseCommand) -> Option<Messag
         RebaseCommand::OntoUpstream => onto_upstream(model),
         RebaseCommand::OntoUpstreamSetting(upstream) => onto_upstream_setting(model, upstream),
         RebaseCommand::Elsewhere(target) => elsewhere(model, target),
+        RebaseCommand::Subset { newbase, start } => subset(model, newbase, start),
         RebaseCommand::ExecuteInteractive => execute_interactive(model),
         RebaseCommand::Continue => continue_rebase(model),
         RebaseCommand::Skip => skip_rebase(model),
@@ -64,6 +65,18 @@ fn execute_interactive(model: &mut Model) -> Option<Message> {
 fn elsewhere(model: &mut Model, target: String) -> Option<Message> {
     let args = vec!["rebase".to_string(), target];
     execute_pty_command(model, args, "Rebase".to_string())
+}
+
+/// Rebase a subset of the current branch's history onto a new base:
+/// `git rebase --onto <newbase> <start>^` (or `--root` when start has no parent).
+fn subset(model: &mut Model, newbase: String, start: String) -> Option<Message> {
+    let mut args = vec!["rebase".to_string(), "--onto".to_string(), newbase.clone()];
+    if rebase::commit_has_parent(&model.workdir, &start) {
+        args.push(format!("{}^", start));
+    } else {
+        args.push("--root".to_string());
+    }
+    execute_pty_command(model, args, format!("Rebase subset onto {}", newbase))
 }
 
 /// Rebase the current branch onto its push remote branch.
