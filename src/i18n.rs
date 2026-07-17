@@ -544,7 +544,7 @@ static SWEDISH: Strings = Strings {
     input_stash_message: "Namnge gömställe",
     input_stash_index_message: "Göm indexmeddelande",
     input_stash_worktree_message: "Göm arbetsträdsmeddelande",
-    input_stash_keeping_index_message: "Göm men behåll register",
+    input_stash_keeping_index_message: "Göm-men-behåll-register-meddelande",
     input_rename_branch_fmt: "Byt namn på gren '{}' till:",
     input_worktree_path_fmt: "Arbetsträdsväg för '{}'",
     input_push_refspec_fmt: "Knuffa refspec(er) till '{}' (kommaseparerade)",
