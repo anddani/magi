@@ -51,8 +51,8 @@ fn push(
         args.extend(["-m".to_string(), message]);
     }
 
-    // extra_args only apply to StashType::Both (index/worktree ignore them)
-    if stash_type == StashType::Both {
+    // extra_args only apply to Both and KeepingIndex (index/worktree ignore them)
+    if matches!(stash_type, StashType::Both | StashType::KeepingIndex) {
         args.extend(extra_args);
     }
 
