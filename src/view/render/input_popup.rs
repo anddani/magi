@@ -3,7 +3,7 @@
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
 };
@@ -50,7 +50,7 @@ pub fn render(state: &InputPopupState, frame: &mut Frame, area: Rect, theme: &Th
 
     // Hint line
     let hint = "Enter to confirm, Esc to cancel";
-    let hint_line = Line::from(Span::styled(hint, Style::default().fg(Color::DarkGray)));
+    let hint_line = Line::from(Span::styled(hint, Style::default().fg(theme.dim_text)));
 
     let hint_area = Rect::new(inner.x, inner.y + 2, inner.width, 1);
     frame.render_widget(Paragraph::new(hint_line), hint_area);

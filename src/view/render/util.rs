@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
 };
 
@@ -78,7 +78,7 @@ pub fn push_remote_description<'a>(
         .fg(theme.local_branch)
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
-    let faded_style = Style::default().fg(Color::DarkGray);
+    let faded_style = Style::default().fg(theme.dim_text);
 
     // When in arg_mode, fade the command text
     let cmd_key_style = if model.arg_mode {
@@ -123,7 +123,7 @@ pub fn upstream_description<'a>(
         .fg(theme.local_branch)
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
-    let faded_style = Style::default().fg(Color::DarkGray);
+    let faded_style = Style::default().fg(theme.dim_text);
 
     // When in arg_mode, fade the command text
     let cmd_key_style = if arg_mode { faded_style } else { key_style };
@@ -156,7 +156,7 @@ pub fn command_description<'a>(
         .fg(theme.local_branch)
         .add_modifier(Modifier::BOLD);
     let desc_style = Style::default();
-    let faded_style = Style::default().fg(Color::DarkGray);
+    let faded_style = Style::default().fg(theme.dim_text);
 
     // When in arg_mode, fade the command text
     let cmd_key_style = if arg_mode { faded_style } else { key_style };
@@ -175,7 +175,7 @@ pub fn argument_value_line<'a>(
     value: Option<&'a str>,
     arg_mode: bool,
 ) -> Line<'a> {
-    let faded_style = Style::default().fg(Color::DarkGray);
+    let faded_style = Style::default().fg(theme.dim_text);
     let desc_style = Style::default();
     let key_style = Style::default()
         .fg(theme.diff_addition)
@@ -207,7 +207,7 @@ pub fn argument_line<'a>(
     arg_mode: bool,
     selected: bool,
 ) -> Line<'a> {
-    let faded_style = Style::default().fg(Color::DarkGray);
+    let faded_style = Style::default().fg(theme.dim_text);
     let desc_style = Style::default();
     let key_style = Style::default()
         .fg(theme.diff_addition)

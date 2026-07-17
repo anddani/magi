@@ -67,6 +67,13 @@ fn parse_color(s: &str) -> Option<Color> {
     None
 }
 
+/// Whether the terminal has a dark or light background
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ThemeMode {
+    Dark,
+    Light,
+}
+
 /// Color overrides in the config file
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct ColorOverrides {
@@ -82,10 +89,22 @@ pub struct ColorOverrides {
     pub detached_head: Option<String>,
     pub untracked_file: Option<String>,
     pub unstaged_status: Option<String>,
+    pub staged_status: Option<String>,
     pub file_path: Option<String>,
     pub commit_hash: Option<String>,
     pub text: Option<String>,
+    pub dim_text: Option<String>,
     pub selection_bg: Option<String>,
+    pub status_bar_bg: Option<String>,
+    pub status_bar_fg: Option<String>,
+    pub status_mode_normal_bg: Option<String>,
+    pub status_mode_normal_fg: Option<String>,
+    pub status_mode_visual_bg: Option<String>,
+    pub status_mode_visual_fg: Option<String>,
+    pub status_mode_search_bg: Option<String>,
+    pub status_mode_search_fg: Option<String>,
+    pub search_match_bg: Option<String>,
+    pub search_match_fg: Option<String>,
 }
 
 /// Main config structure
@@ -93,6 +112,14 @@ pub struct ColorOverrides {
 pub struct Config {
     #[serde(default = "default_theme_name")]
     pub theme: String,
+
+    /// Theme picked when `theme = "auto"` and the terminal is dark
+    #[serde(default)]
+    pub theme_dark: Option<String>,
+
+    /// Theme picked when `theme = "auto"` and the terminal is light
+    #[serde(default)]
+    pub theme_light: Option<String>,
 
     #[serde(default)]
     pub colors: ColorOverrides,
@@ -102,13 +129,15 @@ pub struct Config {
 }
 
 fn default_theme_name() -> String {
-    "default".to_string()
+    "auto".to_string()
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             theme: default_theme_name(),
+            theme_dark: None,
+            theme_light: None,
             colors: ColorOverrides::default(),
             language: None,
         }
@@ -116,9 +145,37 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Get the default config file path
+    /// Get the default config file path.
+    ///
+    /// `$XDG_CONFIG_HOME/magi/config.toml`, defaulting to
+    /// `~/.config/magi/config.toml`. On macOS, `dirs::config_dir()` points to
+    /// `~/Library/Application Support`, which terminal users don't expect, so
+    /// the XDG path is used there too; the old location is still read when
+    /// the XDG path doesn't exist, for configs created by older versions.
     pub fn default_path() -> Option<PathBuf> {
-        dirs::config_dir().map(|p| p.join("magi").join("config.toml"))
+        #[cfg(target_os = "macos")]
+        {
+            let preferred = std::env::var_os("XDG_CONFIG_HOME")
+                .map(PathBuf::from)
+                .filter(|p| p.is_absolute())
+                .or_else(|| dirs::home_dir().map(|h| h.join(".config")))
+                .map(|p| p.join("magi").join("config.toml"));
+            if let Some(ref path) = preferred
+                && !path.exists()
+            {
+                let legacy = dirs::config_dir()
+                    .map(|p| p.join("magi").join("config.toml"))
+                    .filter(|p| p.exists());
+                if legacy.is_some() {
+                    return legacy;
+                }
+            }
+            preferred
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            dirs::config_dir().map(|p| p.join("magi").join("config.toml"))
+        }
     }
 
     /// Load config from the default path, or return default config
@@ -135,37 +192,70 @@ impl Config {
         toml::from_str(&contents).map_err(|e| ConfigError::ParseError(e.to_string()))
     }
 
-    /// Resolve the theme with overrides applied
-    pub fn resolve_theme(&self) -> Theme {
-        let mut theme = Theme::from_name(&self.theme).unwrap_or_else(Theme::default_theme);
+    /// Whether the theme should be picked from the detected terminal background
+    pub fn is_auto_theme(&self) -> bool {
+        self.theme.eq_ignore_ascii_case("auto")
+    }
+
+    /// Resolve the theme with overrides applied.
+    ///
+    /// `detected` is the terminal background mode detected at startup. It is
+    /// only consulted when `theme = "auto"`; detection failure (`None`) falls
+    /// back to the dark theme.
+    pub fn resolve_theme(&self, detected: Option<ThemeMode>) -> Theme {
+        let name: &str = if self.is_auto_theme() {
+            match detected.unwrap_or(ThemeMode::Dark) {
+                ThemeMode::Dark => self.theme_dark.as_deref().unwrap_or("default"),
+                ThemeMode::Light => self.theme_light.as_deref().unwrap_or("default-light"),
+            }
+        } else {
+            &self.theme
+        };
+        let mut theme = Theme::from_name(name).unwrap_or_else(Theme::default_theme);
 
         // Apply overrides using a macro to reduce repetition
-        macro_rules! apply_override {
-            ($field:ident) => {
-                if let Some(ref color_str) = self.colors.$field {
-                    if let Some(color) = parse_color(color_str) {
-                        theme.$field = color;
+        macro_rules! apply_overrides {
+            ($($field:ident),+ $(,)?) => {
+                $(
+                    if let Some(ref color_str) = self.colors.$field {
+                        if let Some(color) = parse_color(color_str) {
+                            theme.$field = color;
+                        }
                     }
-                }
+                )+
             };
         }
 
-        apply_override!(section_header);
-        apply_override!(ref_label);
-        apply_override!(tag_label);
-        apply_override!(diff_addition);
-        apply_override!(diff_deletion);
-        apply_override!(diff_context);
-        apply_override!(diff_hunk);
-        apply_override!(remote_branch);
-        apply_override!(local_branch);
-        apply_override!(detached_head);
-        apply_override!(untracked_file);
-        apply_override!(unstaged_status);
-        apply_override!(file_path);
-        apply_override!(commit_hash);
-        apply_override!(text);
-        apply_override!(selection_bg);
+        apply_overrides!(
+            section_header,
+            ref_label,
+            tag_label,
+            diff_addition,
+            diff_deletion,
+            diff_context,
+            diff_hunk,
+            remote_branch,
+            local_branch,
+            detached_head,
+            untracked_file,
+            unstaged_status,
+            staged_status,
+            file_path,
+            commit_hash,
+            text,
+            dim_text,
+            selection_bg,
+            status_bar_bg,
+            status_bar_fg,
+            status_mode_normal_bg,
+            status_mode_normal_fg,
+            status_mode_visual_bg,
+            status_mode_visual_fg,
+            status_mode_search_bg,
+            status_mode_search_fg,
+            search_match_bg,
+            search_match_fg,
+        );
 
         theme
     }
@@ -226,7 +316,7 @@ mod tests {
             section_header = "#ff0000"
         "##;
         let config: Config = toml::from_str(toml_str).unwrap();
-        let theme = config.resolve_theme();
+        let theme = config.resolve_theme(None);
         assert_eq!(theme.section_header, Color::Rgb(255, 0, 0));
         // Other colors should remain default
         assert_eq!(theme.diff_addition, Color::Green);
@@ -238,14 +328,111 @@ mod tests {
             theme = "catppuccin-frappe"
         "#;
         let config: Config = toml::from_str(toml_str).unwrap();
-        let theme = config.resolve_theme();
+        let theme = config.resolve_theme(None);
         assert_eq!(theme.section_header, Color::Rgb(229, 200, 144));
     }
 
     #[test]
     fn test_default_config() {
         let config = Config::default();
-        let theme = config.resolve_theme();
+        // Default theme is "auto"; failed detection falls back to dark default
+        assert!(config.is_auto_theme());
+        let theme = config.resolve_theme(None);
         assert_eq!(theme.section_header, Color::Yellow);
+    }
+
+    #[test]
+    fn test_auto_theme_picks_light() {
+        let config = Config::default();
+        let theme = config.resolve_theme(Some(ThemeMode::Light));
+        assert_eq!(theme, Theme::default_light());
+    }
+
+    #[test]
+    fn test_auto_theme_picks_dark() {
+        let config = Config::default();
+        let theme = config.resolve_theme(Some(ThemeMode::Dark));
+        assert_eq!(theme, Theme::default_theme());
+    }
+
+    #[test]
+    fn test_auto_theme_respects_theme_dark_and_theme_light() {
+        let toml_str = r#"
+            theme = "auto"
+            theme_dark = "catppuccin-mocha"
+            theme_light = "catppuccin-latte"
+        "#;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        assert_eq!(
+            config.resolve_theme(Some(ThemeMode::Dark)),
+            Theme::catppuccin_mocha()
+        );
+        assert_eq!(
+            config.resolve_theme(Some(ThemeMode::Light)),
+            Theme::catppuccin_latte()
+        );
+    }
+
+    #[test]
+    fn test_explicit_theme_ignores_detected_mode() {
+        let toml_str = r#"
+            theme = "catppuccin-mocha"
+        "#;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        assert!(!config.is_auto_theme());
+        let theme = config.resolve_theme(Some(ThemeMode::Light));
+        assert_eq!(theme, Theme::catppuccin_mocha());
+    }
+
+    #[test]
+    fn test_is_auto_theme_case_insensitive() {
+        let config = Config {
+            theme: "Auto".to_string(),
+            ..Config::default()
+        };
+        assert!(config.is_auto_theme());
+    }
+
+    #[test]
+    fn test_unknown_theme_dark_falls_back_to_default() {
+        let toml_str = r#"
+            theme = "auto"
+            theme_dark = "nonexistent"
+        "#;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        let theme = config.resolve_theme(Some(ThemeMode::Dark));
+        assert_eq!(theme, Theme::default_theme());
+    }
+
+    #[test]
+    fn test_new_color_overrides() {
+        let toml_str = r##"
+            theme = "default"
+            [colors]
+            dim_text = "#808080"
+            search_match_bg = "#ffff00"
+            status_mode_normal_bg = "blue"
+            staged_status = "cyan"
+        "##;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        let theme = config.resolve_theme(None);
+        assert_eq!(theme.dim_text, Color::Rgb(128, 128, 128));
+        assert_eq!(theme.search_match_bg, Color::Rgb(255, 255, 0));
+        assert_eq!(theme.status_mode_normal_bg, Color::Blue);
+        assert_eq!(theme.staged_status, Color::Cyan);
+    }
+
+    #[test]
+    fn test_overrides_apply_on_auto_resolved_theme() {
+        let toml_str = r##"
+            theme = "auto"
+            [colors]
+            dim_text = "#333333"
+        "##;
+        let config: Config = toml::from_str(toml_str).unwrap();
+        let theme = config.resolve_theme(Some(ThemeMode::Light));
+        assert_eq!(theme.dim_text, Color::Rgb(51, 51, 51));
+        // Rest of the theme is default-light
+        assert_eq!(theme.selection_bg, Theme::default_light().selection_bg);
     }
 }

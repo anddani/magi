@@ -56,8 +56,19 @@ fn restore_terminal() {
 }
 
 pub fn run(workdir: Option<PathBuf>, language_override: Option<String>) -> MagiResult<()> {
+    // Load config and detect the terminal background before entering raw
+    // mode / the alternate screen (detection queries the terminal via OSC 11
+    // and its response would otherwise be swallowed by crossterm).
+    let config = Config::load();
+    let detected = if config.is_auto_theme() {
+        crate::config::detect_theme_mode()
+    } else {
+        None
+    };
+    let theme = config.resolve_theme(detected);
+
     let terminal = init_terminal();
-    let result = run_loop(terminal, workdir, language_override);
+    let result = run_loop(terminal, workdir, language_override, config, theme);
     restore_terminal();
     result
 }
@@ -68,11 +79,9 @@ fn run_loop(
     mut terminal: DefaultTerminal,
     path: Option<PathBuf>,
     language_override: Option<String>,
+    config: Config,
+    theme: crate::config::Theme,
 ) -> MagiResult<()> {
-    // Load config and resolve theme
-    let config = Config::load();
-    let theme = config.resolve_theme();
-
     // Initialise i18n: CLI flag takes priority over config file
     let lang = language_override
         .as_deref()
