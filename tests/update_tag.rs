@@ -103,6 +103,22 @@ fn test_f_in_tag_arg_mode_toggles_force() {
 }
 
 #[test]
+fn test_e_in_tag_arg_mode_toggles_edit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('e')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ToggleArgument(Argument::Tag(TagArgument::Edit)))
+    );
+}
+
+#[test]
 fn test_other_key_in_tag_arg_mode_exits_arg_mode() {
     let test_repo = TestRepo::new();
     test_repo.commit_file("file1.txt", "content1", "First commit");
@@ -343,6 +359,136 @@ fn test_create_tag_with_force_moves_existing_tag() {
         tag_ref.peel_to_commit().unwrap().id(),
         head.id(),
         "Forced tag should point at the new HEAD"
+    );
+}
+
+// ── Create tag with --edit ─────────────────────────────────────────────────────
+
+#[test]
+fn test_create_tag_with_edit_returns_with_editor_message() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments(
+        [TagArgument::Edit].into_iter().collect(),
+    ));
+
+    let result = update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    let expected = Message::CreateTagWithEditor {
+        name: "v1.0.0".to_string(),
+        args: vec![
+            "tag".to_string(),
+            "--edit".to_string(),
+            "v1.0.0".to_string(),
+            "HEAD".to_string(),
+        ],
+    };
+    assert_eq!(result, Some(expected));
+    // The editor command must run with the TUI suspended
+    assert!(magi::msg::util::is_external_command(&result.unwrap()));
+    assert!(
+        model.arguments.is_none(),
+        "Arguments should be consumed when building the editor command"
+    );
+}
+
+#[test]
+fn test_create_tag_with_edit_and_force_orders_flags() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments(
+        [TagArgument::Edit, TagArgument::Force].into_iter().collect(),
+    ));
+
+    let result = update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    // Flags are emitted in a stable order: --force before --edit
+    assert_eq!(
+        result,
+        Some(Message::CreateTagWithEditor {
+            name: "v1.0.0".to_string(),
+            args: vec![
+                "tag".to_string(),
+                "--force".to_string(),
+                "--edit".to_string(),
+                "v1.0.0".to_string(),
+                "HEAD".to_string(),
+            ],
+        })
+    );
+}
+
+#[test]
+fn test_create_tag_without_edit_does_not_suspend() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments(
+        [TagArgument::Force].into_iter().collect(),
+    ));
+
+    let result = update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    // Without --edit the tag is created directly, no editor round-trip
+    assert_eq!(result, Some(Message::Refresh));
+}
+
+#[test]
+fn test_create_tag_with_editor_fails_when_tag_exists() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    // Without --force, git rejects the existing tag before opening the
+    // editor, so this test does not depend on any editor configuration
+    let result = update(
+        &mut model,
+        Message::CreateTagWithEditor {
+            name: "v1.0.0".to_string(),
+            args: vec![
+                "tag".to_string(),
+                "--edit".to_string(),
+                "v1.0.0".to_string(),
+                "HEAD".to_string(),
+            ],
+        },
+    );
+
+    assert_eq!(result, None);
+    assert!(
+        matches!(&model.popup, Some(PopupContent::Error { .. })),
+        "Expected error popup when tag already exists"
     );
 }
 
