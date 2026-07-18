@@ -152,7 +152,8 @@ fn compute_exclude(model: &Model, on_select: &OnSelect) -> Option<String> {
         | OnSelect::CheckoutLocalBranch
         | OnSelect::MergeElsewhere
         | OnSelect::MergeEditMessage
-        | OnSelect::MergeNoCommit => model.git_info.current_branch().map(|b| b.to_string()),
+        | OnSelect::MergeNoCommit
+        | OnSelect::MergeAbsorb => model.git_info.current_branch().map(|b| b.to_string()),
         OnSelect::ResetBranchTarget { branch } => Some(branch.clone()),
         OnSelect::OpenPrTarget { source_branch } => Some(source_branch.clone()),
         OnSelect::HarvestSourceBranch { .. } => {
@@ -303,6 +304,18 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
                             current_branch.as_deref() != Some(name.as_str())
                         }
                         BranchSuggestion::Revision(_) => true,
+                    })
+                })
+                .map(|s| s.name().to_string())
+        }
+        OnSelect::MergeAbsorb => {
+            // Cursor local branch (not current); the branch is deleted after
+            // the merge, so only names in the local branch list qualify
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line).into_iter().find(|s| {
+                        matches!(s, BranchSuggestion::LocalBranch(name)
+                            if current_branch.as_deref() != Some(name.as_str()))
                     })
                 })
                 .map(|s| s.name().to_string())
@@ -546,6 +559,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         OnSelect::CheckoutLocalBranch
         | OnSelect::RenameBranch
         | OnSelect::ResetBranchPick
+        | OnSelect::MergeAbsorb
         | OnSelect::PushOtherBranchPick => "No local branches found".to_string(),
         OnSelect::WorktreeAdd { .. } | OnSelect::CreateNewBranchBase { .. } => {
             "No branches or tags found".to_string()

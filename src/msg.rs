@@ -532,6 +532,9 @@ pub enum MergeCommand {
     /// Merge the given branch without committing
     /// (`git merge --no-commit --no-ff <branch>`)
     NoCommit(String),
+    /// Merge the given branch into the current branch, deleting it afterwards
+    /// (`git merge --no-edit <branch>` followed by `git branch -D <branch>`)
+    Absorb(String),
     /// Continue after resolving conflicts
     Continue,
     /// Abort the merge sequence

@@ -32,6 +32,11 @@ pub fn keys(key: KeyEvent, state: &MergePopupState) -> Option<Message> {
             source: OptionsSource::LocalAndRemoteBranches,
             on_select: OnSelect::MergeNoCommit,
         })),
+        KeyCode::Char('a') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Absorb branch".to_string(),
+            source: OptionsSource::LocalBranches,
+            on_select: OnSelect::MergeAbsorb,
+        })),
         _ => None,
     }
 }

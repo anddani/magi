@@ -17,6 +17,7 @@ pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
         MergeCommand::Branch(branch) => merge_branch(model, branch, false),
         MergeCommand::EditMessage(branch) => merge_branch(model, branch, true),
         MergeCommand::NoCommit(branch) => merge_no_commit(model, branch),
+        MergeCommand::Absorb(branch) => absorb_branch(model, branch),
         MergeCommand::Continue => continue_merge(model),
         MergeCommand::Abort => abort_merge(model),
     }
@@ -76,6 +77,38 @@ fn conflict_message(headline: &str, conflicts: &[String]) -> String {
     }
     message.push_str("\n\nResolve the conflicts, then continue or abort from the merge popup (m).");
     message
+}
+
+fn absorb_branch(model: &mut Model, branch: String) -> Option<Message> {
+    model.popup = None;
+    match merge::run_merge_absorb(&model.workdir, &branch) {
+        Ok(CommitResult { success, message }) => {
+            if let Some(conflicts) = (!success).then(|| unresolved_conflicts(model)).flatten() {
+                model.popup = Some(PopupContent::Error {
+                    message: conflict_message(
+                        &format!("Absorb of '{}' stopped due to conflicts:", branch),
+                        &conflicts,
+                    ),
+                });
+            } else {
+                model.toast = Some(Toast {
+                    message,
+                    style: if success {
+                        ToastStyle::Success
+                    } else {
+                        ToastStyle::Warning
+                    },
+                    expires_at: Instant::now() + TOAST_DURATION,
+                });
+            }
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
 }
 
 fn merge_no_commit(model: &mut Model, branch: String) -> Option<Message> {
