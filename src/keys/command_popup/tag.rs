@@ -1,8 +1,20 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::msg::{Message, OnSelect, OptionsSource, ShowSelectPopupConfig};
+use crate::{
+    model::arguments::{Argument::Tag, TagArgument},
+    msg::{Message, OnSelect, OptionsSource, ShowSelectPopupConfig},
+};
 
-pub fn keys(key: KeyEvent) -> Option<Message> {
+pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
+    if arg_mode {
+        return match key.code {
+            KeyCode::Char(c) => TagArgument::from_key(c)
+                .map(|arg| Message::ToggleArgument(Tag(arg)))
+                .or(Some(Message::ExitArgMode)),
+            _ => Some(Message::ExitArgMode),
+        };
+    }
+
     match key.code {
         KeyCode::Char('t') => Some(Message::ShowCreateTagInput),
         KeyCode::Char('x') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
@@ -15,6 +27,7 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
             source: OptionsSource::Remotes,
             on_select: OnSelect::PruneTagsRemotePick,
         })),
+        KeyCode::Char('-') => Some(Message::EnterArgMode),
         KeyCode::Char('q') => Some(Message::DismissPopup),
         _ => None,
     }

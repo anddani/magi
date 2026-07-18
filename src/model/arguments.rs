@@ -10,6 +10,7 @@ pub enum Arguments {
     StashArguments(HashSet<StashArgument>),
     RevertArguments(HashSet<RevertArgument>),
     LogArguments(HashSet<LogArgument>),
+    TagArguments(HashSet<TagArgument>),
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -21,6 +22,7 @@ pub enum Argument {
     Stash(StashArgument),
     Revert(RevertArgument),
     Log(LogArgument),
+    Tag(TagArgument),
 }
 
 pub trait PopupArgument: Sized + Eq + Hash {
@@ -137,6 +139,22 @@ impl Arguments {
 
     pub fn log_mut(&mut self) -> Option<&mut HashSet<LogArgument>> {
         if let Arguments::LogArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn tag(&self) -> Option<&HashSet<TagArgument>> {
+        if let Arguments::TagArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn tag_mut(&mut self) -> Option<&mut HashSet<TagArgument>> {
+        if let Arguments::TagArguments(args) = self {
             Some(args)
         } else {
             None
@@ -491,6 +509,42 @@ impl PopupArgument for RevertArgument {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum TagArgument {
+    Force,
+}
+
+impl TagArgument {
+    pub fn from_key(key: char) -> Option<TagArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for TagArgument {
+    fn all() -> Vec<TagArgument> {
+        vec![TagArgument::Force]
+    }
+
+    fn key(&self) -> char {
+        match self {
+            TagArgument::Force => 'f',
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        let t = i18n::t();
+        match self {
+            TagArgument::Force => t.arg_tag_force,
+        }
+    }
+
+    fn flag(&self) -> &'static str {
+        match self {
+            TagArgument::Force => "--force",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -516,5 +570,17 @@ mod tests {
         assert_eq!(RevertArgument::from_key('e'), Some(RevertArgument::Edit));
         assert_eq!(RevertArgument::from_key('E'), Some(RevertArgument::NoEdit));
         assert_eq!(RevertArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_tag_argument_key_and_flag() {
+        assert_eq!(TagArgument::Force.key(), 'f');
+        assert_eq!(TagArgument::Force.flag(), "--force");
+    }
+
+    #[test]
+    fn test_tag_argument_from_key() {
+        assert_eq!(TagArgument::from_key('f'), Some(TagArgument::Force));
+        assert_eq!(TagArgument::from_key('x'), None);
     }
 }
