@@ -3,6 +3,7 @@ use magi::model::InputField;
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
+    model::arguments::{Argument, Arguments, TagArgument},
     model::popup::{ConfirmAction, InputContext, PopupContent, PopupContentCommand},
     model::select_popup::OnSelect,
     msg::{Message, OptionsSource, ShowSelectPopupConfig, update::update},
@@ -69,6 +70,84 @@ fn test_esc_in_tag_popup_dismisses() {
 
     let result = handle_key(key(KeyCode::Esc), &model);
     assert_eq!(result, Some(Message::DismissPopup));
+}
+
+// ── Arguments ──────────────────────────────────────────────────────────────────
+
+#[test]
+fn test_minus_in_tag_popup_enters_arg_mode() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+
+    let result = handle_key(key(KeyCode::Char('-')), &model);
+    assert_eq!(result, Some(Message::EnterArgMode));
+}
+
+#[test]
+fn test_f_in_tag_arg_mode_toggles_force() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('f')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ToggleArgument(Argument::Tag(TagArgument::Force)))
+    );
+}
+
+#[test]
+fn test_other_key_in_tag_arg_mode_exits_arg_mode() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('z')), &model);
+    assert_eq!(result, Some(Message::ExitArgMode));
+}
+
+#[test]
+fn test_toggle_tag_force_argument_updates_model() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+    model.arg_mode = true;
+
+    update(
+        &mut model,
+        Message::ToggleArgument(Argument::Tag(TagArgument::Force)),
+    );
+
+    assert!(!model.arg_mode);
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.tag())
+        .expect("Expected tag arguments");
+    assert!(args.contains(&TagArgument::Force));
+
+    // Toggling again removes it
+    update(
+        &mut model,
+        Message::ToggleArgument(Argument::Tag(TagArgument::Force)),
+    );
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.tag())
+        .expect("Expected tag arguments");
+    assert!(!args.contains(&TagArgument::Force));
 }
 
 // ── Create tag flow ────────────────────────────────────────────────────────────
@@ -185,6 +264,85 @@ fn test_create_tag_creates_tag() {
     assert!(
         tag_list.contains(&"v1.0.0"),
         "Tag 'v1.0.0' should exist in the repository"
+    );
+}
+
+#[test]
+fn test_create_tag_fails_when_tag_exists_without_force() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
+
+    let result = update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    assert_eq!(result, None);
+    assert!(
+        matches!(&model.popup, Some(PopupContent::Error { .. })),
+        "Expected error popup when re-creating an existing tag without --force"
+    );
+}
+
+#[test]
+fn test_create_tag_with_force_moves_existing_tag() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
+
+    model.arguments = Some(Arguments::TagArguments(
+        [TagArgument::Force].into_iter().collect(),
+    ));
+
+    let result = update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(model.popup.is_none());
+    assert!(
+        model.arguments.is_none(),
+        "Arguments should be consumed after creating the tag"
+    );
+
+    // The tag should now point at the new HEAD commit
+    let repo = &model.git_info.repository;
+    let tag_ref = repo.find_reference("refs/tags/v1.0.0").unwrap();
+    let head = repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(
+        tag_ref.peel_to_commit().unwrap().id(),
+        head.id(),
+        "Forced tag should point at the new HEAD"
     );
 }
 
