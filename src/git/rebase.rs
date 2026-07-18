@@ -62,6 +62,51 @@ pub fn commit_has_parent(workdir: &Path, commit: &str) -> bool {
     .is_ok_and(|output| output.status.success())
 }
 
+/// Resolves a (possibly abbreviated) commit-ish to its full commit hash.
+fn resolve_commit_hash(workdir: &Path, commit: &str) -> MagiResult<String> {
+    let output = git_cmd(
+        workdir,
+        &["rev-parse", "--verify", &format!("{commit}^{{commit}}")],
+    )
+    .output()?;
+
+    if !output.status.success() {
+        return Err(MagiError::Generic(format!(
+            "Failed to resolve commit {}: {}",
+            commit,
+            String::from_utf8_lossy(&output.stderr).trim()
+        )));
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+/// Starts an interactive rebase that stops at `commit` so it can be modified:
+/// the todo marks `commit` as `edit` and picks every commit after it.
+/// The rebase stops right after applying `commit`, leaving it as HEAD for
+/// amending; `git rebase --continue` then replays the remaining commits.
+pub fn run_modify_commit(workdir: &Path, commit: &str) -> MagiResult<CommitResult> {
+    let full_hash = resolve_commit_hash(workdir, commit)?;
+    let has_parent = commit_has_parent(workdir, &full_hash);
+    let mut entries = get_interactive_rebase_commits(workdir, &full_hash, has_parent)?;
+
+    let mut found = false;
+    for entry in &mut entries {
+        if entry.hash == full_hash {
+            entry.action = RebaseAction::Edit;
+            found = true;
+        }
+    }
+    if !found {
+        return Err(MagiError::Generic(format!(
+            "Commit {} cannot be modified (not reachable from HEAD, or a merge commit)",
+            commit
+        )));
+    }
+
+    start_interactive_rebase(workdir, &full_hash, has_parent, &entries)
+}
+
 /// Returns the initial todo entries for an interactive rebase that includes
 /// `base` and every commit after it up to HEAD (oldest first, all `pick`).
 /// Merge commits are excluded, matching what `git rebase -i` generates
@@ -403,6 +448,71 @@ mod tests {
         start_interactive_rebase(workdir, &base_hash, true, &entries).unwrap();
 
         assert!(!workdir.join(".git").join("magi-rebase-todo").exists());
+    }
+
+    #[test]
+    fn test_run_modify_commit_stops_at_commit() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let target = test_repo.head_hash();
+        test_repo.commit_file("b.txt", "b", "Commit B");
+        let workdir = test_repo.repo_path();
+
+        let result = run_modify_commit(workdir, &target).unwrap();
+
+        assert!(result.success);
+        // The rebase stops at the target commit, leaving it as HEAD for amending
+        assert!(rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Commit A", "Initial commit"]);
+        // The following commit is still pending in the todo
+        let entries = get_rebasing_entries(workdir);
+        assert!(entries.iter().any(|e| e.message == "Commit B"));
+
+        git_cmd(workdir, &["rebase", "--abort"]).status().unwrap();
+    }
+
+    #[test]
+    fn test_run_modify_commit_accepts_short_hash() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let target = test_repo.head_hash();
+        test_repo.commit_file("b.txt", "b", "Commit B");
+        let workdir = test_repo.repo_path();
+
+        let result = run_modify_commit(workdir, &target[..7]).unwrap();
+
+        assert!(result.success);
+        assert!(rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Commit A", "Initial commit"]);
+
+        git_cmd(workdir, &["rebase", "--abort"]).status().unwrap();
+    }
+
+    #[test]
+    fn test_run_modify_commit_on_root_commit() {
+        let test_repo = TestRepo::new();
+        let root = test_repo.head_hash();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let workdir = test_repo.repo_path();
+
+        let result = run_modify_commit(workdir, &root).unwrap();
+
+        assert!(result.success);
+        assert!(rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Initial commit"]);
+
+        git_cmd(workdir, &["rebase", "--abort"]).status().unwrap();
+    }
+
+    #[test]
+    fn test_run_modify_commit_unknown_commit_fails() {
+        let test_repo = TestRepo::new();
+        let workdir = test_repo.repo_path();
+
+        let result = run_modify_commit(workdir, "0000000000000000000000000000000000000000");
+
+        assert!(result.is_err());
+        assert!(!rebase_in_progress(workdir));
     }
 
     #[test]

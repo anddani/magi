@@ -33,6 +33,7 @@ pub fn is_external_command(msg: &Message) -> bool {
             | Message::Revert(RevertCommand::WithEditor { .. })
             | Message::Rebase(RebaseCommand::Continue)
             | Message::Rebase(RebaseCommand::ExecuteInteractive)
+            | Message::Rebase(RebaseCommand::ModifyCommit(_))
             | Message::Merge(MergeCommand::Continue)
             | Message::Merge(MergeCommand::Branch(_))
             | Message::Merge(MergeCommand::EditMessage(_))

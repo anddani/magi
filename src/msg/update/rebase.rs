@@ -21,6 +21,7 @@ pub fn update(model: &mut Model, rebase_command: RebaseCommand) -> Option<Messag
         RebaseCommand::Elsewhere(target) => elsewhere(model, target),
         RebaseCommand::Subset { newbase, start } => subset(model, newbase, start),
         RebaseCommand::ExecuteInteractive => execute_interactive(model),
+        RebaseCommand::ModifyCommit(commit) => modify_commit(model, commit),
         RebaseCommand::Continue => continue_rebase(model),
         RebaseCommand::Skip => skip_rebase(model),
         RebaseCommand::Abort => abort_rebase(model),
@@ -42,6 +43,33 @@ fn execute_interactive(model: &mut Model) -> Option<Message> {
         state.base_has_parent,
         &state.entries,
     ) {
+        Ok(CommitResult { success, message }) => {
+            model.toast = Some(Toast {
+                message,
+                style: if success {
+                    ToastStyle::Success
+                } else {
+                    ToastStyle::Warning
+                },
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
+}
+
+/// Starts an interactive rebase that stops at `commit` for editing. This is
+/// an external command (the TUI is suspended) because git prints rebase
+/// progress and stop instructions to the terminal.
+fn modify_commit(model: &mut Model, commit: String) -> Option<Message> {
+    model.popup = None;
+
+    match rebase::run_modify_commit(&model.workdir, &commit) {
         Ok(CommitResult { success, message }) => {
             model.toast = Some(Toast {
                 message,
