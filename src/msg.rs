@@ -526,6 +526,9 @@ pub enum MergeCommand {
     /// Merge the given branch into the current branch, editing the merge message
     /// (`git merge --edit --no-ff <branch>`)
     EditMessage(String),
+    /// Merge the given branch without committing
+    /// (`git merge --no-commit --no-ff <branch>`)
+    NoCommit(String),
     /// Continue after resolving conflicts
     Continue,
     /// Abort the merge sequence

@@ -8,6 +8,18 @@ use crate::{
     },
 };
 
+/// Lists paths with unresolved conflicts
+/// (`git diff --name-only --diff-filter=U`).
+pub fn conflicted_files<P: AsRef<Path>>(repo_path: P) -> MagiResult<Vec<String>> {
+    let output = git_cmd(&repo_path, &["diff", "--name-only", "--diff-filter=U"]).output()?;
+    Ok(String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect())
+}
+
 pub fn run_merge_continue_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
     let status = git_cmd(&repo_path, &["merge", "--continue"]).status()?;
 
@@ -81,6 +93,40 @@ mod tests {
         );
         test_repo.commit_file(feature_file.0, feature_file.1, "Feature commit");
         assert!(run_git(test_repo, &["checkout", "main"]).status.success());
+    }
+
+    #[test]
+    fn test_conflicted_files_empty_when_no_conflicts() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+        assert!(conflicted_files(test_repo.repo_path()).unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_conflicted_files_lists_unresolved_paths() {
+        let test_repo = TestRepo::new();
+        disable_editor(&test_repo);
+        // Both branches modify the same file: merging conflicts.
+        setup_divergent_branches(
+            &test_repo,
+            ("base.txt", "main change\n"),
+            ("base.txt", "feature change\n"),
+        );
+
+        let merge = run_git(&test_repo, &["merge", "feature"]);
+        assert!(!merge.status.success());
+
+        assert_eq!(
+            conflicted_files(test_repo.repo_path()).unwrap(),
+            vec!["base.txt".to_string()]
+        );
+
+        // Resolving and staging the file clears the conflict list.
+        test_repo
+            .write_file_content("base.txt", "resolved\n")
+            .stage_files(&["base.txt"]);
+        assert!(conflicted_files(test_repo.repo_path()).unwrap().is_empty());
     }
 
     #[test]

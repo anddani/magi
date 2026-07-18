@@ -151,7 +151,8 @@ fn compute_exclude(model: &Model, on_select: &OnSelect) -> Option<String> {
         OnSelect::CheckoutBranch
         | OnSelect::CheckoutLocalBranch
         | OnSelect::MergeElsewhere
-        | OnSelect::MergeEditMessage => model.git_info.current_branch().map(|b| b.to_string()),
+        | OnSelect::MergeEditMessage
+        | OnSelect::MergeNoCommit => model.git_info.current_branch().map(|b| b.to_string()),
         OnSelect::ResetBranchTarget { branch } => Some(branch.clone()),
         OnSelect::OpenPrTarget { source_branch } => Some(source_branch.clone()),
         OnSelect::HarvestSourceBranch { .. } => {
@@ -292,7 +293,7 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
                 .and_then(|line| suggestions_from_line(line).into_iter().next())
                 .map(|s| s.name().to_string())
         }
-        OnSelect::MergeElsewhere | OnSelect::MergeEditMessage => {
+        OnSelect::MergeElsewhere | OnSelect::MergeEditMessage | OnSelect::MergeNoCommit => {
             // Cursor branch/revision (not current)
             cursor_line
                 .and_then(|line| {
@@ -361,6 +362,7 @@ fn should_insert_if_missing(on_select: &OnSelect) -> bool {
         OnSelect::CheckoutBranch           // LocalAndRemoteBranches — revision can be inserted
         | OnSelect::MergeElsewhere         // can insert revision
         | OnSelect::MergeEditMessage       // can insert revision
+        | OnSelect::MergeNoCommit          // can insert revision
         | OnSelect::WorktreeAdd { .. }     // can insert non-list suggestion
         | OnSelect::CreateNewBranchBase { .. } // can insert revision/hash
         | OnSelect::FileCheckoutRevision   // can insert cursor suggestion
@@ -539,6 +541,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         OnSelect::CheckoutBranch
         | OnSelect::MergeElsewhere
         | OnSelect::MergeEditMessage
+        | OnSelect::MergeNoCommit
         | OnSelect::DeleteBranch => "No branches found".to_string(),
         OnSelect::CheckoutLocalBranch
         | OnSelect::RenameBranch
