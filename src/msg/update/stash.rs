@@ -1,6 +1,6 @@
 use crate::model::arguments::{Arguments::StashArguments, PopupArgument};
 use crate::{
-    git::snapshot::create_snapshot,
+    git::{snapshot::create_snapshot, worktree_stash::create_worktree_stash},
     model::{Model, popup::PopupContent},
     msg::{Message, StashCommand, StashType, update::pty_helper::execute_pty_command},
 };
@@ -41,6 +41,18 @@ fn push(
     message: String,
     extra_args: Vec<String>,
 ) -> Option<Message> {
+    // Worktree-only has no `git stash push` flag — it is built with plumbing
+    if stash_type == StashType::Worktree {
+        model.popup = None;
+        return match create_worktree_stash(&model.workdir, &message) {
+            Ok(()) => Some(Message::Refresh),
+            Err(message) => {
+                model.popup = Some(PopupContent::Error { message });
+                None
+            }
+        };
+    }
+
     let mut args = vec!["stash".to_string(), "push".to_string()];
 
     if let Some(flag) = stash_type.flag() {
@@ -51,8 +63,8 @@ fn push(
         args.extend(["-m".to_string(), message]);
     }
 
-    // extra_args only apply to StashType::Both (index/worktree ignore them)
-    if stash_type == StashType::Both {
+    // extra_args only apply to Both and KeepingIndex (index/worktree ignore them)
+    if matches!(stash_type, StashType::Both | StashType::KeepingIndex) {
         args.extend(extra_args);
     }
 

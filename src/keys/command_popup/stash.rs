@@ -19,6 +19,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('z') => Some(Message::ShowStashInput(StashType::Both)),
         KeyCode::Char('i') => Some(Message::ShowStashInput(StashType::Index)),
         KeyCode::Char('w') => Some(Message::ShowStashInput(StashType::Worktree)),
+        KeyCode::Char('x') => Some(Message::ShowStashInput(StashType::KeepingIndex)),
         KeyCode::Char('Z') => Some(Message::Stash(StashCommand::Snapshot)),
         KeyCode::Char('a') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
             title: "Apply stash".to_string(),

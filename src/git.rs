@@ -55,6 +55,7 @@ pub mod unpulled_commits;
 pub mod unstaged_changes;
 pub mod untracked_files;
 pub mod worktree;
+pub mod worktree_stash;
 
 pub struct GitInfo {
     pub repository: Repository,

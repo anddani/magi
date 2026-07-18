@@ -580,8 +580,11 @@ pub enum StashType {
     Both,
     /// Stash only the index / staged changes (git stash push --staged)
     Index,
-    /// Stash only the working tree, keeping the index intact (git stash push --keep-index)
+    /// Stash only the unstaged worktree changes, keeping the index intact
+    /// (no porcelain equivalent — built with plumbing, see git::worktree_stash)
     Worktree,
+    /// Stash both index and working tree, keeping the index intact (git stash push --keep-index)
+    KeepingIndex,
 }
 
 impl StashType {
@@ -592,6 +595,7 @@ impl StashType {
             StashType::Both => t.input_stash_message,
             StashType::Index => t.input_stash_index_message,
             StashType::Worktree => t.input_stash_worktree_message,
+            StashType::KeepingIndex => t.input_stash_keeping_index_message,
         }
     }
 
@@ -600,7 +604,8 @@ impl StashType {
         match self {
             StashType::Both => None,
             StashType::Index => Some("--staged"),
-            StashType::Worktree => Some("--keep-index"),
+            StashType::Worktree => None,
+            StashType::KeepingIndex => Some("--keep-index"),
         }
     }
 
@@ -610,6 +615,7 @@ impl StashType {
             StashType::Both => "Stash",
             StashType::Index => "Stash index",
             StashType::Worktree => "Stash worktree",
+            StashType::KeepingIndex => "Stash keeping index",
         }
     }
 }
