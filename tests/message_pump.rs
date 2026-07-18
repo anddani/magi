@@ -70,6 +70,29 @@ fn test_select_confirm_merge_edit_message_suspends_tui() {
     assert!(model.pty_state.is_none());
 }
 
+/// "Merge but don't commit" never opens an editor, so confirming the branch
+/// must run `git merge --no-commit --no-ff` in a background PTY without
+/// suspending the TUI.
+#[test]
+fn test_select_confirm_merge_no_commit_runs_in_pty() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file.txt", "content", "Initial commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Merge branch (no commit)".to_string(),
+            vec!["feature".to_string()],
+            OnSelect::MergeNoCommit,
+        ),
+    )));
+
+    process_messages(&mut model, Some(Message::Select(SelectMessage::Confirm)));
+
+    assert_eq!(model.running_state, RunningState::Running);
+    assert!(model.pty_state.is_some());
+}
+
 #[test]
 fn test_process_messages_drains_non_external_chain() {
     let test_repo = TestRepo::new();

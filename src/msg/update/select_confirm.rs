@@ -289,6 +289,9 @@ fn route_result(
         (Some(OnSelect::MergeEditMessage), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::EditMessage(branch)))
         }
+        (Some(OnSelect::MergeNoCommit), SelectResult::Selected(branch)) => {
+            Some(Message::Merge(MergeCommand::NoCommit(branch)))
+        }
         (Some(OnSelect::ApplyPick), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Pick(vec![hash])))
         }

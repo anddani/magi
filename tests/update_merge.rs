@@ -90,6 +90,27 @@ fn test_e_in_merge_popup_shows_select_with_edit_message() {
 }
 
 #[test]
+fn test_n_in_merge_popup_shows_select_with_no_commit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('n')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Merge branch (no commit)".to_string(),
+            source: OptionsSource::LocalAndRemoteBranches,
+            on_select: OnSelect::MergeNoCommit,
+        }))
+    );
+}
+
+#[test]
 fn test_q_dismisses_merge_popup() {
     let test_repo = TestRepo::new();
     test_repo.commit_file("file1.txt", "content1", "First commit");
@@ -410,4 +431,107 @@ fn test_merge_branch_message_with_conflicts_shows_warning_toast() {
     assert_eq!(toast.message, "Merge aborted");
     // The merge stays in progress so it can be resolved or aborted.
     assert!(test_repo.repo.path().join("MERGE_HEAD").exists());
+}
+
+// ── MergeCommand::NoCommit — execution ────────────────────────────────────────
+
+/// Waits for the background PTY merge to finish by polling the repo state.
+fn wait_for<F: Fn() -> bool>(condition: F, description: &str) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while std::time::Instant::now() < deadline {
+        if condition() {
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    panic!("Timed out waiting for: {}", description);
+}
+
+#[test]
+fn test_merge_no_commit_runs_in_pty() {
+    let test_repo = TestRepo::new();
+    // Divergent branches touching different files: merges cleanly.
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::NoCommit("feature".to_string())),
+    );
+
+    // --no-commit never opens an editor, so the merge runs in a background
+    // PTY instead of suspending the TUI.
+    assert_eq!(result, None);
+    assert!(model.popup.is_none());
+    assert!(model.pty_state.is_some());
+}
+
+#[test]
+fn test_merge_no_commit_stages_merge_without_committing() {
+    let test_repo = TestRepo::new();
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+    let head_before = test_repo.head_hash();
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::Merge(MergeCommand::NoCommit("feature".to_string())),
+    );
+
+    // The merge pauses before committing, leaving MERGE_HEAD in place.
+    wait_for(
+        || test_repo.repo.path().join("MERGE_HEAD").exists(),
+        "MERGE_HEAD to appear",
+    );
+    assert_eq!(test_repo.head_hash(), head_before, "HEAD must not move");
+    assert!(test_repo.repo_path().join("feature.txt").exists());
+}
+
+#[test]
+fn test_merge_no_commit_fast_forward_still_stops_before_committing() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+    // Put a commit on feature only, so a plain merge would fast-forward.
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "-b", "feature"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "main"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    let head_before = test_repo.head_hash();
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::Merge(MergeCommand::NoCommit("feature".to_string())),
+    );
+
+    // --no-ff prevents the fast-forward, so the merge pauses uncommitted.
+    wait_for(
+        || test_repo.repo.path().join("MERGE_HEAD").exists(),
+        "MERGE_HEAD to appear",
+    );
+    assert_eq!(test_repo.head_hash(), head_before, "HEAD must not move");
+    assert!(test_repo.repo_path().join("feature.txt").exists());
 }

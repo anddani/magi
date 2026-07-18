@@ -13,6 +13,7 @@ pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
     match cmd {
         MergeCommand::Branch(branch) => merge_branch(model, branch, false),
         MergeCommand::EditMessage(branch) => merge_branch(model, branch, true),
+        MergeCommand::NoCommit(branch) => merge_no_commit(model, branch),
         MergeCommand::Continue => continue_merge(model),
         MergeCommand::Abort => abort_merge(model),
     }
@@ -44,6 +45,19 @@ fn merge_branch(model: &mut Model, branch: String, edit_message: bool) -> Option
         }
     }
     Some(Message::Refresh)
+}
+
+fn merge_no_commit(model: &mut Model, branch: String) -> Option<Message> {
+    execute_pty_command(
+        model,
+        vec![
+            "merge".to_string(),
+            "--no-commit".to_string(),
+            "--no-ff".to_string(),
+            branch,
+        ],
+        "Merge".to_string(),
+    )
 }
 
 fn continue_merge(model: &mut Model) -> Option<Message> {

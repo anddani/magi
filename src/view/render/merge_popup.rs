@@ -35,6 +35,7 @@ pub fn content<'a>(
         content: vec![
             command_description(theme, model.arg_mode, "m", t.cmd_merge),
             command_description(theme, model.arg_mode, "e", t.cmd_merge_edit_message),
+            command_description(theme, model.arg_mode, "n", t.cmd_merge_no_commit),
         ],
     };
 
