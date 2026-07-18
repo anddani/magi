@@ -321,7 +321,12 @@ mod tests {
         assert!(test_repo.repo_path().join("feature.txt").exists());
         assert!(!merge_in_progress(&test_repo));
         // The absorbed branch is gone.
-        assert!(test_repo.repo.find_branch("feature", git2::BranchType::Local).is_err());
+        assert!(
+            test_repo
+                .repo
+                .find_branch("feature", git2::BranchType::Local)
+                .is_err()
+        );
     }
 
     #[test]
@@ -345,7 +350,12 @@ mod tests {
         assert_eq!(result.message, "Absorb: Feature commit");
         assert_eq!(test_repo.head_hash(), feature_hash);
         assert!(!merge_in_progress(&test_repo));
-        assert!(test_repo.repo.find_branch("feature", git2::BranchType::Local).is_err());
+        assert!(
+            test_repo
+                .repo
+                .find_branch("feature", git2::BranchType::Local)
+                .is_err()
+        );
     }
 
     #[test]
@@ -364,7 +374,12 @@ mod tests {
         assert_eq!(result.message, "Absorb aborted");
         assert!(merge_in_progress(&test_repo));
         // The branch survives so the merge can be resolved or aborted.
-        assert!(test_repo.repo.find_branch("feature", git2::BranchType::Local).is_ok());
+        assert!(
+            test_repo
+                .repo
+                .find_branch("feature", git2::BranchType::Local)
+                .is_ok()
+        );
     }
 
     #[test]
