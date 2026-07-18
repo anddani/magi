@@ -485,6 +485,9 @@ pub enum RebaseCommand {
     Subset { newbase: String, start: String },
     /// Run the interactive rebase using the todo list in `model.rebase_todo`
     ExecuteInteractive,
+    /// Start an interactive rebase that stops at the given commit for editing
+    /// (the commit is marked `edit`, everything after it is picked)
+    ModifyCommit(String),
     /// Continue after resolving conflicts
     Continue,
     /// Skip the current conflicting commit
@@ -661,6 +664,9 @@ pub enum CommitSelect {
     /// Show log pick to choose the start commit for a subset rebase
     /// (the new base was already picked in a select popup)
     RebaseSubset { newbase: String },
+    /// Show select popup (or confirm) to pick a commit to modify
+    /// (stops an interactive rebase at that commit for editing)
+    ModifyCommit,
 
     // Revise-related
     /// Show select popup (or confirm) to pick a commit to revise (reword)

@@ -126,6 +126,7 @@ pub struct Strings {
     pub cmd_elsewhere: &'static str,
     pub cmd_interactively: &'static str,
     pub cmd_a_subset: &'static str,
+    pub cmd_to_modify_a_commit: &'static str,
     /// Window title while picking the start commit of a subset rebase.
     /// `{}` is the new base (branch/ref) chosen in the previous step.
     pub title_pick_rebase_subset_fmt: &'static str,
@@ -365,6 +366,7 @@ static ENGLISH: Strings = Strings {
     cmd_elsewhere: "Elsewhere",
     cmd_interactively: "Interactively",
     cmd_a_subset: "A subset",
+    cmd_to_modify_a_commit: "To modify a commit",
     title_pick_rebase_subset_fmt: "Press Enter on a commit to rebase it and commits above onto {}, or Esc/q to cancel",
     cmd_all_remotes: "All remotes",
     cmd_another_branch: "Another branch",
@@ -585,6 +587,7 @@ static SWEDISH: Strings = Strings {
     cmd_elsewhere: "Annanstans",
     cmd_interactively: "Interaktivt",
     cmd_a_subset: "En delmängd",
+    cmd_to_modify_a_commit: "För att ändra en förbindelse",
     title_pick_rebase_subset_fmt: "Tryck Enter på en förbindelse för att ympa den och förbindelser ovanför på {}, eller Esc/q för att avbryta",
     cmd_all_remotes: "Alla fjärrar",
     cmd_another_branch: "Annan gren",

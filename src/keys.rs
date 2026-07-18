@@ -78,6 +78,9 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     ConfirmAction::RebaseElsewhere(target) => {
                         Message::Rebase(RebaseCommand::Elsewhere(target.clone()))
                     }
+                    ConfirmAction::ModifyCommit(hash) => {
+                        Message::Rebase(RebaseCommand::ModifyCommit(hash.clone()))
+                    }
                     ConfirmAction::ReviseCommit(hash) => Message::ReviseCommit(hash.clone()),
                     ConfirmAction::ResetBranch {
                         branch,

@@ -69,6 +69,8 @@ pub enum OnSelect {
     RebaseElsewhere,
     /// Select the base commit for an interactive rebase (base inclusive)
     RebaseInteractive,
+    /// Select a commit to modify (stops an interactive rebase at that commit)
+    ModifyCommit,
     /// Select the new base for a subset rebase (step 1 of 2)
     RebaseSubsetOnto,
     /// Select the start commit for a subset rebase (step 2 of 2, carries the new base)

@@ -20,8 +20,33 @@ pub fn update(model: &mut Model, commit_select: CommitSelect) -> Option<Message>
             LogType::Current,
             OnSelect::RebaseSubsetStart { newbase },
         ),
+        CommitSelect::ModifyCommit => show_select_modify_commit(model),
         CommitSelect::ReviseCommit => show_select_revise_commit(model),
     }
+}
+
+pub fn show_select_modify_commit(model: &mut Model) -> Option<Message> {
+    let cursor_pos = model.ui_model.cursor_position;
+
+    // If cursor is on a commit line, suggest it and ask for confirmation
+    if let Some(line) = model.ui_model.lines.get(cursor_pos) {
+        let hash = match &line.content {
+            LineContent::Commit(commit_info) => Some(commit_info.hash.clone()),
+            LineContent::LogLine(entry) => entry.hash.clone(),
+            _ => None,
+        };
+
+        if let Some(hash) = hash {
+            model.popup = None;
+            model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
+                message: format!("Modify commit {}?", hash),
+                on_confirm: ConfirmAction::ModifyCommit(hash),
+            }));
+            return None;
+        }
+    }
+
+    show_log_select(model, LogType::Current, OnSelect::ModifyCommit)
 }
 
 pub fn show_select_fixup_commit(model: &mut Model, fixup_type: FixupType) -> Option<Message> {

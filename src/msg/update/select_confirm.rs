@@ -129,6 +129,9 @@ fn route_result(
         (Some(OnSelect::RebaseInteractive), SelectResult::Selected(commit)) => {
             Some(Message::ShowRebaseTodo(commit))
         }
+        (Some(OnSelect::ModifyCommit), SelectResult::Selected(commit)) => {
+            Some(Message::Rebase(RebaseCommand::ModifyCommit(commit)))
+        }
         (Some(OnSelect::RebaseSubsetOnto), SelectResult::Selected(newbase)) => {
             Some(Message::ShowCommitSelect(CommitSelect::RebaseSubset {
                 newbase,
