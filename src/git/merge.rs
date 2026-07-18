@@ -51,6 +51,31 @@ pub fn run_merge_edit_with_editor<P: AsRef<Path>>(
     get_commit_result(repo_path, status, "Merge")
 }
 
+/// Runs `git merge --no-edit <branch>` and, when the merge succeeds, deletes
+/// the merged branch (`git branch -D <branch>`). `--no-edit` never opens an
+/// editor, so the TUI does not need to be suspended. When the merge stops on
+/// conflicts the branch is kept so the merge can be resolved or aborted.
+pub fn run_merge_absorb<P: AsRef<Path>>(repo_path: P, branch: &str) -> MagiResult<CommitResult> {
+    let repo_path = repo_path.as_ref();
+    let output = git_cmd(repo_path, &["merge", "--no-edit", branch]).output()?;
+
+    let result = get_commit_result(repo_path, output.status, "Absorb")?;
+    if !result.success {
+        return Ok(result);
+    }
+
+    let delete = git_cmd(repo_path, &["branch", "-D", branch]).output()?;
+    if delete.status.success() {
+        Ok(result)
+    } else {
+        let stderr = String::from_utf8_lossy(&delete.stderr).trim().to_string();
+        Ok(CommitResult {
+            success: false,
+            message: format!("Absorbed '{}' but failed to delete it: {}", branch, stderr),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -269,6 +294,77 @@ mod tests {
         assert!(!result.success);
         assert_eq!(result.message, "Merge aborted");
         assert!(merge_in_progress(&test_repo));
+    }
+
+    #[test]
+    fn test_merge_absorb_merges_and_deletes_branch() {
+        let test_repo = TestRepo::new();
+        // Divergent branches touching different files: merges cleanly.
+        setup_divergent_branches(
+            &test_repo,
+            ("main.txt", "main content\n"),
+            ("feature.txt", "feature content\n"),
+        );
+
+        let result = run_merge_absorb(test_repo.repo_path(), "feature").unwrap();
+
+        assert!(result.success);
+        assert!(
+            result.message.starts_with("Absorb: Merge branch 'feature'"),
+            "unexpected message: {}",
+            result.message
+        );
+
+        let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+        assert_eq!(head.parent_count(), 2);
+        assert!(test_repo.repo_path().join("main.txt").exists());
+        assert!(test_repo.repo_path().join("feature.txt").exists());
+        assert!(!merge_in_progress(&test_repo));
+        // The absorbed branch is gone.
+        assert!(test_repo.repo.find_branch("feature", git2::BranchType::Local).is_err());
+    }
+
+    #[test]
+    fn test_merge_absorb_fast_forward_deletes_branch() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+        // Put a commit on feature only, so merging it into main fast-forwards.
+        assert!(
+            run_git(&test_repo, &["checkout", "-b", "feature"])
+                .status
+                .success()
+        );
+        test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+        assert!(run_git(&test_repo, &["checkout", "main"]).status.success());
+        let feature_hash = test_repo.branch_hash("feature");
+
+        let result = run_merge_absorb(test_repo.repo_path(), "feature").unwrap();
+
+        assert!(result.success);
+        assert_eq!(result.message, "Absorb: Feature commit");
+        assert_eq!(test_repo.head_hash(), feature_hash);
+        assert!(!merge_in_progress(&test_repo));
+        assert!(test_repo.repo.find_branch("feature", git2::BranchType::Local).is_err());
+    }
+
+    #[test]
+    fn test_merge_absorb_with_conflicts_keeps_branch() {
+        let test_repo = TestRepo::new();
+        // Both branches modify the same file: merging conflicts.
+        setup_divergent_branches(
+            &test_repo,
+            ("base.txt", "main change\n"),
+            ("base.txt", "feature change\n"),
+        );
+
+        let result = run_merge_absorb(test_repo.repo_path(), "feature").unwrap();
+
+        assert!(!result.success);
+        assert_eq!(result.message, "Absorb aborted");
+        assert!(merge_in_progress(&test_repo));
+        // The branch survives so the merge can be resolved or aborted.
+        assert!(test_repo.repo.find_branch("feature", git2::BranchType::Local).is_ok());
     }
 
     #[test]

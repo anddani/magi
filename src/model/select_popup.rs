@@ -111,6 +111,8 @@ pub enum OnSelect {
     MergeEditMessage,
     /// Select a branch to merge into the current branch without committing
     MergeNoCommit,
+    /// Select a local branch to merge into the current branch and delete afterwards
+    MergeAbsorb,
     /// Select a commit to cherry-pick onto the current branch
     ApplyPick,
     /// Select a commit to apply (--no-commit) onto the current branch

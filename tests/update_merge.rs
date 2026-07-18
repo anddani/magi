@@ -111,6 +111,27 @@ fn test_n_in_merge_popup_shows_select_with_no_commit() {
 }
 
 #[test]
+fn test_a_in_merge_popup_shows_select_with_absorb() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('a')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Absorb branch".to_string(),
+            source: OptionsSource::LocalBranches,
+            on_select: OnSelect::MergeAbsorb,
+        }))
+    );
+}
+
+#[test]
 fn test_q_dismisses_merge_popup() {
     let test_repo = TestRepo::new();
     test_repo.commit_file("file1.txt", "content1", "First commit");
@@ -488,6 +509,92 @@ fn test_merge_continue_with_unresolved_conflicts_shows_conflict_dialog() {
         message
     );
     assert!(test_repo.repo.path().join("MERGE_HEAD").exists());
+}
+
+// ── MergeCommand::Absorb — execution ──────────────────────────────────────────
+
+#[test]
+fn test_absorb_creates_merge_commit_and_deletes_branch() {
+    let test_repo = TestRepo::new();
+    // Divergent branches touching different files: merges cleanly.
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Absorb("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(model.popup.is_none());
+    // --no-edit never opens an editor, so the merge runs directly.
+    assert!(model.pty_state.is_none());
+    let toast = model.toast.expect("Expected a toast after absorbing");
+    assert_eq!(toast.style, ToastStyle::Success);
+    assert!(
+        toast.message.starts_with("Absorb: Merge branch 'feature'"),
+        "unexpected toast message: {}",
+        toast.message
+    );
+
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head.parent_count(), 2);
+    assert!(test_repo.repo_path().join("feature.txt").exists());
+    // The absorbed branch is gone.
+    assert!(
+        test_repo
+            .repo
+            .find_branch("feature", git2::BranchType::Local)
+            .is_err()
+    );
+}
+
+#[test]
+fn test_absorb_with_conflicts_shows_conflict_dialog_and_keeps_branch() {
+    let test_repo = TestRepo::new();
+    // Both branches modify the same file: merging conflicts.
+    setup_divergent_branches(
+        &test_repo,
+        ("base.txt", "main change\n"),
+        ("base.txt", "feature change\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Absorb("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(model.pty_state.is_none());
+    // A toast is easy to miss: conflicts must surface as an error dialog.
+    assert!(model.toast.is_none());
+    let message = expect_error_popup(&model);
+    assert!(
+        message.contains("Absorb of 'feature' stopped due to conflicts"),
+        "unexpected error message: {}",
+        message
+    );
+    assert!(
+        message.contains("base.txt"),
+        "conflicted file missing from message: {}",
+        message
+    );
+    // The merge stays in progress and the branch survives so the merge can
+    // be resolved or aborted.
+    assert!(test_repo.repo.path().join("MERGE_HEAD").exists());
+    assert!(
+        test_repo
+            .repo
+            .find_branch("feature", git2::BranchType::Local)
+            .is_ok()
+    );
 }
 
 // ── MergeCommand::NoCommit — execution ────────────────────────────────────────
