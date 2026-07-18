@@ -101,3 +101,66 @@ fn test_snapshot_with_no_changes_shows_error() {
     );
     assert!(stash_messages(&test_repo).is_empty());
 }
+
+// ── Snapshot index ─────────────────────────────────────────────────────────────
+
+#[test]
+fn test_upper_i_in_stash_popup_triggers_index_snapshot() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Stash));
+
+    let result = handle_key(key(KeyCode::Char('I')), &model);
+    assert_eq!(result, Some(Message::Stash(StashCommand::SnapshotIndex)));
+}
+
+#[test]
+fn test_index_snapshot_creates_stash_and_keeps_index() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    test_repo
+        .write_file_content("file1.txt", "staged change")
+        .stage_files(&["file1.txt"]);
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Stash));
+
+    let result = update(&mut model, Message::Stash(StashCommand::SnapshotIndex));
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert_eq!(model.popup, None);
+
+    let messages = stash_messages(&test_repo);
+    assert_eq!(messages.len(), 1);
+    assert!(messages[0].contains("WIP on"));
+
+    // The index is untouched — the change is still staged
+    let output = git_cmd(test_repo.repo_path(), &["diff", "--cached", "--name-only"])
+        .output()
+        .unwrap();
+    let staged = String::from_utf8_lossy(&output.stdout);
+    assert!(staged.contains("file1.txt"));
+}
+
+#[test]
+fn test_index_snapshot_with_nothing_staged_shows_error() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    test_repo.write_file_content("file1.txt", "unstaged only");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Stash));
+
+    let result = update(&mut model, Message::Stash(StashCommand::SnapshotIndex));
+
+    assert_eq!(result, None);
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Error {
+            message: "No staged changes to save".to_string()
+        })
+    );
+    assert!(stash_messages(&test_repo).is_empty());
+}
