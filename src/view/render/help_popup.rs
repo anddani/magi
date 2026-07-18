@@ -40,6 +40,7 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
     let applying_changes_col = PopupColumn {
         title: Some(t.col_applying_changes.into()),
         content: vec![
+            command_description(theme, false, "a", t.cmd_apply),
             command_description(theme, false, "s", t.cmd_stage),
             command_description(theme, false, "S", t.cmd_stage_all),
             command_description(theme, false, "u", t.cmd_unstage),

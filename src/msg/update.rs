@@ -5,6 +5,7 @@ use crate::{
 
 mod amend;
 mod apply;
+mod apply_selected;
 mod checkout_branch;
 mod checkout_new_branch;
 mod cherry_spinoff;
@@ -117,6 +118,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::StageSelected => stage_selected::update(model),
         Message::UnstageSelected => unstage_selected::update(model),
         Message::UnstageAll => unstage_all::update(model),
+        Message::ApplySelected => apply_selected::update(model),
         Message::DiscardSelected => discard_selected::update(model),
         Message::ConfirmDiscard(target) => confirm_discard::update(model, target),
         Message::ConfirmPopStash(stash_ref) => confirm_pop_stash::update(model, stash_ref),

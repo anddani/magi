@@ -309,6 +309,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (_, Char('u')) => Some(Message::UnstageSelected),
         (_, Char('U')) => Some(Message::UnstageAll),
         (_, Char('x')) => Some(Message::DiscardSelected),
+        (NONE, Char('a')) => Some(Message::ApplySelected),
 
         // Search
         (NONE, Char('/')) => Some(Message::EnterSearchMode),
