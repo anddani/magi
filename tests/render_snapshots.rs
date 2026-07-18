@@ -425,6 +425,16 @@ fn snapshot_error_popup() {
 }
 
 #[test]
+fn snapshot_merge_conflict_error_popup() {
+    let test_repo = TestRepo::new();
+    let mut model = create_snapshot_model(&test_repo);
+    model.popup = Some(PopupContent::Error {
+        message: "Merge of 'feature' stopped due to conflicts:\n\n  base.txt\n\nResolve the conflicts, then continue or abort from the merge popup (m).".to_string(),
+    });
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_confirm_popup() {
     let test_repo = TestRepo::new();
     let mut model = create_snapshot_model(&test_repo);

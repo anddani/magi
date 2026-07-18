@@ -11,7 +11,7 @@ use magi::{
 };
 
 mod utils;
-use utils::{create_model_from_test_repo, expect_select_popup, find_line, key};
+use utils::{create_model_from_test_repo, expect_error_popup, expect_select_popup, find_line, key};
 
 // ── ShowMergePopup — key binding ───────────────────────────────────────────────
 
@@ -380,7 +380,7 @@ fn test_merge_edit_message_creates_merge_commit_even_when_fast_forward() {
 }
 
 #[test]
-fn test_merge_edit_message_with_conflicts_shows_warning_toast() {
+fn test_merge_edit_message_with_conflicts_shows_conflict_dialog() {
     let test_repo = TestRepo::new();
     disable_editor(&test_repo);
     // Both branches modify the same file: merging conflicts.
@@ -399,15 +399,25 @@ fn test_merge_edit_message_with_conflicts_shows_warning_toast() {
 
     assert_eq!(result, Some(Message::Refresh));
     assert!(model.pty_state.is_none());
-    let toast = model.toast.expect("Expected a toast after failed merge");
-    assert_eq!(toast.style, ToastStyle::Warning);
-    assert_eq!(toast.message, "Merge aborted");
+    // A toast is easy to miss: conflicts must surface as an error dialog.
+    assert!(model.toast.is_none());
+    let message = expect_error_popup(&model);
+    assert!(
+        message.contains("Merge of 'feature' stopped due to conflicts"),
+        "unexpected error message: {}",
+        message
+    );
+    assert!(
+        message.contains("base.txt"),
+        "conflicted file missing from message: {}",
+        message
+    );
     // The merge stays in progress so it can be resolved or aborted.
     assert!(test_repo.repo.path().join("MERGE_HEAD").exists());
 }
 
 #[test]
-fn test_merge_branch_message_with_conflicts_shows_warning_toast() {
+fn test_merge_branch_message_with_conflicts_shows_conflict_dialog() {
     let test_repo = TestRepo::new();
     disable_editor(&test_repo);
     // Both branches modify the same file: merging conflicts.
@@ -426,10 +436,57 @@ fn test_merge_branch_message_with_conflicts_shows_warning_toast() {
 
     assert_eq!(result, Some(Message::Refresh));
     assert!(model.pty_state.is_none());
-    let toast = model.toast.expect("Expected a toast after failed merge");
-    assert_eq!(toast.style, ToastStyle::Warning);
-    assert_eq!(toast.message, "Merge aborted");
+    // A toast is easy to miss: conflicts must surface as an error dialog.
+    assert!(model.toast.is_none());
+    let message = expect_error_popup(&model);
+    assert!(
+        message.contains("Merge of 'feature' stopped due to conflicts"),
+        "unexpected error message: {}",
+        message
+    );
+    assert!(
+        message.contains("base.txt"),
+        "conflicted file missing from message: {}",
+        message
+    );
     // The merge stays in progress so it can be resolved or aborted.
+    assert!(test_repo.repo.path().join("MERGE_HEAD").exists());
+}
+
+#[test]
+fn test_merge_continue_with_unresolved_conflicts_shows_conflict_dialog() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    setup_divergent_branches(
+        &test_repo,
+        ("base.txt", "main change\n"),
+        ("base.txt", "feature change\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Start the merge; it stops on the conflict.
+    update(
+        &mut model,
+        Message::Merge(MergeCommand::Branch("feature".to_string())),
+    );
+    assert!(test_repo.repo.path().join("MERGE_HEAD").exists());
+
+    // Continuing without resolving must explain what is blocking it.
+    let result = update(&mut model, Message::Merge(MergeCommand::Continue));
+
+    assert_eq!(result, Some(Message::Refresh));
+    let message = expect_error_popup(&model);
+    assert!(
+        message.contains("Cannot continue the merge"),
+        "unexpected error message: {}",
+        message
+    );
+    assert!(
+        message.contains("base.txt"),
+        "conflicted file missing from message: {}",
+        message
+    );
     assert!(test_repo.repo.path().join("MERGE_HEAD").exists());
 }
 
