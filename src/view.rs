@@ -7,7 +7,7 @@ use ratatui::{
 
 use crate::{
     i18n,
-    model::{InputMode, Model, ViewMode},
+    model::{InputMode, Model, ViewMode, select_popup::OnSelect},
     view::{
         render::{render_popup, render_toast, util::input_spans},
         util::{apply_search_highlight, apply_selection_style, visible_scroll_offset},
@@ -246,11 +246,16 @@ pub fn view(model: &Model, frame: &mut Frame) {
 
     // Set title based on view mode
     let title = match model.view_mode {
-        ViewMode::Status => "Magi",
-        ViewMode::Log { picking: false, .. } => "Log",
-        ViewMode::Log { picking: true, .. } => "Pick commit",
-        ViewMode::Preview => "Preview",
-        ViewMode::RebaseTodo => "Rebase",
+        ViewMode::Status => "Magi".to_string(),
+        ViewMode::Log { picking: false, .. } => "Log".to_string(),
+        ViewMode::Log { picking: true, .. } => match &model.log_pick_on_select {
+            Some(OnSelect::RebaseSubsetStart { newbase }) => {
+                i18n::t().fmt1(i18n::t().title_pick_rebase_subset_fmt, newbase)
+            }
+            _ => "Pick commit".to_string(),
+        },
+        ViewMode::Preview => "Preview".to_string(),
+        ViewMode::RebaseTodo => "Rebase".to_string(),
     };
 
     // Vim-style command line typed in the rebase todo editor (after ':')

@@ -9,8 +9,9 @@ use crate::{
         select_popup::OnSelect,
     },
     msg::{
-        ApplyCommand, FetchCommand, LogType, MergeCommand, Message, OptionsSource, PullCommand,
-        PushCommand, RebaseCommand, ResetMode, RevertCommand, ShowSelectPopupConfig, StashCommand,
+        ApplyCommand, CommitSelect, FetchCommand, LogType, MergeCommand, Message, OptionsSource,
+        PullCommand, PushCommand, RebaseCommand, ResetMode, RevertCommand, ShowSelectPopupConfig,
+        StashCommand,
     },
 };
 
@@ -127,6 +128,14 @@ fn route_result(
         }
         (Some(OnSelect::RebaseInteractive), SelectResult::Selected(commit)) => {
             Some(Message::ShowRebaseTodo(commit))
+        }
+        (Some(OnSelect::RebaseSubsetOnto), SelectResult::Selected(newbase)) => {
+            Some(Message::ShowCommitSelect(CommitSelect::RebaseSubset {
+                newbase,
+            }))
+        }
+        (Some(OnSelect::RebaseSubsetStart { newbase }), SelectResult::Selected(start)) => {
+            Some(Message::Rebase(RebaseCommand::Subset { newbase, start }))
         }
         (Some(OnSelect::ReviseCommit), SelectResult::Selected(hash)) => {
             Some(Message::ReviseCommit(hash))

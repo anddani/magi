@@ -14,7 +14,7 @@ use magi::{
         },
         select_popup::{OnSelect, SelectPopupState},
     },
-    msg::{LogType, Message, update::update},
+    msg::{CommitSelect, LogType, Message, update::update},
     view::view,
 };
 use ratatui::{Terminal, backend::TestBackend};
@@ -119,6 +119,30 @@ fn snapshot_log_view() {
         }
     }
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_log_pick_view_rebase_subset() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .commit_file("first.txt", "one", "Add first file")
+        .commit_file("second.txt", "two", "Add second file");
+
+    let mut model = create_snapshot_model(&test_repo);
+    update(
+        &mut model,
+        Message::ShowCommitSelect(CommitSelect::RebaseSubset {
+            newbase: "main".to_string(),
+        }),
+    );
+
+    // Pin the relative commit times so the frame stays deterministic.
+    for line in &mut model.ui_model.lines {
+        if let LineContent::LogLine(entry) = &mut line.content {
+            entry.time = entry.time.as_ref().map(|_| "2 days".to_string());
+        }
+    }
+    assert_frame_snapshot!(render_to_string(&model, 100, 24));
 }
 
 // ── Command popups ────────────────────────────────────────────────────────────

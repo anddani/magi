@@ -69,6 +69,10 @@ pub enum OnSelect {
     RebaseElsewhere,
     /// Select the base commit for an interactive rebase (base inclusive)
     RebaseInteractive,
+    /// Select the new base for a subset rebase (step 1 of 2)
+    RebaseSubsetOnto,
+    /// Select the start commit for a subset rebase (step 2 of 2, carries the new base)
+    RebaseSubsetStart { newbase: String },
     /// Select a push remote to rebase onto (sets branch.<name>.pushRemote)
     RebasePushRemote,
     /// Select an upstream branch to rebase onto (setting it as upstream)
