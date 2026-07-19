@@ -496,6 +496,9 @@ pub enum RebaseCommand {
     /// Start an interactive rebase that stops at the given commit for editing
     /// (the commit is marked `edit`, everything after it is picked)
     ModifyCommit(String),
+    /// Start an interactive rebase that rewords the given commit
+    /// (the commit is marked `reword`, everything after it is picked)
+    RewordCommit(String),
     /// Continue after resolving conflicts
     Continue,
     /// Skip the current conflicting commit
@@ -682,6 +685,9 @@ pub enum CommitSelect {
     /// Show select popup (or confirm) to pick a commit to modify
     /// (stops an interactive rebase at that commit for editing)
     ModifyCommit,
+    /// Show select popup (or confirm) to pick a commit to reword
+    /// (an interactive rebase marks it `reword` and opens the editor)
+    RewordCommit,
 
     // Revise-related
     /// Show select popup (or confirm) to pick a commit to revise (reword)

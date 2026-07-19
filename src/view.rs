@@ -252,6 +252,8 @@ pub fn view(model: &Model, frame: &mut Frame) {
             Some(OnSelect::RebaseSubsetStart { newbase }) => {
                 i18n::t().fmt1(i18n::t().title_pick_rebase_subset_fmt, newbase)
             }
+            Some(OnSelect::ModifyCommit) => i18n::t().title_pick_modify_commit.to_string(),
+            Some(OnSelect::RewordCommit) => i18n::t().title_pick_reword_commit.to_string(),
             _ => "Pick commit".to_string(),
         },
         ViewMode::Preview => "Preview".to_string(),

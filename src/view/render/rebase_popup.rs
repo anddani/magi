@@ -67,12 +67,10 @@ pub fn content<'a>(
     // Empty title keeps the commands aligned with the left column's content
     let modify_col = PopupColumn {
         title: Some(PopupColumnTitle::Raw("")),
-        content: vec![command_description(
-            theme,
-            model.arg_mode,
-            "m",
-            t.cmd_to_modify_a_commit,
-        )],
+        content: vec![
+            command_description(theme, model.arg_mode, "m", t.cmd_to_modify_a_commit),
+            command_description(theme, model.arg_mode, "w", t.cmd_to_reword_a_commit),
+        ],
     };
 
     CommandPopupContent {

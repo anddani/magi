@@ -127,9 +127,14 @@ pub struct Strings {
     pub cmd_interactively: &'static str,
     pub cmd_a_subset: &'static str,
     pub cmd_to_modify_a_commit: &'static str,
+    pub cmd_to_reword_a_commit: &'static str,
     /// Window title while picking the start commit of a subset rebase.
     /// `{}` is the new base (branch/ref) chosen in the previous step.
     pub title_pick_rebase_subset_fmt: &'static str,
+    /// Window title while picking a commit to modify (edit in a rebase)
+    pub title_pick_modify_commit: &'static str,
+    /// Window title while picking a commit to reword
+    pub title_pick_reword_commit: &'static str,
     pub cmd_all_remotes: &'static str,
     pub cmd_another_branch: &'static str,
     pub cmd_explicit_refspec: &'static str,
@@ -371,7 +376,10 @@ static ENGLISH: Strings = Strings {
     cmd_interactively: "Interactively",
     cmd_a_subset: "A subset",
     cmd_to_modify_a_commit: "To modify a commit",
+    cmd_to_reword_a_commit: "To reword a commit",
     title_pick_rebase_subset_fmt: "Press Enter on a commit to rebase it and commits above onto {}, or Esc/q to cancel",
+    title_pick_modify_commit: "Press Enter on a commit to modify it, or Esc/q to cancel",
+    title_pick_reword_commit: "Press Enter on a commit to reword its message, or Esc/q to cancel",
     cmd_all_remotes: "All remotes",
     cmd_another_branch: "Another branch",
     cmd_explicit_refspec: "Explicit refspec",
@@ -596,7 +604,10 @@ static SWEDISH: Strings = Strings {
     cmd_interactively: "Interaktivt",
     cmd_a_subset: "En delmängd",
     cmd_to_modify_a_commit: "För att ändra en förbindelse",
+    cmd_to_reword_a_commit: "För att omformulera en förbindelse",
     title_pick_rebase_subset_fmt: "Tryck Enter på en förbindelse för att ympa den och förbindelser ovanför på {}, eller Esc/q för att avbryta",
+    title_pick_modify_commit: "Tryck Enter på en förbindelse för att ändra den, eller Esc/q för att avbryta",
+    title_pick_reword_commit: "Tryck Enter på en förbindelse för att omformulera dess meddelande, eller Esc/q för att avbryta",
     cmd_all_remotes: "Alla fjärrar",
     cmd_another_branch: "Annan gren",
     cmd_explicit_refspec: "Explicit refspec",

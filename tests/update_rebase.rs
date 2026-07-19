@@ -1400,3 +1400,186 @@ fn test_modify_commit_update_stops_rebase_at_commit() {
     assert!(rebase_in_progress(test_repo.repo_path()));
     assert!(model.toast.is_some(), "Expected a toast after modify");
 }
+
+// ── Reword commit — popup key and selection ───────────────────────────────────
+
+#[test]
+fn test_w_in_rebase_popup_shows_reword_commit_select() {
+    let test_repo = TestRepo::new();
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(rebase_popup(false));
+
+    let result = handle_key(key(KeyCode::Char('w')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowCommitSelect(CommitSelect::RewordCommit))
+    );
+}
+
+#[test]
+fn test_w_key_has_no_effect_in_in_progress_popup() {
+    let test_repo = TestRepo::new();
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(rebase_popup(true));
+
+    let result = handle_key(key(KeyCode::Char('w')), &model);
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_reword_commit_on_commit_shows_confirmation() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .commit_file("file1.txt", "content1", "First commit")
+        .commit_file("file2.txt", "content2", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let commit_line = find_commit_line(&model).expect("Expected a commit line in the model");
+    model.ui_model.cursor_position = commit_line;
+
+    let expected_hash =
+        if let LineContent::Commit(info) = &model.ui_model.lines[commit_line].content {
+            info.hash.clone()
+        } else {
+            panic!("Not a commit line");
+        };
+
+    let result = update(
+        &mut model,
+        Message::ShowCommitSelect(CommitSelect::RewordCommit),
+    );
+
+    assert_eq!(result, None);
+    let state = expect_confirm_popup(&model);
+    assert!(state.message.contains(&expected_hash));
+    assert!(matches!(
+        &state.on_confirm,
+        ConfirmAction::RewordCommit(hash) if *hash == expected_hash
+    ));
+}
+
+#[test]
+fn test_reword_commit_confirmation_routes_to_rebase_command() {
+    let test_repo = TestRepo::new();
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Confirm(
+        magi::model::popup::ConfirmPopupState {
+            message: "Reword commit abc1234?".to_string(),
+            on_confirm: ConfirmAction::RewordCommit("abc1234".to_string()),
+        },
+    ));
+
+    let result = handle_key(key(KeyCode::Char('y')), &model);
+    assert_eq!(
+        result,
+        Some(Message::Rebase(RebaseCommand::RewordCommit(
+            "abc1234".to_string()
+        )))
+    );
+}
+
+#[test]
+fn test_reword_commit_not_on_commit_shows_current_log_pick_view() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let non_commit_pos = find_line(&model, |c| {
+        !matches!(c, LineContent::Commit(_) | LineContent::LogLine(_))
+    })
+    .expect("Expected at least one non-commit line");
+    model.ui_model.cursor_position = non_commit_pos;
+
+    let result = update(
+        &mut model,
+        Message::ShowCommitSelect(CommitSelect::RewordCommit),
+    );
+
+    assert_eq!(result, None);
+    assert!(
+        matches!(
+            model.view_mode,
+            ViewMode::Log {
+                log_type: LogType::Current,
+                picking: true,
+                ..
+            }
+        ),
+        "Expected current-branch log pick view"
+    );
+    assert_eq!(model.log_pick_on_select, Some(OnSelect::RewordCommit));
+}
+
+#[test]
+fn test_select_confirm_reword_commit_returns_rebase_message() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, true, false).unwrap();
+    commits.retain(|e| e.is_commit());
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let expected_hash = commits[0].hash.as_ref().unwrap().clone();
+
+    model.ui_model.lines = commits
+        .into_iter()
+        .map(|entry| Line {
+            content: LineContent::LogLine(entry),
+            section: None,
+        })
+        .collect();
+    model.ui_model.cursor_position = 0;
+    model.view_mode = ViewMode::Log {
+        log_type: LogType::Current,
+        picking: true,
+        graph: true,
+        color: false,
+    };
+    model.log_pick_on_select = Some(OnSelect::RewordCommit);
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::Rebase(RebaseCommand::RewordCommit(expected_hash)))
+    );
+    assert_eq!(model.view_mode, ViewMode::Status);
+    assert!(model.log_pick_on_select.is_none());
+}
+
+#[test]
+fn test_reword_commit_update_rewords_message() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    let target = test_repo.head_hash();
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
+
+    // Git opens the editor for the reworded message; replace it wholesale.
+    // GIT_EDITOR outranks core.editor, so a developer's GIT_EDITOR (or a
+    // real interactive editor) must be overridden via the env var.
+    unsafe { std::env::set_var("GIT_EDITOR", "echo 'Reworded' >") };
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::Rebase(RebaseCommand::RewordCommit(target)),
+    );
+
+    // The rebase runs to completion; only the message changes
+    assert!(!rebase_in_progress(test_repo.repo_path()));
+    assert!(model.toast.is_some(), "Expected a toast after reword");
+
+    let workdir = test_repo.repo_path();
+    assert_eq!(
+        magi::git::read_commit_message(workdir, "HEAD").as_deref(),
+        Some("Second commit")
+    );
+    assert_eq!(
+        magi::git::read_commit_message(workdir, "HEAD^").as_deref(),
+        Some("Reworded")
+    );
+}
