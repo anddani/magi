@@ -668,6 +668,8 @@ pub enum StashCommand {
     SnapshotIndex,
     /// Create a snapshot stash of only the unstaged working tree changes, without resetting them
     SnapshotWorktree,
+    /// Commit the index and working tree states to the wip refs, without resetting them
+    ToWipRef,
 }
 
 /// Messages for commit select
