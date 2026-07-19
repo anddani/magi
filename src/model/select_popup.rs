@@ -73,6 +73,8 @@ pub enum OnSelect {
     ModifyCommit,
     /// Select a commit to reword (an interactive rebase marks it `reword`)
     RewordCommit,
+    /// Select a commit to remove (an interactive rebase marks it `drop`)
+    RemoveCommit,
     /// Select the new base for a subset rebase (step 1 of 2)
     RebaseSubsetOnto,
     /// Select the start commit for a subset rebase (step 2 of 2, carries the new base)

@@ -70,6 +70,7 @@ pub fn content<'a>(
         content: vec![
             command_description(theme, model.arg_mode, "m", t.cmd_to_modify_a_commit),
             command_description(theme, model.arg_mode, "w", t.cmd_to_reword_a_commit),
+            command_description(theme, model.arg_mode, "k", t.cmd_to_remove_a_commit),
         ],
     };
 
