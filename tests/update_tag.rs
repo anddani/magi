@@ -407,7 +407,9 @@ fn test_create_tag_with_edit_and_force_orders_flags() {
 
     let mut model = create_model_from_test_repo(&test_repo);
     model.arguments = Some(Arguments::TagArguments(
-        [TagArgument::Edit, TagArgument::Force].into_iter().collect(),
+        [TagArgument::Edit, TagArgument::Force]
+            .into_iter()
+            .collect(),
     ));
 
     let result = update(
