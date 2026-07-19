@@ -2,6 +2,7 @@ use crate::model::arguments::{Arguments::StashArguments, PopupArgument};
 use crate::{
     git::{
         snapshot::{create_index_snapshot, create_snapshot, create_worktree_snapshot},
+        wip::commit_to_wip_refs,
         worktree_stash::create_worktree_stash,
     },
     model::{Model, popup::PopupContent},
@@ -25,6 +26,7 @@ pub fn update(model: &mut Model, stash_command: StashCommand) -> Option<Message>
         StashCommand::Snapshot => snapshot(model, create_snapshot),
         StashCommand::SnapshotIndex => snapshot(model, create_index_snapshot),
         StashCommand::SnapshotWorktree => snapshot(model, create_worktree_snapshot),
+        StashCommand::ToWipRef => snapshot(model, commit_to_wip_refs),
     }
 }
 

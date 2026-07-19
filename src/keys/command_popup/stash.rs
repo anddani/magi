@@ -23,6 +23,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('Z') => Some(Message::Stash(StashCommand::Snapshot)),
         KeyCode::Char('I') => Some(Message::Stash(StashCommand::SnapshotIndex)),
         KeyCode::Char('W') => Some(Message::Stash(StashCommand::SnapshotWorktree)),
+        KeyCode::Char('r') => Some(Message::Stash(StashCommand::ToWipRef)),
         KeyCode::Char('a') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
             title: "Apply stash".to_string(),
             source: OptionsSource::Stashes,
