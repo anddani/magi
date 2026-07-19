@@ -514,6 +514,7 @@ pub enum TagArgument {
     Force,
     Edit,
     Annotate,
+    Sign,
 }
 
 impl TagArgument {
@@ -524,7 +525,12 @@ impl TagArgument {
 
 impl PopupArgument for TagArgument {
     fn all() -> Vec<TagArgument> {
-        vec![TagArgument::Force, TagArgument::Edit, TagArgument::Annotate]
+        vec![
+            TagArgument::Force,
+            TagArgument::Edit,
+            TagArgument::Annotate,
+            TagArgument::Sign,
+        ]
     }
 
     fn key(&self) -> char {
@@ -532,6 +538,7 @@ impl PopupArgument for TagArgument {
             TagArgument::Force => 'f',
             TagArgument::Edit => 'e',
             TagArgument::Annotate => 'a',
+            TagArgument::Sign => 's',
         }
     }
 
@@ -541,6 +548,7 @@ impl PopupArgument for TagArgument {
             TagArgument::Force => t.arg_tag_force,
             TagArgument::Edit => t.arg_tag_edit,
             TagArgument::Annotate => t.arg_tag_annotate,
+            TagArgument::Sign => t.arg_tag_sign,
         }
     }
 
@@ -549,6 +557,7 @@ impl PopupArgument for TagArgument {
             TagArgument::Force => "--force",
             TagArgument::Edit => "--edit",
             TagArgument::Annotate => "--annotate",
+            TagArgument::Sign => "--sign",
         }
     }
 }
@@ -588,13 +597,20 @@ mod tests {
         assert_eq!(TagArgument::Edit.flag(), "--edit");
         assert_eq!(TagArgument::Annotate.key(), 'a');
         assert_eq!(TagArgument::Annotate.flag(), "--annotate");
+        assert_eq!(TagArgument::Sign.key(), 's');
+        assert_eq!(TagArgument::Sign.flag(), "--sign");
     }
 
     #[test]
     fn test_tag_argument_order_matches_magit() {
         assert_eq!(
             TagArgument::all(),
-            vec![TagArgument::Force, TagArgument::Edit, TagArgument::Annotate]
+            vec![
+                TagArgument::Force,
+                TagArgument::Edit,
+                TagArgument::Annotate,
+                TagArgument::Sign,
+            ]
         );
     }
 
@@ -603,6 +619,7 @@ mod tests {
         assert_eq!(TagArgument::from_key('f'), Some(TagArgument::Force));
         assert_eq!(TagArgument::from_key('e'), Some(TagArgument::Edit));
         assert_eq!(TagArgument::from_key('a'), Some(TagArgument::Annotate));
+        assert_eq!(TagArgument::from_key('s'), Some(TagArgument::Sign));
         assert_eq!(TagArgument::from_key('x'), None);
     }
 }

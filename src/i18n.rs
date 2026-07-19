@@ -241,6 +241,7 @@ pub struct Strings {
     pub arg_tag_force: &'static str,
     pub arg_tag_edit: &'static str,
     pub arg_tag_annotate: &'static str,
+    pub arg_tag_sign: &'static str,
     pub arg_revert_mainline: &'static str,
     pub input_revert_mainline: &'static str,
 
@@ -483,6 +484,7 @@ static ENGLISH: Strings = Strings {
     arg_tag_force: "Force",
     arg_tag_edit: "Edit message",
     arg_tag_annotate: "Annotate",
+    arg_tag_sign: "Sign",
     arg_revert_mainline: "Replay merge relative to parent",
     input_revert_mainline: "Mainline parent number",
 
@@ -712,6 +714,7 @@ static SWEDISH: Strings = Strings {
     arg_tag_force: "Tvinga",
     arg_tag_edit: "Ändra meddelandet",
     arg_tag_annotate: "Annotera",
+    arg_tag_sign: "Signera",
     arg_revert_mainline: "Spela upp sammanslagning relativt förälder",
     input_revert_mainline: "Förälderantalsnummer",
 

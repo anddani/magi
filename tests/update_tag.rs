@@ -137,6 +137,22 @@ fn test_a_in_tag_arg_mode_toggles_annotate() {
 }
 
 #[test]
+fn test_s_in_tag_arg_mode_toggles_sign() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('s')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ToggleArgument(Argument::Tag(TagArgument::Sign)))
+    );
+}
+
+#[test]
 fn test_other_key_in_tag_arg_mode_exits_arg_mode() {
     let test_repo = TestRepo::new();
     test_repo.commit_file("file1.txt", "content1", "First commit");
@@ -521,6 +537,80 @@ fn test_create_tag_with_annotate_and_force_orders_flags() {
                 "tag".to_string(),
                 "--force".to_string(),
                 "--annotate".to_string(),
+                "v1.0.0".to_string(),
+                "HEAD".to_string(),
+            ],
+        })
+    );
+}
+
+// ── Create tag with --sign ─────────────────────────────────────────────────────
+
+#[test]
+fn test_create_tag_with_sign_returns_with_editor_message() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments(
+        [TagArgument::Sign].into_iter().collect(),
+    ));
+
+    let result = update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    let expected = Message::CreateTagWithEditor {
+        name: "v1.0.0".to_string(),
+        args: vec![
+            "tag".to_string(),
+            "--sign".to_string(),
+            "v1.0.0".to_string(),
+            "HEAD".to_string(),
+        ],
+    };
+    assert_eq!(result, Some(expected));
+    // The editor command must run with the TUI suspended
+    assert!(magi::msg::util::is_external_command(&result.unwrap()));
+    assert!(
+        model.arguments.is_none(),
+        "Arguments should be consumed when building the editor command"
+    );
+}
+
+#[test]
+fn test_create_tag_with_sign_and_annotate_orders_flags() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments(
+        [TagArgument::Sign, TagArgument::Annotate]
+            .into_iter()
+            .collect(),
+    ));
+
+    let result = update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    // Flags are emitted in a stable order: --annotate before --sign
+    assert_eq!(
+        result,
+        Some(Message::CreateTagWithEditor {
+            name: "v1.0.0".to_string(),
+            args: vec![
+                "tag".to_string(),
+                "--annotate".to_string(),
+                "--sign".to_string(),
                 "v1.0.0".to_string(),
                 "HEAD".to_string(),
             ],
