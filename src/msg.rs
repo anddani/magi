@@ -288,6 +288,12 @@ pub enum Message {
         name: String,
         target: String,
     },
+    /// Runs `git tag --edit ...` which opens the user's configured editor
+    /// for the tag message. Requires the TUI to be suspended.
+    CreateTagWithEditor {
+        name: String,
+        args: Vec<String>,
+    },
     /// Delete an existing tag by name
     DeleteTag(String),
     /// Show confirmation popup for tag prune after computing local/remote diff

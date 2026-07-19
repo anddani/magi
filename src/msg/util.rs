@@ -31,6 +31,7 @@ pub fn is_external_command(msg: &Message) -> bool {
             | Message::ReviseCommit(_)
             | Message::Revert(RevertCommand::Continue)
             | Message::Revert(RevertCommand::WithEditor { .. })
+            | Message::CreateTagWithEditor { .. }
             | Message::Rebase(RebaseCommand::Continue)
             | Message::Rebase(RebaseCommand::ExecuteInteractive)
             | Message::Rebase(RebaseCommand::ModifyCommit(_))

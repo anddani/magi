@@ -512,6 +512,7 @@ impl PopupArgument for RevertArgument {
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum TagArgument {
     Force,
+    Edit,
 }
 
 impl TagArgument {
@@ -522,12 +523,13 @@ impl TagArgument {
 
 impl PopupArgument for TagArgument {
     fn all() -> Vec<TagArgument> {
-        vec![TagArgument::Force]
+        vec![TagArgument::Force, TagArgument::Edit]
     }
 
     fn key(&self) -> char {
         match self {
             TagArgument::Force => 'f',
+            TagArgument::Edit => 'e',
         }
     }
 
@@ -535,12 +537,14 @@ impl PopupArgument for TagArgument {
         let t = i18n::t();
         match self {
             TagArgument::Force => t.arg_tag_force,
+            TagArgument::Edit => t.arg_tag_edit,
         }
     }
 
     fn flag(&self) -> &'static str {
         match self {
             TagArgument::Force => "--force",
+            TagArgument::Edit => "--edit",
         }
     }
 }
@@ -576,11 +580,22 @@ mod tests {
     fn test_tag_argument_key_and_flag() {
         assert_eq!(TagArgument::Force.key(), 'f');
         assert_eq!(TagArgument::Force.flag(), "--force");
+        assert_eq!(TagArgument::Edit.key(), 'e');
+        assert_eq!(TagArgument::Edit.flag(), "--edit");
+    }
+
+    #[test]
+    fn test_tag_argument_edit_listed_below_force() {
+        assert_eq!(
+            TagArgument::all(),
+            vec![TagArgument::Force, TagArgument::Edit]
+        );
     }
 
     #[test]
     fn test_tag_argument_from_key() {
         assert_eq!(TagArgument::from_key('f'), Some(TagArgument::Force));
+        assert_eq!(TagArgument::from_key('e'), Some(TagArgument::Edit));
         assert_eq!(TagArgument::from_key('x'), None);
     }
 }

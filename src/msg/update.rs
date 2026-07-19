@@ -223,6 +223,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowTagPopup => show_tag_popup::update(model),
         Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),
         Message::CreateTag { name, target } => create_tag::update(model, name, target),
+        Message::CreateTagWithEditor { name, args } => create_tag::with_editor(model, name, args),
         Message::DeleteTag(name) => delete_tag::update(model, name),
         Message::ShowPruneTagsConfirm { remote } => show_prune_tags_confirm::update(model, remote),
         Message::PruneTags {
