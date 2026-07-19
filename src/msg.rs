@@ -27,6 +27,8 @@ pub enum LogType {
     Current,
     /// Show log for another branch/revision
     Other(String),
+    /// Show log for the current branch, its upstream and its push target
+    Related,
     /// Show log for all references (--all)
     AllReferences,
     /// Show log for local branches and HEAD

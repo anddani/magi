@@ -63,6 +63,7 @@ pub fn get_log_entries(
     match log_type {
         LogType::Current => args.push("HEAD".to_string()),
         LogType::Other(revision) => args.push(revision.clone()),
+        LogType::Related => args.extend(get_related_revs(repository)),
         LogType::AllReferences => args.push("--all".to_string()),
         LogType::LocalBranches => {
             if head_detached {
@@ -103,6 +104,95 @@ pub fn get_log_entries(
     }
 
     Ok(entries)
+}
+
+/// Resolves the revisions for a related log, mirroring `magit-log-related`:
+/// the current branch, its push target, its upstream and — when the upstream
+/// is a local branch — that branch's own upstream. When HEAD is detached, the
+/// previously checked out branch and HEAD are shown instead.
+fn get_related_revs(repository: &Repository) -> Vec<String> {
+    let detached = repository.head_detached().unwrap_or(false);
+
+    let current = if detached {
+        previous_branch(repository)
+    } else {
+        repository
+            .head()
+            .ok()
+            .and_then(|head| head.shorthand().ok().map(String::from))
+    };
+
+    let mut revs: Vec<String> = Vec::new();
+    let mut push_rev = |rev: Option<String>| {
+        if let Some(rev) = rev
+            && !revs.contains(&rev)
+        {
+            revs.push(rev);
+        }
+    };
+
+    match current {
+        Some(branch) => {
+            push_rev(Some(branch.clone()));
+            if detached {
+                push_rev(Some("HEAD".to_string()));
+            }
+            push_rev(push_branch(repository, &branch));
+            if let Some((upstream, upstream_is_local)) = upstream_branch(repository, &branch) {
+                // When the upstream is a local branch, also show its own upstream
+                let upup = if upstream_is_local {
+                    upstream_branch(repository, &upstream).map(|(name, _)| name)
+                } else {
+                    None
+                };
+                push_rev(Some(upstream));
+                push_rev(upup);
+            }
+        }
+        None => push_rev(Some("HEAD".to_string())),
+    }
+
+    revs
+}
+
+/// Gets the push target of `branch` (e.g. "origin/main") if that remote
+/// branch exists
+fn push_branch(repository: &Repository, branch: &str) -> Option<String> {
+    let remote = super::config::get_push_remote(repository, branch)?;
+    let candidate = format!("{}/{}", remote, branch);
+    repository
+        .find_branch(&candidate, git2::BranchType::Remote)
+        .ok()?;
+    Some(candidate)
+}
+
+/// Gets the upstream of `branch` as a short rev, and whether it is a local
+/// branch. Returns None if no upstream is configured or it doesn't exist
+fn upstream_branch(repository: &Repository, branch: &str) -> Option<(String, bool)> {
+    let refname = repository
+        .branch_upstream_name(&format!("refs/heads/{}", branch))
+        .ok()?;
+    let refname = refname.as_str().ok()?;
+    // Only include upstreams that actually exist
+    repository.find_reference(refname).ok()?;
+    if let Some(local) = refname.strip_prefix("refs/heads/") {
+        Some((local.to_string(), true))
+    } else {
+        refname
+            .strip_prefix("refs/remotes/")
+            .map(|remote| (remote.to_string(), false))
+    }
+}
+
+/// Gets the previously checked out branch (`@{-1}`), if it is a local branch
+fn previous_branch(repository: &Repository) -> Option<String> {
+    let (_, reference) = repository.revparse_ext("@{-1}").ok()?;
+    let reference = reference?;
+    if reference.is_branch() {
+        reference.shorthand().ok().map(String::from)
+    } else {
+        None
+    }
 }
 
 /// Parse the output of git log into LogEntry structs
@@ -332,6 +422,139 @@ mod tests {
 
         assert!(messages.contains(&"Initial commit".to_string()));
         assert!(!messages.contains(&"Second commit".to_string()));
+    }
+
+    #[test]
+    fn test_get_related_revs_current_branch_only() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        let revs = get_related_revs(&test_repo.repo);
+
+        assert_eq!(revs, vec!["main".to_string()]);
+    }
+
+    #[test]
+    fn test_get_related_revs_includes_remote_upstream_and_push_target() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        let head = test_repo
+            .repo
+            .head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id();
+
+        // Simulate a remote with origin/main as both upstream and push target
+        test_repo
+            .repo
+            .remote("origin", "https://example.com/repo.git")
+            .unwrap();
+        test_repo
+            .repo
+            .reference("refs/remotes/origin/main", head, false, "remote branch")
+            .unwrap();
+        let mut config = test_repo.repo.config().unwrap();
+        config.set_str("branch.main.remote", "origin").unwrap();
+        config
+            .set_str("branch.main.merge", "refs/heads/main")
+            .unwrap();
+        config.set_str("remote.pushDefault", "origin").unwrap();
+
+        let revs = get_related_revs(&test_repo.repo);
+
+        // Upstream and push target are the same rev, so it only appears once
+        assert_eq!(revs, vec!["main".to_string(), "origin/main".to_string()]);
+    }
+
+    #[test]
+    fn test_get_related_revs_local_upstream_includes_its_own_upstream() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        let head = test_repo
+            .repo
+            .head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id();
+
+        // main tracks origin/main
+        test_repo
+            .repo
+            .remote("origin", "https://example.com/repo.git")
+            .unwrap();
+        test_repo
+            .repo
+            .reference("refs/remotes/origin/main", head, false, "remote branch")
+            .unwrap();
+        let mut config = test_repo.repo.config().unwrap();
+        config.set_str("branch.main.remote", "origin").unwrap();
+        config
+            .set_str("branch.main.merge", "refs/heads/main")
+            .unwrap();
+
+        // feature tracks the local branch main
+        test_repo.create_branch("feature");
+        test_repo.repo.set_head("refs/heads/feature").unwrap();
+        config.set_str("branch.feature.remote", ".").unwrap();
+        config
+            .set_str("branch.feature.merge", "refs/heads/main")
+            .unwrap();
+
+        let revs = get_related_revs(&test_repo.repo);
+
+        assert_eq!(
+            revs,
+            vec![
+                "feature".to_string(),
+                "main".to_string(),
+                "origin/main".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn test_get_related_revs_detached_head_uses_previous_branch() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo.create_branch("feature");
+        test_repo.repo.set_head("refs/heads/feature").unwrap();
+        test_repo.detach_head();
+
+        let revs = get_related_revs(&test_repo.repo);
+
+        assert_eq!(revs, vec!["feature".to_string(), "HEAD".to_string()]);
+    }
+
+    #[test]
+    fn test_get_log_entries_related() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        // Create a branch at the initial commit, make it main's local upstream,
+        // then advance main past it
+        let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+        test_repo.repo.branch("base", &head, false).unwrap();
+        let mut config = test_repo.repo.config().unwrap();
+        config.set_str("branch.main.remote", ".").unwrap();
+        config
+            .set_str("branch.main.merge", "refs/heads/base")
+            .unwrap();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Second commit");
+
+        let entries = get_log_entries(&test_repo.repo, &LogType::Related, true, false).unwrap();
+        let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
+
+        assert!(messages.contains(&"Initial commit".to_string()));
+        assert!(messages.contains(&"Second commit".to_string()));
     }
 
     #[test]

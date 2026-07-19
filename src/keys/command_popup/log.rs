@@ -24,6 +24,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
             source: OptionsSource::AllRefs,
             on_select: OnSelect::LogOther,
         })),
+        KeyCode::Char('u') => Some(Message::ShowLog(LogType::Related)),
         KeyCode::Char('L') => Some(Message::ShowLog(LogType::LocalBranches)),
         KeyCode::Char('b') => Some(Message::ShowLog(LogType::AllBranches)),
         KeyCode::Char('a') => Some(Message::ShowLog(LogType::AllReferences)),
