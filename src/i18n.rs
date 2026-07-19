@@ -43,6 +43,7 @@ pub struct Strings {
     pub popup_log: &'static str,
     pub popup_stash: &'static str,
     pub popup_tag: &'static str,
+    pub popup_worktree: &'static str,
     pub popup_reset: &'static str,
     pub popup_rebase: &'static str,
     pub popup_revert: &'static str,
@@ -57,6 +58,7 @@ pub struct Strings {
     // Column / section titles inside popups
     pub col_checkout: &'static str,
     pub col_create: &'static str,
+    pub col_create_new: &'static str,
     pub col_do: &'static str,
     pub col_arguments: &'static str,
     pub col_formatting: &'static str,
@@ -307,6 +309,7 @@ static ENGLISH: Strings = Strings {
     popup_log: "Log",
     popup_stash: "Stash",
     popup_tag: "Tag",
+    popup_worktree: "Worktree",
     popup_reset: "Reset",
     popup_rebase: "Rebase",
     popup_revert: "Revert",
@@ -320,6 +323,7 @@ static ENGLISH: Strings = Strings {
 
     col_checkout: "Checkout",
     col_create: "Create",
+    col_create_new: "Create new",
     col_do: "Do",
     col_arguments: "Arguments",
     col_formatting: "Formatting",
@@ -542,6 +546,7 @@ static SWEDISH: Strings = Strings {
     popup_log: "Diarium",
     popup_stash: "Gömma",
     popup_tag: "Märke",
+    popup_worktree: "Arbetsträd",
     popup_reset: "Återställ",
     popup_rebase: "Ympa",
     popup_revert: "Återgå",
@@ -555,6 +560,7 @@ static SWEDISH: Strings = Strings {
 
     col_checkout: "Byt till",
     col_create: "Skapa",
+    col_create_new: "Skapa nytt",
     col_do: "Utför",
     col_arguments: "Argument",
     col_formatting: "Formatering",

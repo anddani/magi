@@ -343,6 +343,7 @@ pub enum PopupContentCommand {
     Merge(MergePopupState),
     Apply(ApplyPopupState),
     Tag,
+    Worktree,
     Select(SelectPopupState),
 }
 
