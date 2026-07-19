@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::git::{
     git_cmd, read_commit_message,
-    worktree_stash::{commit_tree, run},
+    worktree_stash::{commit_tree, run, store_worktree_stash},
 };
 
 /// Creates a snapshot stash of the index and working tree without resetting
@@ -72,6 +72,13 @@ pub fn create_index_snapshot(workdir: &Path) -> Result<(), String> {
     ))?;
 
     Ok(())
+}
+
+/// Creates a snapshot stash of only the unstaged working tree changes,
+/// keeping the index and working tree intact. Same plumbing as the
+/// worktree-only stash, just without resetting the working tree afterwards.
+pub fn create_worktree_snapshot(workdir: &Path) -> Result<(), String> {
+    store_worktree_stash(workdir, "")
 }
 
 #[cfg(test)]
@@ -189,6 +196,81 @@ mod tests {
         let result = create_index_snapshot(test_repo.repo_path());
 
         assert_eq!(result, Err("No staged changes to save".to_string()));
+        assert!(stash_messages(&test_repo).is_empty());
+    }
+
+    #[test]
+    fn test_create_worktree_snapshot_keeps_index_and_worktree() {
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Initial commit");
+        test_repo
+            .write_file_content("file.txt", "staged")
+            .stage_files(&["file.txt"])
+            .write_file_content("file.txt", "unstaged");
+
+        let result = create_worktree_snapshot(test_repo.repo_path());
+
+        assert_eq!(result, Ok(()));
+
+        let messages = stash_messages(&test_repo);
+        assert_eq!(messages.len(), 1);
+        assert!(messages[0].starts_with("WIP on"));
+
+        // Nothing is reset: the index still holds the staged change and the
+        // working tree still holds the unstaged one
+        let staged = run(git_cmd(test_repo.repo_path(), &["show", ":file.txt"])).unwrap();
+        assert_eq!(staged, "staged");
+        let content = std::fs::read_to_string(test_repo.repo_path().join("file.txt")).unwrap();
+        assert_eq!(content, "unstaged");
+    }
+
+    #[test]
+    fn test_worktree_snapshot_contains_only_unstaged_changes() {
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Initial commit");
+        test_repo
+            .write_file_content("file.txt", "staged")
+            .stage_files(&["file.txt"])
+            .write_file_content("file.txt", "unstaged");
+
+        create_worktree_snapshot(test_repo.repo_path()).unwrap();
+
+        // The stash commit's tree matches the working tree, and its index
+        // commit records no staged changes
+        let stashed = run(git_cmd(
+            test_repo.repo_path(),
+            &["show", "stash@{0}:file.txt"],
+        ))
+        .unwrap();
+        assert_eq!(stashed, "unstaged");
+        let stashed_index = run(git_cmd(
+            test_repo.repo_path(),
+            &["diff", "--name-only", "stash@{0}^", "stash@{0}^2"],
+        ))
+        .unwrap();
+        assert_eq!(stashed_index, "");
+    }
+
+    #[test]
+    fn test_create_worktree_snapshot_nothing_unstaged() {
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Initial commit");
+        test_repo
+            .write_file_content("file.txt", "staged")
+            .stage_files(&["file.txt"]);
+
+        let result = create_worktree_snapshot(test_repo.repo_path());
+
+        assert_eq!(result, Err("No unstaged changes to save".to_string()));
         assert!(stash_messages(&test_repo).is_empty());
     }
 }
