@@ -233,6 +233,7 @@ pub struct Strings {
     pub arg_log_color: &'static str,
     pub arg_tag_force: &'static str,
     pub arg_tag_edit: &'static str,
+    pub arg_tag_annotate: &'static str,
     pub arg_revert_mainline: &'static str,
     pub input_revert_mainline: &'static str,
 
@@ -469,6 +470,7 @@ static ENGLISH: Strings = Strings {
     arg_log_color: "Show graph in color",
     arg_tag_force: "Force",
     arg_tag_edit: "Edit message",
+    arg_tag_annotate: "Annotate",
     arg_revert_mainline: "Replay merge relative to parent",
     input_revert_mainline: "Mainline parent number",
 
@@ -692,6 +694,7 @@ static SWEDISH: Strings = Strings {
     arg_log_color: "Visa graf i färg",
     arg_tag_force: "Tvinga",
     arg_tag_edit: "Ändra meddelandet",
+    arg_tag_annotate: "Annotera",
     arg_revert_mainline: "Spela upp sammanslagning relativt förälder",
     input_revert_mainline: "Förälderantalsnummer",
 

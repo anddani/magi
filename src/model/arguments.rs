@@ -513,6 +513,7 @@ impl PopupArgument for RevertArgument {
 pub enum TagArgument {
     Force,
     Edit,
+    Annotate,
 }
 
 impl TagArgument {
@@ -523,13 +524,14 @@ impl TagArgument {
 
 impl PopupArgument for TagArgument {
     fn all() -> Vec<TagArgument> {
-        vec![TagArgument::Force, TagArgument::Edit]
+        vec![TagArgument::Force, TagArgument::Edit, TagArgument::Annotate]
     }
 
     fn key(&self) -> char {
         match self {
             TagArgument::Force => 'f',
             TagArgument::Edit => 'e',
+            TagArgument::Annotate => 'a',
         }
     }
 
@@ -538,6 +540,7 @@ impl PopupArgument for TagArgument {
         match self {
             TagArgument::Force => t.arg_tag_force,
             TagArgument::Edit => t.arg_tag_edit,
+            TagArgument::Annotate => t.arg_tag_annotate,
         }
     }
 
@@ -545,6 +548,7 @@ impl PopupArgument for TagArgument {
         match self {
             TagArgument::Force => "--force",
             TagArgument::Edit => "--edit",
+            TagArgument::Annotate => "--annotate",
         }
     }
 }
@@ -582,13 +586,15 @@ mod tests {
         assert_eq!(TagArgument::Force.flag(), "--force");
         assert_eq!(TagArgument::Edit.key(), 'e');
         assert_eq!(TagArgument::Edit.flag(), "--edit");
+        assert_eq!(TagArgument::Annotate.key(), 'a');
+        assert_eq!(TagArgument::Annotate.flag(), "--annotate");
     }
 
     #[test]
-    fn test_tag_argument_edit_listed_below_force() {
+    fn test_tag_argument_order_matches_magit() {
         assert_eq!(
             TagArgument::all(),
-            vec![TagArgument::Force, TagArgument::Edit]
+            vec![TagArgument::Force, TagArgument::Edit, TagArgument::Annotate]
         );
     }
 
@@ -596,6 +602,7 @@ mod tests {
     fn test_tag_argument_from_key() {
         assert_eq!(TagArgument::from_key('f'), Some(TagArgument::Force));
         assert_eq!(TagArgument::from_key('e'), Some(TagArgument::Edit));
+        assert_eq!(TagArgument::from_key('a'), Some(TagArgument::Annotate));
         assert_eq!(TagArgument::from_key('x'), None);
     }
 }
