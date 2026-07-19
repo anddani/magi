@@ -42,6 +42,11 @@ pub fn keys(key: KeyEvent, state: &MergePopupState) -> Option<Message> {
             source: OptionsSource::LocalAndRemoteBranches,
             on_select: OnSelect::MergePreview,
         })),
+        KeyCode::Char('s') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Squash merge".to_string(),
+            source: OptionsSource::LocalAndRemoteBranches,
+            on_select: OnSelect::MergeSquash,
+        })),
         _ => None,
     }
 }

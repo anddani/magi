@@ -19,6 +19,7 @@ pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
         MergeCommand::NoCommit(branch) => merge_no_commit(model, branch),
         MergeCommand::Absorb(branch) => absorb_branch(model, branch),
         MergeCommand::Preview(branch) => preview_merge(model, branch),
+        MergeCommand::Squash(branch) => squash_merge(model, branch),
         MergeCommand::Continue => continue_merge(model),
         MergeCommand::Abort => abort_merge(model),
     }
@@ -145,6 +146,14 @@ fn merge_no_commit(model: &mut Model, branch: String) -> Option<Message> {
             "--no-ff".to_string(),
             branch,
         ],
+        "Merge".to_string(),
+    )
+}
+
+fn squash_merge(model: &mut Model, branch: String) -> Option<Message> {
+    execute_pty_command(
+        model,
+        vec!["merge".to_string(), "--squash".to_string(), branch],
         "Merge".to_string(),
     )
 }

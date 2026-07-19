@@ -119,6 +119,8 @@ pub enum OnSelect {
     MergeAbsorb,
     /// Select a branch to preview a merge of into the current branch
     MergePreview,
+    /// Select a branch to squash-merge into the working tree (`git merge --squash`)
+    MergeSquash,
     /// Select a commit to cherry-pick onto the current branch
     ApplyPick,
     /// Select a commit to apply (--no-commit) onto the current branch

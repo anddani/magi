@@ -550,6 +550,9 @@ pub enum MergeCommand {
     /// working tree (`git merge-tree --write-tree HEAD <branch>` diffed
     /// against HEAD)
     Preview(String),
+    /// Squash-merge the given branch into the working tree without committing
+    /// (`git merge --squash <branch>`)
+    Squash(String),
     /// Continue after resolving conflicts
     Continue,
     /// Abort the merge sequence

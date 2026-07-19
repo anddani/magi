@@ -154,7 +154,8 @@ fn compute_exclude(model: &Model, on_select: &OnSelect) -> Option<String> {
         | OnSelect::MergeEditMessage
         | OnSelect::MergeNoCommit
         | OnSelect::MergeAbsorb
-        | OnSelect::MergePreview => model.git_info.current_branch().map(|b| b.to_string()),
+        | OnSelect::MergePreview
+        | OnSelect::MergeSquash => model.git_info.current_branch().map(|b| b.to_string()),
         OnSelect::ResetBranchTarget { branch } => Some(branch.clone()),
         OnSelect::OpenPrTarget { source_branch } => Some(source_branch.clone()),
         OnSelect::HarvestSourceBranch { .. } => {
@@ -298,7 +299,8 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
         OnSelect::MergeElsewhere
         | OnSelect::MergeEditMessage
         | OnSelect::MergeNoCommit
-        | OnSelect::MergePreview => {
+        | OnSelect::MergePreview
+        | OnSelect::MergeSquash => {
             // Cursor branch/revision (not current)
             cursor_line
                 .and_then(|line| {

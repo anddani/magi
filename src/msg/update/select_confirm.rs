@@ -304,6 +304,9 @@ fn route_result(
         (Some(OnSelect::MergePreview), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Preview(branch)))
         }
+        (Some(OnSelect::MergeSquash), SelectResult::Selected(branch)) => {
+            Some(Message::Merge(MergeCommand::Squash(branch)))
+        }
         (Some(OnSelect::ApplyPick), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Pick(vec![hash])))
         }

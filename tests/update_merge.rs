@@ -153,6 +153,27 @@ fn test_p_in_merge_popup_shows_select_with_preview() {
 }
 
 #[test]
+fn test_s_in_merge_popup_shows_select_with_squash() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('s')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Squash merge".to_string(),
+            source: OptionsSource::LocalAndRemoteBranches,
+            on_select: OnSelect::MergeSquash,
+        }))
+    );
+}
+
+#[test]
 fn test_q_dismisses_merge_popup() {
     let test_repo = TestRepo::new();
     test_repo.commit_file("file1.txt", "content1", "First commit");
@@ -291,6 +312,44 @@ fn test_merge_preview_cursor_on_branch_ref_prioritizes_it() {
                 title: "Preview merge".to_string(),
                 source: OptionsSource::LocalAndRemoteBranches,
                 on_select: OnSelect::MergePreview,
+            }),
+        );
+
+        let state = expect_select_popup(&model);
+        assert_eq!(
+            state.all_options[0], "feature-branch",
+            "feature-branch should be first because cursor is on its commit"
+        );
+    }
+}
+
+#[test]
+fn test_merge_squash_cursor_on_branch_ref_prioritizes_it() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
+
+    // Create another branch pointing at this commit
+    test_repo.create_branch("feature-branch");
+
+    // Make a second commit so current branch is ahead
+    test_repo.commit_file("file.txt", "second", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Find a commit line that has "feature-branch" as a ref
+    let branch_pos = find_line(
+        &model,
+        |c| matches!(c, LineContent::Commit(info) if info.refs.iter().any(|r| r.name == "feature-branch")),
+    );
+
+    if let Some(pos) = branch_pos {
+        model.ui_model.cursor_position = pos;
+        update(
+            &mut model,
+            Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Squash merge".to_string(),
+                source: OptionsSource::LocalAndRemoteBranches,
+                on_select: OnSelect::MergeSquash,
             }),
         );
 
@@ -757,6 +816,101 @@ fn test_merge_no_commit_fast_forward_still_stops_before_committing() {
     );
     assert_eq!(test_repo.head_hash(), head_before, "HEAD must not move");
     assert!(test_repo.repo_path().join("feature.txt").exists());
+}
+
+// ── MergeCommand::Squash — execution ──────────────────────────────────────────
+
+#[test]
+fn test_squash_merge_runs_in_pty() {
+    let test_repo = TestRepo::new();
+    // Divergent branches touching different files: merges cleanly.
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Squash("feature".to_string())),
+    );
+
+    // --squash never opens an editor, so the merge runs in a background
+    // PTY instead of suspending the TUI.
+    assert_eq!(result, None);
+    assert!(model.popup.is_none());
+    assert!(model.pty_state.is_some());
+}
+
+#[test]
+fn test_squash_merge_stages_changes_without_committing() {
+    let test_repo = TestRepo::new();
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+    let head_before = test_repo.head_hash();
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::Merge(MergeCommand::Squash("feature".to_string())),
+    );
+
+    // --squash stages the merged changes and stops, leaving SQUASH_MSG in
+    // place instead of creating a merge commit (no MERGE_HEAD either).
+    wait_for(
+        || test_repo.repo.path().join("SQUASH_MSG").exists(),
+        "SQUASH_MSG to appear",
+    );
+    assert_eq!(test_repo.head_hash(), head_before, "HEAD must not move");
+    assert!(test_repo.repo_path().join("feature.txt").exists());
+    assert!(
+        !test_repo.repo.path().join("MERGE_HEAD").exists(),
+        "squash merge must not record a merge in progress"
+    );
+}
+
+#[test]
+fn test_squash_merge_fast_forward_still_stops_before_committing() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+    // Put a commit on feature only, so a plain merge would fast-forward.
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "-b", "feature"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "main"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    let head_before = test_repo.head_hash();
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::Merge(MergeCommand::Squash("feature".to_string())),
+    );
+
+    // Even a fast-forwardable squash merge stages the changes uncommitted.
+    wait_for(
+        || test_repo.repo_path().join("feature.txt").exists(),
+        "feature.txt to appear in the worktree",
+    );
+    assert_eq!(test_repo.head_hash(), head_before, "HEAD must not move");
 }
 
 // ── MergeCommand::Preview — execution ─────────────────────────────────────────
