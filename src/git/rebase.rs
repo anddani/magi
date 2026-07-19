@@ -96,6 +96,13 @@ pub fn run_reword_commit(workdir: &Path, commit: &str) -> MagiResult<CommitResul
     run_action_on_commit(workdir, commit, RebaseAction::Reword, "reworded")
 }
 
+/// Starts an interactive rebase that removes `commit`: the todo marks
+/// `commit` as `drop` and picks every commit after it. The rebase runs to
+/// completion on its own unless replaying a later commit conflicts.
+pub fn run_remove_commit(workdir: &Path, commit: &str) -> MagiResult<CommitResult> {
+    run_action_on_commit(workdir, commit, RebaseAction::Drop, "removed")
+}
+
 /// Starts an interactive rebase where `commit` is marked with `action` and
 /// every commit after it is picked. `action_desc` is the past-tense verb
 /// used in the error message when the commit is not in the todo.
@@ -578,6 +585,83 @@ mod tests {
         assert!(result.success);
         assert!(!rebase_in_progress(workdir));
         assert_eq!(log_subjects(workdir), vec!["Commit A", "Reworded"]);
+    }
+
+    #[test]
+    fn test_run_remove_commit_removes_commit() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let target = test_repo.head_hash();
+        test_repo.commit_file("b.txt", "b", "Commit B");
+        let workdir = test_repo.repo_path();
+
+        let result = run_remove_commit(workdir, &target).unwrap();
+
+        assert!(result.success);
+        // The rebase runs to completion; the commit and its changes are gone
+        assert!(!rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Commit B", "Initial commit"]);
+        assert!(!workdir.join("a.txt").exists());
+        assert!(workdir.join("b.txt").exists());
+    }
+
+    #[test]
+    fn test_run_remove_commit_accepts_short_hash() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let target = test_repo.head_hash();
+        test_repo.commit_file("b.txt", "b", "Commit B");
+        let workdir = test_repo.repo_path();
+
+        let result = run_remove_commit(workdir, &target[..7]).unwrap();
+
+        assert!(result.success);
+        assert!(!rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Commit B", "Initial commit"]);
+    }
+
+    #[test]
+    fn test_run_remove_commit_on_head_commit() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        test_repo.commit_file("b.txt", "b", "Commit B");
+        let head = test_repo.head_hash();
+        let workdir = test_repo.repo_path();
+
+        let result = run_remove_commit(workdir, &head).unwrap();
+
+        assert!(result.success);
+        assert!(!rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Commit A", "Initial commit"]);
+        assert!(!workdir.join("b.txt").exists());
+    }
+
+    #[test]
+    fn test_run_remove_commit_conflicting_later_commit_stops_rebase() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let target = test_repo.head_hash();
+        // Commit B changes the same file, so removing Commit A conflicts
+        test_repo.commit_file("a.txt", "b", "Commit B");
+        let workdir = test_repo.repo_path();
+
+        let result = run_remove_commit(workdir, &target).unwrap();
+
+        assert!(!result.success);
+        assert!(rebase_in_progress(workdir));
+
+        git_cmd(workdir, &["rebase", "--abort"]).status().unwrap();
+    }
+
+    #[test]
+    fn test_run_remove_commit_unknown_commit_fails() {
+        let test_repo = TestRepo::new();
+        let workdir = test_repo.repo_path();
+
+        let result = run_remove_commit(workdir, "0000000000000000000000000000000000000000");
+
+        assert!(result.is_err());
+        assert!(!rebase_in_progress(workdir));
     }
 
     #[test]

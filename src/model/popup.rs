@@ -31,6 +31,8 @@ pub enum ConfirmAction {
     ModifyCommit(String),
     /// Start an interactive rebase that rewords the given commit
     RewordCommit(String),
+    /// Start an interactive rebase that removes (drops) the given commit
+    RemoveCommit(String),
     /// Revise (reword) a commit via `git commit --fixup=reword:<hash> --edit`
     ReviseCommit(String),
     /// Reset a branch to a target ref/commit

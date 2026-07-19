@@ -23,6 +23,7 @@ pub fn update(model: &mut Model, rebase_command: RebaseCommand) -> Option<Messag
         RebaseCommand::ExecuteInteractive => execute_interactive(model),
         RebaseCommand::ModifyCommit(commit) => modify_commit(model, commit),
         RebaseCommand::RewordCommit(commit) => reword_commit(model, commit),
+        RebaseCommand::RemoveCommit(commit) => remove_commit(model, commit),
         RebaseCommand::Continue => continue_rebase(model),
         RebaseCommand::Skip => skip_rebase(model),
         RebaseCommand::Abort => abort_rebase(model),
@@ -98,6 +99,33 @@ fn reword_commit(model: &mut Model, commit: String) -> Option<Message> {
     model.popup = None;
 
     match rebase::run_reword_commit(&model.workdir, &commit) {
+        Ok(CommitResult { success, message }) => {
+            model.toast = Some(Toast {
+                message,
+                style: if success {
+                    ToastStyle::Success
+                } else {
+                    ToastStyle::Warning
+                },
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
+}
+
+/// Starts an interactive rebase that removes `commit`. This is an external
+/// command (the TUI is suspended) because git prints rebase progress and,
+/// on conflict, stop instructions to the terminal.
+fn remove_commit(model: &mut Model, commit: String) -> Option<Message> {
+    model.popup = None;
+
+    match rebase::run_remove_commit(&model.workdir, &commit) {
         Ok(CommitResult { success, message }) => {
             model.toast = Some(Toast {
                 message,

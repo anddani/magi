@@ -501,6 +501,9 @@ pub enum RebaseCommand {
     /// Start an interactive rebase that rewords the given commit
     /// (the commit is marked `reword`, everything after it is picked)
     RewordCommit(String),
+    /// Start an interactive rebase that removes the given commit
+    /// (the commit is marked `drop`, everything after it is picked)
+    RemoveCommit(String),
     /// Continue after resolving conflicts
     Continue,
     /// Skip the current conflicting commit
@@ -699,6 +702,9 @@ pub enum CommitSelect {
     /// Show select popup (or confirm) to pick a commit to reword
     /// (an interactive rebase marks it `reword` and opens the editor)
     RewordCommit,
+    /// Show select popup (or confirm) to pick a commit to remove
+    /// (an interactive rebase marks it `drop`)
+    RemoveCommit,
 
     // Revise-related
     /// Show select popup (or confirm) to pick a commit to revise (reword)

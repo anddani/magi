@@ -135,6 +135,9 @@ fn route_result(
         (Some(OnSelect::RewordCommit), SelectResult::Selected(commit)) => {
             Some(Message::Rebase(RebaseCommand::RewordCommit(commit)))
         }
+        (Some(OnSelect::RemoveCommit), SelectResult::Selected(commit)) => {
+            Some(Message::Rebase(RebaseCommand::RemoveCommit(commit)))
+        }
         (Some(OnSelect::RebaseSubsetOnto), SelectResult::Selected(newbase)) => {
             Some(Message::ShowCommitSelect(CommitSelect::RebaseSubset {
                 newbase,
