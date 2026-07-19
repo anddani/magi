@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// Consumes the tag popup arguments, returning their git flags in a
-/// stable order (--force before --edit before --annotate).
+/// stable order (--force before --edit before --annotate before --sign).
 fn take_tag_flags(model: &mut Model) -> Vec<String> {
     if let Some(TagArguments(arguments)) = model.arguments.take() {
         TagArgument::all()
@@ -25,10 +25,10 @@ fn take_tag_flags(model: &mut Model) -> Vec<String> {
 }
 
 /// Create a new git tag pointing at `target`.
-/// Equivalent to `git tag [--force] [--edit] [--annotate] <name> <target>`.
+/// Equivalent to `git tag [--force] [--edit] [--annotate] [--sign] <name> <target>`.
 ///
-/// With --edit or --annotate, `git tag` opens the editor for the tag
-/// message, so the command must run with the TUI suspended instead of
+/// With --edit, --annotate or --sign, `git tag` opens the editor for the
+/// tag message, so the command must run with the TUI suspended instead of
 /// capturing output.
 pub fn update(model: &mut Model, name: String, target: String) -> Option<Message> {
     let flags = take_tag_flags(model);
@@ -39,7 +39,7 @@ pub fn update(model: &mut Model, name: String, target: String) -> Option<Message
 
     if flags
         .iter()
-        .any(|flag| flag == "--edit" || flag == "--annotate")
+        .any(|flag| flag == "--edit" || flag == "--annotate" || flag == "--sign")
     {
         return Some(Message::CreateTagWithEditor { name, args });
     }
@@ -71,7 +71,7 @@ pub fn update(model: &mut Model, name: String, target: String) -> Option<Message
     }
 }
 
-/// Runs `git tag --edit/--annotate ...` with stdio inherited so the user's
+/// Runs `git tag --edit/--annotate/--sign ...` with stdio inherited so the user's
 /// configured editor can open for the tag message. Requires the TUI to be
 /// suspended.
 pub fn with_editor(model: &mut Model, name: String, args: Vec<String>) -> Option<Message> {
