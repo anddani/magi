@@ -39,6 +39,7 @@ pub fn content<'a>(
             command_description(theme, model.arg_mode, "a", t.cmd_merge_absorb),
             command_description(theme, model.arg_mode, "p", t.cmd_merge_preview),
             command_description(theme, model.arg_mode, "s", t.cmd_merge_squash),
+            command_description(theme, model.arg_mode, "d", t.cmd_merge_dissolve),
         ],
     };
 

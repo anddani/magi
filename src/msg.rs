@@ -558,6 +558,9 @@ pub enum MergeCommand {
     /// Squash-merge the given branch into the working tree without committing
     /// (`git merge --squash <branch>`)
     Squash(String),
+    /// Merge the current branch into the given branch and delete the former
+    /// (`git checkout <branch>` followed by an absorb of the old branch)
+    Dissolve(String),
     /// Continue after resolving conflicts
     Continue,
     /// Abort the merge sequence
