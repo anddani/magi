@@ -37,6 +37,8 @@ pub enum LogType {
     AllBranches,
     /// Show reflog for the current branch (HEAD when detached)
     Reflog,
+    /// Show reflog for another branch/ref
+    ReflogOther(String),
 }
 
 /// Mode for `git reset` — controls how far the reset goes

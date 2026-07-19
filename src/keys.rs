@@ -1735,6 +1735,24 @@ mod tests {
     }
 
     #[test]
+    fn test_shift_o_in_log_popup_shows_reflog_ref_select() {
+        use crate::msg::{OnSelect, OptionsSource, ShowSelectPopupConfig};
+
+        let model = create_log_popup_model();
+
+        let key = create_key_event(NONE, Char('O'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Show reflog for".to_string(),
+                source: OptionsSource::AllRefs,
+                on_select: OnSelect::ReflogOther,
+            }))
+        );
+    }
+
+    #[test]
     fn test_minus_in_log_popup_enters_arg_mode() {
         let model = create_log_popup_model();
 

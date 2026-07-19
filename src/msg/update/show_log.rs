@@ -17,7 +17,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         _ => (true, false),
     };
     // Reflogs cannot be drawn as a graph (git rejects --graph with --walk-reflogs)
-    let graph = graph && log_type != LogType::Reflog;
+    let graph = graph && !matches!(log_type, LogType::Reflog | LogType::ReflogOther(_));
     match get_log_entries(&model.git_info.repository, &log_type, graph, color) {
         Ok(entries) => {
             // Convert log entries to lines

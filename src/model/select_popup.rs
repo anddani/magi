@@ -131,6 +131,8 @@ pub enum OnSelect {
     ApplySquash,
     /// Select a branch/revision to show the log for
     LogOther,
+    /// Select a branch/ref to show the reflog for
+    ReflogOther,
     /// Select a commit to donate (step 1 of 2, no pre-selection)
     DonateCommitPick,
     /// Select a commit to spin out (step 1 of 3, no pre-selection)
