@@ -22,6 +22,7 @@ pub fn update(model: &mut Model, rebase_command: RebaseCommand) -> Option<Messag
         RebaseCommand::Subset { newbase, start } => subset(model, newbase, start),
         RebaseCommand::ExecuteInteractive => execute_interactive(model),
         RebaseCommand::ModifyCommit(commit) => modify_commit(model, commit),
+        RebaseCommand::RewordCommit(commit) => reword_commit(model, commit),
         RebaseCommand::Continue => continue_rebase(model),
         RebaseCommand::Skip => skip_rebase(model),
         RebaseCommand::Abort => abort_rebase(model),
@@ -70,6 +71,33 @@ fn modify_commit(model: &mut Model, commit: String) -> Option<Message> {
     model.popup = None;
 
     match rebase::run_modify_commit(&model.workdir, &commit) {
+        Ok(CommitResult { success, message }) => {
+            model.toast = Some(Toast {
+                message,
+                style: if success {
+                    ToastStyle::Success
+                } else {
+                    ToastStyle::Warning
+                },
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
+}
+
+/// Starts an interactive rebase that rewords `commit`. This is an external
+/// command (the TUI is suspended) because git opens the user's editor for
+/// the new commit message.
+fn reword_commit(model: &mut Model, commit: String) -> Option<Message> {
+    model.popup = None;
+
+    match rebase::run_reword_commit(&model.workdir, &commit) {
         Ok(CommitResult { success, message }) => {
             model.toast = Some(Toast {
                 message,

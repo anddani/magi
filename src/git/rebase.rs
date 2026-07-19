@@ -86,6 +86,25 @@ fn resolve_commit_hash(workdir: &Path, commit: &str) -> MagiResult<String> {
 /// The rebase stops right after applying `commit`, leaving it as HEAD for
 /// amending; `git rebase --continue` then replays the remaining commits.
 pub fn run_modify_commit(workdir: &Path, commit: &str) -> MagiResult<CommitResult> {
+    run_action_on_commit(workdir, commit, RebaseAction::Edit, "modified")
+}
+
+/// Starts an interactive rebase that rewords `commit`: the todo marks
+/// `commit` as `reword` and picks every commit after it. Git opens the
+/// user's editor for the new message, then the rebase finishes on its own.
+pub fn run_reword_commit(workdir: &Path, commit: &str) -> MagiResult<CommitResult> {
+    run_action_on_commit(workdir, commit, RebaseAction::Reword, "reworded")
+}
+
+/// Starts an interactive rebase where `commit` is marked with `action` and
+/// every commit after it is picked. `action_desc` is the past-tense verb
+/// used in the error message when the commit is not in the todo.
+fn run_action_on_commit(
+    workdir: &Path,
+    commit: &str,
+    action: RebaseAction,
+    action_desc: &str,
+) -> MagiResult<CommitResult> {
     let full_hash = resolve_commit_hash(workdir, commit)?;
     let has_parent = commit_has_parent(workdir, &full_hash);
     let mut entries = get_interactive_rebase_commits(workdir, &full_hash, has_parent)?;
@@ -93,14 +112,14 @@ pub fn run_modify_commit(workdir: &Path, commit: &str) -> MagiResult<CommitResul
     let mut found = false;
     for entry in &mut entries {
         if entry.hash == full_hash {
-            entry.action = RebaseAction::Edit;
+            entry.action = action;
             found = true;
         }
     }
     if !found {
         return Err(MagiError::Generic(format!(
-            "Commit {} cannot be modified (not reachable from HEAD, or a merge commit)",
-            commit
+            "Commit {} cannot be {} (not reachable from HEAD, or a merge commit)",
+            commit, action_desc
         )));
     }
 
@@ -326,6 +345,15 @@ mod tests {
     use super::*;
     use crate::git::test_repo::TestRepo;
 
+    /// Points GIT_EDITOR at a command that replaces the commit message with
+    /// "Reworded". The env var outranks core.editor, so any GIT_EDITOR from
+    /// the developer's environment would otherwise leak into reword tests
+    /// (or, if unset, git would open a real editor and hang).
+    fn set_reword_editor() {
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        ONCE.call_once(|| unsafe { std::env::set_var("GIT_EDITOR", "echo 'Reworded' >") });
+    }
+
     /// Commit subjects, newest first.
     fn log_subjects(workdir: &Path) -> Vec<String> {
         let output = git_cmd(workdir, &["log", "--format=%s"]).output().unwrap();
@@ -510,6 +538,54 @@ mod tests {
         let workdir = test_repo.repo_path();
 
         let result = run_modify_commit(workdir, "0000000000000000000000000000000000000000");
+
+        assert!(result.is_err());
+        assert!(!rebase_in_progress(workdir));
+    }
+
+    #[test]
+    fn test_run_reword_commit_rewords_message() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let target = test_repo.head_hash();
+        test_repo.commit_file("b.txt", "b", "Commit B");
+        let workdir = test_repo.repo_path();
+
+        set_reword_editor();
+        let result = run_reword_commit(workdir, &target).unwrap();
+
+        assert!(result.success);
+        // The rebase runs to completion; only the message changes
+        assert!(!rebase_in_progress(workdir));
+        assert_eq!(
+            log_subjects(workdir),
+            vec!["Commit B", "Reworded", "Initial commit"]
+        );
+        assert!(workdir.join("a.txt").exists());
+        assert!(workdir.join("b.txt").exists());
+    }
+
+    #[test]
+    fn test_run_reword_commit_on_root_commit() {
+        let test_repo = TestRepo::new();
+        let root = test_repo.head_hash();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let workdir = test_repo.repo_path();
+
+        set_reword_editor();
+        let result = run_reword_commit(workdir, &root).unwrap();
+
+        assert!(result.success);
+        assert!(!rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Commit A", "Reworded"]);
+    }
+
+    #[test]
+    fn test_run_reword_commit_unknown_commit_fails() {
+        let test_repo = TestRepo::new();
+        let workdir = test_repo.repo_path();
+
+        let result = run_reword_commit(workdir, "0000000000000000000000000000000000000000");
 
         assert!(result.is_err());
         assert!(!rebase_in_progress(workdir));
