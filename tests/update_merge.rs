@@ -3,7 +3,7 @@ use magi::{
     git::{git_cmd, test_repo::TestRepo},
     keys::handle_key,
     model::{
-        LineContent, ToastStyle,
+        LineContent, ToastStyle, ViewMode,
         popup::{MergePopupState, PopupContent, PopupContentCommand},
         select_popup::OnSelect,
     },
@@ -132,6 +132,27 @@ fn test_a_in_merge_popup_shows_select_with_absorb() {
 }
 
 #[test]
+fn test_p_in_merge_popup_shows_select_with_preview() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('p')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Preview merge".to_string(),
+            source: OptionsSource::LocalAndRemoteBranches,
+            on_select: OnSelect::MergePreview,
+        }))
+    );
+}
+
+#[test]
 fn test_q_dismisses_merge_popup() {
     let test_repo = TestRepo::new();
     test_repo.commit_file("file1.txt", "content1", "First commit");
@@ -232,6 +253,44 @@ fn test_merge_elsewhere_cursor_on_branch_ref_prioritizes_it() {
                 title: "Merge branch".to_string(),
                 source: OptionsSource::LocalAndRemoteBranches,
                 on_select: OnSelect::MergeElsewhere,
+            }),
+        );
+
+        let state = expect_select_popup(&model);
+        assert_eq!(
+            state.all_options[0], "feature-branch",
+            "feature-branch should be first because cursor is on its commit"
+        );
+    }
+}
+
+#[test]
+fn test_merge_preview_cursor_on_branch_ref_prioritizes_it() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
+
+    // Create another branch pointing at this commit
+    test_repo.create_branch("feature-branch");
+
+    // Make a second commit so current branch is ahead
+    test_repo.commit_file("file.txt", "second", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Find a commit line that has "feature-branch" as a ref
+    let branch_pos = find_line(
+        &model,
+        |c| matches!(c, LineContent::Commit(info) if info.refs.iter().any(|r| r.name == "feature-branch")),
+    );
+
+    if let Some(pos) = branch_pos {
+        model.ui_model.cursor_position = pos;
+        update(
+            &mut model,
+            Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Preview merge".to_string(),
+                source: OptionsSource::LocalAndRemoteBranches,
+                on_select: OnSelect::MergePreview,
             }),
         );
 
@@ -698,4 +757,131 @@ fn test_merge_no_commit_fast_forward_still_stops_before_committing() {
     );
     assert_eq!(test_repo.head_hash(), head_before, "HEAD must not move");
     assert!(test_repo.repo_path().join("feature.txt").exists());
+}
+
+// ── MergeCommand::Preview — execution ─────────────────────────────────────────
+
+#[test]
+fn test_preview_merge_enters_preview_mode_with_diff() {
+    let test_repo = TestRepo::new();
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+    let head_before = test_repo.head_hash();
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Preview("feature".to_string())),
+    );
+
+    assert_eq!(result, None);
+    assert!(model.popup.is_none());
+    assert_eq!(model.view_mode, ViewMode::Preview);
+    assert_eq!(model.ui_model.cursor_position, 0);
+
+    let contents: Vec<&str> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|l| match &l.content {
+            LineContent::PreviewLine { content, .. } => Some(content.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(contents[0], "Preview merge of feature into main");
+    assert!(
+        contents.contains(&"+feature content"),
+        "expected incoming change in preview: {:?}",
+        contents
+    );
+
+    // Previewing must not perform the merge.
+    assert_eq!(test_repo.head_hash(), head_before, "HEAD must not move");
+    assert!(!test_repo.repo_path().join("feature.txt").exists());
+    assert!(!test_repo.repo.path().join("MERGE_HEAD").exists());
+}
+
+#[test]
+fn test_preview_merge_exit_returns_to_previous_view() {
+    let test_repo = TestRepo::new();
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let cursor_before = model.ui_model.cursor_position;
+
+    update(
+        &mut model,
+        Message::Merge(MergeCommand::Preview("feature".to_string())),
+    );
+    assert_eq!(model.view_mode, ViewMode::Preview);
+
+    update(&mut model, Message::ExitPreview);
+
+    assert_eq!(model.view_mode, ViewMode::Status);
+    assert_eq!(model.ui_model.cursor_position, cursor_before);
+}
+
+#[test]
+fn test_preview_merge_with_conflicts_shows_conflict_note() {
+    let test_repo = TestRepo::new();
+    setup_divergent_branches(
+        &test_repo,
+        ("base.txt", "main change\n"),
+        ("base.txt", "feature change\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::Merge(MergeCommand::Preview("feature".to_string())),
+    );
+
+    assert_eq!(model.view_mode, ViewMode::Preview);
+    let contents: Vec<&str> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|l| match &l.content {
+            LineContent::PreviewLine { content, .. } => Some(content.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        contents.iter().any(|c| c.contains("conflicts")),
+        "expected a conflict note: {:?}",
+        contents
+    );
+    // Previewing a conflicting merge must not start a merge.
+    assert!(!test_repo.repo.path().join("MERGE_HEAD").exists());
+}
+
+#[test]
+fn test_preview_merge_unknown_branch_shows_error_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Preview("no-such-branch".to_string())),
+    );
+
+    assert_eq!(result, None);
+    assert_eq!(model.view_mode, ViewMode::Status);
+    let message = expect_error_popup(&model);
+    assert!(
+        message.contains("Cannot preview merge of 'no-such-branch'"),
+        "unexpected error message: {}",
+        message
+    );
 }
