@@ -72,6 +72,7 @@ pub struct Strings {
     pub col_general: &'static str,
     pub col_apply_here: &'static str,
     pub col_apply_elsewhere: &'static str,
+    pub col_reflog: &'static str,
 
     // Dynamic styled title parts used in push/pull/rebase popups.
     // The branch name is coloured separately between pre and post.
@@ -328,6 +329,7 @@ static ENGLISH: Strings = Strings {
     col_general: "General",
     col_apply_here: "Apply here",
     col_apply_elsewhere: "Apply elsewhere",
+    col_reflog: "Reflog",
 
     push_to_pre: "Push ",
     push_to_post: " to",
@@ -557,6 +559,7 @@ static SWEDISH: Strings = Strings {
     col_general: "Allmänt",
     col_apply_here: "Plocka russin här",
     col_apply_elsewhere: "Plocka russin någon annanstans",
+    col_reflog: "Reflogg",
 
     push_to_pre: "Knuffa ",
     push_to_post: " till",

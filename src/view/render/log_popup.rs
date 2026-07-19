@@ -38,6 +38,16 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         ],
     };
 
+    let reflog_col = PopupColumn {
+        title: Some(t.col_reflog.into()),
+        content: vec![command_description(
+            theme,
+            model.arg_mode,
+            "r",
+            t.cmd_current,
+        )],
+    };
+
     CommandPopupContent {
         title: t.popup_log,
         rows: vec![
@@ -45,7 +55,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
                 columns: vec![formatting_col],
             },
             PopupRow {
-                columns: vec![log_col],
+                columns: vec![log_col, reflog_col],
             },
         ],
     }

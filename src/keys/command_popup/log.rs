@@ -28,6 +28,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('L') => Some(Message::ShowLog(LogType::LocalBranches)),
         KeyCode::Char('b') => Some(Message::ShowLog(LogType::AllBranches)),
         KeyCode::Char('a') => Some(Message::ShowLog(LogType::AllReferences)),
+        KeyCode::Char('r') => Some(Message::ShowLog(LogType::Reflog)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }
