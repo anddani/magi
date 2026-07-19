@@ -37,6 +37,11 @@ pub fn keys(key: KeyEvent, state: &MergePopupState) -> Option<Message> {
             source: OptionsSource::LocalBranches,
             on_select: OnSelect::MergeAbsorb,
         })),
+        KeyCode::Char('p') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Preview merge".to_string(),
+            source: OptionsSource::LocalAndRemoteBranches,
+            on_select: OnSelect::MergePreview,
+        })),
         _ => None,
     }
 }

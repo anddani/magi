@@ -546,6 +546,10 @@ pub enum MergeCommand {
     /// Merge the given branch into the current branch, deleting it afterwards
     /// (`git merge --no-edit <branch>` followed by `git branch -D <branch>`)
     Absorb(String),
+    /// Preview the result of merging the given branch, without touching the
+    /// working tree (`git merge-tree --write-tree HEAD <branch>` diffed
+    /// against HEAD)
+    Preview(String),
     /// Continue after resolving conflicts
     Continue,
     /// Abort the merge sequence

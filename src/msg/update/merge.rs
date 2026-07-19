@@ -1,8 +1,8 @@
 use std::time::Instant;
 
 use crate::{
-    git::{commit::CommitResult, merge},
-    model::{Model, PopupContent, Toast, ToastStyle},
+    git::{commit::CommitResult, merge, preview},
+    model::{Model, PopupContent, Toast, ToastStyle, ViewMode},
     msg::{
         MergeCommand, Message,
         update::{
@@ -18,6 +18,7 @@ pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
         MergeCommand::EditMessage(branch) => merge_branch(model, branch, true),
         MergeCommand::NoCommit(branch) => merge_no_commit(model, branch),
         MergeCommand::Absorb(branch) => absorb_branch(model, branch),
+        MergeCommand::Preview(branch) => preview_merge(model, branch),
         MergeCommand::Continue => continue_merge(model),
         MergeCommand::Abort => abort_merge(model),
     }
@@ -109,6 +110,30 @@ fn absorb_branch(model: &mut Model, branch: String) -> Option<Message> {
         }
     }
     Some(Message::Refresh)
+}
+
+fn preview_merge(model: &mut Model, branch: String) -> Option<Message> {
+    model.popup = None;
+    let head_name = model
+        .git_info
+        .current_branch()
+        .unwrap_or_else(|| "HEAD".to_string());
+    match preview::get_merge_preview_lines(&model.workdir, &branch, &head_name) {
+        Ok(lines) => {
+            model.preview_return_mode = Some(model.view_mode.clone());
+            model.preview_return_ui_model = Some(model.ui_model.clone());
+            model.ui_model.lines = lines;
+            model.ui_model.cursor_position = 0;
+            model.ui_model.scroll_offset = 0;
+            model.view_mode = ViewMode::Preview;
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    None
 }
 
 fn merge_no_commit(model: &mut Model, branch: String) -> Option<Message> {
