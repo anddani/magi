@@ -9,6 +9,17 @@ use crate::git::git_cmd;
 /// with plumbing the way magit does it: the current index is committed as a
 /// temporary base so that the stash only records the worktree-vs-index diff.
 pub fn create_worktree_stash(workdir: &Path, message: &str) -> Result<(), String> {
+    store_worktree_stash(workdir, message)?;
+
+    // keep the index: reset the worktree files to the index state
+    run(git_cmd(workdir, &["checkout", "--", "."]))?;
+
+    Ok(())
+}
+
+/// Builds and stores a stash commit containing only the unstaged worktree
+/// changes, leaving the index and the working tree untouched.
+pub(crate) fn store_worktree_stash(workdir: &Path, message: &str) -> Result<(), String> {
     let unstaged = run(git_cmd(workdir, &["diff", "--name-only"]))?;
     if unstaged.is_empty() {
         return Err("No unstaged changes to save".to_string());
@@ -55,9 +66,6 @@ pub fn create_worktree_stash(workdir: &Path, message: &str) -> Result<(), String
         workdir,
         &["stash", "store", "-m", &message, &stash_commit],
     ))?;
-
-    // keep the index: reset the worktree files to the index state
-    run(git_cmd(workdir, &["checkout", "--", "."]))?;
 
     Ok(())
 }

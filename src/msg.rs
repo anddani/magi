@@ -657,6 +657,8 @@ pub enum StashCommand {
     Snapshot,
     /// Create a snapshot stash of only the index, without resetting it
     SnapshotIndex,
+    /// Create a snapshot stash of only the unstaged working tree changes, without resetting them
+    SnapshotWorktree,
 }
 
 /// Messages for commit select
