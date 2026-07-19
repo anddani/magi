@@ -35,6 +35,8 @@ pub enum LogType {
     LocalBranches,
     /// Show log for local and remote branches and HEAD
     AllBranches,
+    /// Show reflog for the current branch (HEAD when detached)
+    Reflog,
 }
 
 /// Mode for `git reset` — controls how far the reset goes

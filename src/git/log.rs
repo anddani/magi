@@ -35,11 +35,15 @@ pub fn get_log_entries(
 
     let head_detached = repository.head_detached()?;
 
+    let reflog = matches!(log_type, LogType::Reflog);
+
     // Build the git log command similar to Magit
     // Format: hash<sep>refs<sep>author<sep>date<sep>message
+    // Reflogs use the reflog subject (%gs, e.g. "commit: fix bug") as message
+    let message_format = if reflog { "%gs" } else { "%s" };
     let format = format!(
-        "%h{}%D{}%aN{}%ar{}%s",
-        SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
+        "%h{}%D{}%aN{}%ar{}{}",
+        SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, message_format
     );
 
     let mut args = vec![
@@ -49,7 +53,8 @@ pub fn get_log_entries(
         format!("-n{}", MAX_LOG_ENTRIES),
     ];
 
-    if graph {
+    // git rejects --graph together with --walk-reflogs
+    if graph && !reflog {
         args.push("--graph".to_string());
     }
 
@@ -78,6 +83,10 @@ pub fn get_log_entries(
             args.push("--branches".to_string());
             args.push("--remotes".to_string());
         }
+        LogType::Reflog => {
+            args.push("--walk-reflogs".to_string());
+            args.push(reflog_ref(repository));
+        }
     }
 
     args.push("--".to_string());
@@ -104,6 +113,19 @@ pub fn get_log_entries(
     }
 
     Ok(entries)
+}
+
+/// Resolves the ref whose reflog to show, mirroring `magit-reflog-current`:
+/// the current branch, or HEAD when detached
+fn reflog_ref(repository: &Repository) -> String {
+    if repository.head_detached().unwrap_or(true) {
+        return "HEAD".to_string();
+    }
+    repository
+        .head()
+        .ok()
+        .and_then(|head| head.shorthand().ok().map(String::from))
+        .unwrap_or_else(|| "HEAD".to_string())
 }
 
 /// Resolves the revisions for a related log, mirroring `magit-log-related`:
@@ -422,6 +444,43 @@ mod tests {
 
         assert!(messages.contains(&"Initial commit".to_string()));
         assert!(!messages.contains(&"Second commit".to_string()));
+    }
+
+    #[test]
+    fn test_get_log_entries_reflog() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Second commit");
+
+        let entries = get_log_entries(&test_repo.repo, &LogType::Reflog, true, false).unwrap();
+        let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
+
+        // Reflog entries use the reflog subject ("<command>: <rest>")
+        assert!(messages.iter().any(|m| m.contains("Second commit")));
+        assert!(messages.iter().any(|m| m.starts_with("commit")));
+        // No graph is drawn even though graph was requested
+        assert!(entries.iter().all(|e| e.graph.is_empty()));
+    }
+
+    #[test]
+    fn test_reflog_ref_current_branch() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        assert_eq!(reflog_ref(&test_repo.repo), "main");
+    }
+
+    #[test]
+    fn test_reflog_ref_detached_head() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo.detach_head();
+        assert_eq!(reflog_ref(&test_repo.repo), "HEAD");
     }
 
     #[test]
