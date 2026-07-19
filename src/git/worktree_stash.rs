@@ -88,7 +88,7 @@ fn write_worktree_tree(
     run(write_tree)
 }
 
-fn commit_tree(
+pub(crate) fn commit_tree(
     workdir: &Path,
     tree: &str,
     parents: &[&str],
@@ -111,7 +111,7 @@ fn commit_tree(
 
 /// Runs a git command, returning trimmed stdout on success and trimmed stderr
 /// as the error otherwise.
-fn run(mut cmd: Command) -> Result<String, String> {
+pub(crate) fn run(mut cmd: Command) -> Result<String, String> {
     let output = cmd.output().map_err(|err| err.to_string())?;
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())

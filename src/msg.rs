@@ -649,6 +649,8 @@ pub enum StashCommand {
     Drop(String),
     /// Create a snapshot stash of index + working tree without resetting them
     Snapshot,
+    /// Create a snapshot stash of only the index, without resetting it
+    SnapshotIndex,
 }
 
 /// Messages for commit select
