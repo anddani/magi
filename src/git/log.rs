@@ -35,7 +35,13 @@ pub fn get_log_entries(
 
     let head_detached = repository.head_detached()?;
 
-    let reflog = matches!(log_type, LogType::Reflog);
+    let reflog = matches!(log_type, LogType::Reflog | LogType::Stashes);
+
+    // With no stashes the refs/stash ref doesn't exist and git log would
+    // fail; show an empty list instead, like Magit's empty stashes buffer
+    if matches!(log_type, LogType::Stashes) && repository.find_reference("refs/stash").is_err() {
+        return Ok(Vec::new());
+    }
 
     // Build the git log command similar to Magit
     // Format: hash<sep>refs<sep>author<sep>date<sep>message
@@ -86,6 +92,10 @@ pub fn get_log_entries(
         LogType::Reflog => {
             args.push("--walk-reflogs".to_string());
             args.push(reflog_ref(repository));
+        }
+        LogType::Stashes => {
+            args.push("--walk-reflogs".to_string());
+            args.push("refs/stash".to_string());
         }
     }
 
@@ -464,6 +474,39 @@ mod tests {
         assert!(messages.iter().any(|m| m.starts_with("commit")));
         // No graph is drawn even though graph was requested
         assert!(entries.iter().all(|e| e.graph.is_empty()));
+    }
+
+    #[test]
+    fn test_get_log_entries_stashes() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "first")
+            .create_stash("First stash");
+        test_repo
+            .write_file_content("file.txt", "second")
+            .create_stash("Second stash");
+
+        let entries = get_log_entries(&test_repo.repo, &LogType::Stashes, true, false).unwrap();
+        let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
+
+        // Both stashes are listed, most recent first
+        assert_eq!(messages.len(), 2);
+        assert!(messages[0].contains("Second stash"));
+        assert!(messages[1].contains("First stash"));
+        // No graph is drawn even though graph was requested
+        assert!(entries.iter().all(|e| e.graph.is_empty()));
+    }
+
+    #[test]
+    fn test_get_log_entries_stashes_empty_without_stashes() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+
+        let entries = get_log_entries(&test_repo.repo, &LogType::Stashes, true, false).unwrap();
+        assert!(entries.is_empty());
     }
 
     #[test]
