@@ -24,6 +24,8 @@ pub fn update(model: &mut Model, rebase_command: RebaseCommand) -> Option<Messag
         RebaseCommand::ModifyCommit(commit) => modify_commit(model, commit),
         RebaseCommand::RewordCommit(commit) => reword_commit(model, commit),
         RebaseCommand::RemoveCommit(commit) => remove_commit(model, commit),
+        RebaseCommand::Autosquash(base) => autosquash(model, base, false),
+        RebaseCommand::AutosquashInto(commit) => autosquash(model, commit, true),
         RebaseCommand::Continue => continue_rebase(model),
         RebaseCommand::Skip => skip_rebase(model),
         RebaseCommand::Abort => abort_rebase(model),
@@ -126,6 +128,33 @@ fn remove_commit(model: &mut Model, commit: String) -> Option<Message> {
     model.popup = None;
 
     match rebase::run_remove_commit(&model.workdir, &commit) {
+        Ok(CommitResult { success, message }) => {
+            model.toast = Some(Toast {
+                message,
+                style: if success {
+                    ToastStyle::Success
+                } else {
+                    ToastStyle::Warning
+                },
+                expires_at: Instant::now() + TOAST_DURATION,
+            });
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
+}
+
+/// Runs `git rebase --autosquash` from `base` (see [`rebase::run_autosquash`]).
+/// This is an external command (the TUI is suspended) because `squash!`
+/// commits open the user's editor for the combined message.
+fn autosquash(model: &mut Model, base: String, include_base: bool) -> Option<Message> {
+    model.popup = None;
+
+    match rebase::run_autosquash(&model.workdir, &base, include_base) {
         Ok(CommitResult { success, message }) => {
             model.toast = Some(Toast {
                 message,

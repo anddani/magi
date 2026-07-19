@@ -255,6 +255,7 @@ pub fn view(model: &Model, frame: &mut Frame) {
             Some(OnSelect::ModifyCommit) => i18n::t().title_pick_modify_commit.to_string(),
             Some(OnSelect::RewordCommit) => i18n::t().title_pick_reword_commit.to_string(),
             Some(OnSelect::RemoveCommit) => i18n::t().title_pick_remove_commit.to_string(),
+            Some(OnSelect::AutosquashCommit) => i18n::t().title_pick_autosquash_commit.to_string(),
             _ => "Pick commit".to_string(),
         },
         ViewMode::Preview => "Preview".to_string(),

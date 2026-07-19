@@ -74,6 +74,17 @@ pub fn content<'a>(
         ],
     };
 
+    // Empty title keeps the commands aligned with the left column's content
+    let autosquash_col = PopupColumn {
+        title: Some(PopupColumnTitle::Raw("")),
+        content: vec![command_description(
+            theme,
+            model.arg_mode,
+            "f",
+            t.cmd_to_autosquash,
+        )],
+    };
+
     CommandPopupContent {
         title: t.popup_rebase,
         rows: vec![
@@ -81,7 +92,7 @@ pub fn content<'a>(
                 columns: vec![rebase_onto_col],
             },
             PopupRow {
-                columns: vec![rebase_col, modify_col],
+                columns: vec![rebase_col, modify_col, autosquash_col],
             },
         ],
     }
