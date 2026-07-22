@@ -103,6 +103,55 @@ pub fn run_remove_commit(workdir: &Path, commit: &str) -> MagiResult<CommitResul
     run_action_on_commit(workdir, commit, RebaseAction::Drop, "removed")
 }
 
+/// Returns the merge base of the configured upstream and HEAD, or None when
+/// no upstream is configured (or the branches share no common ancestor).
+pub fn get_upstream_merge_base(workdir: &Path) -> Option<String> {
+    let output = git_cmd(workdir, &["merge-base", "@{upstream}", "HEAD"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    (!hash.is_empty()).then_some(hash)
+}
+
+/// Runs `git rebase --interactive --autosquash` accepting the generated todo
+/// as-is, so `fixup!`/`squash!` commits are combined with their targets.
+/// With `include_base` false, `base` itself is not replayed (the upstream
+/// merge-base path); with true, the rebase starts at `base` so fixups can be
+/// squashed into it (the picked-commit path). `squash!` commits may open the
+/// user's editor, so the caller must run this while the TUI is suspended.
+pub fn run_autosquash(workdir: &Path, base: &str, include_base: bool) -> MagiResult<CommitResult> {
+    let full_hash = resolve_commit_hash(workdir, base)?;
+
+    // `true` exits 0 without touching the todo, so the autosquash order
+    // git generated is executed unchanged.
+    let mut args = vec![
+        "-c",
+        "sequence.editor=true",
+        "rebase",
+        "--interactive",
+        "--autosquash",
+        "--keep-empty",
+        "--autostash",
+    ];
+    let parent = format!("{full_hash}^");
+    if !include_base {
+        args.push(&full_hash);
+    } else if commit_has_parent(workdir, &full_hash) {
+        args.push(&parent);
+    } else {
+        args.push("--root");
+    }
+
+    let status = git_cmd(workdir, &args).status();
+
+    get_commit_result(workdir, status?, "Autosquash")
+}
+
 /// Starts an interactive rebase where `commit` is marked with `action` and
 /// every commit after it is picked. `action_desc` is the past-tense verb
 /// used in the error message when the commit is not in the todo.
@@ -659,6 +708,112 @@ mod tests {
         let workdir = test_repo.repo_path();
 
         let result = run_remove_commit(workdir, "0000000000000000000000000000000000000000");
+
+        assert!(result.is_err());
+        assert!(!rebase_in_progress(workdir));
+    }
+
+    /// Points main's upstream at refs/remotes/origin/main frozen at the
+    /// current HEAD, so commits made afterwards are "unpushed".
+    fn set_upstream_at_head(test_repo: &TestRepo) {
+        let workdir = test_repo.repo_path();
+        let head = test_repo.head_hash();
+        git_cmd(workdir, &["update-ref", "refs/remotes/origin/main", &head])
+            .status()
+            .unwrap();
+        // @{upstream} only resolves when the remote has a fetch refspec
+        // mapping refs/heads/* into refs/remotes/origin/*.
+        git_cmd(workdir, &["config", "remote.origin.url", "."])
+            .status()
+            .unwrap();
+        git_cmd(
+            workdir,
+            &[
+                "config",
+                "remote.origin.fetch",
+                "+refs/heads/*:refs/remotes/origin/*",
+            ],
+        )
+        .status()
+        .unwrap();
+        git_cmd(workdir, &["config", "branch.main.remote", "origin"])
+            .status()
+            .unwrap();
+        git_cmd(workdir, &["config", "branch.main.merge", "refs/heads/main"])
+            .status()
+            .unwrap();
+    }
+
+    #[test]
+    fn test_get_upstream_merge_base_no_upstream_returns_none() {
+        let test_repo = TestRepo::new();
+
+        assert_eq!(get_upstream_merge_base(test_repo.repo_path()), None);
+    }
+
+    #[test]
+    fn test_get_upstream_merge_base_returns_merge_base() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let pushed = test_repo.head_hash();
+        set_upstream_at_head(&test_repo);
+        test_repo.commit_file("b.txt", "b", "Commit B");
+
+        assert_eq!(get_upstream_merge_base(test_repo.repo_path()), Some(pushed));
+    }
+
+    #[test]
+    fn test_run_autosquash_squashes_fixup_commit() {
+        let test_repo = TestRepo::new();
+        let base = test_repo.head_hash();
+        test_repo.commit_file("a.txt", "a", "Target");
+        test_repo.commit_file("a.txt", "fixed", "fixup! Target");
+        let workdir = test_repo.repo_path();
+
+        let result = run_autosquash(workdir, &base, false).unwrap();
+
+        assert!(result.success);
+        assert!(!rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Target", "Initial commit"]);
+        assert_eq!(fs::read_to_string(workdir.join("a.txt")).unwrap(), "fixed");
+    }
+
+    #[test]
+    fn test_run_autosquash_include_base_squashes_into_base() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("a.txt", "a", "Target");
+        let target = test_repo.head_hash();
+        test_repo.commit_file("a.txt", "fixed", "fixup! Target");
+        let workdir = test_repo.repo_path();
+
+        let result = run_autosquash(workdir, &target, true).unwrap();
+
+        assert!(result.success);
+        assert!(!rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Target", "Initial commit"]);
+        assert_eq!(fs::read_to_string(workdir.join("a.txt")).unwrap(), "fixed");
+    }
+
+    #[test]
+    fn test_run_autosquash_without_fixups_keeps_history() {
+        let test_repo = TestRepo::new();
+        let base = test_repo.head_hash();
+        test_repo.commit_file("a.txt", "a", "Commit A");
+        let workdir = test_repo.repo_path();
+
+        let result = run_autosquash(workdir, &base, false).unwrap();
+
+        assert!(result.success);
+        assert!(!rebase_in_progress(workdir));
+        assert_eq!(log_subjects(workdir), vec!["Commit A", "Initial commit"]);
+    }
+
+    #[test]
+    fn test_run_autosquash_unknown_commit_fails() {
+        let test_repo = TestRepo::new();
+        let workdir = test_repo.repo_path();
+
+        let result = run_autosquash(workdir, "0000000000000000000000000000000000000000", false);
 
         assert!(result.is_err());
         assert!(!rebase_in_progress(workdir));

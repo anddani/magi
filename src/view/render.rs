@@ -34,6 +34,7 @@ mod select_popup;
 mod stash_popup;
 mod tag_popup;
 pub mod util;
+mod worktree_popup;
 
 /// Calculate a centered rectangle within the given area
 fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
@@ -111,6 +112,7 @@ pub fn render_popup(
                 PopupContentCommand::Merge(state) => merge_popup::content(theme, model, state),
                 PopupContentCommand::Apply(state) => apply_popup::content(theme, model, state),
                 PopupContentCommand::Tag => tag_popup::content(theme, model),
+                PopupContentCommand::Worktree => worktree_popup::content(theme),
 
                 // Select popup uses custom rendering, not the column layout
                 PopupContentCommand::Select(state) => {

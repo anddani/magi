@@ -211,6 +211,30 @@ fn snapshot_log_pick_view_remove_commit() {
     assert_frame_snapshot!(render_to_string(&model, 100, 24));
 }
 
+#[test]
+fn snapshot_log_pick_view_autosquash() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .commit_file("first.txt", "one", "Add first file")
+        .commit_file("second.txt", "two", "Add second file");
+
+    // Without an upstream, autosquash falls back to picking the commit to
+    // squash into.
+    let mut model = create_snapshot_model(&test_repo);
+    update(
+        &mut model,
+        Message::ShowCommitSelect(CommitSelect::Autosquash),
+    );
+
+    // Pin the relative commit times so the frame stays deterministic.
+    for line in &mut model.ui_model.lines {
+        if let LineContent::LogLine(entry) = &mut line.content {
+            entry.time = entry.time.as_ref().map(|_| "2 days".to_string());
+        }
+    }
+    assert_frame_snapshot!(render_to_string(&model, 100, 24));
+}
+
 // ── Command popups ────────────────────────────────────────────────────────────
 
 /// Create a snapshot model showing the given command popup.
@@ -308,6 +332,13 @@ fn snapshot_pull_popup() {
 fn snapshot_branch_popup() {
     let test_repo = TestRepo::new();
     let model = create_command_popup_model(&test_repo, PopupContentCommand::Branch);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_worktree_popup() {
+    let test_repo = TestRepo::new();
+    let model = create_command_popup_model(&test_repo, PopupContentCommand::Worktree);
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 

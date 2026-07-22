@@ -37,6 +37,8 @@ pub fn is_external_command(msg: &Message) -> bool {
             | Message::Rebase(RebaseCommand::ModifyCommit(_))
             | Message::Rebase(RebaseCommand::RewordCommit(_))
             | Message::Rebase(RebaseCommand::RemoveCommit(_))
+            | Message::Rebase(RebaseCommand::Autosquash(_))
+            | Message::Rebase(RebaseCommand::AutosquashInto(_))
             | Message::Merge(MergeCommand::Continue)
             | Message::Merge(MergeCommand::Branch(_))
             | Message::Merge(MergeCommand::EditMessage(_))

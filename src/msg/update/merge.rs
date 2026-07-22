@@ -20,6 +20,7 @@ pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
         MergeCommand::Absorb(branch) => absorb_branch(model, branch),
         MergeCommand::Preview(branch) => preview_merge(model, branch),
         MergeCommand::Squash(branch) => squash_merge(model, branch),
+        MergeCommand::Dissolve(branch) => dissolve_branch(model, branch),
         MergeCommand::Continue => continue_merge(model),
         MergeCommand::Abort => abort_merge(model),
     }
@@ -89,6 +90,50 @@ fn absorb_branch(model: &mut Model, branch: String) -> Option<Message> {
                 model.popup = Some(PopupContent::Error {
                     message: conflict_message(
                         &format!("Absorb of '{}' stopped due to conflicts:", branch),
+                        &conflicts,
+                    ),
+                });
+            } else {
+                model.toast = Some(Toast {
+                    message,
+                    style: if success {
+                        ToastStyle::Success
+                    } else {
+                        ToastStyle::Warning
+                    },
+                    expires_at: Instant::now() + TOAST_DURATION,
+                });
+            }
+        }
+        Err(e) => {
+            model.popup = Some(PopupContent::Error {
+                message: e.to_string(),
+            });
+        }
+    }
+    Some(Message::Refresh)
+}
+
+fn dissolve_branch(model: &mut Model, target: String) -> Option<Message> {
+    model.popup = None;
+    // On a detached HEAD `current_branch()` reports "HEAD", which is not a
+    // branch that can be dissolved.
+    let detached = model.git_info.repository.head_detached().unwrap_or(false);
+    let Some(current) = model.git_info.current_branch().filter(|_| !detached) else {
+        model.popup = Some(PopupContent::Error {
+            message: "Cannot dissolve: no branch is checked out".to_string(),
+        });
+        return Some(Message::Refresh);
+    };
+    match merge::run_merge_dissolve(&model.workdir, &current, &target) {
+        Ok(CommitResult { success, message }) => {
+            if let Some(conflicts) = (!success).then(|| unresolved_conflicts(model)).flatten() {
+                model.popup = Some(PopupContent::Error {
+                    message: conflict_message(
+                        &format!(
+                            "Dissolve of '{}' into '{}' stopped due to conflicts:",
+                            current, target
+                        ),
                         &conflicts,
                     ),
                 });

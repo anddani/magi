@@ -1763,3 +1763,204 @@ fn test_remove_commit_update_removes_commit() {
     assert!(!workdir.join("file1.txt").exists());
     assert!(workdir.join("file2.txt").exists());
 }
+
+// ── Autosquash — popup key and base selection ─────────────────────────────────
+
+/// Points main's upstream at refs/remotes/origin/main frozen at the current
+/// HEAD, so commits made afterwards are "unpushed".
+fn set_upstream_at_head(test_repo: &TestRepo) {
+    let head = test_repo
+        .repo
+        .head()
+        .unwrap()
+        .peel_to_commit()
+        .unwrap()
+        .id();
+    test_repo
+        .repo
+        .reference("refs/remotes/origin/main", head, true, "upstream")
+        .unwrap();
+    let mut config = test_repo.repo.config().unwrap();
+    // @{upstream} only resolves when the remote has a fetch refspec
+    // mapping refs/heads/* into refs/remotes/origin/*.
+    config.set_str("remote.origin.url", ".").unwrap();
+    config
+        .set_str("remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*")
+        .unwrap();
+    config.set_str("branch.main.remote", "origin").unwrap();
+    config
+        .set_str("branch.main.merge", "refs/heads/main")
+        .unwrap();
+}
+
+#[test]
+fn test_f_in_rebase_popup_shows_autosquash() {
+    let test_repo = TestRepo::new();
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(rebase_popup(false));
+
+    let result = handle_key(key(KeyCode::Char('f')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ShowCommitSelect(CommitSelect::Autosquash))
+    );
+}
+
+#[test]
+fn test_f_key_has_no_effect_in_in_progress_popup() {
+    let test_repo = TestRepo::new();
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(rebase_popup(true));
+
+    let result = handle_key(key(KeyCode::Char('f')), &model);
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_autosquash_with_upstream_runs_on_merge_base() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    let pushed = test_repo.head_hash();
+    set_upstream_at_head(&test_repo);
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(rebase_popup(false));
+
+    let result = update(
+        &mut model,
+        Message::ShowCommitSelect(CommitSelect::Autosquash),
+    );
+
+    assert_eq!(
+        result,
+        Some(Message::Rebase(RebaseCommand::Autosquash(pushed)))
+    );
+    assert!(model.popup.is_none(), "Expected the popup to be closed");
+}
+
+#[test]
+fn test_autosquash_without_upstream_shows_current_log_pick_view() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(rebase_popup(false));
+
+    let result = update(
+        &mut model,
+        Message::ShowCommitSelect(CommitSelect::Autosquash),
+    );
+
+    assert_eq!(result, None);
+    assert!(
+        matches!(
+            model.view_mode,
+            ViewMode::Log {
+                log_type: LogType::Current,
+                picking: true,
+                ..
+            }
+        ),
+        "Expected current-branch log pick view"
+    );
+    assert_eq!(model.log_pick_on_select, Some(OnSelect::AutosquashCommit));
+}
+
+#[test]
+fn test_select_confirm_autosquash_returns_autosquash_into_message() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, true, false).unwrap();
+    commits.retain(|e| e.is_commit());
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let expected_hash = commits[0].hash.as_ref().unwrap().clone();
+
+    model.ui_model.lines = commits
+        .into_iter()
+        .map(|entry| Line {
+            content: LineContent::LogLine(entry),
+            section: None,
+        })
+        .collect();
+    model.ui_model.cursor_position = 0;
+    model.view_mode = ViewMode::Log {
+        log_type: LogType::Current,
+        picking: true,
+        graph: true,
+        color: false,
+    };
+    model.log_pick_on_select = Some(OnSelect::AutosquashCommit);
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::Rebase(RebaseCommand::AutosquashInto(
+            expected_hash
+        )))
+    );
+    assert_eq!(model.view_mode, ViewMode::Status);
+    assert!(model.log_pick_on_select.is_none());
+}
+
+#[test]
+fn test_autosquash_update_squashes_fixup_commit() {
+    let test_repo = TestRepo::new();
+    let base = test_repo.head_hash();
+    test_repo.commit_file("file1.txt", "content1", "Target");
+    test_repo.commit_file("file1.txt", "fixed", "fixup! Target");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::Rebase(RebaseCommand::Autosquash(base)));
+
+    assert!(!rebase_in_progress(test_repo.repo_path()));
+    assert!(model.toast.is_some(), "Expected a toast after autosquash");
+
+    let workdir = test_repo.repo_path();
+    assert_eq!(
+        magi::git::read_commit_message(workdir, "HEAD").as_deref(),
+        Some("Target")
+    );
+    assert_eq!(
+        magi::git::read_commit_message(workdir, "HEAD^").as_deref(),
+        Some("Initial commit")
+    );
+    assert_eq!(
+        std::fs::read_to_string(workdir.join("file1.txt")).unwrap(),
+        "fixed"
+    );
+}
+
+#[test]
+fn test_autosquash_into_update_squashes_into_selected_commit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "Target");
+    let target = test_repo.head_hash();
+    test_repo.commit_file("file1.txt", "fixed", "fixup! Target");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(
+        &mut model,
+        Message::Rebase(RebaseCommand::AutosquashInto(target)),
+    );
+
+    assert!(!rebase_in_progress(test_repo.repo_path()));
+    assert!(model.toast.is_some(), "Expected a toast after autosquash");
+
+    let workdir = test_repo.repo_path();
+    assert_eq!(
+        magi::git::read_commit_message(workdir, "HEAD").as_deref(),
+        Some("Target")
+    );
+    assert_eq!(
+        std::fs::read_to_string(workdir.join("file1.txt")).unwrap(),
+        "fixed"
+    );
+}

@@ -39,6 +39,8 @@ pub enum LogType {
     Reflog,
     /// Show reflog for another branch/ref
     ReflogOther(String),
+    /// Show all stashes (the reflog of refs/stash)
+    Stashes,
 }
 
 /// Mode for `git reset` — controls how far the reset goes
@@ -506,6 +508,12 @@ pub enum RebaseCommand {
     /// Start an interactive rebase that removes the given commit
     /// (the commit is marked `drop`, everything after it is picked)
     RemoveCommit(String),
+    /// Run `git rebase --autosquash` onto the given base commit (the merge
+    /// base of upstream and HEAD); the generated todo is accepted as-is
+    Autosquash(String),
+    /// Run `git rebase --autosquash` starting at the given commit, so
+    /// fixups can be squashed into it (used when no upstream is configured)
+    AutosquashInto(String),
     /// Continue after resolving conflicts
     Continue,
     /// Skip the current conflicting commit
@@ -560,6 +568,9 @@ pub enum MergeCommand {
     /// Squash-merge the given branch into the working tree without committing
     /// (`git merge --squash <branch>`)
     Squash(String),
+    /// Merge the current branch into the given branch and delete the former
+    /// (`git checkout <branch>` followed by an absorb of the old branch)
+    Dissolve(String),
     /// Continue after resolving conflicts
     Continue,
     /// Abort the merge sequence
@@ -707,6 +718,9 @@ pub enum CommitSelect {
     /// Show select popup (or confirm) to pick a commit to remove
     /// (an interactive rebase marks it `drop`)
     RemoveCommit,
+    /// Autosquash fixup!/squash! commits: rebases onto the upstream merge
+    /// base directly, or shows a commit pick when no upstream is configured
+    Autosquash,
 
     // Revise-related
     /// Show select popup (or confirm) to pick a commit to revise (reword)

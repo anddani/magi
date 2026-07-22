@@ -44,6 +44,9 @@ fn command_popup_keys(c: char) -> Option<Message> {
         'A' => Some(Message::ShowApplyPopup),
         'm' => Some(Message::ShowMergePopup),
         't' => Some(Message::ShowTagPopup),
+        'w' => Some(Message::ShowPopup(PopupContent::Command(
+            PopupContentCommand::Worktree,
+        ))),
         'O' => Some(Message::ShowResetPopup),
         _ => None,
     }
@@ -1061,6 +1064,62 @@ mod tests {
                 on_select: OnSelect::CheckoutLocalBranch,
             }))
         );
+    }
+
+    // Worktree popup tests
+
+    #[test]
+    fn test_w_shows_worktree_popup() {
+        let model = create_test_model();
+
+        let key = create_key_event(NONE, Char('w'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ShowPopup(PopupContent::Command(
+                PopupContentCommand::Worktree
+            )))
+        );
+    }
+
+    fn create_worktree_popup_model() -> Model {
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Worktree));
+        model
+    }
+
+    #[test]
+    fn test_b_in_worktree_popup_shows_worktree_checkout_select() {
+        let model = create_worktree_popup_model();
+
+        let key = create_key_event(NONE, Char('b'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Worktree checkout".to_string(),
+                source: OptionsSource::BranchesAndTagsExcludingCheckedOut,
+                on_select: OnSelect::WorktreeAdd { checkout: true },
+            }))
+        );
+    }
+
+    #[test]
+    fn test_esc_dismisses_worktree_popup() {
+        let model = create_worktree_popup_model();
+
+        let key = create_key_event(NONE, KeyCode::Esc);
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
+    }
+
+    #[test]
+    fn test_q_dismisses_worktree_popup() {
+        let model = create_worktree_popup_model();
+
+        let key = create_key_event(NONE, Char('q'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::DismissPopup));
     }
 
     // Input popup tests

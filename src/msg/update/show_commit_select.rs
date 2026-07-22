@@ -1,13 +1,15 @@
 use std::time::Instant;
 
 use crate::{
-    git::log::get_log_entries,
+    git::{log::get_log_entries, rebase::get_upstream_merge_base},
     model::{
         Line, LineContent, Model, Toast, ToastStyle, ViewMode,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent},
         select_popup::OnSelect,
     },
-    msg::{CommitSelect, FixupType, LogType, Message, update::commit::TOAST_DURATION},
+    msg::{
+        CommitSelect, FixupType, LogType, Message, RebaseCommand, update::commit::TOAST_DURATION,
+    },
 };
 
 pub fn update(model: &mut Model, commit_select: CommitSelect) -> Option<Message> {
@@ -23,6 +25,7 @@ pub fn update(model: &mut Model, commit_select: CommitSelect) -> Option<Message>
         CommitSelect::ModifyCommit => show_select_modify_commit(model),
         CommitSelect::RewordCommit => show_select_reword_commit(model),
         CommitSelect::RemoveCommit => show_select_remove_commit(model),
+        CommitSelect::Autosquash => show_select_autosquash(model),
         CommitSelect::ReviseCommit => show_select_revise_commit(model),
     }
 }
@@ -97,6 +100,18 @@ pub fn show_select_remove_commit(model: &mut Model) -> Option<Message> {
     }
 
     show_log_select(model, LogType::Current, OnSelect::RemoveCommit)
+}
+
+/// With an upstream configured, autosquash runs on the upstream merge base
+/// right away (like magit). Otherwise the user picks the first commit that
+/// fixups may be squashed into.
+pub fn show_select_autosquash(model: &mut Model) -> Option<Message> {
+    if let Some(base) = get_upstream_merge_base(&model.workdir) {
+        model.popup = None;
+        return Some(Message::Rebase(RebaseCommand::Autosquash(base)));
+    }
+
+    show_log_select(model, LogType::Current, OnSelect::AutosquashCommit)
 }
 
 pub fn show_select_fixup_commit(model: &mut Model, fixup_type: FixupType) -> Option<Message> {

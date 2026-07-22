@@ -138,6 +138,9 @@ fn route_result(
         (Some(OnSelect::RemoveCommit), SelectResult::Selected(commit)) => {
             Some(Message::Rebase(RebaseCommand::RemoveCommit(commit)))
         }
+        (Some(OnSelect::AutosquashCommit), SelectResult::Selected(commit)) => {
+            Some(Message::Rebase(RebaseCommand::AutosquashInto(commit)))
+        }
         (Some(OnSelect::RebaseSubsetOnto), SelectResult::Selected(newbase)) => {
             Some(Message::ShowCommitSelect(CommitSelect::RebaseSubset {
                 newbase,
@@ -309,6 +312,9 @@ fn route_result(
         }
         (Some(OnSelect::MergeSquash), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Squash(branch)))
+        }
+        (Some(OnSelect::MergeDissolve), SelectResult::Selected(branch)) => {
+            Some(Message::Merge(MergeCommand::Dissolve(branch)))
         }
         (Some(OnSelect::ApplyPick), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Pick(vec![hash])))

@@ -47,6 +47,11 @@ pub fn keys(key: KeyEvent, state: &MergePopupState) -> Option<Message> {
             source: OptionsSource::LocalAndRemoteBranches,
             on_select: OnSelect::MergeSquash,
         })),
+        KeyCode::Char('d') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Dissolve into".to_string(),
+            source: OptionsSource::LocalBranches,
+            on_select: OnSelect::MergeDissolve,
+        })),
         _ => None,
     }
 }

@@ -43,6 +43,7 @@ pub struct Strings {
     pub popup_log: &'static str,
     pub popup_stash: &'static str,
     pub popup_tag: &'static str,
+    pub popup_worktree: &'static str,
     pub popup_reset: &'static str,
     pub popup_rebase: &'static str,
     pub popup_revert: &'static str,
@@ -57,6 +58,7 @@ pub struct Strings {
     // Column / section titles inside popups
     pub col_checkout: &'static str,
     pub col_create: &'static str,
+    pub col_create_new: &'static str,
     pub col_do: &'static str,
     pub col_arguments: &'static str,
     pub col_formatting: &'static str,
@@ -73,6 +75,7 @@ pub struct Strings {
     pub col_apply_here: &'static str,
     pub col_apply_elsewhere: &'static str,
     pub col_reflog: &'static str,
+    pub col_inspect: &'static str,
 
     // Dynamic styled title parts used in push/pull/rebase popups.
     // The branch name is coloured separately between pre and post.
@@ -130,6 +133,7 @@ pub struct Strings {
     pub cmd_to_modify_a_commit: &'static str,
     pub cmd_to_reword_a_commit: &'static str,
     pub cmd_to_remove_a_commit: &'static str,
+    pub cmd_to_autosquash: &'static str,
     /// Window title while picking the start commit of a subset rebase.
     /// `{}` is the new base (branch/ref) chosen in the previous step.
     pub title_pick_rebase_subset_fmt: &'static str,
@@ -139,6 +143,9 @@ pub struct Strings {
     pub title_pick_reword_commit: &'static str,
     /// Window title while picking a commit to remove (drop in a rebase)
     pub title_pick_remove_commit: &'static str,
+    /// Window title while picking the commit to squash fixups into
+    /// (autosquash fallback when no upstream is configured)
+    pub title_pick_autosquash_commit: &'static str,
     pub cmd_all_remotes: &'static str,
     pub cmd_another_branch: &'static str,
     pub cmd_explicit_refspec: &'static str,
@@ -157,6 +164,7 @@ pub struct Strings {
     pub cmd_apply: &'static str,
     pub cmd_pop: &'static str,
     pub cmd_drop: &'static str,
+    pub cmd_list: &'static str,
     pub cmd_other_branch: &'static str,
     pub cmd_matching_branches: &'static str,
     pub cmd_push_tag: &'static str,
@@ -178,6 +186,7 @@ pub struct Strings {
     pub cmd_merge_absorb: &'static str,
     pub cmd_merge_preview: &'static str,
     pub cmd_merge_squash: &'static str,
+    pub cmd_merge_dissolve: &'static str,
     pub cmd_revert_commits: &'static str,
     pub cmd_pick: &'static str,
     pub cmd_harvest: &'static str,
@@ -307,6 +316,7 @@ static ENGLISH: Strings = Strings {
     popup_log: "Log",
     popup_stash: "Stash",
     popup_tag: "Tag",
+    popup_worktree: "Worktree",
     popup_reset: "Reset",
     popup_rebase: "Rebase",
     popup_revert: "Revert",
@@ -320,6 +330,7 @@ static ENGLISH: Strings = Strings {
 
     col_checkout: "Checkout",
     col_create: "Create",
+    col_create_new: "Create new",
     col_do: "Do",
     col_arguments: "Arguments",
     col_formatting: "Formatting",
@@ -336,6 +347,7 @@ static ENGLISH: Strings = Strings {
     col_apply_here: "Apply here",
     col_apply_elsewhere: "Apply elsewhere",
     col_reflog: "Reflog",
+    col_inspect: "Inspect",
 
     push_to_pre: "Push ",
     push_to_post: " to",
@@ -387,10 +399,12 @@ static ENGLISH: Strings = Strings {
     cmd_to_modify_a_commit: "To modify a commit",
     cmd_to_reword_a_commit: "To reword a commit",
     cmd_to_remove_a_commit: "To remove a commit",
+    cmd_to_autosquash: "To autosquash",
     title_pick_rebase_subset_fmt: "Press Enter on a commit to rebase it and commits above onto {}, or Esc/q to cancel",
     title_pick_modify_commit: "Press Enter on a commit to modify it, or Esc/q to cancel",
     title_pick_reword_commit: "Press Enter on a commit to reword its message, or Esc/q to cancel",
     title_pick_remove_commit: "Press Enter on a commit to remove it, or Esc/q to cancel",
+    title_pick_autosquash_commit: "Press Enter on a commit to squash into it and then rebase, or Esc/q to cancel",
     cmd_all_remotes: "All remotes",
     cmd_another_branch: "Another branch",
     cmd_explicit_refspec: "Explicit refspec",
@@ -409,6 +423,7 @@ static ENGLISH: Strings = Strings {
     cmd_apply: "Apply",
     cmd_pop: "Pop",
     cmd_drop: "Drop",
+    cmd_list: "List",
     cmd_other_branch: "Other branch",
     cmd_matching_branches: "Matching branches",
     cmd_push_tag: "Push a tag",
@@ -430,6 +445,7 @@ static ENGLISH: Strings = Strings {
     cmd_merge_absorb: "Absorb",
     cmd_merge_preview: "Preview merge",
     cmd_merge_squash: "Squash merge",
+    cmd_merge_dissolve: "Dissolve",
     cmd_revert_commits: "Revert commit(s)",
     cmd_pick: "Pick",
     cmd_harvest: "Harvest",
@@ -542,6 +558,7 @@ static SWEDISH: Strings = Strings {
     popup_log: "Diarium",
     popup_stash: "Gömma",
     popup_tag: "Märke",
+    popup_worktree: "Arbetsträd",
     popup_reset: "Återställ",
     popup_rebase: "Ympa",
     popup_revert: "Återgå",
@@ -555,6 +572,7 @@ static SWEDISH: Strings = Strings {
 
     col_checkout: "Byt till",
     col_create: "Skapa",
+    col_create_new: "Skapa nytt",
     col_do: "Utför",
     col_arguments: "Argument",
     col_formatting: "Formatering",
@@ -571,6 +589,7 @@ static SWEDISH: Strings = Strings {
     col_apply_here: "Plocka russin här",
     col_apply_elsewhere: "Plocka russin någon annanstans",
     col_reflog: "Reflogg",
+    col_inspect: "Inspektera",
 
     push_to_pre: "Knuffa ",
     push_to_post: " till",
@@ -622,10 +641,12 @@ static SWEDISH: Strings = Strings {
     cmd_to_modify_a_commit: "För att ändra en förbindelse",
     cmd_to_reword_a_commit: "För att omformulera en förbindelse",
     cmd_to_remove_a_commit: "För att ta bort en förbindelse",
+    cmd_to_autosquash: "För att auto-mosa",
     title_pick_rebase_subset_fmt: "Tryck Enter på en förbindelse för att ympa den och förbindelser ovanför på {}, eller Esc/q för att avbryta",
     title_pick_modify_commit: "Tryck Enter på en förbindelse för att ändra den, eller Esc/q för att avbryta",
     title_pick_reword_commit: "Tryck Enter på en förbindelse för att omformulera dess meddelande, eller Esc/q för att avbryta",
     title_pick_remove_commit: "Tryck Enter på en förbindelse för att ta bort den, eller Esc/q för att avbryta",
+    title_pick_autosquash_commit: "Tryck Enter på en förbindelse för att mosa in i den och sedan ympa, eller Esc/q för att avbryta",
     cmd_all_remotes: "Alla fjärrar",
     cmd_another_branch: "Annan gren",
     cmd_explicit_refspec: "Explicit refspec",
@@ -644,6 +665,7 @@ static SWEDISH: Strings = Strings {
     cmd_apply: "Applicera",
     cmd_pop: "Plocka",
     cmd_drop: "Fimpa",
+    cmd_list: "Lista",
     cmd_other_branch: "Annan gren",
     cmd_matching_branches: "Matchande grenar",
     cmd_push_tag: "Knuffa ett märke",
@@ -665,6 +687,7 @@ static SWEDISH: Strings = Strings {
     cmd_merge_absorb: "Absorbera",
     cmd_merge_preview: "Förhandsgranska sammanfogning",
     cmd_merge_squash: "Squash-sammanfoga",
+    cmd_merge_dissolve: "Upplös",
     cmd_revert_commits: "Återgå förbindelse(r)",
     cmd_pick: "Plocka",
     cmd_harvest: "Skörda",
