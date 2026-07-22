@@ -86,6 +86,7 @@ mod toggle_argument;
 mod toggle_section;
 mod unstage_all;
 mod unstage_selected;
+mod worktree_branch;
 mod worktree_checkout;
 
 /// Processes a [`Message`], modifying the passed model.
@@ -256,6 +257,24 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             path,
             checkout,
         } => worktree_checkout::update(model, branch, path, checkout),
+        Message::ShowWorktreeBranchNameInput { starting_point } => {
+            show_input_popup::update(model, InputContext::WorktreeBranchName { starting_point })
+        }
+        Message::ShowWorktreeBranchPathInput {
+            starting_point,
+            branch_name,
+        } => show_input_popup::update(
+            model,
+            InputContext::WorktreeBranchPath {
+                starting_point,
+                branch_name,
+            },
+        ),
+        Message::WorktreeBranch {
+            starting_point,
+            branch_name,
+            path,
+        } => worktree_branch::update(model, starting_point, branch_name, path),
         Message::ShowPreview => show_preview::update(model),
         Message::ExitPreview => exit_preview::update(model),
         Message::FileCheckout { revision, file } => file_checkout::update(model, revision, file),

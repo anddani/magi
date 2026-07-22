@@ -244,7 +244,9 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
                 .map(|s| s.name().to_string())
                 .or_else(|| get_last_checked_out_branch(&model.git_info.repository))
         }
-        OnSelect::CreateNewBranchBase { .. } | OnSelect::CreateTagTarget { .. } => {
+        OnSelect::CreateNewBranchBase { .. }
+        | OnSelect::CreateTagTarget { .. }
+        | OnSelect::WorktreeBranch => {
             // Cursor suggestion (any), then current branch
             cursor_line
                 .and_then(|line| suggestions_from_line(line).into_iter().next())
@@ -386,6 +388,7 @@ fn should_insert_if_missing(on_select: &OnSelect) -> bool {
         | OnSelect::MergeNoCommit          // can insert revision
         | OnSelect::MergePreview           // can insert revision
         | OnSelect::WorktreeAdd { .. }     // can insert non-list suggestion
+        | OnSelect::WorktreeBranch         // can insert revision/hash
         | OnSelect::CreateNewBranchBase { .. } // can insert revision/hash
         | OnSelect::FileCheckoutRevision   // can insert cursor suggestion
         | OnSelect::LogOther               // can insert cursor suggestion
@@ -572,9 +575,9 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::MergeAbsorb
         | OnSelect::MergeDissolve
         | OnSelect::PushOtherBranchPick => "No local branches found".to_string(),
-        OnSelect::WorktreeAdd { .. } | OnSelect::CreateNewBranchBase { .. } => {
-            "No branches or tags found".to_string()
-        }
+        OnSelect::WorktreeAdd { .. }
+        | OnSelect::WorktreeBranch
+        | OnSelect::CreateNewBranchBase { .. } => "No branches or tags found".to_string(),
         OnSelect::FileCheckoutRevision
         | OnSelect::LogOther
         | OnSelect::ReflogOther

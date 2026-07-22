@@ -155,6 +155,9 @@ fn route_result(
         (Some(OnSelect::WorktreeAdd { checkout }), SelectResult::Selected(branch)) => {
             Some(Message::ShowWorktreePathInput { branch, checkout })
         }
+        (Some(OnSelect::WorktreeBranch), SelectResult::Selected(starting_point)) => {
+            Some(Message::ShowWorktreeBranchNameInput { starting_point })
+        }
         (Some(OnSelect::ResetBranchPick), SelectResult::Selected(branch)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
                 title: "Reset branch to".to_string(),

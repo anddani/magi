@@ -1105,6 +1105,22 @@ mod tests {
     }
 
     #[test]
+    fn test_c_in_worktree_popup_shows_worktree_branch_select() {
+        let model = create_worktree_popup_model();
+
+        let key = create_key_event(NONE, Char('c'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Create branch starting at".to_string(),
+                source: OptionsSource::BranchesAndTags,
+                on_select: OnSelect::WorktreeBranch,
+            }))
+        );
+    }
+
+    #[test]
     fn test_esc_dismisses_worktree_popup() {
         let model = create_worktree_popup_model();
 
