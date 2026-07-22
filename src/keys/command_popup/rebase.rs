@@ -47,6 +47,7 @@ pub fn keys(key: KeyEvent, state: &RebasePopupState) -> Option<Message> {
         KeyCode::Char('m') => Some(Message::ShowCommitSelect(CommitSelect::ModifyCommit)),
         KeyCode::Char('w') => Some(Message::ShowCommitSelect(CommitSelect::RewordCommit)),
         KeyCode::Char('k') => Some(Message::ShowCommitSelect(CommitSelect::RemoveCommit)),
+        KeyCode::Char('f') => Some(Message::ShowCommitSelect(CommitSelect::Autosquash)),
         KeyCode::Char('s') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
             title: "Rebase subset onto".to_string(),
             source: OptionsSource::AllRefs,

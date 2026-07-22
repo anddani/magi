@@ -75,6 +75,9 @@ pub enum OnSelect {
     RewordCommit,
     /// Select a commit to remove (an interactive rebase marks it `drop`)
     RemoveCommit,
+    /// Select the commit to squash fixups into (autosquash fallback when
+    /// no upstream is configured)
+    AutosquashCommit,
     /// Select the new base for a subset rebase (step 1 of 2)
     RebaseSubsetOnto,
     /// Select the start commit for a subset rebase (step 2 of 2, carries the new base)
