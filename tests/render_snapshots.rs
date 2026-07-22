@@ -52,10 +52,14 @@ fn render_to_styled_string(model: &Model, width: u16, height: u16) -> String {
 }
 
 /// Snapshot with commit hashes redacted (7-40 hex chars surrounded by word
-/// boundaries) so frames containing commits stay deterministic.
+/// boundaries) and the crate version redacted (help popup) so frames stay
+/// deterministic across commits and version bumps.
 macro_rules! assert_frame_snapshot {
     ($frame:expr) => {
-        insta::with_settings!({filters => vec![(r"\b[0-9a-f]{7,40}\b", "[hash]")]}, {
+        insta::with_settings!({filters => vec![
+            (r"\b[0-9a-f]{7,40}\b", "[hash]"),
+            (r"version \d+\.\d+\.\d+", "version [version]"),
+        ]}, {
             insta::assert_snapshot!($frame);
         })
     };
