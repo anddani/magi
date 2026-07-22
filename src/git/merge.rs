@@ -56,10 +56,46 @@ pub fn run_merge_edit_with_editor<P: AsRef<Path>>(
 /// editor, so the TUI does not need to be suspended. When the merge stops on
 /// conflicts the branch is kept so the merge can be resolved or aborted.
 pub fn run_merge_absorb<P: AsRef<Path>>(repo_path: P, branch: &str) -> MagiResult<CommitResult> {
+    merge_branch_and_delete(repo_path.as_ref(), branch, "Absorb", "Absorbed")
+}
+
+/// Checks out `into` and then merges `branch` into it with absorb semantics:
+/// the merged branch is deleted when the merge succeeds and kept when the
+/// merge stops on conflicts. `--no-edit` never opens an editor, so the TUI
+/// does not need to be suspended. When the checkout fails nothing is merged.
+pub fn run_merge_dissolve<P: AsRef<Path>>(
+    repo_path: P,
+    branch: &str,
+    into: &str,
+) -> MagiResult<CommitResult> {
     let repo_path = repo_path.as_ref();
+    let checkout = git_cmd(repo_path, &["checkout", into]).output()?;
+    if !checkout.status.success() {
+        let stderr = String::from_utf8_lossy(&checkout.stderr).trim().to_string();
+        return Ok(CommitResult {
+            success: false,
+            message: format!(
+                "Cannot dissolve '{}': failed to checkout '{}': {}",
+                branch, into, stderr
+            ),
+        });
+    }
+
+    merge_branch_and_delete(repo_path, branch, "Dissolve", "Dissolved")
+}
+
+/// Merges `branch` into the checked-out branch (`git merge --no-edit`) and
+/// deletes it when the merge succeeds. `merged` is the past-tense verb used
+/// when the merge succeeds but the delete fails.
+fn merge_branch_and_delete(
+    repo_path: &Path,
+    branch: &str,
+    label: &str,
+    merged: &str,
+) -> MagiResult<CommitResult> {
     let output = git_cmd(repo_path, &["merge", "--no-edit", branch]).output()?;
 
-    let result = get_commit_result(repo_path, output.status, "Absorb")?;
+    let result = get_commit_result(repo_path, output.status, label)?;
     if !result.success {
         return Ok(result);
     }
@@ -71,7 +107,10 @@ pub fn run_merge_absorb<P: AsRef<Path>>(repo_path: P, branch: &str) -> MagiResul
         let stderr = String::from_utf8_lossy(&delete.stderr).trim().to_string();
         Ok(CommitResult {
             success: false,
-            message: format!("Absorbed '{}' but failed to delete it: {}", branch, stderr),
+            message: format!(
+                "{} '{}' but failed to delete it: {}",
+                merged, branch, stderr
+            ),
         })
     }
 }
@@ -374,6 +413,147 @@ mod tests {
         assert_eq!(result.message, "Absorb aborted");
         assert!(merge_in_progress(&test_repo));
         // The branch survives so the merge can be resolved or aborted.
+        assert!(
+            test_repo
+                .repo
+                .find_branch("feature", git2::BranchType::Local)
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn test_merge_dissolve_merges_into_target_and_deletes_branch() {
+        let test_repo = TestRepo::new();
+        // Divergent branches touching different files: merges cleanly.
+        setup_divergent_branches(
+            &test_repo,
+            ("main.txt", "main content\n"),
+            ("feature.txt", "feature content\n"),
+        );
+        // Dissolving merges the current branch into the target.
+        assert!(
+            run_git(&test_repo, &["checkout", "feature"])
+                .status
+                .success()
+        );
+
+        let result = run_merge_dissolve(test_repo.repo_path(), "feature", "main").unwrap();
+
+        assert!(result.success);
+        assert!(
+            result
+                .message
+                .starts_with("Dissolve: Merge branch 'feature'"),
+            "unexpected message: {}",
+            result.message
+        );
+
+        // The merge landed on the target branch.
+        let head = test_repo.repo.head().unwrap();
+        assert_eq!(head.shorthand().unwrap(), "main");
+        let head = head.peel_to_commit().unwrap();
+        assert_eq!(head.parent_count(), 2);
+        assert!(test_repo.repo_path().join("main.txt").exists());
+        assert!(test_repo.repo_path().join("feature.txt").exists());
+        assert!(!merge_in_progress(&test_repo));
+        // The dissolved branch is gone.
+        assert!(
+            test_repo
+                .repo
+                .find_branch("feature", git2::BranchType::Local)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn test_merge_dissolve_fast_forward_deletes_branch() {
+        let test_repo = TestRepo::new();
+        test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+        // Put a commit on feature only, so merging it into main fast-forwards.
+        assert!(
+            run_git(&test_repo, &["checkout", "-b", "feature"])
+                .status
+                .success()
+        );
+        test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+        let feature_hash = test_repo.branch_hash("feature");
+
+        let result = run_merge_dissolve(test_repo.repo_path(), "feature", "main").unwrap();
+
+        assert!(result.success);
+        assert_eq!(result.message, "Dissolve: Feature commit");
+        assert_eq!(test_repo.repo.head().unwrap().shorthand().unwrap(), "main");
+        assert_eq!(test_repo.head_hash(), feature_hash);
+        assert!(!merge_in_progress(&test_repo));
+        assert!(
+            test_repo
+                .repo
+                .find_branch("feature", git2::BranchType::Local)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn test_merge_dissolve_with_conflicts_keeps_branch() {
+        let test_repo = TestRepo::new();
+        // Both branches modify the same file: merging conflicts.
+        setup_divergent_branches(
+            &test_repo,
+            ("base.txt", "main change\n"),
+            ("base.txt", "feature change\n"),
+        );
+        assert!(
+            run_git(&test_repo, &["checkout", "feature"])
+                .status
+                .success()
+        );
+
+        let result = run_merge_dissolve(test_repo.repo_path(), "feature", "main").unwrap();
+
+        assert!(!result.success);
+        assert_eq!(result.message, "Dissolve aborted");
+        // The merge is paused on the target branch so it can be resolved or
+        // aborted, and the branch survives.
+        assert_eq!(test_repo.repo.head().unwrap().shorthand().unwrap(), "main");
+        assert!(merge_in_progress(&test_repo));
+        assert!(
+            test_repo
+                .repo
+                .find_branch("feature", git2::BranchType::Local)
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn test_merge_dissolve_unknown_target_fails_and_keeps_branch() {
+        let test_repo = TestRepo::new();
+        setup_divergent_branches(
+            &test_repo,
+            ("main.txt", "main content\n"),
+            ("feature.txt", "feature content\n"),
+        );
+        assert!(
+            run_git(&test_repo, &["checkout", "feature"])
+                .status
+                .success()
+        );
+
+        let result =
+            run_merge_dissolve(test_repo.repo_path(), "feature", "no-such-branch").unwrap();
+
+        assert!(!result.success);
+        assert!(
+            result.message.starts_with("Cannot dissolve 'feature'"),
+            "unexpected message: {}",
+            result.message
+        );
+        // Nothing was merged or deleted.
+        assert_eq!(
+            test_repo.repo.head().unwrap().shorthand().unwrap(),
+            "feature"
+        );
+        assert!(!merge_in_progress(&test_repo));
         assert!(
             test_repo
                 .repo

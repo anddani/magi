@@ -155,7 +155,8 @@ fn compute_exclude(model: &Model, on_select: &OnSelect) -> Option<String> {
         | OnSelect::MergeNoCommit
         | OnSelect::MergeAbsorb
         | OnSelect::MergePreview
-        | OnSelect::MergeSquash => model.git_info.current_branch().map(|b| b.to_string()),
+        | OnSelect::MergeSquash
+        | OnSelect::MergeDissolve => model.git_info.current_branch().map(|b| b.to_string()),
         OnSelect::ResetBranchTarget { branch } => Some(branch.clone()),
         OnSelect::OpenPrTarget { source_branch } => Some(source_branch.clone()),
         OnSelect::HarvestSourceBranch { .. } => {
@@ -314,9 +315,10 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
                 })
                 .map(|s| s.name().to_string())
         }
-        OnSelect::MergeAbsorb => {
-            // Cursor local branch (not current); the branch is deleted after
-            // the merge, so only names in the local branch list qualify
+        OnSelect::MergeAbsorb | OnSelect::MergeDissolve => {
+            // Cursor local branch (not current); absorb deletes the selected
+            // branch and dissolve checks it out, so only names in the local
+            // branch list qualify
             cursor_line
                 .and_then(|line| {
                     suggestions_from_line(line).into_iter().find(|s| {
@@ -567,6 +569,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::RenameBranch
         | OnSelect::ResetBranchPick
         | OnSelect::MergeAbsorb
+        | OnSelect::MergeDissolve
         | OnSelect::PushOtherBranchPick => "No local branches found".to_string(),
         OnSelect::WorktreeAdd { .. } | OnSelect::CreateNewBranchBase { .. } => {
             "No branches or tags found".to_string()

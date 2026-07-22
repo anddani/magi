@@ -123,6 +123,9 @@ pub enum OnSelect {
     MergePreview,
     /// Select a branch to squash-merge into the working tree (`git merge --squash`)
     MergeSquash,
+    /// Select a local branch to merge the current branch into; the current
+    /// branch is deleted after the merge
+    MergeDissolve,
     /// Select a commit to cherry-pick onto the current branch
     ApplyPick,
     /// Select a commit to apply (--no-commit) onto the current branch
