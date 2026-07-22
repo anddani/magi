@@ -930,6 +930,355 @@ fn test_prune_tags_deletes_local_only_tags() {
     );
 }
 
+// ── Tag release flow ───────────────────────────────────────────────────────────
+
+/// Creates an annotated tag via the git CLI (TestRepo has no helper for this)
+fn create_annotated_tag(test_repo: &TestRepo, name: &str, message: &str) {
+    let repo_path = test_repo.repo.workdir().unwrap();
+    let output = std::process::Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(["tag", "-a", "-m", message, name])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "failed to create annotated tag");
+}
+
+#[test]
+fn test_r_in_tag_popup_shows_tag_release_input() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+
+    let result = handle_key(key(KeyCode::Char('r')), &model);
+    assert_eq!(result, Some(Message::ShowTagReleaseInput));
+}
+
+#[test]
+fn test_tag_release_first_release_opens_empty_input() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(&mut model, Message::ShowTagReleaseInput);
+
+    assert_eq!(result, None);
+    let state = expect_input_popup(&model);
+    assert_eq!(state.context, InputContext::TagRelease { previous: None });
+    assert_eq!(state.input.as_str(), "");
+}
+
+#[test]
+fn test_tag_release_first_release_prefills_from_release_commit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "Release version 1.0.0");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    let result = update(&mut model, Message::ShowTagReleaseInput);
+
+    assert_eq!(result, None);
+    let state = expect_input_popup(&model);
+    assert_eq!(state.context, InputContext::TagRelease { previous: None });
+    // Versions starting with a digit are prefixed with "v"
+    assert_eq!(state.input.as_str(), "v1.0.0");
+}
+
+#[test]
+fn test_tag_release_with_previous_prefills_previous_tag() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
+
+    let result = update(&mut model, Message::ShowTagReleaseInput);
+
+    assert_eq!(result, None);
+    let state = expect_input_popup(&model);
+    assert_eq!(
+        state.context,
+        InputContext::TagRelease {
+            previous: Some("v1.0.0".to_string())
+        }
+    );
+    // The previous tag is the initial input, leaving it to the user to
+    // increment the desired part of the version
+    assert_eq!(state.input.as_str(), "v1.0.0");
+}
+
+#[test]
+fn test_tag_release_picks_highest_version_not_lexical_order() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    for name in ["v1.2.0", "v1.10.0", "v1.9.0"] {
+        update(
+            &mut model,
+            Message::CreateTag {
+                name: name.to_string(),
+                target: "HEAD".to_string(),
+            },
+        );
+    }
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
+
+    update(&mut model, Message::ShowTagReleaseInput);
+
+    // 1.10.0 > 1.9.0 numerically, even though "1.9.0" sorts higher lexically
+    let state = expect_input_popup(&model);
+    assert_eq!(state.input.as_str(), "v1.10.0");
+}
+
+#[test]
+fn test_tag_release_release_commit_creates_directly() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+    test_repo.commit_file("file2.txt", "content2", "Release version 1.1.0");
+
+    let result = update(&mut model, Message::ShowTagReleaseInput);
+
+    // The version comes from HEAD's message and the "v" prefix from the
+    // previous release tag — no prompt needed
+    assert_eq!(
+        result,
+        Some(Message::CreateTagRelease {
+            name: "v1.1.0".to_string()
+        })
+    );
+}
+
+#[test]
+fn test_tag_release_keeps_previous_tag_prefix() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // Previous release tag has no "v" prefix
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+    test_repo.commit_file("file2.txt", "content2", "Release version 1.1.0");
+
+    let result = update(&mut model, Message::ShowTagReleaseInput);
+
+    assert_eq!(
+        result,
+        Some(Message::CreateTagRelease {
+            name: "1.1.0".to_string()
+        })
+    );
+}
+
+#[test]
+fn test_tag_release_input_confirm_returns_create_tag_release() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::input_popup(InputContext::TagRelease {
+        previous: Some("v1.0.0".to_string()),
+    }));
+    if let Some(PopupContent::Input(ref mut state)) = model.popup {
+        state.input = InputField::from_text("v1.1.0");
+    }
+
+    let result = update(&mut model, Message::Input(magi::msg::InputMessage::Confirm));
+
+    assert_eq!(
+        result,
+        Some(Message::CreateTagRelease {
+            name: "v1.1.0".to_string()
+        })
+    );
+}
+
+#[test]
+fn test_create_tag_release_creates_lightweight_tag() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
+
+    let result = update(
+        &mut model,
+        Message::CreateTagRelease {
+            name: "v1.1.0".to_string(),
+        },
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(model.popup.is_none());
+
+    let tags = model.git_info.repository.tag_names(None).unwrap();
+    let tag_list: Vec<&str> = tags.iter().filter_map(|t| t.ok().flatten()).collect();
+    assert!(
+        tag_list.contains(&"v1.1.0"),
+        "Tag 'v1.1.0' should exist in the repository"
+    );
+}
+
+#[test]
+fn test_create_tag_release_first_release_forces_edit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // No release tags exist, so the user must review the message with --edit
+    let result = update(
+        &mut model,
+        Message::CreateTagRelease {
+            name: "v1.0.0".to_string(),
+        },
+    );
+
+    let expected = Message::CreateTagWithEditor {
+        name: "v1.0.0".to_string(),
+        args: vec![
+            "tag".to_string(),
+            "--edit".to_string(),
+            "v1.0.0".to_string(),
+        ],
+    };
+    assert_eq!(result, Some(expected));
+    assert!(magi::msg::util::is_external_command(&result.unwrap()));
+}
+
+#[test]
+fn test_create_tag_release_annotate_derives_message_from_previous() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    create_annotated_tag(&test_repo, "v1.0.0", "Widget 1.0.0");
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments(
+        [TagArgument::Annotate].into_iter().collect(),
+    ));
+
+    let result = update(
+        &mut model,
+        Message::CreateTagRelease {
+            name: "v1.1.0".to_string(),
+        },
+    );
+
+    // With --annotate and a derived -m message no editor is needed
+    assert_eq!(result, Some(Message::Refresh));
+    assert!(
+        model.arguments.is_none(),
+        "Arguments should be consumed after creating the tag"
+    );
+
+    // The previous tag's message with the version string substituted
+    let repo = &model.git_info.repository;
+    let tag_ref = repo.find_reference("refs/tags/v1.1.0").unwrap();
+    let tag = tag_ref.peel_to_tag().unwrap();
+    assert_eq!(tag.message().unwrap().unwrap().trim(), "Widget 1.1.0");
+}
+
+#[test]
+fn test_create_tag_release_annotate_falls_back_to_repo_name_message() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    // Lightweight tag: `git tag -n` shows the commit subject, which contains
+    // neither the version nor the tag name, forcing the fallback message
+    let mut model = create_model_from_test_repo(&test_repo);
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+    test_repo.commit_file("file2.txt", "content2", "Second commit");
+
+    model.arguments = Some(Arguments::TagArguments(
+        [TagArgument::Annotate].into_iter().collect(),
+    ));
+
+    let result = update(
+        &mut model,
+        Message::CreateTagRelease {
+            name: "v1.1.0".to_string(),
+        },
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+
+    // Fallback message is "<Repo> <version>"
+    let repo = &model.git_info.repository;
+    let tag_ref = repo.find_reference("refs/tags/v1.1.0").unwrap();
+    let tag = tag_ref.peel_to_tag().unwrap();
+    let message = tag.message().unwrap().unwrap();
+    assert!(
+        message.trim().ends_with(" 1.1.0"),
+        "Fallback message should end with the version, got: {:?}",
+        message
+    );
+}
+
+#[test]
+fn test_create_tag_release_fails_when_tag_exists() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    let result = update(
+        &mut model,
+        Message::CreateTagRelease {
+            name: "v1.0.0".to_string(),
+        },
+    );
+
+    assert_eq!(result, None);
+    assert!(
+        matches!(&model.popup, Some(PopupContent::Error { .. })),
+        "Expected error popup when the release tag already exists"
+    );
+}
+
 #[test]
 fn test_prune_tags_confirm_shows_confirm_popup() {
     let test_repo = TestRepo::new();

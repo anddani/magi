@@ -16,6 +16,7 @@ mod confirm_discard;
 mod confirm_drop_stash;
 mod confirm_pop_stash;
 mod create_tag;
+mod create_tag_release;
 mod credentials_input;
 mod delete_branch;
 mod delete_tag;
@@ -77,6 +78,7 @@ mod show_revert_mainline_input;
 mod show_revert_popup;
 mod show_select_popup;
 mod show_tag_popup;
+mod show_tag_release_input;
 mod spinoff_branch;
 mod spinout_branch;
 mod stage_all_modified;
@@ -222,6 +224,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowMergePopup => show_merge_popup::update(model),
         Message::ShowTagPopup => show_tag_popup::update(model),
         Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),
+        Message::ShowTagReleaseInput => show_tag_release_input::update(model),
+        Message::CreateTagRelease { name } => create_tag_release::update(model, name),
         Message::CreateTag { name, target } => create_tag::update(model, name, target),
         Message::CreateTagWithEditor { name, args } => create_tag::with_editor(model, name, args),
         Message::DeleteTag(name) => delete_tag::update(model, name),

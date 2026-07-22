@@ -25,7 +25,10 @@ pub fn content<'a>(theme: &Theme, model: &Model) -> CommandPopupContent<'a> {
 
     let create_col = PopupColumn {
         title: Some(t.col_create.into()),
-        content: vec![command_description(theme, model.arg_mode, "t", t.cmd_tag)],
+        content: vec![
+            command_description(theme, model.arg_mode, "t", t.cmd_tag),
+            command_description(theme, model.arg_mode, "r", t.cmd_release),
+        ],
     };
 
     let do_col = PopupColumn {
