@@ -34,6 +34,7 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             command_description(theme, false, "_", t.cmd_revert),
             command_description(theme, false, "z", t.cmd_stash),
             command_description(theme, false, "t", t.cmd_tag),
+            command_description(theme, false, "w", t.cmd_worktree),
         ],
     };
 

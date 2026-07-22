@@ -16,6 +16,7 @@ mod revert;
 mod select;
 mod stash;
 mod tag;
+mod worktree;
 
 pub fn handle_command_popup_key(
     key: KeyEvent,
@@ -43,6 +44,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Merge(state) => merge::keys(key, state),
         PopupContentCommand::Apply(state) => apply::keys(key, state),
         PopupContentCommand::Tag => tag::keys(key, arg_mode),
+        PopupContentCommand::Worktree => worktree::keys(key),
         PopupContentCommand::Select(_) => select::keys(key),
     }
 }

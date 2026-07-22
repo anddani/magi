@@ -336,6 +336,13 @@ fn snapshot_branch_popup() {
 }
 
 #[test]
+fn snapshot_worktree_popup() {
+    let test_repo = TestRepo::new();
+    let model = create_command_popup_model(&test_repo, PopupContentCommand::Worktree);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_log_popup() {
     let test_repo = TestRepo::new();
     let model = create_command_popup_model(&test_repo, PopupContentCommand::Log);
