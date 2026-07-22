@@ -2,7 +2,9 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     model::arguments::{Argument::Stash, StashArgument},
-    msg::{Message, OnSelect, OptionsSource, ShowSelectPopupConfig, StashCommand, StashType},
+    msg::{
+        LogType, Message, OnSelect, OptionsSource, ShowSelectPopupConfig, StashCommand, StashType,
+    },
 };
 
 pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
@@ -39,6 +41,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
             source: OptionsSource::Stashes,
             on_select: OnSelect::DropStash,
         })),
+        KeyCode::Char('l') => Some(Message::ShowLog(LogType::Stashes)),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

@@ -73,6 +73,7 @@ pub struct Strings {
     pub col_apply_here: &'static str,
     pub col_apply_elsewhere: &'static str,
     pub col_reflog: &'static str,
+    pub col_inspect: &'static str,
 
     // Dynamic styled title parts used in push/pull/rebase popups.
     // The branch name is coloured separately between pre and post.
@@ -157,6 +158,7 @@ pub struct Strings {
     pub cmd_apply: &'static str,
     pub cmd_pop: &'static str,
     pub cmd_drop: &'static str,
+    pub cmd_list: &'static str,
     pub cmd_other_branch: &'static str,
     pub cmd_matching_branches: &'static str,
     pub cmd_push_tag: &'static str,
@@ -336,6 +338,7 @@ static ENGLISH: Strings = Strings {
     col_apply_here: "Apply here",
     col_apply_elsewhere: "Apply elsewhere",
     col_reflog: "Reflog",
+    col_inspect: "Inspect",
 
     push_to_pre: "Push ",
     push_to_post: " to",
@@ -409,6 +412,7 @@ static ENGLISH: Strings = Strings {
     cmd_apply: "Apply",
     cmd_pop: "Pop",
     cmd_drop: "Drop",
+    cmd_list: "List",
     cmd_other_branch: "Other branch",
     cmd_matching_branches: "Matching branches",
     cmd_push_tag: "Push a tag",
@@ -571,6 +575,7 @@ static SWEDISH: Strings = Strings {
     col_apply_here: "Plocka russin här",
     col_apply_elsewhere: "Plocka russin någon annanstans",
     col_reflog: "Reflogg",
+    col_inspect: "Inspektera",
 
     push_to_pre: "Knuffa ",
     push_to_post: " till",
@@ -644,6 +649,7 @@ static SWEDISH: Strings = Strings {
     cmd_apply: "Applicera",
     cmd_pop: "Plocka",
     cmd_drop: "Fimpa",
+    cmd_list: "Lista",
     cmd_other_branch: "Annan gren",
     cmd_matching_branches: "Matchande grenar",
     cmd_push_tag: "Knuffa ett märke",
