@@ -35,7 +35,10 @@ pub fn get_log_entries(
 
     let head_detached = repository.head_detached()?;
 
-    let reflog = matches!(log_type, LogType::Reflog | LogType::Stashes);
+    let reflog = matches!(
+        log_type,
+        LogType::Reflog | LogType::ReflogOther(_) | LogType::Stashes
+    );
 
     // With no stashes the refs/stash ref doesn't exist and git log would
     // fail; show an empty list instead, like Magit's empty stashes buffer
@@ -92,6 +95,10 @@ pub fn get_log_entries(
         LogType::Reflog => {
             args.push("--walk-reflogs".to_string());
             args.push(reflog_ref(repository));
+        }
+        LogType::ReflogOther(reference) => {
+            args.push("--walk-reflogs".to_string());
+            args.push(reference.clone());
         }
         LogType::Stashes => {
             args.push("--walk-reflogs".to_string());
@@ -472,6 +479,32 @@ mod tests {
         // Reflog entries use the reflog subject ("<command>: <rest>")
         assert!(messages.iter().any(|m| m.contains("Second commit")));
         assert!(messages.iter().any(|m| m.starts_with("commit")));
+        // No graph is drawn even though graph was requested
+        assert!(entries.iter().all(|e| e.graph.is_empty()));
+    }
+
+    #[test]
+    fn test_get_log_entries_reflog_other() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Second commit")
+            .create_branch("feature");
+
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::ReflogOther("feature".to_string()),
+            true,
+            false,
+        )
+        .unwrap();
+        let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
+
+        // The branch's reflog only has its creation entry
+        assert!(messages.iter().any(|m| m.starts_with("branch")));
         // No graph is drawn even though graph was requested
         assert!(entries.iter().all(|e| e.graph.is_empty()));
     }

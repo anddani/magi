@@ -328,6 +328,9 @@ fn route_result(
         (Some(OnSelect::LogOther), SelectResult::Selected(revision)) => {
             Some(Message::ShowLog(LogType::Other(revision)))
         }
+        (Some(OnSelect::ReflogOther), SelectResult::Selected(reference)) => {
+            Some(Message::ShowLog(LogType::ReflogOther(reference)))
+        }
         (Some(OnSelect::CherrySpinoffCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
                 title: "Spinoff root".to_string(),
@@ -594,6 +597,30 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowLog(LogType::Other("feature/foo".to_string())))
+        );
+        assert!(model.popup.is_none());
+    }
+
+    #[test]
+    fn test_select_popup_routes_reflog_other() {
+        use crate::model::select_popup::SelectPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+            SelectPopupState::new(
+                "Show reflog for".to_string(),
+                vec!["feature/foo".to_string()],
+                OnSelect::ReflogOther,
+            ),
+        )));
+
+        let result = update(&mut model);
+
+        assert_eq!(
+            result,
+            Some(Message::ShowLog(LogType::ReflogOther(
+                "feature/foo".to_string()
+            )))
         );
         assert!(model.popup.is_none());
     }

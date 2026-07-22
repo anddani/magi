@@ -262,7 +262,7 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
                 })
                 .map(|s| s.name().to_string())
         }
-        OnSelect::FileCheckoutRevision | OnSelect::LogOther => {
+        OnSelect::FileCheckoutRevision | OnSelect::LogOther | OnSelect::ReflogOther => {
             // Cursor suggestion (any)
             cursor_line
                 .and_then(|line| suggestions_from_line(line).into_iter().next())
@@ -389,6 +389,7 @@ fn should_insert_if_missing(on_select: &OnSelect) -> bool {
         | OnSelect::CreateNewBranchBase { .. } // can insert revision/hash
         | OnSelect::FileCheckoutRevision   // can insert cursor suggestion
         | OnSelect::LogOther               // can insert cursor suggestion
+        | OnSelect::ReflogOther            // can insert cursor suggestion
         | OnSelect::ResetBranchTarget { .. } // can insert cursor hash
         | OnSelect::Reset(_)               // can insert cursor hash
         | OnSelect::ResetIndex             // can insert cursor hash
@@ -576,6 +577,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         }
         OnSelect::FileCheckoutRevision
         | OnSelect::LogOther
+        | OnSelect::ReflogOther
         | OnSelect::ResetBranchTarget { .. }
         | OnSelect::Reset(_)
         | OnSelect::ResetIndex

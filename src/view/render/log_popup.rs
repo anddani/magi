@@ -40,12 +40,10 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
 
     let reflog_col = PopupColumn {
         title: Some(t.col_reflog.into()),
-        content: vec![command_description(
-            theme,
-            model.arg_mode,
-            "r",
-            t.cmd_current,
-        )],
+        content: vec![
+            command_description(theme, model.arg_mode, "r", t.cmd_current),
+            command_description(theme, model.arg_mode, "O", t.cmd_other),
+        ],
     };
 
     CommandPopupContent {
