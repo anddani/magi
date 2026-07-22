@@ -19,8 +19,8 @@ use magi::{
 
 mod utils;
 use utils::{
-    create_model_from_test_repo, cursor_to_commit, expect_confirm_popup, find_commit_line,
-    find_line, key,
+    create_model_from_test_repo, cursor_to_commit, expect_confirm_popup, expect_select_popup,
+    find_commit_line, find_line, key,
 };
 
 // ── ShowRebasePopup ────────────────────────────────────────────────────────────
@@ -673,6 +673,103 @@ fn test_select_confirm_rebase_subset_start_returns_rebase_message() {
     );
     assert_eq!(model.view_mode, ViewMode::Status);
     assert!(model.log_pick_on_select.is_none());
+}
+
+// ── Subset rebase — cursor suggestion in the "Rebase subset onto" select ──────
+
+fn show_rebase_subset_onto_select(model: &mut Model) {
+    update(
+        model,
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Rebase subset onto".to_string(),
+            source: OptionsSource::AllRefs,
+            on_select: OnSelect::RebaseSubsetOnto,
+        }),
+    );
+}
+
+#[test]
+fn test_rebase_subset_onto_cursor_on_branch_ref_prioritizes_it() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
+    test_repo.create_branch("feature-branch");
+    test_repo.commit_file("file.txt", "second", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Place cursor on the commit that carries the feature-branch ref
+    let branch_pos = find_line(
+        &model,
+        |c| matches!(c, LineContent::Commit(info) if info.refs.iter().any(|r| r.name == "feature-branch")),
+    )
+    .expect("Expected a commit line with the feature-branch ref");
+    model.ui_model.cursor_position = branch_pos;
+
+    show_rebase_subset_onto_select(&mut model);
+
+    let state = expect_select_popup(&model);
+    assert_eq!(
+        state.all_options[0], "feature-branch",
+        "feature-branch should be first because cursor is on its commit"
+    );
+}
+
+#[test]
+fn test_rebase_subset_onto_cursor_on_commit_inserts_hash() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
+    // A second branch so the options list is not empty after excluding
+    // the current branch
+    test_repo.create_branch("other-branch");
+    test_repo.commit_file("file.txt", "second", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Place cursor on a commit that has no branch refs (the first commit
+    // only carries other-branch — pick one without any non-current refs)
+    let commit_pos = find_line(&model, |c| {
+        matches!(c, LineContent::Commit(info)
+            if info.refs.iter().all(|r| r.name != "other-branch"))
+    })
+    .expect("Expected a commit line without the other-branch ref");
+    model.ui_model.cursor_position = commit_pos;
+
+    let expected_hash = if let LineContent::Commit(info) = &model.ui_model.lines[commit_pos].content
+    {
+        info.hash.clone()
+    } else {
+        panic!("Not a commit line");
+    };
+
+    show_rebase_subset_onto_select(&mut model);
+
+    let state = expect_select_popup(&model);
+    assert_eq!(
+        state.all_options[0], expected_hash,
+        "The cursor commit hash should be inserted first"
+    );
+}
+
+#[test]
+fn test_rebase_subset_onto_excludes_current_branch() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file.txt", "initial", "Initial commit");
+    test_repo.create_branch("other-branch");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let current = model.git_info.current_branch().unwrap();
+
+    // Cursor away from any commit line so no insertion happens
+    model.ui_model.cursor_position = 0;
+
+    show_rebase_subset_onto_select(&mut model);
+
+    let state = expect_select_popup(&model);
+    assert!(
+        !state.all_options.contains(&current),
+        "The current branch should not be offered as a rebase target"
+    );
+    assert!(state.all_options.contains(&"other-branch".to_string()));
 }
 
 #[test]
