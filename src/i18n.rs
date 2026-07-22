@@ -259,6 +259,7 @@ pub struct Strings {
     pub arg_tag_sign: &'static str,
     pub arg_revert_mainline: &'static str,
     pub input_revert_mainline: &'static str,
+    pub arg_rebase_keep_empty: &'static str,
 
     // Mode labels shown in the status bar
     pub mode_normal: &'static str,
@@ -514,6 +515,7 @@ static ENGLISH: Strings = Strings {
     arg_tag_sign: "Sign",
     arg_revert_mainline: "Replay merge relative to parent",
     input_revert_mainline: "Mainline parent number",
+    arg_rebase_keep_empty: "Keep empty commits",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUAL",
@@ -756,6 +758,7 @@ static SWEDISH: Strings = Strings {
     arg_tag_sign: "Signera",
     arg_revert_mainline: "Spela upp sammanslagning relativt förälder",
     input_revert_mainline: "Förälderantalsnummer",
+    arg_rebase_keep_empty: "Behåll tomma förbindelser",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUELL",

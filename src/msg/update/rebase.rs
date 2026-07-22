@@ -8,18 +8,29 @@ use crate::{
     },
     model::{
         Model, Toast, ToastStyle, ViewMode,
+        arguments::{Arguments::RebaseArguments, PopupArgument},
         popup::{PopupContent, PopupContentCommand},
     },
     msg::{Message, RebaseCommand, update::pty_helper::execute_pty_command},
 };
 
 pub fn update(model: &mut Model, rebase_command: RebaseCommand) -> Option<Message> {
+    let extra_args: Vec<String> = if let Some(RebaseArguments(arguments)) = model.arguments.take() {
+        arguments
+            .into_iter()
+            .map(|a| a.flag().to_string())
+            .collect()
+    } else {
+        vec![]
+    };
     match rebase_command {
-        RebaseCommand::OntoPushRemote(remote) => onto_push_remote(model, remote),
-        RebaseCommand::OntoUpstream => onto_upstream(model),
-        RebaseCommand::OntoUpstreamSetting(upstream) => onto_upstream_setting(model, upstream),
-        RebaseCommand::Elsewhere(target) => elsewhere(model, target),
-        RebaseCommand::Subset { newbase, start } => subset(model, newbase, start),
+        RebaseCommand::OntoPushRemote(remote) => onto_push_remote(model, remote, extra_args),
+        RebaseCommand::OntoUpstream => onto_upstream(model, extra_args),
+        RebaseCommand::OntoUpstreamSetting(upstream) => {
+            onto_upstream_setting(model, upstream, extra_args)
+        }
+        RebaseCommand::Elsewhere(target) => elsewhere(model, target, extra_args),
+        RebaseCommand::Subset { newbase, start } => subset(model, newbase, start, extra_args),
         RebaseCommand::ExecuteInteractive => execute_interactive(model),
         RebaseCommand::ModifyCommit(commit) => modify_commit(model, commit),
         RebaseCommand::RewordCommit(commit) => reword_commit(model, commit),
@@ -175,15 +186,24 @@ fn autosquash(model: &mut Model, base: String, include_base: bool) -> Option<Mes
     Some(Message::Refresh)
 }
 
-fn elsewhere(model: &mut Model, target: String) -> Option<Message> {
-    let args = vec!["rebase".to_string(), target];
+fn elsewhere(model: &mut Model, target: String, extra_args: Vec<String>) -> Option<Message> {
+    let mut args = vec!["rebase".to_string()];
+    args.extend(extra_args);
+    args.push(target);
     execute_pty_command(model, args, "Rebase".to_string())
 }
 
 /// Rebase a subset of the current branch's history onto a new base:
 /// `git rebase --onto <newbase> <start>^` (or `--root` when start has no parent).
-fn subset(model: &mut Model, newbase: String, start: String) -> Option<Message> {
-    let mut args = vec!["rebase".to_string(), "--onto".to_string(), newbase.clone()];
+fn subset(
+    model: &mut Model,
+    newbase: String,
+    start: String,
+    extra_args: Vec<String>,
+) -> Option<Message> {
+    let mut args = vec!["rebase".to_string()];
+    args.extend(extra_args);
+    args.extend(["--onto".to_string(), newbase.clone()]);
     if rebase::commit_has_parent(&model.workdir, &start) {
         args.push(format!("{}^", start));
     } else {
@@ -195,7 +215,7 @@ fn subset(model: &mut Model, newbase: String, start: String) -> Option<Message> 
 /// Rebase the current branch onto its push remote branch.
 /// Sets `branch.<name>.pushRemote` to the remote, then runs
 /// `git rebase <remote>/<current_branch>`.
-fn onto_push_remote(model: &mut Model, remote: String) -> Option<Message> {
+fn onto_push_remote(model: &mut Model, remote: String, extra_args: Vec<String>) -> Option<Message> {
     let current_branch = match get_current_branch(&model.workdir).ok().flatten() {
         Some(branch) => branch,
         None => {
@@ -214,14 +234,16 @@ fn onto_push_remote(model: &mut Model, remote: String) -> Option<Message> {
     }
 
     let target = format!("{}/{}", remote, current_branch);
-    let args = vec!["rebase".to_string(), target.clone()];
+    let mut args = vec!["rebase".to_string()];
+    args.extend(extra_args);
+    args.push(target.clone());
 
     execute_pty_command(model, args, format!("Rebase onto {}", target))
 }
 
 /// Rebase the current branch onto its configured upstream branch.
 /// The upstream is read from the rebase popup state.
-fn onto_upstream(model: &mut Model) -> Option<Message> {
+fn onto_upstream(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
     let upstream =
         if let Some(PopupContent::Command(PopupContentCommand::Rebase(ref state))) = model.popup {
             state.upstream.clone()
@@ -229,13 +251,19 @@ fn onto_upstream(model: &mut Model) -> Option<Message> {
             return None;
         }?;
 
-    let args = vec!["rebase".to_string(), upstream.clone()];
+    let mut args = vec!["rebase".to_string()];
+    args.extend(extra_args);
+    args.push(upstream.clone());
     execute_pty_command(model, args, format!("Rebase onto {}", upstream))
 }
 
 /// Rebase the current branch onto the given remote branch (e.g. "origin/main"),
 /// setting it as the upstream first.
-fn onto_upstream_setting(model: &mut Model, upstream: String) -> Option<Message> {
+fn onto_upstream_setting(
+    model: &mut Model,
+    upstream: String,
+    extra_args: Vec<String>,
+) -> Option<Message> {
     if let Err(e) = set_upstream_branch(&model.git_info.repository, &upstream) {
         model.popup = Some(PopupContent::Error {
             message: format!("Failed to set upstream: {}", e),
@@ -243,7 +271,9 @@ fn onto_upstream_setting(model: &mut Model, upstream: String) -> Option<Message>
         return None;
     }
 
-    let args = vec!["rebase".to_string(), upstream.clone()];
+    let mut args = vec!["rebase".to_string()];
+    args.extend(extra_args);
+    args.push(upstream.clone());
     execute_pty_command(model, args, format!("Rebase onto {}", upstream))
 }
 
