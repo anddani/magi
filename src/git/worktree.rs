@@ -54,6 +54,35 @@ pub fn worktree_add<P: AsRef<Path>>(
     }
 }
 
+/// Add a new worktree at `path`, creating and checking out a new branch
+/// `branch` starting at `starting_point`.
+/// Runs: git worktree add -b <branch> <path> <starting_point>
+pub fn worktree_add_branch<P: AsRef<Path>>(
+    repo_path: P,
+    path: &str,
+    branch: &str,
+    starting_point: &str,
+) -> MagiResult<WorktreeAddResult> {
+    let output = git_cmd(
+        &repo_path,
+        &["worktree", "add", "-b", branch, path, starting_point],
+    )
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .output()?;
+
+    if output.status.success() {
+        Ok(WorktreeAddResult::Success)
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        Ok(WorktreeAddResult::Error(if stderr.is_empty() {
+            "git worktree add failed".to_string()
+        } else {
+            stderr
+        }))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -112,6 +141,64 @@ mod tests {
 
         let checked_out = get_checked_out_branches(repo_path);
         assert!(!checked_out.contains("other-branch"));
+    }
+
+    #[test]
+    fn test_worktree_add_branch_success() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        let worktree_path_str = {
+            let tmp = tempfile::tempdir().unwrap();
+            tmp.path().to_str().unwrap().to_string()
+        };
+
+        let result =
+            worktree_add_branch(repo_path, &worktree_path_str, "new-branch", "main").unwrap();
+        if let WorktreeAddResult::Error(ref e) = result {
+            panic!("Expected success but got error: {e}");
+        }
+        assert!(matches!(result, WorktreeAddResult::Success));
+
+        // Verify the worktree was created and has the new branch checked out
+        assert!(std::path::Path::new(&worktree_path_str).exists());
+        let checked_out = get_checked_out_branches(repo_path);
+        assert!(checked_out.contains("new-branch"));
+    }
+
+    #[test]
+    fn test_worktree_add_branch_existing_branch_returns_error() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        let worktree_path_str = {
+            let tmp = tempfile::tempdir().unwrap();
+            tmp.path().to_str().unwrap().to_string()
+        };
+
+        // -b refuses to overwrite an existing branch
+        let result = worktree_add_branch(repo_path, &worktree_path_str, "main", "main").unwrap();
+        assert!(matches!(result, WorktreeAddResult::Error(_)));
+    }
+
+    #[test]
+    fn test_worktree_add_branch_invalid_starting_point_returns_error() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        let worktree_path_str = {
+            let tmp = tempfile::tempdir().unwrap();
+            tmp.path().to_str().unwrap().to_string()
+        };
+
+        let result = worktree_add_branch(
+            repo_path,
+            &worktree_path_str,
+            "new-branch",
+            "nonexistent-ref",
+        )
+        .unwrap();
+        assert!(matches!(result, WorktreeAddResult::Error(_)));
     }
 
     #[test]

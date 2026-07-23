@@ -221,6 +221,24 @@ pub enum Message {
         /// Whether to switch to the new worktree after creating it
         checkout: bool,
     },
+    /// Show the input popup for the name of a new branch to check out in a
+    /// new worktree (step 2 of 3)
+    ShowWorktreeBranchNameInput {
+        starting_point: String,
+    },
+    /// Show the input popup for the path of a new worktree with a new branch
+    /// (step 3 of 3)
+    ShowWorktreeBranchPathInput {
+        starting_point: String,
+        branch_name: String,
+    },
+    /// Create a new branch starting at starting_point and check it out in a
+    /// new worktree at the given path
+    WorktreeBranch {
+        starting_point: String,
+        branch_name: String,
+        path: String,
+    },
     /// Show confirmation popup before deleting the selected branch
     DeleteBranch(String),
     /// Actually delete the branch after user confirmation

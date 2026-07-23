@@ -98,6 +98,9 @@ pub enum OnSelect {
     ResetWorktree,
     /// Select a branch/revision for a new worktree (checkout=true switches to it)
     WorktreeAdd { checkout: bool },
+    /// Select the starting point for a new branch checked out in a new
+    /// worktree (step 1 of 3; branch name and path are entered next)
+    WorktreeBranch,
     /// Select a revision to checkout a file from (step 1 of 2)
     FileCheckoutRevision,
     /// Select a file to checkout (step 2 of 2, carries the chosen revision)
