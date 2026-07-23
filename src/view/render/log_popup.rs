@@ -43,6 +43,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         content: vec![
             command_description(theme, model.arg_mode, "r", t.cmd_current),
             command_description(theme, model.arg_mode, "O", t.cmd_other),
+            command_description(theme, model.arg_mode, "H", t.cmd_head),
         ],
     };
 

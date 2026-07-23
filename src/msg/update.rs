@@ -15,6 +15,7 @@ mod confirm_delete_branch;
 mod confirm_discard;
 mod confirm_drop_stash;
 mod confirm_pop_stash;
+mod confirm_reverse;
 mod create_tag;
 mod create_tag_release;
 mod credentials_input;
@@ -51,6 +52,7 @@ mod rename_branch;
 mod reset_branch;
 mod reset_index;
 mod reset_worktree;
+mod reverse_selected;
 mod revert;
 mod revise_commit;
 mod search;
@@ -88,6 +90,7 @@ mod toggle_argument;
 mod toggle_section;
 mod unstage_all;
 mod unstage_selected;
+mod worktree_branch;
 mod worktree_checkout;
 
 /// Processes a [`Message`], modifying the passed model.
@@ -121,6 +124,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::UnstageSelected => unstage_selected::update(model),
         Message::UnstageAll => unstage_all::update(model),
         Message::ApplySelected => apply_selected::update(model),
+        Message::ReverseSelected => reverse_selected::update(model),
+        Message::ConfirmReverse(target) => confirm_reverse::update(model, target),
         Message::DiscardSelected => discard_selected::update(model),
         Message::ConfirmDiscard(target) => confirm_discard::update(model, target),
         Message::ConfirmPopStash(stash_ref) => confirm_pop_stash::update(model, stash_ref),
@@ -260,6 +265,24 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             path,
             checkout,
         } => worktree_checkout::update(model, branch, path, checkout),
+        Message::ShowWorktreeBranchNameInput { starting_point } => {
+            show_input_popup::update(model, InputContext::WorktreeBranchName { starting_point })
+        }
+        Message::ShowWorktreeBranchPathInput {
+            starting_point,
+            branch_name,
+        } => show_input_popup::update(
+            model,
+            InputContext::WorktreeBranchPath {
+                starting_point,
+                branch_name,
+            },
+        ),
+        Message::WorktreeBranch {
+            starting_point,
+            branch_name,
+            path,
+        } => worktree_branch::update(model, starting_point, branch_name, path),
         Message::ShowPreview => show_preview::update(model),
         Message::ExitPreview => exit_preview::update(model),
         Message::FileCheckout { revision, file } => file_checkout::update(model, revision, file),

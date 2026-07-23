@@ -11,6 +11,7 @@ pub enum Arguments {
     RevertArguments(HashSet<RevertArgument>),
     LogArguments(HashSet<LogArgument>),
     TagArguments(HashSet<TagArgument>),
+    RebaseArguments(HashSet<RebaseArgument>),
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -23,6 +24,7 @@ pub enum Argument {
     Revert(RevertArgument),
     Log(LogArgument),
     Tag(TagArgument),
+    Rebase(RebaseArgument),
 }
 
 pub trait PopupArgument: Sized + Eq + Hash {
@@ -155,6 +157,22 @@ impl Arguments {
 
     pub fn tag_mut(&mut self) -> Option<&mut HashSet<TagArgument>> {
         if let Arguments::TagArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn rebase(&self) -> Option<&HashSet<RebaseArgument>> {
+        if let Arguments::RebaseArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn rebase_mut(&mut self) -> Option<&mut HashSet<RebaseArgument>> {
+        if let Arguments::RebaseArguments(args) = self {
             Some(args)
         } else {
             None
@@ -510,6 +528,42 @@ impl PopupArgument for RevertArgument {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum RebaseArgument {
+    KeepEmpty,
+}
+
+impl RebaseArgument {
+    pub fn from_key(key: char) -> Option<RebaseArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for RebaseArgument {
+    fn all() -> Vec<RebaseArgument> {
+        vec![RebaseArgument::KeepEmpty]
+    }
+
+    fn key(&self) -> char {
+        match self {
+            RebaseArgument::KeepEmpty => 'k',
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        let t = i18n::t();
+        match self {
+            RebaseArgument::KeepEmpty => t.arg_rebase_keep_empty,
+        }
+    }
+
+    fn flag(&self) -> &'static str {
+        match self {
+            RebaseArgument::KeepEmpty => "--keep-empty",
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum TagArgument {
     Force,
     Edit,
@@ -612,6 +666,21 @@ mod tests {
                 TagArgument::Sign,
             ]
         );
+    }
+
+    #[test]
+    fn test_rebase_argument_key_and_flag() {
+        assert_eq!(RebaseArgument::KeepEmpty.key(), 'k');
+        assert_eq!(RebaseArgument::KeepEmpty.flag(), "--keep-empty");
+    }
+
+    #[test]
+    fn test_rebase_argument_from_key() {
+        assert_eq!(
+            RebaseArgument::from_key('k'),
+            Some(RebaseArgument::KeepEmpty)
+        );
+        assert_eq!(RebaseArgument::from_key('x'), None);
     }
 
     #[test]

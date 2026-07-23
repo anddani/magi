@@ -7,6 +7,7 @@ use magi::i18n::{self, Language, Strings};
 /// Keep in sync with the `*_fmt` fields in src/i18n.rs.
 const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 7] = [
     ("input_rename_branch_fmt", |s| s.input_rename_branch_fmt),
+    ("help_version_fmt", |s| s.help_version_fmt),
     ("input_worktree_path_fmt", |s| s.input_worktree_path_fmt),
     ("input_push_refspec_fmt", |s| s.input_push_refspec_fmt),
     ("input_fetch_refspec_fmt", |s| s.input_fetch_refspec_fmt),

@@ -46,6 +46,7 @@ pub mod rebase;
 pub mod recent_commits;
 pub mod releases;
 pub mod reset;
+pub mod reverse;
 pub mod revert;
 pub mod snapshot;
 pub mod stage;

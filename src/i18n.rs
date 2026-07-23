@@ -106,6 +106,9 @@ pub struct Strings {
     pub input_fetch_refspec_fmt: &'static str,
     pub input_release_tag_fmt: &'static str,
 
+    /// Version line shown at the bottom of the help popup.
+    pub help_version_fmt: &'static str,
+
     // Command descriptions used inside popup rows and the help popup
     pub cmd_branch_revision: &'static str,
     pub cmd_local_branch: &'static str,
@@ -155,6 +158,7 @@ pub struct Strings {
     pub cmd_submodules: &'static str,
     pub cmd_current: &'static str,
     pub cmd_other: &'static str,
+    pub cmd_head: &'static str,
     pub cmd_related: &'static str,
     pub cmd_local_branches: &'static str,
     pub cmd_all_branches: &'static str,
@@ -162,6 +166,7 @@ pub struct Strings {
     pub cmd_both: &'static str,
     pub cmd_index: &'static str,
     pub cmd_worktree: &'static str,
+    pub cmd_branch_and_worktree: &'static str,
     pub cmd_keeping_index: &'static str,
     pub cmd_to_wip_ref: &'static str,
     pub cmd_apply: &'static str,
@@ -211,6 +216,7 @@ pub struct Strings {
     pub cmd_unstage: &'static str,
     pub cmd_unstage_all: &'static str,
     pub cmd_discard: &'static str,
+    pub cmd_reverse: &'static str,
     pub cmd_quit: &'static str,
     pub cmd_refresh: &'static str,
     pub cmd_show_help: &'static str,
@@ -262,6 +268,7 @@ pub struct Strings {
     pub arg_tag_sign: &'static str,
     pub arg_revert_mainline: &'static str,
     pub input_revert_mainline: &'static str,
+    pub arg_rebase_keep_empty: &'static str,
 
     // Mode labels shown in the status bar
     pub mode_normal: &'static str,
@@ -375,7 +382,7 @@ static ENGLISH: Strings = Strings {
     input_push_refspec_fmt: "Push refspec(s) to '{}' (comma-separated)",
     input_fetch_refspec_fmt: "Fetch refspec(s) from '{}' (comma-separated)",
     input_release_tag_fmt: "Create release tag (previous was {})",
-
+    help_version_fmt: "Magi version {}",
     cmd_branch_revision: "Branch/revision",
     cmd_local_branch: "Local branch",
     cmd_new_branch: "New branch",
@@ -417,6 +424,7 @@ static ENGLISH: Strings = Strings {
     cmd_submodules: "Submodules",
     cmd_current: "Current",
     cmd_other: "Other",
+    cmd_head: "HEAD",
     cmd_related: "Related",
     cmd_local_branches: "Local branches",
     cmd_all_branches: "All branches",
@@ -424,6 +432,7 @@ static ENGLISH: Strings = Strings {
     cmd_both: "Both",
     cmd_index: "Index",
     cmd_worktree: "Worktree",
+    cmd_branch_and_worktree: "Branch and worktree",
     cmd_keeping_index: "Keeping index",
     cmd_to_wip_ref: "To wip ref",
     cmd_apply: "Apply",
@@ -472,6 +481,7 @@ static ENGLISH: Strings = Strings {
     cmd_unstage: "Unstage",
     cmd_unstage_all: "Unstage all",
     cmd_discard: "Discard",
+    cmd_reverse: "Reverse",
     cmd_quit: "        quit",
     cmd_refresh: "Refresh",
     cmd_show_help: "      show this help",
@@ -520,6 +530,7 @@ static ENGLISH: Strings = Strings {
     arg_tag_sign: "Sign",
     arg_revert_mainline: "Replay merge relative to parent",
     input_revert_mainline: "Mainline parent number",
+    arg_rebase_keep_empty: "Keep empty commits",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUAL",
@@ -620,7 +631,7 @@ static SWEDISH: Strings = Strings {
     input_push_refspec_fmt: "Knuffa refspec(er) till '{}' (kommaseparerade)",
     input_fetch_refspec_fmt: "Hämta refspec(er) från '{}' (kommaseparerade)",
     input_release_tag_fmt: "Skapa utgåvomärke (föregående var {})",
-
+    help_version_fmt: "Magi version {}",
     cmd_branch_revision: "Gren/revision",
     cmd_local_branch: "Lokal gren",
     cmd_new_branch: "Ny gren",
@@ -662,6 +673,7 @@ static SWEDISH: Strings = Strings {
     cmd_submodules: "Undermoduler",
     cmd_current: "Nuvarande",
     cmd_other: "Annan",
+    cmd_head: "HEAD",
     cmd_related: "Relaterade",
     cmd_local_branches: "Lokala grenar",
     cmd_all_branches: "Alla grenar",
@@ -669,6 +681,7 @@ static SWEDISH: Strings = Strings {
     cmd_both: "Båda",
     cmd_index: "Register",
     cmd_worktree: "Arbetsträd",
+    cmd_branch_and_worktree: "Gren och arbetsträd",
     cmd_keeping_index: "Behåll register",
     cmd_to_wip_ref: "Till wip-referens",
     cmd_apply: "Applicera",
@@ -717,6 +730,7 @@ static SWEDISH: Strings = Strings {
     cmd_unstage: "Återkalla",
     cmd_unstage_all: "Återkalla allt",
     cmd_discard: "Fimpa",
+    cmd_reverse: "Tvärtemot",
     cmd_quit: "        Avsluta",
     cmd_refresh: "Förfriska",
     cmd_show_help: "      Visa denna hjälp",
@@ -765,6 +779,7 @@ static SWEDISH: Strings = Strings {
     arg_tag_sign: "Signera",
     arg_revert_mainline: "Spela upp sammanslagning relativt förälder",
     input_revert_mainline: "Förälderantalsnummer",
+    arg_rebase_keep_empty: "Behåll tomma förbindelser",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUELL",

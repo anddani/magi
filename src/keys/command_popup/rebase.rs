@@ -1,11 +1,20 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    model::arguments::{Argument::Rebase, RebaseArgument},
     model::popup::RebasePopupState,
     msg::{CommitSelect, Message, OnSelect, OptionsSource, RebaseCommand, ShowSelectPopupConfig},
 };
 
-pub fn keys(key: KeyEvent, state: &RebasePopupState) -> Option<Message> {
+pub fn keys(key: KeyEvent, arg_mode: bool, state: &RebasePopupState) -> Option<Message> {
+    if arg_mode {
+        return match key.code {
+            KeyCode::Char(c) => RebaseArgument::from_key(c)
+                .map(|arg| Message::ToggleArgument(Rebase(arg)))
+                .or(Some(Message::ExitArgMode)),
+            _ => Some(Message::ExitArgMode),
+        };
+    }
     if state.in_progress {
         return match key.code {
             KeyCode::Char('q') => Some(Message::DismissPopup),
@@ -53,6 +62,7 @@ pub fn keys(key: KeyEvent, state: &RebasePopupState) -> Option<Message> {
             source: OptionsSource::AllRefs,
             on_select: OnSelect::RebaseSubsetOnto,
         })),
+        KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }
 }
