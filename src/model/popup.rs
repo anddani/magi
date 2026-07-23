@@ -21,6 +21,8 @@ pub enum ConfirmAction {
     DeleteBranch(String),
     /// Discard changes (stores the discard target)
     DiscardChanges(crate::msg::DiscardTarget),
+    /// Reverse changes in the working tree (stores the reverse target)
+    Reverse(crate::msg::ReverseTarget),
     /// Pop a stash (stores the stash reference, e.g. "stash@{0}")
     PopStash(String),
     /// Drop a stash (stores the stash reference, e.g. "stash@{0}" or "all")

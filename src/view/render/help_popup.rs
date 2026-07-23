@@ -47,6 +47,7 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
             command_description(theme, false, "u", t.cmd_unstage),
             command_description(theme, false, "U", t.cmd_unstage_all),
             command_description(theme, false, "x", t.cmd_discard),
+            command_description(theme, false, "-", t.cmd_reverse),
         ],
     };
 

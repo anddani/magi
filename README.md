@@ -219,7 +219,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Worktree
 - [ ] Applying changes
     - [ ] Apply
-    - [ ] Reverse
+    - [x] Reverse
     - [x] Discard
     - [x] Stage
     - [x] Unstage

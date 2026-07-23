@@ -15,6 +15,7 @@ mod confirm_delete_branch;
 mod confirm_discard;
 mod confirm_drop_stash;
 mod confirm_pop_stash;
+mod confirm_reverse;
 mod create_tag;
 mod credentials_input;
 mod delete_branch;
@@ -50,6 +51,7 @@ mod rename_branch;
 mod reset_branch;
 mod reset_index;
 mod reset_worktree;
+mod reverse_selected;
 mod revert;
 mod revise_commit;
 mod search;
@@ -119,6 +121,8 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::UnstageSelected => unstage_selected::update(model),
         Message::UnstageAll => unstage_all::update(model),
         Message::ApplySelected => apply_selected::update(model),
+        Message::ReverseSelected => reverse_selected::update(model),
+        Message::ConfirmReverse(target) => confirm_reverse::update(model, target),
         Message::DiscardSelected => discard_selected::update(model),
         Message::ConfirmDiscard(target) => confirm_discard::update(model, target),
         Message::ConfirmPopStash(stash_ref) => confirm_pop_stash::update(model, stash_ref),
