@@ -1,4 +1,7 @@
-use std::{path::Path, process::ExitStatus};
+use std::{
+    path::Path,
+    process::{Command, ExitStatus, Stdio},
+};
 
 use super::git_cmd;
 use crate::errors::MagiResult;
@@ -12,6 +15,15 @@ pub struct CommitResult {
 pub fn get_commit_result<P: AsRef<Path>>(
     repo_path: P,
     status: ExitStatus,
+    op: &str,
+) -> MagiResult<CommitResult> {
+    get_commit_result_with_stderr(repo_path, status, "", op)
+}
+
+pub fn get_commit_result_with_stderr<P: AsRef<Path>>(
+    repo_path: P,
+    status: ExitStatus,
+    stderr: &str,
     op: &str,
 ) -> MagiResult<CommitResult> {
     if status.success() {
@@ -28,8 +40,76 @@ pub fn get_commit_result<P: AsRef<Path>>(
     } else {
         Ok(CommitResult {
             success: false,
-            message: format!("{} aborted", op),
+            message: abort_message(op, stderr),
         })
+    }
+}
+
+/// Builds the failure message for an aborted commit, including the most
+/// useful line of git's stderr: the first `error:`/`fatal:` line if present,
+/// otherwise the first non-empty line.
+fn abort_message(op: &str, stderr: &str) -> String {
+    let lines = || stderr.lines().map(str::trim).filter(|l| !l.is_empty());
+    let reason = lines()
+        .find(|l| l.starts_with("error:") || l.starts_with("fatal:"))
+        .map(|l| {
+            l.trim_start_matches("error:")
+                .trim_start_matches("fatal:")
+                .trim()
+                .trim_end_matches(':')
+        })
+        .or_else(|| lines().next());
+    match reason {
+        Some(reason) => format!("{} aborted: {}", op, reason),
+        None => format!("{} aborted", op),
+    }
+}
+
+/// Runs a git command with stdin/stdout attached to the terminal (so the
+/// user's editor works) while capturing stderr for error reporting.
+fn status_capturing_stderr(cmd: &mut Command) -> std::io::Result<(ExitStatus, String)> {
+    let child = cmd.stderr(Stdio::piped()).spawn()?;
+    let output = child.wait_with_output()?;
+    Ok((
+        output.status,
+        String::from_utf8_lossy(&output.stderr).to_string(),
+    ))
+}
+
+/// Checks whether git can create a signed commit with the current
+/// configuration. Returns git's stderr when signing fails, `None` when it
+/// works. The probe signs a dangling commit of the empty tree, so the index,
+/// worktree and HEAD are untouched (git gc eventually removes the object).
+pub fn signing_error<P: AsRef<Path>>(repo_path: P) -> MagiResult<Option<String>> {
+    let tree = git_cmd(&repo_path, &["hash-object", "-w", "-t", "tree", "--stdin"])
+        .stdin(Stdio::null())
+        .output()?;
+    if !tree.status.success() {
+        return Ok(Some(
+            String::from_utf8_lossy(&tree.stderr).trim().to_string(),
+        ));
+    }
+    let tree_hash = String::from_utf8_lossy(&tree.stdout).trim().to_string();
+
+    let probe = git_cmd(
+        &repo_path,
+        &["commit-tree", &tree_hash, "-S", "-m", "magi signing check"],
+    )
+    .stdin(Stdio::null())
+    .output()?;
+    if probe.status.success() {
+        Ok(None)
+    } else {
+        // Drop gpg's machine-readable status lines; they add no information
+        // for the user.
+        let message = String::from_utf8_lossy(&probe.stderr)
+            .lines()
+            .filter(|l| !l.trim_start().starts_with("[GNUPG:]"))
+            .collect::<Vec<_>>()
+            .join("\n")
+            .trim()
+            .to_string();
+        Ok(Some(message))
     }
 }
 
@@ -48,9 +128,9 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(
     // - Commit-msg hooks run
     // - Post-commit hooks run
     // - User's configured editor opens correctly
-    let status = git_cmd(&repo_path, &["commit"]).args(flags).status()?;
+    let (status, stderr) = status_capturing_stderr(git_cmd(&repo_path, &["commit"]).args(flags))?;
 
-    get_commit_result(repo_path, status, "Commit")
+    get_commit_result_with_stderr(repo_path, status, &stderr, "Commit")
 }
 
 /// Lists authors from the commit history as `Name <email>` strings,
@@ -74,11 +154,10 @@ pub fn run_amend_commit_with_editor<P: AsRef<Path>>(
     repo_path: P,
     flags: Vec<String>,
 ) -> MagiResult<CommitResult> {
-    let status = git_cmd(&repo_path, &["commit", "--amend"])
-        .args(flags)
-        .status()?;
+    let (status, stderr) =
+        status_capturing_stderr(git_cmd(&repo_path, &["commit", "--amend"]).args(flags))?;
 
-    get_commit_result(repo_path, status, "Amend")
+    get_commit_result_with_stderr(repo_path, status, &stderr, "Amend")
 }
 
 /// Runs `git commit --fixup=<commit_hash> --no-edit` to create a fixup commit.
@@ -92,7 +171,12 @@ pub fn run_fixup_commit<P: AsRef<Path>>(
     )
     .output()?;
 
-    get_commit_result(repo_path, output.status, "Fixup")
+    get_commit_result_with_stderr(
+        repo_path,
+        output.status,
+        &String::from_utf8_lossy(&output.stderr),
+        "Fixup",
+    )
 }
 
 /// Runs `git commit --squash=<commit_hash> --no-edit` to create a squash commit.
@@ -106,7 +190,12 @@ pub fn run_squash_commit<P: AsRef<Path>>(
     )
     .output()?;
 
-    get_commit_result(repo_path, output.status, "Squash")
+    get_commit_result_with_stderr(
+        repo_path,
+        output.status,
+        &String::from_utf8_lossy(&output.stderr),
+        "Squash",
+    )
 }
 
 /// Runs `git commit --squash=<commit_hash> --edit` to create an augment commit.
@@ -115,13 +204,12 @@ pub fn run_augment_commit<P: AsRef<Path>>(
     repo_path: P,
     commit_hash: String,
 ) -> MagiResult<CommitResult> {
-    let status = git_cmd(
+    let (status, stderr) = status_capturing_stderr(&mut git_cmd(
         &repo_path,
         &["commit", &format!("--squash={}", commit_hash), "--edit"],
-    )
-    .status()?;
+    ))?;
 
-    get_commit_result(repo_path, status, "Augment")
+    get_commit_result_with_stderr(repo_path, status, &stderr, "Augment")
 }
 
 /// Runs `git commit --fixup=reword:<commit_hash> --edit` to revise a commit message.
@@ -131,17 +219,16 @@ pub fn run_revise_commit<P: AsRef<Path>>(
     repo_path: P,
     commit_hash: String,
 ) -> MagiResult<CommitResult> {
-    let status = git_cmd(
+    let (status, stderr) = status_capturing_stderr(&mut git_cmd(
         &repo_path,
         &[
             "commit",
             &format!("--fixup=reword:{}", commit_hash),
             "--edit",
         ],
-    )
-    .status()?;
+    ))?;
 
-    get_commit_result(repo_path, status, "Revise")
+    get_commit_result_with_stderr(repo_path, status, &stderr, "Revise")
 }
 
 /// Runs `git commit --fixup=amend:<commit_hash> --edit` to create an alter commit.
@@ -150,17 +237,16 @@ pub fn run_alter_commit<P: AsRef<Path>>(
     repo_path: P,
     commit_hash: String,
 ) -> MagiResult<CommitResult> {
-    let status = git_cmd(
+    let (status, stderr) = status_capturing_stderr(&mut git_cmd(
         &repo_path,
         &[
             "commit",
             &format!("--fixup=amend:{}", commit_hash),
             "--edit",
         ],
-    )
-    .status()?;
+    ))?;
 
-    get_commit_result(repo_path, status, "Alter")
+    get_commit_result_with_stderr(repo_path, status, &stderr, "Alter")
 }
 
 #[cfg(test)]
@@ -176,6 +262,67 @@ mod tests {
                 .unwrap();
         entries.retain(|e| e.is_commit());
         entries
+    }
+
+    #[test]
+    fn test_abort_message_uses_error_line_from_stderr() {
+        let stderr = "hint: something\nerror: gpg failed to sign the data:\ngpg: signing failed: No secret key\nfatal: failed to write commit object\n";
+        assert_eq!(
+            abort_message("Commit", stderr),
+            "Commit aborted: gpg failed to sign the data"
+        );
+    }
+
+    #[test]
+    fn test_abort_message_falls_back_to_first_line() {
+        assert_eq!(
+            abort_message("Commit", "Aborting commit due to empty commit message.\n"),
+            "Commit aborted: Aborting commit due to empty commit message."
+        );
+    }
+
+    #[test]
+    fn test_abort_message_without_stderr() {
+        assert_eq!(abort_message("Commit", ""), "Commit aborted");
+    }
+
+    #[test]
+    fn test_signing_error_reports_gpg_failure() {
+        let test_repo = TestRepo::new();
+        // Point gpg at a program that always fails, like a missing key does.
+        git_cmd(test_repo.repo_path(), &["config", "gpg.program", "false"])
+            .output()
+            .unwrap();
+
+        let err = signing_error(test_repo.repo_path()).unwrap();
+
+        assert!(err.is_some());
+        assert!(err.unwrap().contains("gpg"));
+    }
+
+    #[test]
+    fn test_signing_error_none_when_signing_works() {
+        let test_repo = TestRepo::new();
+        // Fake gpg that emits the SIG_CREATED status line git looks for.
+        let fake_gpg = test_repo.repo_path().join("fake-gpg.sh");
+        std::fs::write(
+            &fake_gpg,
+            "#!/bin/sh\necho \"[GNUPG:] SIG_CREATED \" >&2\necho fake-signature\n",
+        )
+        .unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&fake_gpg, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        git_cmd(
+            test_repo.repo_path(),
+            &["config", "gpg.program", fake_gpg.to_str().unwrap()],
+        )
+        .output()
+        .unwrap();
+
+        assert!(signing_error(test_repo.repo_path()).unwrap().is_none());
     }
 
     #[test]

@@ -10,11 +10,16 @@ use crate::{
     msg::Message,
 };
 
-use super::commit::{TOAST_DURATION, take_commit_author};
+use super::commit::{TOAST_DURATION, check_signing, take_commit_author};
 
 pub fn update(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
     // Dismiss the commit popup, keeping the author override it carries
     let author = take_commit_author(model);
+
+    if let Some(message) = check_signing(model) {
+        model.popup = Some(PopupContent::Error { message });
+        return None;
+    }
 
     let mut flags: Vec<String> = vec![];
 

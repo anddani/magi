@@ -169,6 +169,7 @@ pub enum CommitArgument {
     Verbose,
     DisableHooks,
     ResetAuthor,
+    GpgSign,
 }
 
 impl CommitArgument {
@@ -185,6 +186,7 @@ impl PopupArgument for CommitArgument {
             CommitArgument::Verbose,
             CommitArgument::DisableHooks,
             CommitArgument::ResetAuthor,
+            CommitArgument::GpgSign,
         ]
     }
 
@@ -195,6 +197,7 @@ impl PopupArgument for CommitArgument {
             CommitArgument::Verbose => 'v',
             CommitArgument::DisableHooks => 'n',
             CommitArgument::ResetAuthor => 'R',
+            CommitArgument::GpgSign => 'S',
         }
     }
 
@@ -206,6 +209,7 @@ impl PopupArgument for CommitArgument {
             CommitArgument::Verbose => t.arg_commit_verbose,
             CommitArgument::DisableHooks => t.arg_commit_disable_hooks,
             CommitArgument::ResetAuthor => t.arg_commit_reset_author,
+            CommitArgument::GpgSign => t.arg_commit_gpg_sign,
         }
     }
 
@@ -216,6 +220,7 @@ impl PopupArgument for CommitArgument {
             CommitArgument::Verbose => "--verbose",
             CommitArgument::DisableHooks => "--no-verify",
             CommitArgument::ResetAuthor => "--reset-author",
+            CommitArgument::GpgSign => "--gpg-sign",
         }
     }
 }
@@ -565,6 +570,23 @@ impl PopupArgument for TagArgument {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_commit_argument_gpg_sign_key_and_flag() {
+        assert_eq!(CommitArgument::GpgSign.key(), 'S');
+        assert_eq!(CommitArgument::GpgSign.flag(), "--gpg-sign");
+    }
+
+    #[test]
+    fn test_commit_argument_from_key() {
+        assert_eq!(CommitArgument::from_key('S'), Some(CommitArgument::GpgSign));
+        assert_eq!(CommitArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_commit_argument_all_contains_gpg_sign() {
+        assert!(CommitArgument::all().contains(&CommitArgument::GpgSign));
+    }
 
     #[test]
     fn test_revert_argument_edit_listed_above_no_edit() {
