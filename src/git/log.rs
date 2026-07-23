@@ -510,6 +510,31 @@ mod tests {
     }
 
     #[test]
+    fn test_get_log_entries_reflog_head() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Second commit");
+
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::ReflogOther("HEAD".to_string()),
+            true,
+            false,
+        )
+        .unwrap();
+        let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
+
+        // HEAD's reflog contains the commits made on the current branch
+        assert!(messages.iter().any(|m| m.contains("Second commit")));
+        // No graph is drawn even though graph was requested
+        assert!(entries.iter().all(|e| e.graph.is_empty()));
+    }
+
+    #[test]
     fn test_get_log_entries_stashes() {
         use crate::git::test_repo::TestRepo;
 

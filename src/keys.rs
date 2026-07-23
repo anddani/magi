@@ -1812,6 +1812,20 @@ mod tests {
     }
 
     #[test]
+    fn test_shift_h_in_log_popup_shows_head_reflog() {
+        use crate::msg::LogType;
+
+        let model = create_log_popup_model();
+
+        let key = create_key_event(NONE, Char('H'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ShowLog(LogType::ReflogOther("HEAD".to_string())))
+        );
+    }
+
+    #[test]
     fn test_minus_in_log_popup_enters_arg_mode() {
         let model = create_log_popup_model();
 
