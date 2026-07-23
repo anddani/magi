@@ -194,20 +194,20 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Log
         - [x] Local
         - [x] Other
-        - [ ] Related
+        - [x] Related
         - [x] Local branches
         - [x] All branches
         - [x] All references
-        - [ ] Current reflog
-        - [ ] Other reflog
+        - [x] Current reflog
+        - [x] Other reflog
         - [ ] HEAD reflog
         - [ ] Shortlog
-    - [ ] Merge
+    - [x] Merge
     - [ ] Remote
     - [ ] Submodule
     - [ ] Subtree
     - [x] Push
-    - [ ] Rebase
+    - [x] Rebase
     - [x] Tag
     - [ ] Note
     - [x] Revert
@@ -217,8 +217,10 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Show refs
     - [x] Stash
     - [ ] Worktree
+        - [x] Create new worktree
+        - [ ] Checkout/manage worktrees
 - [ ] Applying changes
-    - [ ] Apply
+    - [x] Apply
     - [ ] Reverse
     - [x] Discard
     - [x] Stage
