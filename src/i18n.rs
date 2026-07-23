@@ -103,6 +103,8 @@ pub struct Strings {
     pub input_worktree_path_fmt: &'static str,
     pub input_push_refspec_fmt: &'static str,
     pub input_fetch_refspec_fmt: &'static str,
+    /// Version line shown at the bottom of the help popup.
+    pub help_version_fmt: &'static str,
 
     // Command descriptions used inside popup rows and the help popup
     pub cmd_branch_revision: &'static str,
@@ -372,6 +374,7 @@ static ENGLISH: Strings = Strings {
     input_worktree_path_fmt: "Worktree path for '{}'",
     input_push_refspec_fmt: "Push refspec(s) to '{}' (comma-separated)",
     input_fetch_refspec_fmt: "Fetch refspec(s) from '{}' (comma-separated)",
+    help_version_fmt: "Magi version {}",
 
     cmd_branch_revision: "Branch/revision",
     cmd_local_branch: "Local branch",
@@ -616,6 +619,7 @@ static SWEDISH: Strings = Strings {
     input_worktree_path_fmt: "Arbetsträdsväg för '{}'",
     input_push_refspec_fmt: "Knuffa refspec(er) till '{}' (kommaseparerade)",
     input_fetch_refspec_fmt: "Hämta refspec(er) från '{}' (kommaseparerade)",
+    help_version_fmt: "Magi version {}",
 
     cmd_branch_revision: "Gren/revision",
     cmd_local_branch: "Lokal gren",

@@ -1,5 +1,10 @@
 use super::popup_content::CommandPopupContent;
 
+use ratatui::{
+    style::Style,
+    text::{Line, Span},
+};
+
 use crate::{
     config::Theme,
     i18n,
@@ -69,23 +74,63 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
         ],
     };
 
+    let version_row = PopupRow {
+        columns: vec![PopupColumn {
+            title: None,
+            content: vec![Line::from(Span::styled(
+                t.fmt1(t.help_version_fmt, env!("CARGO_PKG_VERSION")),
+                Style::default().fg(theme.dim_text),
+            ))],
+        }],
+    };
+
     CommandPopupContent {
         title: t.popup_help,
-        rows: vec![PopupRow {
-            columns: vec![
-                command_popup_col_1,
-                command_popup_col_2,
-                PopupColumn {
-                    title: Some("    ".into()),
-                    content: vec![],
-                },
-                applying_changes_col,
-                PopupColumn {
-                    title: Some("    ".into()),
-                    content: vec![],
-                },
-                general_col,
-            ],
-        }],
+        rows: vec![
+            PopupRow {
+                columns: vec![
+                    command_popup_col_1,
+                    command_popup_col_2,
+                    PopupColumn {
+                        title: Some("    ".into()),
+                        content: vec![],
+                    },
+                    applying_changes_col,
+                    PopupColumn {
+                        title: Some("    ".into()),
+                        content: vec![],
+                    },
+                    general_col,
+                ],
+            },
+            version_row,
+        ],
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn line_text(line: &Line) -> String {
+        line.spans.iter().map(|s| s.content.as_ref()).collect()
+    }
+
+    #[test]
+    fn last_row_shows_crate_version() {
+        let theme = Theme::default();
+        let popup = content(&theme);
+
+        let version_line = popup
+            .rows
+            .last()
+            .and_then(|row| row.columns.first())
+            .and_then(|col| col.content.first())
+            .expect("help popup should end with a version line");
+
+        assert_eq!(
+            line_text(version_line),
+            format!("Magi version {}", env!("CARGO_PKG_VERSION"))
+        );
     }
 }
