@@ -710,7 +710,7 @@ static SWEDISH: Strings = Strings {
     cmd_unstage: "Återkalla",
     cmd_unstage_all: "Återkalla allt",
     cmd_discard: "Fimpa",
-    cmd_reverse: "Omvänd",
+    cmd_reverse: "Tvärtemot",
     cmd_quit: "        Avsluta",
     cmd_refresh: "Förfriska",
     cmd_show_help: "      Visa denna hjälp",
