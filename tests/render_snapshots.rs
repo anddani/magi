@@ -5,7 +5,7 @@ use magi::{
     git::credential::CredentialType,
     model::{
         LineContent,
-        arguments::{Arguments, PushArgument, TagArgument},
+        arguments::{Arguments, PushArgument, RebaseArgument, TagArgument},
         popup::{
             ApplyPopupState, CommitPopupState, ConfirmAction, ConfirmPopupState,
             CredentialPopupState, FetchPopupState, InputContext, InputPopupState, MergePopupState,
@@ -409,6 +409,28 @@ fn snapshot_rebase_popup_in_progress() {
         }),
     );
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_rebase_popup_arg_mode() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Rebase(RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            upstream: None,
+            push_remote: None,
+            sole_remote: None,
+        }),
+    );
+    model.arg_mode = true;
+    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+        RebaseArgument::KeepEmpty,
+    ])));
+    // Argument mode only changes styling (key highlights, selected flags), so
+    // snapshot the styled buffer instead of the plain-text frame.
+    assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
 }
 
 #[test]

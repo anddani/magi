@@ -8,6 +8,7 @@ use magi::{
     keys::handle_key,
     model::{
         Line, LineContent, Model, SectionType, ViewMode,
+        arguments::{Argument, RebaseArgument},
         popup::{ConfirmAction, PopupContent, PopupContentCommand, RebasePopupState},
         select_popup::{OnSelect, SelectPopupState},
     },
@@ -2032,6 +2033,134 @@ fn test_autosquash_update_squashes_fixup_commit() {
         std::fs::read_to_string(workdir.join("file1.txt")).unwrap(),
         "fixed"
     );
+}
+
+// ── Arguments ─────────────────────────────────────────────────────────────────
+
+fn rebase_popup_state() -> RebasePopupState {
+    RebasePopupState {
+        branch: "main".to_string(),
+        in_progress: false,
+        upstream: None,
+        push_remote: None,
+        sole_remote: None,
+    }
+}
+
+#[test]
+fn test_dash_in_rebase_popup_enters_arg_mode() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+
+    let result = handle_key(key(KeyCode::Char('-')), &model);
+    assert_eq!(result, Some(Message::EnterArgMode));
+}
+
+#[test]
+fn test_k_in_arg_mode_toggles_keep_empty() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('k')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ToggleArgument(Argument::Rebase(
+            RebaseArgument::KeepEmpty
+        )))
+    );
+}
+
+#[test]
+fn test_unknown_key_in_arg_mode_exits_arg_mode() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('x')), &model);
+    assert_eq!(result, Some(Message::ExitArgMode));
+}
+
+#[test]
+fn test_toggle_keep_empty_updates_arguments_and_exits_arg_mode() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    update(
+        &mut model,
+        Message::ToggleArgument(Argument::Rebase(RebaseArgument::KeepEmpty)),
+    );
+
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.rebase())
+        .expect("Expected rebase arguments");
+    assert!(args.contains(&RebaseArgument::KeepEmpty));
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_toggle_keep_empty_twice_removes_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+
+    for _ in 0..2 {
+        update(
+            &mut model,
+            Message::ToggleArgument(Argument::Rebase(RebaseArgument::KeepEmpty)),
+        );
+    }
+
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.rebase())
+        .expect("Expected rebase arguments");
+    assert!(!args.contains(&RebaseArgument::KeepEmpty));
+}
+
+#[test]
+fn test_dash_ignored_while_rebase_in_progress() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        RebasePopupState {
+            in_progress: true,
+            ..rebase_popup_state()
+        },
+    )));
+
+    let result = handle_key(key(KeyCode::Char('-')), &model);
+    assert_eq!(result, None);
 }
 
 #[test]
