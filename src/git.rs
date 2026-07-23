@@ -44,6 +44,7 @@ pub mod pty_command;
 pub mod push;
 pub mod rebase;
 pub mod recent_commits;
+pub mod releases;
 pub mod reset;
 pub mod reverse;
 pub mod revert;

@@ -517,6 +517,19 @@ fn snapshot_tag_popup() {
 }
 
 #[test]
+fn snapshot_tag_release_input_popup() {
+    let test_repo = TestRepo::new();
+    let mut model = create_snapshot_model(&test_repo);
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::TagRelease {
+            previous: Some("v1.0.0".to_string()),
+        },
+        "v1.0.0",
+    )));
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_tag_popup_with_force_argument() {
     let test_repo = TestRepo::new();
     let mut model = create_command_popup_model(&test_repo, PopupContentCommand::Tag);

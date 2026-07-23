@@ -160,6 +160,11 @@ pub enum InputContext {
     },
     /// Creating a new tag (name input; target picked next)
     CreateTag,
+    /// Naming a release tag for HEAD (prefilled with the suggested name)
+    TagRelease {
+        /// The previous (highest) release tag, or `None` for the first release
+        previous: Option<String>,
+    },
     /// Entering the mainline parent number for a revert of a merge commit
     RevertMainline { revert_state: RevertPopupState },
 }
@@ -182,6 +187,14 @@ impl InputPopupState {
         }
     }
 
+    /// Create an input popup state prefilled with the given text
+    pub fn with_text(context: InputContext, text: impl Into<String>) -> Self {
+        Self {
+            input: InputField::from_text(text),
+            context,
+        }
+    }
+
     pub fn title(&self) -> String {
         let t = i18n::t();
         match &self.context {
@@ -200,6 +213,10 @@ impl InputPopupState {
             InputContext::PushRefspec { remote } => t.fmt1(t.input_push_refspec_fmt, remote),
             InputContext::FetchRefspec { remote } => t.fmt1(t.input_fetch_refspec_fmt, remote),
             InputContext::CreateTag => t.input_tag_name.to_string(),
+            InputContext::TagRelease { previous } => match previous {
+                Some(ptag) => t.fmt1(t.input_release_tag_fmt, ptag),
+                None => t.input_first_release_tag.to_string(),
+            },
             InputContext::RevertMainline { .. } => t.input_revert_mainline.to_string(),
         }
     }

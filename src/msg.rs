@@ -339,6 +339,15 @@ pub enum Message {
     ShowTagPopup,
     /// Show the input popup for entering a new tag name
     ShowCreateTagInput,
+    /// Compute the next release tag from existing release tags and HEAD's
+    /// commit message, then prompt for its name (or create it directly when
+    /// HEAD's message is "Release version <v>" and a previous release exists)
+    ShowTagReleaseInput,
+    /// Create a release tag with the given name at HEAD, deriving the
+    /// annotation message from the previous release tag's message
+    CreateTagRelease {
+        name: String,
+    },
     /// Create a new tag pointing at the given target ref/commit
     CreateTag {
         name: String,
