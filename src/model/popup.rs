@@ -21,6 +21,8 @@ pub enum ConfirmAction {
     DeleteBranch(String),
     /// Discard changes (stores the discard target)
     DiscardChanges(crate::msg::DiscardTarget),
+    /// Reverse changes in the working tree (stores the reverse target)
+    Reverse(crate::msg::ReverseTarget),
     /// Pop a stash (stores the stash reference, e.g. "stash@{0}")
     PopStash(String),
     /// Drop a stash (stores the stash reference, e.g. "stash@{0}" or "all")
@@ -132,6 +134,20 @@ pub enum InputContext {
         /// Whether to switch to the new worktree after creating it
         checkout: bool,
     },
+    /// Entering the name for a new branch checked out in a new worktree
+    /// (step 2 of 3; path is entered next)
+    WorktreeBranchName {
+        /// The starting point (branch, tag, or commit hash) for the new branch
+        starting_point: String,
+    },
+    /// Entering the directory path for a new worktree with a new branch
+    /// (step 3 of 3)
+    WorktreeBranchPath {
+        /// The starting point (branch, tag, or commit hash) for the new branch
+        starting_point: String,
+        /// The name of the new branch to create and check out
+        branch_name: String,
+    },
     /// Entering refspec(s) to push to a remote (comma-separated)
     PushRefspec {
         /// The remote to push to
@@ -144,6 +160,11 @@ pub enum InputContext {
     },
     /// Creating a new tag (name input; target picked next)
     CreateTag,
+    /// Naming a release tag for HEAD (prefilled with the suggested name)
+    TagRelease {
+        /// The previous (highest) release tag, or `None` for the first release
+        previous: Option<String>,
+    },
     /// Entering the mainline parent number for a revert of a merge commit
     RevertMainline { revert_state: RevertPopupState },
 }
@@ -166,6 +187,14 @@ impl InputPopupState {
         }
     }
 
+    /// Create an input popup state prefilled with the given text
+    pub fn with_text(context: InputContext, text: impl Into<String>) -> Self {
+        Self {
+            input: InputField::from_text(text),
+            context,
+        }
+    }
+
     pub fn title(&self) -> String {
         let t = i18n::t();
         match &self.context {
@@ -177,9 +206,17 @@ impl InputPopupState {
             InputContext::CherrySpinout { .. } => t.input_cherry_spinout.to_string(),
             InputContext::CherrySpinoff { .. } => t.input_cherry_spinoff.to_string(),
             InputContext::WorktreePath { branch, .. } => t.fmt1(t.input_worktree_path_fmt, branch),
+            InputContext::WorktreeBranchName { .. } => t.input_new_branch.to_string(),
+            InputContext::WorktreeBranchPath { branch_name, .. } => {
+                t.fmt1(t.input_worktree_path_fmt, branch_name)
+            }
             InputContext::PushRefspec { remote } => t.fmt1(t.input_push_refspec_fmt, remote),
             InputContext::FetchRefspec { remote } => t.fmt1(t.input_fetch_refspec_fmt, remote),
             InputContext::CreateTag => t.input_tag_name.to_string(),
+            InputContext::TagRelease { previous } => match previous {
+                Some(ptag) => t.fmt1(t.input_release_tag_fmt, ptag),
+                None => t.input_first_release_tag.to_string(),
+            },
             InputContext::RevertMainline { .. } => t.input_revert_mainline.to_string(),
         }
     }

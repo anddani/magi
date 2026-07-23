@@ -12,7 +12,7 @@ use crate::{
 
 /// Consumes the tag popup arguments, returning their git flags in a
 /// stable order (--force before --edit before --annotate before --sign).
-fn take_tag_flags(model: &mut Model) -> Vec<String> {
+pub(super) fn take_tag_flags(model: &mut Model) -> Vec<String> {
     if let Some(TagArguments(arguments)) = model.arguments.take() {
         TagArgument::all()
             .into_iter()

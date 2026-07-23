@@ -31,12 +31,12 @@ pub fn update(model: &mut Model, branch: String, path: String, checkout: bool) -
     }
 }
 
-fn resolve_path(workdir: &std::path::Path, path: &str) -> PathBuf {
+pub(super) fn resolve_path(workdir: &std::path::Path, path: &str) -> PathBuf {
     let p = PathBuf::from(path);
     if p.is_absolute() { p } else { workdir.join(p) }
 }
 
-fn switch_to_worktree(model: &mut Model, path: PathBuf) {
+pub(super) fn switch_to_worktree(model: &mut Model, path: PathBuf) {
     match GitInfo::new_from_path(&path) {
         Ok(git_info) => {
             // Extract canonical workdir from the new repo

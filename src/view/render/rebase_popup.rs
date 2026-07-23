@@ -7,10 +7,12 @@ use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
     i18n,
-    model::{Model, popup::RebasePopupState},
+    model::{Model, arguments::RebaseArgument, popup::RebasePopupState},
     view::render::{
         popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
-        util::{command_description, push_remote_description, upstream_description},
+        util::{
+            argument_lines, command_description, push_remote_description, upstream_description,
+        },
     },
 };
 
@@ -41,6 +43,15 @@ pub fn content<'a>(
             }],
         };
     }
+
+    let arguments_col = PopupColumn {
+        title: Some(t.col_arguments.into()),
+        content: argument_lines::<RebaseArgument>(
+            theme,
+            model.arg_mode,
+            model.arguments.as_ref().and_then(|a| a.rebase()),
+        ),
+    };
 
     let rebase_onto_title = Line::from(vec![
         Span::styled(t.rebase_onto_pre, section_style),
@@ -88,6 +99,9 @@ pub fn content<'a>(
     CommandPopupContent {
         title: t.popup_rebase,
         rows: vec![
+            PopupRow {
+                columns: vec![arguments_col],
+            },
             PopupRow {
                 columns: vec![rebase_onto_col],
             },

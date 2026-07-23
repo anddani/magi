@@ -75,7 +75,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
 }
 
 /// Determines the discard source (staged vs unstaged) from a section type.
-fn determine_source(section: Option<&SectionType>) -> Option<DiscardSource> {
+pub(super) fn determine_source(section: Option<&SectionType>) -> Option<DiscardSource> {
     match section {
         Some(SectionType::UnstagedChanges)
         | Some(SectionType::UnstagedFile { .. })

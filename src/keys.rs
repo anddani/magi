@@ -72,6 +72,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     ConfirmAction::DiscardChanges(target) => {
                         Message::ConfirmDiscard(target.clone())
                     }
+                    ConfirmAction::Reverse(target) => Message::ConfirmReverse(target.clone()),
                     ConfirmAction::PopStash(stash_ref) => {
                         Message::ConfirmPopStash(stash_ref.clone())
                     }
@@ -322,6 +323,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (_, Char('U')) => Some(Message::UnstageAll),
         (_, Char('x')) => Some(Message::DiscardSelected),
         (NONE, Char('a')) => Some(Message::ApplySelected),
+        (NONE, Char('-')) => Some(Message::ReverseSelected),
 
         // Search
         (NONE, Char('/')) => Some(Message::EnterSearchMode),
@@ -1105,6 +1107,22 @@ mod tests {
     }
 
     #[test]
+    fn test_c_in_worktree_popup_shows_worktree_branch_select() {
+        let model = create_worktree_popup_model();
+
+        let key = create_key_event(NONE, Char('c'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Create branch starting at".to_string(),
+                source: OptionsSource::BranchesAndTags,
+                on_select: OnSelect::WorktreeBranch,
+            }))
+        );
+    }
+
+    #[test]
     fn test_esc_dismisses_worktree_popup() {
         let model = create_worktree_popup_model();
 
@@ -1808,6 +1826,20 @@ mod tests {
                 source: OptionsSource::AllRefs,
                 on_select: OnSelect::ReflogOther,
             }))
+        );
+    }
+
+    #[test]
+    fn test_shift_h_in_log_popup_shows_head_reflog() {
+        use crate::msg::LogType;
+
+        let model = create_log_popup_model();
+
+        let key = create_key_event(NONE, Char('H'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ShowLog(LogType::ReflogOther("HEAD".to_string())))
         );
     }
 

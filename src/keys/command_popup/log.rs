@@ -34,6 +34,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
             source: OptionsSource::AllRefs,
             on_select: OnSelect::ReflogOther,
         })),
+        KeyCode::Char('H') => Some(Message::ShowLog(LogType::ReflogOther("HEAD".to_string()))),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

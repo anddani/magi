@@ -59,6 +59,12 @@ pub fn update(model: &mut Model, argument: Argument) -> Option<Message> {
             |a| a.tag_mut(),
             Arguments::TagArguments,
         ),
+        Argument::Rebase(arg) => toggle_set(
+            &mut model.arguments,
+            arg,
+            |a| a.rebase_mut(),
+            Arguments::RebaseArguments,
+        ),
     }
     model.arg_mode = false;
     None

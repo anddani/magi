@@ -17,6 +17,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
 
     match key.code {
         KeyCode::Char('t') => Some(Message::ShowCreateTagInput),
+        KeyCode::Char('r') => Some(Message::ShowTagReleaseInput),
         KeyCode::Char('x') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
             title: "Delete tag".to_string(),
             source: OptionsSource::Tags,

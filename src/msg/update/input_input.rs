@@ -79,6 +79,20 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             path: input,
             checkout,
         }),
+        InputContext::WorktreeBranchName { starting_point } => {
+            Some(Message::ShowWorktreeBranchPathInput {
+                starting_point,
+                branch_name: input,
+            })
+        }
+        InputContext::WorktreeBranchPath {
+            starting_point,
+            branch_name,
+        } => Some(Message::WorktreeBranch {
+            starting_point,
+            branch_name,
+            path: input,
+        }),
         InputContext::PushRefspec { remote } => Some(Message::Push(PushCommand::PushRefspecs {
             remote,
             refspecs: input,
@@ -94,6 +108,7 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             source: OptionsSource::BranchesAndTags,
             on_select: OnSelect::CreateTagTarget { name: input },
         })),
+        InputContext::TagRelease { .. } => Some(Message::CreateTagRelease { name: input }),
         InputContext::Stash(_) | InputContext::RevertMainline { .. } => unreachable!(),
     }
 }

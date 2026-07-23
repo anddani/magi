@@ -9,7 +9,7 @@ use crate::{
         },
         file_checkout::get_tracked_files,
         open_pr::has_any_remote,
-        push::{get_current_branch, get_local_tags, get_remotes},
+        push::{get_current_branch, get_local_tags, get_remotes, get_upstream_branch},
         worktree::get_checked_out_branches,
     },
     i18n,
@@ -156,7 +156,8 @@ fn compute_exclude(model: &Model, on_select: &OnSelect) -> Option<String> {
         | OnSelect::MergeAbsorb
         | OnSelect::MergePreview
         | OnSelect::MergeSquash
-        | OnSelect::MergeDissolve => model.git_info.current_branch().map(|b| b.to_string()),
+        | OnSelect::MergeDissolve
+        | OnSelect::RebaseSubsetOnto => model.git_info.current_branch().map(|b| b.to_string()),
         OnSelect::ResetBranchTarget { branch } => Some(branch.clone()),
         OnSelect::OpenPrTarget { source_branch } => Some(source_branch.clone()),
         OnSelect::HarvestSourceBranch { .. } => {
@@ -244,7 +245,9 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
                 .map(|s| s.name().to_string())
                 .or_else(|| get_last_checked_out_branch(&model.git_info.repository))
         }
-        OnSelect::CreateNewBranchBase { .. } | OnSelect::CreateTagTarget { .. } => {
+        OnSelect::CreateNewBranchBase { .. }
+        | OnSelect::CreateTagTarget { .. }
+        | OnSelect::WorktreeBranch => {
             // Cursor suggestion (any), then current branch
             cursor_line
                 .and_then(|line| suggestions_from_line(line).into_iter().next())
@@ -328,6 +331,22 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
                 })
                 .map(|s| s.name().to_string())
         }
+        OnSelect::RebaseSubsetOnto => {
+            // Cursor branch/revision (not current), then the upstream branch
+            // (magit-read-other-branch-or-commit with upstream as secondary default)
+            cursor_line
+                .and_then(|line| {
+                    suggestions_from_line(line).into_iter().find(|s| match s {
+                        BranchSuggestion::LocalBranch(name)
+                        | BranchSuggestion::RemoteBranch(name) => {
+                            current_branch.as_deref() != Some(name.as_str())
+                        }
+                        BranchSuggestion::Revision(_) => true,
+                    })
+                })
+                .map(|s| s.name().to_string())
+                .or_else(|| get_upstream_branch(&model.workdir).ok().flatten())
+        }
         OnSelect::ApplyPick
         | OnSelect::ApplyApply
         | OnSelect::ApplySquash
@@ -386,6 +405,7 @@ fn should_insert_if_missing(on_select: &OnSelect) -> bool {
         | OnSelect::MergeNoCommit          // can insert revision
         | OnSelect::MergePreview           // can insert revision
         | OnSelect::WorktreeAdd { .. }     // can insert non-list suggestion
+        | OnSelect::WorktreeBranch         // can insert revision/hash
         | OnSelect::CreateNewBranchBase { .. } // can insert revision/hash
         | OnSelect::FileCheckoutRevision   // can insert cursor suggestion
         | OnSelect::LogOther               // can insert cursor suggestion
@@ -404,6 +424,7 @@ fn should_insert_if_missing(on_select: &OnSelect) -> bool {
         | OnSelect::CherrySpinoffRootPick { .. } // cursor hash is inserted
         | OnSelect::HarvestCommitPick      // cursor hash is inserted
         | OnSelect::CreateTagTarget { .. } // can insert cursor suggestion
+        | OnSelect::RebaseSubsetOnto // can insert cursor revision
     )
 }
 
@@ -572,9 +593,9 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::MergeAbsorb
         | OnSelect::MergeDissolve
         | OnSelect::PushOtherBranchPick => "No local branches found".to_string(),
-        OnSelect::WorktreeAdd { .. } | OnSelect::CreateNewBranchBase { .. } => {
-            "No branches or tags found".to_string()
-        }
+        OnSelect::WorktreeAdd { .. }
+        | OnSelect::WorktreeBranch
+        | OnSelect::CreateNewBranchBase { .. } => "No branches or tags found".to_string(),
         OnSelect::FileCheckoutRevision
         | OnSelect::LogOther
         | OnSelect::ReflogOther
@@ -582,7 +603,8 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::Reset(_)
         | OnSelect::ResetIndex
         | OnSelect::ResetWorktree
-        | OnSelect::CreateTagTarget { .. } => "No references found".to_string(),
+        | OnSelect::CreateTagTarget { .. }
+        | OnSelect::RebaseSubsetOnto => "No references found".to_string(),
         OnSelect::FileCheckoutFile { .. } => "No tracked files found".to_string(),
         OnSelect::ApplyStash | OnSelect::PopStash | OnSelect::DropStash => {
             "No stashes found".to_string()

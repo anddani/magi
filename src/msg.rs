@@ -118,6 +118,29 @@ pub enum DiscardTarget {
     },
 }
 
+/// Target for reverse operations. The change is applied in reverse to the
+/// working tree only — the index is left untouched (mirrors magit-reverse).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ReverseTarget {
+    /// A complete patch built from a commit/stash preview
+    Patch { patch: String },
+    /// The staged changes of entire files
+    Files { paths: Vec<String> },
+    /// A single staged hunk
+    Hunk { path: String, hunk_index: usize },
+    /// Multiple staged hunks in the same file
+    Hunks {
+        path: String,
+        hunk_indices: Vec<usize>,
+    },
+    /// Specific lines within a staged hunk
+    Lines {
+        path: String,
+        hunk_index: usize,
+        line_indices: Vec<usize>,
+    },
+}
+
 #[derive(PartialEq, Eq, Debug)]
 pub enum Message {
     /// Quit application
@@ -155,6 +178,13 @@ pub enum Message {
     /// tree. Only meaningful in Preview mode, where the shown diff comes from
     /// a commit or stash rather than the working tree.
     ApplySelected,
+
+    /// Reverse the change under the cursor (or visual selection) in the
+    /// working tree (shows confirmation popup). Works on staged changes and
+    /// on commit/stash previews; uncommitted changes cannot be reversed.
+    ReverseSelected,
+    /// Actually reverse after user confirms
+    ConfirmReverse(ReverseTarget),
 
     /// Discard changes under cursor (shows confirmation popup)
     DiscardSelected,
@@ -220,6 +250,24 @@ pub enum Message {
         path: String,
         /// Whether to switch to the new worktree after creating it
         checkout: bool,
+    },
+    /// Show the input popup for the name of a new branch to check out in a
+    /// new worktree (step 2 of 3)
+    ShowWorktreeBranchNameInput {
+        starting_point: String,
+    },
+    /// Show the input popup for the path of a new worktree with a new branch
+    /// (step 3 of 3)
+    ShowWorktreeBranchPathInput {
+        starting_point: String,
+        branch_name: String,
+    },
+    /// Create a new branch starting at starting_point and check it out in a
+    /// new worktree at the given path
+    WorktreeBranch {
+        starting_point: String,
+        branch_name: String,
+        path: String,
     },
     /// Show confirmation popup before deleting the selected branch
     DeleteBranch(String),
@@ -291,6 +339,15 @@ pub enum Message {
     ShowTagPopup,
     /// Show the input popup for entering a new tag name
     ShowCreateTagInput,
+    /// Compute the next release tag from existing release tags and HEAD's
+    /// commit message, then prompt for its name (or create it directly when
+    /// HEAD's message is "Release version <v>" and a previous release exists)
+    ShowTagReleaseInput,
+    /// Create a release tag with the given name at HEAD, deriving the
+    /// annotation message from the previous release tag's message
+    CreateTagRelease {
+        name: String,
+    },
     /// Create a new tag pointing at the given target ref/commit
     CreateTag {
         name: String,

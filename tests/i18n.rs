@@ -5,11 +5,13 @@ use magi::i18n::{self, Language, Strings};
 /// is enforced by the compiler (every `Strings` field must be populated), but
 /// nothing stops a translation from dropping the placeholder — this list does.
 /// Keep in sync with the `*_fmt` fields in src/i18n.rs.
-const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 6] = [
+const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 8] = [
     ("input_rename_branch_fmt", |s| s.input_rename_branch_fmt),
+    ("help_version_fmt", |s| s.help_version_fmt),
     ("input_worktree_path_fmt", |s| s.input_worktree_path_fmt),
     ("input_push_refspec_fmt", |s| s.input_push_refspec_fmt),
     ("input_fetch_refspec_fmt", |s| s.input_fetch_refspec_fmt),
+    ("input_release_tag_fmt", |s| s.input_release_tag_fmt),
     ("completed_successfully_fmt", |s| {
         s.completed_successfully_fmt
     }),
