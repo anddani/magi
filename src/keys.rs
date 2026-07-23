@@ -72,6 +72,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                     ConfirmAction::DiscardChanges(target) => {
                         Message::ConfirmDiscard(target.clone())
                     }
+                    ConfirmAction::Reverse(target) => Message::ConfirmReverse(target.clone()),
                     ConfirmAction::PopStash(stash_ref) => {
                         Message::ConfirmPopStash(stash_ref.clone())
                     }
@@ -322,6 +323,7 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
         (_, Char('U')) => Some(Message::UnstageAll),
         (_, Char('x')) => Some(Message::DiscardSelected),
         (NONE, Char('a')) => Some(Message::ApplySelected),
+        (NONE, Char('-')) => Some(Message::ReverseSelected),
 
         // Search
         (NONE, Char('/')) => Some(Message::EnterSearchMode),

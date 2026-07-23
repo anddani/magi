@@ -98,7 +98,7 @@ struct FileBlock {
 /// any of its lines; selecting a file header includes that file's whole diff.
 /// Returns `None` when the selection touches no diff content (e.g. only the
 /// commit metadata).
-fn build_preview_patch(lines: &[Line], start: usize, end: usize) -> Option<String> {
+pub(super) fn build_preview_patch(lines: &[Line], start: usize, end: usize) -> Option<String> {
     let mut blocks: Vec<FileBlock> = Vec::new();
     let mut hunk_start: Option<usize> = None;
 

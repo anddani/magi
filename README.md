@@ -219,14 +219,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Worktree
         - [x] Create new worktree
         - [ ] Checkout/manage worktrees
-- [ ] Applying changes
-    - [x] Apply
-    - [ ] Reverse
-    - [x] Discard
-    - [x] Stage
-    - [x] Unstage
-    - [x] Stage all
-    - [x] Unstage all
+- [x] Applying changes
 
 
 ## License
