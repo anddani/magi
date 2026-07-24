@@ -428,7 +428,11 @@ fn route_result(
             None
         }
         (
-            Some(OnSelect::RevertMergeMainline { hashes, no_commit }),
+            Some(OnSelect::RevertMergeMainline {
+                hashes,
+                no_commit,
+                strategy,
+            }),
             SelectResult::Selected(selection),
         ) => {
             let mainline = selection
@@ -440,7 +444,19 @@ fn route_result(
                 hashes,
                 mainline,
                 no_commit,
+                strategy,
             }))
+        }
+        (Some(OnSelect::RevertStrategy { mut revert_state }), result) => {
+            // Enter on an empty filter clears the strategy; a selection sets it
+            revert_state.strategy = match result {
+                SelectResult::Selected(strategy) => Some(strategy),
+                _ => None,
+            };
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+                revert_state,
+            )));
+            None
         }
         _ => None,
     }
@@ -474,6 +490,7 @@ mod tests {
             log_pick_on_select: None,
             pty_state: None,
             arg_mode: false,
+            equals_arg_mode: false,
             pending_g: false,
             arguments: None,
             view_mode: ViewMode::Status,

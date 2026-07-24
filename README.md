@@ -211,6 +211,7 @@ Here are a few features that the aforementioned applications lack:
     - [x] Tag
     - [ ] Note
     - [x] Revert
+        - [x] Strategy argument (`=s`, `--strategy=`)
     - [ ] Apply patches
     - [ ] Format patches
     - [x] Reset

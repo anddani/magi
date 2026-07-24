@@ -25,6 +25,7 @@ mod discard_selected;
 mod dismiss_popup;
 mod donate;
 mod enter_arg_mode;
+mod enter_equals_arg_mode;
 mod enter_search_mode;
 mod enter_visual_mode;
 mod exit_arg_mode;
@@ -78,6 +79,7 @@ mod show_rebase_popup;
 mod show_reset_popup;
 mod show_revert_mainline_input;
 mod show_revert_popup;
+mod show_revert_strategy_select;
 mod show_select_popup;
 mod show_tag_popup;
 mod show_tag_release_input;
@@ -171,6 +173,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             show_commit_select::update(model, commit_select)
         }
         Message::EnterArgMode => enter_arg_mode::update(model),
+        Message::EnterEqualsArgMode => enter_equals_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),
         Message::Select(select_msg) => match select_msg {
@@ -207,6 +210,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::Rebase(rebase_command) => rebase::update(model, rebase_command),
         Message::ShowRevertPopup => show_revert_popup::update(model),
         Message::ShowRevertMainlineInput => show_revert_mainline_input::update(model),
+        Message::ShowRevertStrategySelect => show_revert_strategy_select::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),
         Message::ShowApplyPopup => show_apply_popup::update(model),
         Message::Apply(apply_command) => apply::update(model, apply_command),

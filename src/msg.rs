@@ -302,6 +302,8 @@ pub enum Message {
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert
     ShowRevertMainlineInput,
+    /// Show select popup for picking the =s merge strategy for a revert
+    ShowRevertStrategySelect,
     /// Execute a revert command
     Revert(RevertCommand),
 
@@ -429,6 +431,7 @@ pub enum Message {
     },
 
     EnterArgMode,
+    EnterEqualsArgMode,
     ToggleArgument(Argument),
     ExitArgMode,
 
@@ -671,6 +674,7 @@ pub enum RevertCommand {
     Commits {
         hashes: Vec<String>,
         mainline: Option<String>,
+        strategy: Option<String>,
     },
     /// Run a fully-built `git revert` command that opens the user's editor
     /// for the commit message. Requires the TUI to be suspended.
@@ -679,12 +683,14 @@ pub enum RevertCommand {
     NoCommit {
         hashes: Vec<String>,
         mainline: Option<String>,
+        strategy: Option<String>,
     },
     /// Revert merge commit(s) with an explicit mainline parent number (-m)
     CommitsWithMainline {
         hashes: Vec<String>,
         mainline: u8,
         no_commit: bool,
+        strategy: Option<String>,
     },
     /// Continue after resolving conflicts
     Continue,
