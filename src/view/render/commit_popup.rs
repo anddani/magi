@@ -41,6 +41,14 @@ pub fn content<'a>(
         selected,
         &gpg_sign,
     ));
+    arguments.push(argument_value_line(
+        theme,
+        'C',
+        t.arg_commit_reuse_message,
+        "--reuse-message=",
+        state.reuse_message.as_deref(),
+        model.arg_mode,
+    ));
 
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),

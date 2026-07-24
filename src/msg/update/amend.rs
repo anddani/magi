@@ -10,11 +10,11 @@ use crate::{
     msg::Message,
 };
 
-use super::commit::{TOAST_DURATION, check_signing, take_commit_author};
+use super::commit::{TOAST_DURATION, check_signing, push_value_flags, take_commit_popup_state};
 
 pub fn update(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
-    // Dismiss the commit popup, keeping the author override it carries
-    let author = take_commit_author(model);
+    // Dismiss the commit popup, keeping the value arguments it carries
+    let popup_state = take_commit_popup_state(model);
 
     if let Some(message) = check_signing(model) {
         model.popup = Some(PopupContent::Error { message });
@@ -28,9 +28,7 @@ pub fn update(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
     if let Some(CommitArguments(arguments)) = model.arguments.take() {
         flags.extend(arguments.into_iter().map(|a| a.flag().to_string()))
     };
-    if let Some(author) = author {
-        flags.push(format!("--author={}", author));
-    }
+    push_value_flags(&mut flags, popup_state);
 
     match commit::run_amend_commit_with_editor(&model.workdir, flags) {
         Ok(CommitResult { success, message }) => {

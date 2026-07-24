@@ -389,10 +389,20 @@ fn route_result(
         (Some(OnSelect::PruneTagsRemotePick), SelectResult::Selected(remote)) => {
             Some(Message::ShowPruneTagsConfirm { remote })
         }
-        (Some(OnSelect::CommitAuthor), SelectResult::Selected(author)) => {
+        (Some(OnSelect::CommitAuthor { reuse_message }), SelectResult::Selected(author)) => {
             model.popup = Some(PopupContent::Command(PopupContentCommand::Commit(
                 CommitPopupState {
                     author: Some(author),
+                    reuse_message,
+                },
+            )));
+            None
+        }
+        (Some(OnSelect::CommitReuseMessage { author }), SelectResult::Selected(rev)) => {
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Commit(
+                CommitPopupState {
+                    author,
+                    reuse_message: Some(rev),
                 },
             )));
             None
