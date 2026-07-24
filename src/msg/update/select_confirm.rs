@@ -2,6 +2,7 @@ use crate::{
     git::reset::has_uncommitted_changes,
     model::{
         LineContent, Model, ViewMode,
+        arguments::{Arguments, RebaseArgument, RebaseMergesMode},
         popup::{
             CommitPopupState, ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand,
             SelectResult,
@@ -220,6 +221,20 @@ fn route_result(
         (Some(OnSelect::RebaseUpstream), SelectResult::Selected(upstream)) => Some(
             Message::Rebase(RebaseCommand::OntoUpstreamSetting(upstream)),
         ),
+        (Some(OnSelect::RebaseMergesMode), result) => {
+            if let SelectResult::Selected(value) = result
+                && let Some(mode) = RebaseMergesMode::from_value(&value)
+            {
+                let arg = RebaseArgument::RebaseMerges(mode);
+                if let Some(args) = model.arguments.as_mut().and_then(|a| a.rebase_mut()) {
+                    args.insert(arg);
+                } else {
+                    model.arguments = Some(Arguments::RebaseArguments([arg].into_iter().collect()));
+                }
+            }
+            // Return to the rebase popup, now showing the argument as set
+            Some(Message::ShowRebasePopup)
+        }
         (Some(OnSelect::PullElsewhere), SelectResult::Selected(upstream)) => {
             Some(Message::Pull(PullCommand::PullFromElsewhere(upstream)))
         }

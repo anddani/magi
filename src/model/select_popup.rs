@@ -86,6 +86,8 @@ pub enum OnSelect {
     RebasePushRemote,
     /// Select an upstream branch to rebase onto (setting it as upstream)
     RebaseUpstream,
+    /// Select the mode for the `--rebase-merges=` rebase argument
+    RebaseMergesMode,
     /// Select a local branch to reset (step 1 of 2)
     ResetBranchPick,
     /// Select a target to reset the given branch to (step 2 of 2, carries branch name)
@@ -200,6 +202,8 @@ pub enum OptionsSource {
     AllRefs,
     /// Stash entries (from UI model lines)
     Stashes,
+    /// Modes for the `--rebase-merges=` rebase argument
+    RebaseMergesModes,
     /// Tracked files (get_tracked_files)
     TrackedFiles,
 }

@@ -15,6 +15,7 @@ use crate::{
     i18n,
     model::{
         BranchSuggestion, LineContent, Model, Toast, ToastStyle,
+        arguments::RebaseMergesMode,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand},
         select_popup::{OnSelect, OptionsSource, SelectPopupState},
         suggestions_from_line,
@@ -140,6 +141,10 @@ fn fetch_options(model: &Model, source: &OptionsSource) -> Vec<String> {
             })
             .collect(),
         OptionsSource::TrackedFiles => get_tracked_files(&model.git_info.repository),
+        OptionsSource::RebaseMergesModes => RebaseMergesMode::all()
+            .iter()
+            .map(|mode| mode.value().to_string())
+            .collect(),
     }
 }
 
