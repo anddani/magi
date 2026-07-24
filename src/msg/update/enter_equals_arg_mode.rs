@@ -1,7 +1,6 @@
 use crate::{model::Model, msg::Message};
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    model.arg_mode = false;
-    model.equals_arg_mode = false;
+    model.equals_arg_mode = true;
     None
 }

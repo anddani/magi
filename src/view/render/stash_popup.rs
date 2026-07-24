@@ -54,7 +54,10 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
 
     let inspect = PopupColumn {
         title: Some(t.col_inspect.into()),
-        content: vec![command_description(theme, model.arg_mode, "l", t.cmd_list)],
+        content: vec![
+            command_description(theme, model.arg_mode, "l", t.cmd_list),
+            command_description(theme, model.arg_mode, "v", t.cmd_show),
+        ],
     };
 
     CommandPopupContent {

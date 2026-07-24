@@ -1,9 +1,12 @@
+use std::collections::HashSet;
+
 use crossterm::event::KeyCode;
 use magi::{
     git::{git_cmd, test_repo::TestRepo},
     keys::handle_key,
     model::{
         LineContent, ToastStyle, ViewMode,
+        arguments::{Arguments, MergeArgument},
         popup::{MergePopupState, PopupContent, PopupContentCommand},
         select_popup::OnSelect,
     },
@@ -487,6 +490,120 @@ fn test_merge_branch_message_creates_merge_commit() {
     assert_eq!(head.parent_count(), 2);
     assert!(test_repo.repo_path().join("main.txt").exists());
     assert!(test_repo.repo_path().join("feature.txt").exists());
+}
+
+// ── MergeCommand::Branch — --ff-only argument ─────────────────────────────────
+
+#[test]
+fn test_merge_branch_ff_only_fast_forwards_without_merge_commit() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+    // Put a commit on feature only, so the merge can fast-forward.
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "-b", "feature"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "main"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+        MergeArgument::FfOnly,
+    ])));
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Branch("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    let toast = model.toast.expect("Expected a toast after merging");
+    assert_eq!(toast.style, ToastStyle::Success);
+
+    // Fast-forwarded: HEAD is the feature commit, not a merge commit.
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head.parent_count(), 1);
+    assert!(test_repo.repo_path().join("feature.txt").exists());
+    // The argument is consumed by the merge.
+    assert!(model.arguments.is_none());
+}
+
+#[test]
+fn test_merge_branch_ff_only_refuses_divergent_branches() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    // Divergent branches: fast-forward is impossible, so --ff-only aborts.
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+    let head_before = test_repo.head_hash();
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+        MergeArgument::FfOnly,
+    ])));
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Branch("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    let toast = model
+        .toast
+        .expect("Expected a toast after the failed merge");
+    assert_eq!(toast.style, ToastStyle::Warning);
+    // The toast must explain why git refused, not just say "aborted".
+    assert!(
+        toast.message.to_lowercase().contains("fast-forward"),
+        "unexpected toast message: {}",
+        toast.message
+    );
+    // Nothing was merged.
+    assert_eq!(test_repo.head_hash(), head_before);
+}
+
+#[test]
+fn test_merge_edit_message_drops_ff_only() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    // Divergent branches: --ff-only would abort, but edit-message merges
+    // always create a merge commit and drop --ff-only, like in magit.
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+        MergeArgument::FfOnly,
+    ])));
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::EditMessage("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    let toast = model.toast.expect("Expected a toast after merging");
+    assert_eq!(toast.style, ToastStyle::Success);
+
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head.parent_count(), 2);
 }
 
 // ── MergeCommand::EditMessage — execution ─────────────────────────────────────

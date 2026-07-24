@@ -25,6 +25,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
         in_progress,
         selected_commits,
         mainline: None,
+        strategy: None,
     };
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(state)));
     None

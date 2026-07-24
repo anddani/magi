@@ -10,8 +10,13 @@ pub enum Arguments {
     StashArguments(HashSet<StashArgument>),
     RevertArguments(HashSet<RevertArgument>),
     LogArguments(HashSet<LogArgument>),
-    TagArguments(HashSet<TagArgument>),
+    TagArguments {
+        args: HashSet<TagArgument>,
+        /// Key to sign the tag with, set via the `-u` argument (`--local-user=`)
+        local_user: Option<String>,
+    },
     RebaseArguments(HashSet<RebaseArgument>),
+    MergeArguments(HashSet<MergeArgument>),
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -25,6 +30,7 @@ pub enum Argument {
     Log(LogArgument),
     Tag(TagArgument),
     Rebase(RebaseArgument),
+    Merge(MergeArgument),
 }
 
 pub trait PopupArgument: Sized + Eq + Hash {
@@ -147,8 +153,16 @@ impl Arguments {
         }
     }
 
+    /// Tag arguments with no `--local-user=` override set
+    pub fn tag_args(args: HashSet<TagArgument>) -> Arguments {
+        Arguments::TagArguments {
+            args,
+            local_user: None,
+        }
+    }
+
     pub fn tag(&self) -> Option<&HashSet<TagArgument>> {
-        if let Arguments::TagArguments(args) = self {
+        if let Arguments::TagArguments { args, .. } = self {
             Some(args)
         } else {
             None
@@ -156,8 +170,24 @@ impl Arguments {
     }
 
     pub fn tag_mut(&mut self) -> Option<&mut HashSet<TagArgument>> {
-        if let Arguments::TagArguments(args) = self {
+        if let Arguments::TagArguments { args, .. } = self {
             Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn tag_local_user(&self) -> Option<&str> {
+        if let Arguments::TagArguments { local_user, .. } = self {
+            local_user.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn tag_local_user_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::TagArguments { local_user, .. } = self {
+            Some(local_user)
         } else {
             None
         }
@@ -173,6 +203,22 @@ impl Arguments {
 
     pub fn rebase_mut(&mut self) -> Option<&mut HashSet<RebaseArgument>> {
         if let Arguments::RebaseArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn merge(&self) -> Option<&HashSet<MergeArgument>> {
+        if let Arguments::MergeArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn merge_mut(&mut self) -> Option<&mut HashSet<MergeArgument>> {
+        if let Arguments::MergeArguments(args) = self {
             Some(args)
         } else {
             None
@@ -577,6 +623,42 @@ impl PopupArgument for RebaseArgument {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum MergeArgument {
+    FfOnly,
+}
+
+impl MergeArgument {
+    pub fn from_key(key: char) -> Option<MergeArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for MergeArgument {
+    fn all() -> Vec<MergeArgument> {
+        vec![MergeArgument::FfOnly]
+    }
+
+    fn key(&self) -> char {
+        match self {
+            MergeArgument::FfOnly => 'f',
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        let t = i18n::t();
+        match self {
+            MergeArgument::FfOnly => t.arg_merge_ff_only,
+        }
+    }
+
+    fn flag(&self) -> &'static str {
+        match self {
+            MergeArgument::FfOnly => "--ff-only",
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum TagArgument {
     Force,
     Edit,
@@ -737,6 +819,46 @@ mod tests {
                 LogArgument::Decorate
             ]
         );
+    }
+
+    #[test]
+    fn test_merge_argument_key_and_flag() {
+        assert_eq!(MergeArgument::FfOnly.key(), 'f');
+        assert_eq!(MergeArgument::FfOnly.flag(), "--ff-only");
+    }
+
+    #[test]
+    fn test_merge_argument_from_key() {
+        assert_eq!(MergeArgument::from_key('f'), Some(MergeArgument::FfOnly));
+        assert_eq!(MergeArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_merge_argument_all_contains_ff_only() {
+        assert!(MergeArgument::all().contains(&MergeArgument::FfOnly));
+    }
+
+    #[test]
+    fn test_tag_args_has_no_local_user() {
+        let arguments = Arguments::tag_args([TagArgument::Force].into_iter().collect());
+        assert_eq!(arguments.tag_local_user(), None);
+        assert!(arguments.tag().unwrap().contains(&TagArgument::Force));
+    }
+
+    #[test]
+    fn test_tag_local_user_mut_sets_and_clears() {
+        let mut arguments = Arguments::tag_args(HashSet::new());
+        *arguments.tag_local_user_mut().unwrap() = Some("ABCD1234".to_string());
+        assert_eq!(arguments.tag_local_user(), Some("ABCD1234"));
+
+        *arguments.tag_local_user_mut().unwrap() = None;
+        assert_eq!(arguments.tag_local_user(), None);
+    }
+
+    #[test]
+    fn test_tag_local_user_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.tag_local_user(), None);
     }
 
     #[test]

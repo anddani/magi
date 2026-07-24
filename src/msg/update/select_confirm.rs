@@ -2,6 +2,7 @@ use crate::{
     git::reset::has_uncommitted_changes,
     model::{
         LineContent, Model, ViewMode,
+        arguments::Arguments,
         popup::{
             CommitPopupState, ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand,
             SelectResult,
@@ -158,6 +159,9 @@ fn route_result(
         (Some(OnSelect::WorktreeBranch), SelectResult::Selected(starting_point)) => {
             Some(Message::ShowWorktreeBranchNameInput { starting_point })
         }
+        (Some(OnSelect::WorktreeMove), SelectResult::Selected(worktree)) => {
+            Some(Message::ShowWorktreeMovePathInput { worktree })
+        }
         (Some(OnSelect::ResetBranchPick), SelectResult::Selected(branch)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
                 title: "Reset branch to".to_string(),
@@ -298,6 +302,9 @@ fn route_result(
             }));
             None
         }
+        (Some(OnSelect::ShowStash), SelectResult::Selected(stash_display)) => {
+            parse_stash_index(&stash_display).map(Message::ShowStashDiff)
+        }
         (Some(OnSelect::MergeElsewhere), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Branch(branch)))
         }
@@ -397,8 +404,38 @@ fn route_result(
             )));
             None
         }
+        (Some(OnSelect::TagSignAs), SelectResult::Selected(key)) => {
+            // Options are "<keyid> <user id>" entries; only the leading
+            // keyid is passed to git
+            let key = key
+                .split_whitespace()
+                .next()
+                .unwrap_or_default()
+                .to_string();
+            if !key.is_empty() {
+                match model
+                    .arguments
+                    .as_mut()
+                    .and_then(|a| a.tag_local_user_mut())
+                {
+                    Some(local_user) => *local_user = Some(key),
+                    None => {
+                        model.arguments = Some(Arguments::TagArguments {
+                            args: Default::default(),
+                            local_user: Some(key),
+                        })
+                    }
+                }
+            }
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+            None
+        }
         (
-            Some(OnSelect::RevertMergeMainline { hashes, no_commit }),
+            Some(OnSelect::RevertMergeMainline {
+                hashes,
+                no_commit,
+                strategy,
+            }),
             SelectResult::Selected(selection),
         ) => {
             let mainline = selection
@@ -410,10 +447,32 @@ fn route_result(
                 hashes,
                 mainline,
                 no_commit,
+                strategy,
             }))
+        }
+        (Some(OnSelect::RevertStrategy { mut revert_state }), result) => {
+            // Enter on an empty filter clears the strategy; a selection sets it
+            revert_state.strategy = match result {
+                SelectResult::Selected(strategy) => Some(strategy),
+                _ => None,
+            };
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+                revert_state,
+            )));
+            None
         }
         _ => None,
     }
+}
+
+/// Parses the stash index from a display string like "stash@{2}: message".
+fn parse_stash_index(stash_display: &str) -> Option<usize> {
+    stash_display
+        .strip_prefix("stash@{")?
+        .split_once('}')?
+        .0
+        .parse()
+        .ok()
 }
 
 #[cfg(test)]
@@ -444,6 +503,7 @@ mod tests {
             log_pick_on_select: None,
             pty_state: None,
             arg_mode: false,
+            equals_arg_mode: false,
             pending_g: false,
             arguments: None,
             view_mode: ViewMode::Status,
@@ -630,6 +690,33 @@ mod tests {
             )))
         );
         assert!(model.popup.is_none());
+    }
+
+    #[test]
+    fn test_select_popup_routes_show_stash() {
+        use crate::model::select_popup::SelectPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+            SelectPopupState::new(
+                "Show stash".to_string(),
+                vec!["stash@{1}: WIP on main".to_string()],
+                OnSelect::ShowStash,
+            ),
+        )));
+
+        let result = update(&mut model);
+
+        assert_eq!(result, Some(Message::ShowStashDiff(1)));
+        assert!(model.popup.is_none());
+    }
+
+    #[test]
+    fn test_parse_stash_index() {
+        assert_eq!(parse_stash_index("stash@{0}: WIP on main"), Some(0));
+        assert_eq!(parse_stash_index("stash@{12}: some message"), Some(12));
+        assert_eq!(parse_stash_index("stash@{}"), None);
+        assert_eq!(parse_stash_index("not a stash"), None);
     }
 
     #[test]
