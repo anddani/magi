@@ -5,7 +5,7 @@ use crate::{
     model::{
         Model, Toast, ToastStyle,
         arguments::{Arguments::CommitArguments, CommitArgument, PopupArgument},
-        popup::{PopupContent, PopupContentCommand},
+        popup::{CommitPopupState, PopupContent, PopupContentCommand},
     },
     msg::Message,
 };
@@ -13,12 +13,23 @@ use crate::{
 /// Duration for toast notifications
 pub const TOAST_DURATION: Duration = Duration::from_secs(5);
 
-/// Dismisses the commit popup and returns the author override (`-A`) it held,
-/// if any.
-pub fn take_commit_author(model: &mut Model) -> Option<String> {
+/// Dismisses the commit popup and returns the value arguments (`-A` author
+/// and `-C` reuse-message) it held.
+pub fn take_commit_popup_state(model: &mut Model) -> CommitPopupState {
     match model.popup.take() {
-        Some(PopupContent::Command(PopupContentCommand::Commit(state))) => state.author,
-        _ => None,
+        Some(PopupContent::Command(PopupContentCommand::Commit(state))) => state,
+        _ => CommitPopupState::default(),
+    }
+}
+
+/// Appends the flags for the commit popup's value arguments (`--author=` and
+/// `--reuse-message=`) to the given flag list.
+pub fn push_value_flags(flags: &mut Vec<String>, state: CommitPopupState) {
+    if let Some(author) = state.author {
+        flags.push(format!("--author={}", author));
+    }
+    if let Some(rev) = state.reuse_message {
+        flags.push(format!("--reuse-message={}", rev));
     }
 }
 
@@ -42,8 +53,8 @@ pub fn check_signing(model: &Model) -> Option<String> {
 }
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    // Dismiss the commit popup, keeping the author override it carries
-    let author = take_commit_author(model);
+    // Dismiss the commit popup, keeping the value arguments it carries
+    let popup_state = take_commit_popup_state(model);
 
     let allow_no_staged: bool = if let Some(CommitArguments(ref args)) = model.arguments {
         args.contains(&CommitArgument::StageAll) || args.contains(&CommitArgument::AllowEmpty)
@@ -76,9 +87,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
     } else {
         vec![]
     };
-    if let Some(author) = author {
-        flags.push(format!("--author={}", author));
-    }
+    push_value_flags(&mut flags, popup_state);
 
     match commit::run_commit_with_editor(repo_path, flags) {
         Ok(CommitResult { success, message }) => {
@@ -100,4 +109,35 @@ pub fn update(model: &mut Model) -> Option<Message> {
     }
 
     Some(Message::Refresh)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_push_value_flags_empty_state_adds_nothing() {
+        let mut flags = vec!["--verbose".to_string()];
+        push_value_flags(&mut flags, CommitPopupState::default());
+        assert_eq!(flags, vec!["--verbose".to_string()]);
+    }
+
+    #[test]
+    fn test_push_value_flags_adds_author_and_reuse_message() {
+        let mut flags = vec![];
+        push_value_flags(
+            &mut flags,
+            CommitPopupState {
+                author: Some("Jane Doe <jane@example.com>".to_string()),
+                reuse_message: Some("ORIG_HEAD".to_string()),
+            },
+        );
+        assert_eq!(
+            flags,
+            vec![
+                "--author=Jane Doe <jane@example.com>".to_string(),
+                "--reuse-message=ORIG_HEAD".to_string(),
+            ]
+        );
+    }
 }

@@ -168,8 +168,12 @@ pub enum OnSelect {
     DeleteTag,
     /// Select a remote to prune tags against
     PruneTagsRemotePick,
-    /// Select an author to override the commit author with (`--author=`)
-    CommitAuthor,
+    /// Select an author to override the commit author with (`--author=`).
+    /// Carries the rest of the commit popup state so it survives the picker.
+    CommitAuthor { reuse_message: Option<String> },
+    /// Select the commit whose message to reuse (`--reuse-message=`).
+    /// Carries the rest of the commit popup state so it survives the picker.
+    CommitReuseMessage { author: Option<String> },
     /// Select a gpg key to sign the tag with (`--local-user=`)
     TagSignAs,
     /// Select the mainline parent number when reverting a merge commit

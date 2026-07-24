@@ -267,6 +267,20 @@ fn snapshot_commit_popup_with_author() {
         &test_repo,
         PopupContentCommand::Commit(CommitPopupState {
             author: Some("André Danielsson <andre@example.com>".to_string()),
+            reuse_message: None,
+        }),
+    );
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_commit_popup_with_reuse_message() {
+    let test_repo = TestRepo::new();
+    let model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Commit(CommitPopupState {
+            author: None,
+            reuse_message: Some("ORIG_HEAD".to_string()),
         }),
     );
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
