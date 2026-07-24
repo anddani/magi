@@ -12,12 +12,14 @@ use super::commit_utils::{build_push_remote_map, enrich_refs_with_push_remote, s
 const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
-/// Fetches git log entries, optionally with graph and colored graph lines
+/// Fetches git log entries, optionally with graph, colored graph lines and
+/// refnames (--decorate)
 pub fn get_log_entries(
     repository: &Repository,
     log_type: &LogType,
     graph: bool,
     color: bool,
+    decorate: bool,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
@@ -49,18 +51,24 @@ pub fn get_log_entries(
     // Build the git log command similar to Magit
     // Format: hash<sep>refs<sep>author<sep>date<sep>message
     // Reflogs use the reflog subject (%gs, e.g. "commit: fix bug") as message
+    // Without --decorate the refs field is left empty, like Magit's "%s"-only
+    // format when "--decorate" is absent from the arguments
     let message_format = if reflog { "%gs" } else { "%s" };
+    let refs_format = if decorate { "%D" } else { "" };
     let format = format!(
-        "%h{}%D{}%aN{}%ar{}{}",
-        SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, message_format
+        "%h{}{}{}%aN{}%ar{}{}",
+        SEPARATOR, refs_format, SEPARATOR, SEPARATOR, SEPARATOR, message_format
     );
 
     let mut args = vec![
         "log".to_string(),
         format!("--format={}", format),
-        "--decorate=short".to_string(),
         format!("-n{}", MAX_LOG_ENTRIES),
     ];
+
+    if decorate {
+        args.push("--decorate=short".to_string());
+    }
 
     // git rejects --graph together with --walk-reflogs
     if graph && !reflog {
@@ -455,6 +463,7 @@ mod tests {
             &LogType::Other("feature".to_string()),
             true,
             false,
+            true,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -473,7 +482,8 @@ mod tests {
             .stage_files(&["file.txt"])
             .commit("Second commit");
 
-        let entries = get_log_entries(&test_repo.repo, &LogType::Reflog, true, false).unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Reflog, true, false, true).unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         // Reflog entries use the reflog subject ("<command>: <rest>")
@@ -499,6 +509,7 @@ mod tests {
             &LogType::ReflogOther("feature".to_string()),
             true,
             false,
+            true,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -524,6 +535,7 @@ mod tests {
             &LogType::ReflogOther("HEAD".to_string()),
             true,
             false,
+            true,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -546,7 +558,8 @@ mod tests {
             .write_file_content("file.txt", "second")
             .create_stash("Second stash");
 
-        let entries = get_log_entries(&test_repo.repo, &LogType::Stashes, true, false).unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Stashes, true, false, true).unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         // Both stashes are listed, most recent first
@@ -563,7 +576,8 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries = get_log_entries(&test_repo.repo, &LogType::Stashes, true, false).unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Stashes, true, false, true).unwrap();
         assert!(entries.is_empty());
     }
 
@@ -710,7 +724,8 @@ mod tests {
             .stage_files(&["file.txt"])
             .commit("Second commit");
 
-        let entries = get_log_entries(&test_repo.repo, &LogType::Related, true, false).unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Related, true, false, true).unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         assert!(messages.contains(&"Initial commit".to_string()));
@@ -760,13 +775,45 @@ mod tests {
             .stage_files(&["file.txt"])
             .commit("Second commit");
 
-        let entries = get_log_entries(&test_repo.repo, &LogType::Current, true, true).unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Current, true, true, true).unwrap();
 
         // The graph is colored with ANSI codes, but the commit info is not
         let entry = entries.first().unwrap();
         assert!(entry.graph.contains('*'));
         assert_eq!(entry.message, Some("Second commit".to_string()));
         assert!(!entry.message.as_ref().unwrap().contains('\x1b'));
+    }
+
+    #[test]
+    fn test_get_log_entries_decorate_shows_refnames() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Current, true, false, true).unwrap();
+
+        // HEAD is on main, so the commit is decorated with the branch name
+        let entry = entries.first().unwrap();
+        assert!(entry.refs.iter().any(|r| r.name == "main"));
+        assert_eq!(entry.message, Some("Initial commit".to_string()));
+    }
+
+    #[test]
+    fn test_get_log_entries_no_decorate_hides_refnames() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Current, true, false, false).unwrap();
+
+        // Without --decorate no refs are attached, but the rest is intact
+        let entry = entries.first().unwrap();
+        assert!(entry.refs.is_empty());
+        assert!(entry.hash.is_some());
+        assert_eq!(entry.message, Some("Initial commit".to_string()));
     }
 
     #[test]

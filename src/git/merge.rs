@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::{
     errors::MagiResult,
     git::{
-        commit::{CommitResult, get_commit_result},
+        commit::{CommitResult, get_commit_result_with_stderr, status_capturing_stderr},
         git_cmd,
     },
 };
@@ -21,21 +21,27 @@ pub fn conflicted_files<P: AsRef<Path>>(repo_path: P) -> MagiResult<Vec<String>>
 }
 
 pub fn run_merge_continue_with_editor<P: AsRef<Path>>(repo_path: P) -> MagiResult<CommitResult> {
-    let status = git_cmd(&repo_path, &["merge", "--continue"]).status()?;
+    let (status, stderr) =
+        status_capturing_stderr(&mut git_cmd(&repo_path, &["merge", "--continue"]))?;
 
-    get_commit_result(repo_path, status, "Merge continue")
+    get_commit_result_with_stderr(repo_path, status, &stderr, "Merge continue")
 }
 
-/// Runs `git merge <branch>`, which may open the user's configured editor
-/// for the merge commit message. The caller must ensure the TUI is suspended
-/// (via `RunningState::LaunchExternalCommand`) before calling this.
+/// Runs `git merge [extra_args] <branch>`, which may open the user's
+/// configured editor for the merge commit message. The caller must ensure the
+/// TUI is suspended (via `RunningState::LaunchExternalCommand`) before
+/// calling this.
 pub fn run_merge_with_editor<P: AsRef<Path>>(
     repo_path: P,
     branch: &str,
+    extra_args: &[String],
 ) -> MagiResult<CommitResult> {
-    let status = git_cmd(&repo_path, &["merge", branch]).status()?;
+    let mut args = vec!["merge"];
+    args.extend(extra_args.iter().map(String::as_str));
+    args.push(branch);
+    let (status, stderr) = status_capturing_stderr(&mut git_cmd(&repo_path, &args))?;
 
-    get_commit_result(repo_path, status, "Merge")
+    get_commit_result_with_stderr(repo_path, status, &stderr, "Merge")
 }
 
 /// Runs `git merge --edit --no-ff <branch>`, which always creates a merge
@@ -46,17 +52,24 @@ pub fn run_merge_edit_with_editor<P: AsRef<Path>>(
     repo_path: P,
     branch: &str,
 ) -> MagiResult<CommitResult> {
-    let status = git_cmd(&repo_path, &["merge", "--edit", "--no-ff", branch]).status()?;
+    let (status, stderr) = status_capturing_stderr(&mut git_cmd(
+        &repo_path,
+        &["merge", "--edit", "--no-ff", branch],
+    ))?;
 
-    get_commit_result(repo_path, status, "Merge")
+    get_commit_result_with_stderr(repo_path, status, &stderr, "Merge")
 }
 
 /// Runs `git merge --no-edit <branch>` and, when the merge succeeds, deletes
 /// the merged branch (`git branch -D <branch>`). `--no-edit` never opens an
 /// editor, so the TUI does not need to be suspended. When the merge stops on
 /// conflicts the branch is kept so the merge can be resolved or aborted.
-pub fn run_merge_absorb<P: AsRef<Path>>(repo_path: P, branch: &str) -> MagiResult<CommitResult> {
-    merge_branch_and_delete(repo_path.as_ref(), branch, "Absorb", "Absorbed")
+pub fn run_merge_absorb<P: AsRef<Path>>(
+    repo_path: P,
+    branch: &str,
+    extra_args: &[String],
+) -> MagiResult<CommitResult> {
+    merge_branch_and_delete(repo_path.as_ref(), branch, extra_args, "Absorb", "Absorbed")
 }
 
 /// Checks out `into` and then merges `branch` into it with absorb semantics:
@@ -67,6 +80,7 @@ pub fn run_merge_dissolve<P: AsRef<Path>>(
     repo_path: P,
     branch: &str,
     into: &str,
+    extra_args: &[String],
 ) -> MagiResult<CommitResult> {
     let repo_path = repo_path.as_ref();
     let checkout = git_cmd(repo_path, &["checkout", into]).output()?;
@@ -81,7 +95,7 @@ pub fn run_merge_dissolve<P: AsRef<Path>>(
         });
     }
 
-    merge_branch_and_delete(repo_path, branch, "Dissolve", "Dissolved")
+    merge_branch_and_delete(repo_path, branch, extra_args, "Dissolve", "Dissolved")
 }
 
 /// Merges `branch` into the checked-out branch (`git merge --no-edit`) and
@@ -90,12 +104,17 @@ pub fn run_merge_dissolve<P: AsRef<Path>>(
 fn merge_branch_and_delete(
     repo_path: &Path,
     branch: &str,
+    extra_args: &[String],
     label: &str,
     merged: &str,
 ) -> MagiResult<CommitResult> {
-    let output = git_cmd(repo_path, &["merge", "--no-edit", branch]).output()?;
+    let mut args = vec!["merge", "--no-edit"];
+    args.extend(extra_args.iter().map(String::as_str));
+    args.push(branch);
+    let output = git_cmd(repo_path, &args).output()?;
 
-    let result = get_commit_result(repo_path, output.status, label)?;
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let result = get_commit_result_with_stderr(repo_path, output.status, &stderr, label)?;
     if !result.success {
         return Ok(result);
     }
@@ -208,11 +227,62 @@ mod tests {
         test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
         assert!(run_git(&test_repo, &["checkout", "main"]).status.success());
 
-        let result = run_merge_with_editor(test_repo.repo_path(), "feature").unwrap();
+        let result = run_merge_with_editor(test_repo.repo_path(), "feature", &[]).unwrap();
 
         assert!(result.success);
         assert_eq!(result.message, "Merge: Feature commit");
         assert_eq!(test_repo.head_hash(), test_repo.branch_hash("feature"));
+        assert!(!merge_in_progress(&test_repo));
+    }
+
+    #[test]
+    fn test_merge_branch_ff_only_fast_forwards() {
+        let test_repo = TestRepo::new();
+        disable_editor(&test_repo);
+        test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+        // Put a commit on feature only, so merging it into main fast-forwards.
+        assert!(
+            run_git(&test_repo, &["checkout", "-b", "feature"])
+                .status
+                .success()
+        );
+        test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+        assert!(run_git(&test_repo, &["checkout", "main"]).status.success());
+
+        let result =
+            run_merge_with_editor(test_repo.repo_path(), "feature", &["--ff-only".to_string()])
+                .unwrap();
+
+        assert!(result.success);
+        assert_eq!(test_repo.head_hash(), test_repo.branch_hash("feature"));
+        assert!(!merge_in_progress(&test_repo));
+    }
+
+    #[test]
+    fn test_merge_branch_ff_only_refuses_divergent_branches() {
+        let test_repo = TestRepo::new();
+        disable_editor(&test_repo);
+        // Divergent branches: fast-forward is impossible, so --ff-only aborts.
+        setup_divergent_branches(
+            &test_repo,
+            ("main.txt", "main content\n"),
+            ("feature.txt", "feature content\n"),
+        );
+        let head_before = test_repo.head_hash();
+
+        let result =
+            run_merge_with_editor(test_repo.repo_path(), "feature", &["--ff-only".to_string()])
+                .unwrap();
+
+        assert!(!result.success);
+        // The toast must explain why git refused, not just say "aborted".
+        assert!(
+            result.message.to_lowercase().contains("fast-forward"),
+            "unexpected message: {}",
+            result.message
+        );
+        assert_eq!(test_repo.head_hash(), head_before);
         assert!(!merge_in_progress(&test_repo));
     }
 
@@ -227,7 +297,7 @@ mod tests {
             ("feature.txt", "feature content\n"),
         );
 
-        let result = run_merge_with_editor(test_repo.repo_path(), "feature").unwrap();
+        let result = run_merge_with_editor(test_repo.repo_path(), "feature", &[]).unwrap();
 
         assert!(result.success);
         assert!(
@@ -328,7 +398,7 @@ mod tests {
             ("base.txt", "feature change\n"),
         );
 
-        let result = run_merge_with_editor(test_repo.repo_path(), "feature").unwrap();
+        let result = run_merge_with_editor(test_repo.repo_path(), "feature", &[]).unwrap();
 
         assert!(!result.success);
         assert_eq!(result.message, "Merge aborted");
@@ -345,7 +415,7 @@ mod tests {
             ("feature.txt", "feature content\n"),
         );
 
-        let result = run_merge_absorb(test_repo.repo_path(), "feature").unwrap();
+        let result = run_merge_absorb(test_repo.repo_path(), "feature", &[]).unwrap();
 
         assert!(result.success);
         assert!(
@@ -383,7 +453,7 @@ mod tests {
         assert!(run_git(&test_repo, &["checkout", "main"]).status.success());
         let feature_hash = test_repo.branch_hash("feature");
 
-        let result = run_merge_absorb(test_repo.repo_path(), "feature").unwrap();
+        let result = run_merge_absorb(test_repo.repo_path(), "feature", &[]).unwrap();
 
         assert!(result.success);
         assert_eq!(result.message, "Absorb: Feature commit");
@@ -407,7 +477,7 @@ mod tests {
             ("base.txt", "feature change\n"),
         );
 
-        let result = run_merge_absorb(test_repo.repo_path(), "feature").unwrap();
+        let result = run_merge_absorb(test_repo.repo_path(), "feature", &[]).unwrap();
 
         assert!(!result.success);
         assert_eq!(result.message, "Absorb aborted");
@@ -437,7 +507,7 @@ mod tests {
                 .success()
         );
 
-        let result = run_merge_dissolve(test_repo.repo_path(), "feature", "main").unwrap();
+        let result = run_merge_dissolve(test_repo.repo_path(), "feature", "main", &[]).unwrap();
 
         assert!(result.success);
         assert!(
@@ -479,7 +549,7 @@ mod tests {
         test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
         let feature_hash = test_repo.branch_hash("feature");
 
-        let result = run_merge_dissolve(test_repo.repo_path(), "feature", "main").unwrap();
+        let result = run_merge_dissolve(test_repo.repo_path(), "feature", "main", &[]).unwrap();
 
         assert!(result.success);
         assert_eq!(result.message, "Dissolve: Feature commit");
@@ -509,7 +579,7 @@ mod tests {
                 .success()
         );
 
-        let result = run_merge_dissolve(test_repo.repo_path(), "feature", "main").unwrap();
+        let result = run_merge_dissolve(test_repo.repo_path(), "feature", "main", &[]).unwrap();
 
         assert!(!result.success);
         assert_eq!(result.message, "Dissolve aborted");
@@ -540,7 +610,7 @@ mod tests {
         );
 
         let result =
-            run_merge_dissolve(test_repo.repo_path(), "feature", "no-such-branch").unwrap();
+            run_merge_dissolve(test_repo.repo_path(), "feature", "no-such-branch", &[]).unwrap();
 
         assert!(!result.success);
         assert!(
@@ -571,7 +641,11 @@ mod tests {
         let result = run_merge_continue_with_editor(test_repo.repo_path()).unwrap();
 
         assert!(!result.success);
-        assert_eq!(result.message, "Merge continue aborted");
+        assert!(
+            result.message.starts_with("Merge continue aborted: "),
+            "expected the message to include git's reason: {}",
+            result.message
+        );
     }
 
     #[test]
@@ -629,7 +703,11 @@ mod tests {
         let result = run_merge_continue_with_editor(test_repo.repo_path()).unwrap();
 
         assert!(!result.success);
-        assert_eq!(result.message, "Merge continue aborted");
+        assert!(
+            result.message.starts_with("Merge continue aborted"),
+            "unexpected message: {}",
+            result.message
+        );
         assert!(merge_in_progress(&test_repo));
     }
 
@@ -695,6 +773,10 @@ mod tests {
         assert!(!merge_in_progress(&test_repo));
         let result = run_merge_continue_with_editor(test_repo.repo_path()).unwrap();
         assert!(!result.success);
-        assert_eq!(result.message, "Merge continue aborted");
+        assert!(
+            result.message.starts_with("Merge continue aborted: "),
+            "expected the message to include git's reason: {}",
+            result.message
+        );
     }
 }

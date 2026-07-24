@@ -35,6 +35,7 @@ pub mod credential;
 mod diff_utils;
 pub mod discard;
 pub mod file_checkout;
+pub mod gpg;
 pub mod info;
 pub mod log;
 pub mod merge;

@@ -202,7 +202,9 @@ Here are a few features that the aforementioned applications lack:
         - [x] Other reflog
         - [ ] HEAD reflog
         - [ ] Shortlog
+        - [x] Formatting arguments (--graph, --color, --decorate)
     - [x] Merge
+        - [x] Fast-forward only argument (`--ff-only`)
     - [ ] Remote
     - [ ] Submodule
     - [ ] Subtree
@@ -211,13 +213,20 @@ Here are a few features that the aforementioned applications lack:
     - [x] Tag
     - [ ] Note
     - [x] Revert
+        - [x] Strategy argument (`=s`, `--strategy=`)
     - [ ] Apply patches
     - [ ] Format patches
     - [x] Reset
     - [ ] Show refs
     - [x] Stash
+        - [x] Stash both/index/worktree/keeping index
+        - [x] Snapshot
+        - [x] Apply/pop/drop
+        - [x] List
+        - [x] Show
     - [ ] Worktree
         - [x] Create new worktree
+        - [x] Move worktree
         - [ ] Checkout/manage worktrees
 - [x] Applying changes
 

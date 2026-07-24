@@ -67,7 +67,7 @@ fn abort_message(op: &str, stderr: &str) -> String {
 
 /// Runs a git command with stdin/stdout attached to the terminal (so the
 /// user's editor works) while capturing stderr for error reporting.
-fn status_capturing_stderr(cmd: &mut Command) -> std::io::Result<(ExitStatus, String)> {
+pub(crate) fn status_capturing_stderr(cmd: &mut Command) -> std::io::Result<(ExitStatus, String)> {
     let child = cmd.stderr(Stdio::piped()).spawn()?;
     let output = child.wait_with_output()?;
     Ok((
@@ -257,9 +257,14 @@ mod tests {
     /// Helper to get log entries for testing (filters out graph-only entries)
     fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<crate::model::LogEntry> {
         let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-        let mut entries =
-            super::super::log::get_log_entries(&repo, &crate::msg::LogType::Current, true, false)
-                .unwrap();
+        let mut entries = super::super::log::get_log_entries(
+            &repo,
+            &crate::msg::LogType::Current,
+            true,
+            false,
+            true,
+        )
+        .unwrap();
         entries.retain(|e| e.is_commit());
         entries
     }

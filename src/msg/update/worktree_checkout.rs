@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{
     git::{
         GitInfo,
-        worktree::{WorktreeAddResult, worktree_add},
+        worktree::{WorktreeResult, worktree_add},
     },
     model::{Model, popup::PopupContent},
     msg::Message,
@@ -11,14 +11,14 @@ use crate::{
 
 pub fn update(model: &mut Model, branch: String, path: String, checkout: bool) -> Option<Message> {
     match worktree_add(&model.workdir, &path, &branch) {
-        Ok(WorktreeAddResult::Success) => {
+        Ok(WorktreeResult::Success) => {
             if checkout {
                 let worktree_path = resolve_path(&model.workdir, &path);
                 switch_to_worktree(model, worktree_path);
             }
             Some(Message::Refresh)
         }
-        Ok(WorktreeAddResult::Error(err)) => {
+        Ok(WorktreeResult::Error(err)) => {
             model.popup = Some(PopupContent::Error { message: err });
             None
         }

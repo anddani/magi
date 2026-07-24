@@ -10,7 +10,7 @@ use crate::{
         file_checkout::get_tracked_files,
         open_pr::has_any_remote,
         push::{get_current_branch, get_local_tags, get_remotes, get_upstream_branch},
-        worktree::get_checked_out_branches,
+        worktree::{get_checked_out_branches, list_linked_worktrees},
     },
     i18n,
     model::{
@@ -145,6 +145,7 @@ fn fetch_options(model: &Model, source: &OptionsSource) -> Vec<String> {
             .iter()
             .map(|mode| mode.value().to_string())
             .collect(),
+        OptionsSource::LinkedWorktrees => list_linked_worktrees(&model.workdir),
     }
 }
 
@@ -445,6 +446,7 @@ fn handle_stash_cursor(
         OnSelect::ApplyStash => StashOp::Apply,
         OnSelect::PopStash => StashOp::Pop,
         OnSelect::DropStash => StashOp::Drop,
+        OnSelect::ShowStash => StashOp::Show,
         _ => return None,
     };
 
@@ -500,6 +502,7 @@ fn handle_stash_cursor(
                 }));
                 None
             }
+            StashOp::Show => Some(Message::ShowStashDiff(entry.index)),
         };
         return Some(msg);
     }
@@ -511,6 +514,7 @@ enum StashOp {
     Apply,
     Pop,
     Drop,
+    Show,
 }
 
 // ── Skip-if-one-remote shortcuts ──────────────────────────────────────────────
@@ -601,6 +605,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         OnSelect::WorktreeAdd { .. }
         | OnSelect::WorktreeBranch
         | OnSelect::CreateNewBranchBase { .. } => "No branches or tags found".to_string(),
+        OnSelect::WorktreeMove => "No linked worktrees found".to_string(),
         OnSelect::FileCheckoutRevision
         | OnSelect::LogOther
         | OnSelect::ReflogOther
@@ -611,7 +616,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::CreateTagTarget { .. }
         | OnSelect::RebaseSubsetOnto => "No references found".to_string(),
         OnSelect::FileCheckoutFile { .. } => "No tracked files found".to_string(),
-        OnSelect::ApplyStash | OnSelect::PopStash | OnSelect::DropStash => {
+        OnSelect::ApplyStash | OnSelect::PopStash | OnSelect::DropStash | OnSelect::ShowStash => {
             "No stashes found".to_string()
         }
         OnSelect::ApplyPick

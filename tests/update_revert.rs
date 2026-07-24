@@ -7,7 +7,9 @@ use magi::{
         arguments::{Argument, Arguments, RevertArgument},
         popup::{PopupContent, PopupContentCommand, RevertPopupState},
     },
-    msg::{LogType, Message, RevertCommand, update::update, util::is_external_command},
+    msg::{
+        LogType, Message, RevertCommand, SelectMessage, update::update, util::is_external_command,
+    },
 };
 
 mod utils;
@@ -162,7 +164,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
 
     // Populate the model with log-view lines (as ShowLog does)
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let log_lines: Vec<Line> = get_log_entries(&repo, &LogType::Current, true, false)
+    let log_lines: Vec<Line> = get_log_entries(&repo, &LogType::Current, true, false, true)
         .unwrap()
         .into_iter()
         .map(|entry| Line {
@@ -189,6 +191,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
         picking: false,
         graph: true,
         color: false,
+        decorate: true,
     };
     model.ui_model.cursor_position = log_commit_pos;
 
@@ -215,6 +218,7 @@ fn test_underscore_in_revert_popup_with_commits_triggers_revert() {
             in_progress: false,
             selected_commits: vec!["abc1234".to_string()],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -224,6 +228,7 @@ fn test_underscore_in_revert_popup_with_commits_triggers_revert() {
         Some(Message::Revert(RevertCommand::Commits {
             hashes: vec!["abc1234".to_string()],
             mainline: None,
+            strategy: None,
         }))
     );
 }
@@ -239,6 +244,7 @@ fn test_underscore_in_revert_popup_without_commits_does_nothing() {
             in_progress: false,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -257,6 +263,7 @@ fn test_underscore_in_revert_popup_in_progress_triggers_continue() {
             in_progress: true,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -275,6 +282,7 @@ fn test_s_in_revert_popup_in_progress_triggers_skip() {
             in_progress: true,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -293,6 +301,7 @@ fn test_a_in_revert_popup_in_progress_triggers_abort() {
             in_progress: true,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -311,6 +320,7 @@ fn test_s_in_revert_popup_not_in_progress_does_nothing() {
             in_progress: false,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -329,6 +339,7 @@ fn test_q_dismisses_revert_popup() {
             in_progress: false,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -347,6 +358,7 @@ fn test_esc_dismisses_revert_popup() {
             in_progress: false,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -367,6 +379,7 @@ fn test_v_in_revert_popup_with_commits_triggers_no_commit_revert() {
             in_progress: false,
             selected_commits: vec!["abc1234".to_string()],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -376,6 +389,7 @@ fn test_v_in_revert_popup_with_commits_triggers_no_commit_revert() {
         Some(Message::Revert(RevertCommand::NoCommit {
             hashes: vec!["abc1234".to_string()],
             mainline: None,
+            strategy: None,
         }))
     );
 }
@@ -391,6 +405,7 @@ fn test_v_in_revert_popup_without_commits_does_nothing() {
             in_progress: false,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -409,6 +424,7 @@ fn test_v_in_revert_popup_in_progress_does_nothing() {
             in_progress: true,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
 
@@ -426,6 +442,7 @@ fn revert_popup_model(test_repo: &TestRepo) -> magi::model::Model {
             in_progress: false,
             selected_commits: vec![],
             mainline: None,
+            strategy: None,
         },
     )));
     model
@@ -507,6 +524,7 @@ fn test_revert_commits_with_edit_returns_with_editor_command() {
         Message::Revert(RevertCommand::Commits {
             hashes: vec![hash.clone()],
             mainline: None,
+            strategy: None,
         }),
     );
 
@@ -536,6 +554,7 @@ fn test_revert_commits_with_no_edit_runs_in_pty() {
         Message::Revert(RevertCommand::Commits {
             hashes: vec![hash],
             mainline: None,
+            strategy: None,
         }),
     );
 
@@ -562,6 +581,7 @@ fn test_revert_commits_with_both_edit_flags_favors_no_edit() {
         Message::Revert(RevertCommand::Commits {
             hashes: vec![hash],
             mainline: None,
+            strategy: None,
         }),
     );
 
@@ -609,4 +629,188 @@ fn test_revert_with_editor_creates_revert_commit() {
     assert!(summary.starts_with("Revert \"Second commit\""));
     let content = std::fs::read_to_string(test_repo.repo_path().join("file1.txt")).unwrap();
     assert_eq!(content, "one");
+}
+
+// ── Strategy argument (=s) ────────────────────────────────────────────────────
+
+fn revert_popup_state(strategy: Option<String>) -> RevertPopupState {
+    RevertPopupState {
+        in_progress: false,
+        selected_commits: vec!["abc1234".to_string()],
+        mainline: None,
+        strategy,
+    }
+}
+
+#[test]
+fn test_equals_in_revert_popup_enters_equals_arg_mode() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state(None),
+    )));
+
+    let result = handle_key(key(KeyCode::Char('=')), &model);
+    assert_eq!(result, Some(Message::EnterEqualsArgMode));
+
+    let result = update(&mut model, Message::EnterEqualsArgMode);
+    assert_eq!(result, None);
+    assert!(model.equals_arg_mode);
+}
+
+#[test]
+fn test_s_in_equals_arg_mode_shows_strategy_select() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state(None),
+    )));
+    model.equals_arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('s')), &model);
+    assert_eq!(result, Some(Message::ShowRevertStrategySelect));
+}
+
+#[test]
+fn test_other_key_in_equals_arg_mode_exits_arg_mode() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state(None),
+    )));
+    model.equals_arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('x')), &model);
+    assert_eq!(result, Some(Message::ExitArgMode));
+
+    let result = update(&mut model, Message::ExitArgMode);
+    assert_eq!(result, None);
+    assert!(!model.equals_arg_mode);
+}
+
+#[test]
+fn test_show_revert_strategy_select_opens_picker_with_strategies() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state(None),
+    )));
+    model.equals_arg_mode = true;
+
+    let result = update(&mut model, Message::ShowRevertStrategySelect);
+    assert_eq!(result, None);
+    assert!(!model.equals_arg_mode);
+
+    if let Some(PopupContent::Command(PopupContentCommand::Select(state))) = &model.popup {
+        assert_eq!(
+            state.all_options,
+            vec!["resolve", "recursive", "octopus", "ours", "subtree"]
+        );
+    } else {
+        panic!("Expected strategy select popup");
+    }
+}
+
+#[test]
+fn test_confirming_strategy_select_restores_revert_popup_with_strategy() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state(None),
+    )));
+    update(&mut model, Message::ShowRevertStrategySelect);
+
+    // First option ("resolve") is selected by default
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(result, None);
+
+    if let Some(PopupContent::Command(PopupContentCommand::Revert(state))) = &model.popup {
+        assert_eq!(state.strategy.as_deref(), Some("resolve"));
+        assert_eq!(state.selected_commits, vec!["abc1234".to_string()]);
+    } else {
+        panic!("Expected revert popup with strategy set");
+    }
+}
+
+#[test]
+fn test_show_revert_strategy_select_clears_already_set_strategy() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state(Some("ours".to_string())),
+    )));
+
+    let result = update(&mut model, Message::ShowRevertStrategySelect);
+    assert_eq!(result, None);
+
+    if let Some(PopupContent::Command(PopupContentCommand::Revert(state))) = &model.popup {
+        assert_eq!(state.strategy, None);
+    } else {
+        panic!("Expected revert popup with strategy cleared");
+    }
+}
+
+#[test]
+fn test_underscore_with_strategy_includes_strategy_in_command() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state(Some("recursive".to_string())),
+    )));
+
+    let result = handle_key(key(KeyCode::Char('_')), &model);
+    assert_eq!(
+        result,
+        Some(Message::Revert(RevertCommand::Commits {
+            hashes: vec!["abc1234".to_string()],
+            mainline: None,
+            strategy: Some("recursive".to_string()),
+        }))
+    );
+}
+
+#[test]
+fn test_revert_commits_with_strategy_passes_flag_to_git() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    test_repo.commit_file("file1.txt", "content2", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::RevertArguments(
+        [RevertArgument::Edit].into_iter().collect(),
+    ));
+
+    let hash = test_repo.repo.head().unwrap().target().unwrap().to_string();
+    let result = update(
+        &mut model,
+        Message::Revert(RevertCommand::Commits {
+            hashes: vec![hash.clone()],
+            mainline: None,
+            strategy: Some("ours".to_string()),
+        }),
+    );
+
+    let expected = Message::Revert(RevertCommand::WithEditor {
+        args: vec![
+            "revert".to_string(),
+            "--strategy=ours".to_string(),
+            "--edit".to_string(),
+            hash,
+        ],
+    });
+    assert_eq!(result, Some(expected));
 }

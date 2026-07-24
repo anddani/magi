@@ -148,6 +148,11 @@ pub enum InputContext {
         /// The name of the new branch to create and check out
         branch_name: String,
     },
+    /// Entering the new location for an existing worktree
+    WorktreeMovePath {
+        /// The path of the worktree being moved
+        worktree: String,
+    },
     /// Entering refspec(s) to push to a remote (comma-separated)
     PushRefspec {
         /// The remote to push to
@@ -209,6 +214,9 @@ impl InputPopupState {
             InputContext::WorktreeBranchName { .. } => t.input_new_branch.to_string(),
             InputContext::WorktreeBranchPath { branch_name, .. } => {
                 t.fmt1(t.input_worktree_path_fmt, branch_name)
+            }
+            InputContext::WorktreeMovePath { worktree } => {
+                t.fmt1(t.input_worktree_move_path_fmt, worktree)
             }
             InputContext::PushRefspec { remote } => t.fmt1(t.input_push_refspec_fmt, remote),
             InputContext::FetchRefspec { remote } => t.fmt1(t.input_fetch_refspec_fmt, remote),
@@ -347,6 +355,8 @@ pub struct RevertPopupState {
     pub selected_commits: Vec<String>,
     /// Mainline parent number set via `-m` argument (bypasses the select popup when set)
     pub mainline: Option<String>,
+    /// Merge strategy set via `=s` argument (`--strategy=<value>`)
+    pub strategy: Option<String>,
 }
 
 /// State for the Apply (cherry-pick) popup

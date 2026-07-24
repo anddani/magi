@@ -55,6 +55,7 @@ pub fn content<'a>(
     let mut argument_content = argument_lines::<RebaseArgument>(theme, model.arg_mode, selected);
     argument_content.push(argument_value_line(
         theme,
+        '-',
         'r',
         t.arg_rebase_rebase_merges,
         "--rebase-merges=",

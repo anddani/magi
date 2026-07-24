@@ -2,7 +2,10 @@ use std::time::Instant;
 
 use crate::{
     git::{commit::CommitResult, merge, preview},
-    model::{Model, PopupContent, Toast, ToastStyle, ViewMode},
+    model::{
+        Model, PopupContent, Toast, ToastStyle, ViewMode,
+        arguments::{Arguments::MergeArguments, PopupArgument},
+    },
     msg::{
         MergeCommand, Message,
         update::{
@@ -13,25 +16,40 @@ use crate::{
 };
 
 pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
+    let extra_args: Vec<String> = if let Some(MergeArguments(arguments)) = model.arguments.take() {
+        arguments
+            .into_iter()
+            .map(|a| a.flag().to_string())
+            .collect()
+    } else {
+        vec![]
+    };
     match cmd {
-        MergeCommand::Branch(branch) => merge_branch(model, branch, false),
-        MergeCommand::EditMessage(branch) => merge_branch(model, branch, true),
-        MergeCommand::NoCommit(branch) => merge_no_commit(model, branch),
-        MergeCommand::Absorb(branch) => absorb_branch(model, branch),
+        MergeCommand::Branch(branch) => merge_branch(model, branch, false, extra_args),
+        MergeCommand::EditMessage(branch) => merge_branch(model, branch, true, extra_args),
+        MergeCommand::NoCommit(branch) => merge_no_commit(model, branch, extra_args),
+        MergeCommand::Absorb(branch) => absorb_branch(model, branch, extra_args),
         MergeCommand::Preview(branch) => preview_merge(model, branch),
         MergeCommand::Squash(branch) => squash_merge(model, branch),
-        MergeCommand::Dissolve(branch) => dissolve_branch(model, branch),
+        MergeCommand::Dissolve(branch) => dissolve_branch(model, branch, extra_args),
         MergeCommand::Continue => continue_merge(model),
         MergeCommand::Abort => abort_merge(model),
     }
 }
 
-fn merge_branch(model: &mut Model, branch: String, edit_message: bool) -> Option<Message> {
+fn merge_branch(
+    model: &mut Model,
+    branch: String,
+    edit_message: bool,
+    extra_args: Vec<String>,
+) -> Option<Message> {
     model.popup = None;
     let result = if edit_message {
+        // `merge --edit --no-ff` always creates a merge commit, so a selected
+        // `--ff-only` cannot be honored and is dropped, like in magit.
         merge::run_merge_edit_with_editor(&model.workdir, &branch)
     } else {
-        merge::run_merge_with_editor(&model.workdir, &branch)
+        merge::run_merge_with_editor(&model.workdir, &branch, &extra_args)
     };
     match result {
         Ok(CommitResult { success, message }) => {
@@ -82,9 +100,9 @@ fn conflict_message(headline: &str, conflicts: &[String]) -> String {
     message
 }
 
-fn absorb_branch(model: &mut Model, branch: String) -> Option<Message> {
+fn absorb_branch(model: &mut Model, branch: String, extra_args: Vec<String>) -> Option<Message> {
     model.popup = None;
-    match merge::run_merge_absorb(&model.workdir, &branch) {
+    match merge::run_merge_absorb(&model.workdir, &branch, &extra_args) {
         Ok(CommitResult { success, message }) => {
             if let Some(conflicts) = (!success).then(|| unresolved_conflicts(model)).flatten() {
                 model.popup = Some(PopupContent::Error {
@@ -114,7 +132,7 @@ fn absorb_branch(model: &mut Model, branch: String) -> Option<Message> {
     Some(Message::Refresh)
 }
 
-fn dissolve_branch(model: &mut Model, target: String) -> Option<Message> {
+fn dissolve_branch(model: &mut Model, target: String, extra_args: Vec<String>) -> Option<Message> {
     model.popup = None;
     // On a detached HEAD `current_branch()` reports "HEAD", which is not a
     // branch that can be dissolved.
@@ -125,7 +143,7 @@ fn dissolve_branch(model: &mut Model, target: String) -> Option<Message> {
         });
         return Some(Message::Refresh);
     };
-    match merge::run_merge_dissolve(&model.workdir, &current, &target) {
+    match merge::run_merge_dissolve(&model.workdir, &current, &target, &extra_args) {
         Ok(CommitResult { success, message }) => {
             if let Some(conflicts) = (!success).then(|| unresolved_conflicts(model)).flatten() {
                 model.popup = Some(PopupContent::Error {
@@ -182,17 +200,15 @@ fn preview_merge(model: &mut Model, branch: String) -> Option<Message> {
     None
 }
 
-fn merge_no_commit(model: &mut Model, branch: String) -> Option<Message> {
-    execute_pty_command(
-        model,
-        vec![
-            "merge".to_string(),
-            "--no-commit".to_string(),
-            "--no-ff".to_string(),
-            branch,
-        ],
-        "Merge".to_string(),
-    )
+fn merge_no_commit(model: &mut Model, branch: String, extra_args: Vec<String>) -> Option<Message> {
+    let mut args = vec![
+        "merge".to_string(),
+        "--no-commit".to_string(),
+        "--no-ff".to_string(),
+    ];
+    args.extend(extra_args);
+    args.push(branch);
+    execute_pty_command(model, args, "Merge".to_string())
 }
 
 fn squash_merge(model: &mut Model, branch: String) -> Option<Message> {
