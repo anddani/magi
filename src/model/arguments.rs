@@ -514,6 +514,7 @@ impl RevertArgument {
 pub enum LogArgument {
     Graph,
     Color,
+    Decorate,
 }
 
 impl LogArgument {
@@ -524,13 +525,18 @@ impl LogArgument {
 
 impl PopupArgument for LogArgument {
     fn all() -> Vec<LogArgument> {
-        vec![LogArgument::Graph, LogArgument::Color]
+        vec![
+            LogArgument::Graph,
+            LogArgument::Color,
+            LogArgument::Decorate,
+        ]
     }
 
     fn key(&self) -> char {
         match self {
             LogArgument::Graph => 'g',
             LogArgument::Color => 'c',
+            LogArgument::Decorate => 'd',
         }
     }
 
@@ -539,6 +545,7 @@ impl PopupArgument for LogArgument {
         match self {
             LogArgument::Graph => t.arg_log_graph,
             LogArgument::Color => t.arg_log_color,
+            LogArgument::Decorate => t.arg_log_decorate,
         }
     }
 
@@ -546,6 +553,7 @@ impl PopupArgument for LogArgument {
         match self {
             LogArgument::Graph => "--graph",
             LogArgument::Color => "--color",
+            LogArgument::Decorate => "--decorate",
         }
     }
 }
@@ -785,6 +793,32 @@ mod tests {
             Some(RebaseArgument::KeepEmpty)
         );
         assert_eq!(RebaseArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_log_argument_decorate_key_and_flag() {
+        assert_eq!(LogArgument::Decorate.key(), 'd');
+        assert_eq!(LogArgument::Decorate.flag(), "--decorate");
+    }
+
+    #[test]
+    fn test_log_argument_from_key() {
+        assert_eq!(LogArgument::from_key('g'), Some(LogArgument::Graph));
+        assert_eq!(LogArgument::from_key('c'), Some(LogArgument::Color));
+        assert_eq!(LogArgument::from_key('d'), Some(LogArgument::Decorate));
+        assert_eq!(LogArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_log_argument_order_matches_magit() {
+        assert_eq!(
+            LogArgument::all(),
+            vec![
+                LogArgument::Graph,
+                LogArgument::Color,
+                LogArgument::Decorate
+            ]
+        );
     }
 
     #[test]

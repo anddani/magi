@@ -8,13 +8,15 @@ use crate::{
 };
 
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
-    // Graph is shown by default; only disabled when toggled off in the log popup
-    let (graph, color) = match model.arguments.take() {
+    // Graph and refnames are shown by default; only disabled when toggled off
+    // in the log popup
+    let (graph, color, decorate) = match model.arguments.take() {
         Some(LogArguments(args)) => (
             args.contains(&LogArgument::Graph),
             args.contains(&LogArgument::Color),
+            args.contains(&LogArgument::Decorate),
         ),
-        _ => (true, false),
+        _ => (true, false, true),
     };
     // Reflogs cannot be drawn as a graph (git rejects --graph with --walk-reflogs)
     let graph = graph
@@ -22,7 +24,13 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             log_type,
             LogType::Reflog | LogType::ReflogOther(_) | LogType::Stashes
         );
-    match get_log_entries(&model.git_info.repository, &log_type, graph, color) {
+    match get_log_entries(
+        &model.git_info.repository,
+        &log_type,
+        graph,
+        color,
+        decorate,
+    ) {
         Ok(entries) => {
             // Convert log entries to lines
             let lines: Vec<Line> = entries
@@ -48,6 +56,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 picking: false,
                 graph,
                 color,
+                decorate,
             };
 
             // Dismiss the log popup

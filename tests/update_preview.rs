@@ -132,6 +132,7 @@ fn test_show_preview_on_graph_only_log_line_is_noop() {
         picking: false,
         graph: true,
         color: false,
+        decorate: true,
     };
 
     let result = update(&mut model, Message::ShowPreview);
