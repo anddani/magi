@@ -295,6 +295,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         }
         Message::WorktreeMove { worktree, path } => worktree_move::update(model, worktree, path),
         Message::ShowPreview => show_preview::update(model),
+        Message::ShowStashDiff(index) => show_preview::show_stash(model, index),
         Message::ExitPreview => exit_preview::update(model),
         Message::FileCheckout { revision, file } => file_checkout::update(model, revision, file),
         Message::ReviseCommit(hash) => revise_commit::update(model, hash),

@@ -302,6 +302,9 @@ fn route_result(
             }));
             None
         }
+        (Some(OnSelect::ShowStash), SelectResult::Selected(stash_display)) => {
+            parse_stash_index(&stash_display).map(Message::ShowStashDiff)
+        }
         (Some(OnSelect::MergeElsewhere), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Branch(branch)))
         }
@@ -460,6 +463,16 @@ fn route_result(
         }
         _ => None,
     }
+}
+
+/// Parses the stash index from a display string like "stash@{2}: message".
+fn parse_stash_index(stash_display: &str) -> Option<usize> {
+    stash_display
+        .strip_prefix("stash@{")?
+        .split_once('}')?
+        .0
+        .parse()
+        .ok()
 }
 
 #[cfg(test)]
@@ -673,6 +686,33 @@ mod tests {
             )))
         );
         assert!(model.popup.is_none());
+    }
+
+    #[test]
+    fn test_select_popup_routes_show_stash() {
+        use crate::model::select_popup::SelectPopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+            SelectPopupState::new(
+                "Show stash".to_string(),
+                vec!["stash@{1}: WIP on main".to_string()],
+                OnSelect::ShowStash,
+            ),
+        )));
+
+        let result = update(&mut model);
+
+        assert_eq!(result, Some(Message::ShowStashDiff(1)));
+        assert!(model.popup.is_none());
+    }
+
+    #[test]
+    fn test_parse_stash_index() {
+        assert_eq!(parse_stash_index("stash@{0}: WIP on main"), Some(0));
+        assert_eq!(parse_stash_index("stash@{12}: some message"), Some(12));
+        assert_eq!(parse_stash_index("stash@{}"), None);
+        assert_eq!(parse_stash_index("not a stash"), None);
     }
 
     #[test]

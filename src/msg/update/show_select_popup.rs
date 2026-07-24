@@ -441,6 +441,7 @@ fn handle_stash_cursor(
         OnSelect::ApplyStash => StashOp::Apply,
         OnSelect::PopStash => StashOp::Pop,
         OnSelect::DropStash => StashOp::Drop,
+        OnSelect::ShowStash => StashOp::Show,
         _ => return None,
     };
 
@@ -496,6 +497,7 @@ fn handle_stash_cursor(
                 }));
                 None
             }
+            StashOp::Show => Some(Message::ShowStashDiff(entry.index)),
         };
         return Some(msg);
     }
@@ -507,6 +509,7 @@ enum StashOp {
     Apply,
     Pop,
     Drop,
+    Show,
 }
 
 // ── Skip-if-one-remote shortcuts ──────────────────────────────────────────────
@@ -608,7 +611,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::CreateTagTarget { .. }
         | OnSelect::RebaseSubsetOnto => "No references found".to_string(),
         OnSelect::FileCheckoutFile { .. } => "No tracked files found".to_string(),
-        OnSelect::ApplyStash | OnSelect::PopStash | OnSelect::DropStash => {
+        OnSelect::ApplyStash | OnSelect::PopStash | OnSelect::DropStash | OnSelect::ShowStash => {
             "No stashes found".to_string()
         }
         OnSelect::ApplyPick

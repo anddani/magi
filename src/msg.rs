@@ -456,6 +456,8 @@ pub enum Message {
 
     /// Enter preview mode for the commit/stash under cursor
     ShowPreview,
+    /// Enter preview mode for a specific stash (by index)
+    ShowStashDiff(usize),
     /// Exit preview mode and return to previous view
     ExitPreview,
 

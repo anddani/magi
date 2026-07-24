@@ -1,5 +1,5 @@
 use crate::git::preview::{get_commit_preview_lines, get_stash_preview_lines};
-use crate::model::{LineContent, Model, ViewMode};
+use crate::model::{Line, LineContent, Model, ViewMode};
 use crate::msg::Message;
 
 pub fn update(model: &mut Model) -> Option<Message> {
@@ -16,6 +16,17 @@ pub fn update(model: &mut Model) -> Option<Message> {
         _ => return None,
     };
 
+    enter_preview(model, preview_lines)
+}
+
+/// Shows the diff of a specific stash (by index) in the preview view.
+pub fn show_stash(model: &mut Model, index: usize) -> Option<Message> {
+    model.popup = None;
+    let preview_lines = get_stash_preview_lines(&model.workdir, index);
+    enter_preview(model, preview_lines)
+}
+
+fn enter_preview(model: &mut Model, preview_lines: Vec<Line>) -> Option<Message> {
     if preview_lines.is_empty() {
         return None;
     }

@@ -42,7 +42,32 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
             on_select: OnSelect::DropStash,
         })),
         KeyCode::Char('l') => Some(Message::ShowLog(LogType::Stashes)),
+        KeyCode::Char('v') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Show stash".to_string(),
+            source: OptionsSource::Stashes,
+            on_select: OnSelect::ShowStash,
+        })),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::KeyModifiers;
+
+    #[test]
+    fn test_v_shows_show_stash_select_popup() {
+        let key = KeyEvent::new(KeyCode::Char('v'), KeyModifiers::NONE);
+        let result = keys(key, false);
+        assert_eq!(
+            result,
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Show stash".to_string(),
+                source: OptionsSource::Stashes,
+                on_select: OnSelect::ShowStash,
+            }))
+        );
     }
 }
