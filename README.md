@@ -203,6 +203,7 @@ Here are a few features that the aforementioned applications lack:
         - [ ] HEAD reflog
         - [ ] Shortlog
     - [x] Merge
+        - [x] Fast-forward only argument (`--ff-only`)
     - [ ] Remote
     - [ ] Submodule
     - [ ] Subtree

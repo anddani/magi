@@ -270,6 +270,7 @@ pub struct Strings {
     pub arg_revert_mainline: &'static str,
     pub input_revert_mainline: &'static str,
     pub arg_rebase_keep_empty: &'static str,
+    pub arg_merge_ff_only: &'static str,
 
     // Mode labels shown in the status bar
     pub mode_normal: &'static str,
@@ -533,6 +534,7 @@ static ENGLISH: Strings = Strings {
     arg_revert_mainline: "Replay merge relative to parent",
     input_revert_mainline: "Mainline parent number",
     arg_rebase_keep_empty: "Keep empty commits",
+    arg_merge_ff_only: "Fast-forward only",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUAL",
@@ -783,6 +785,7 @@ static SWEDISH: Strings = Strings {
     arg_revert_mainline: "Spela upp sammanslagning relativt förälder",
     input_revert_mainline: "Förälderantalsnummer",
     arg_rebase_keep_empty: "Behåll tomma förbindelser",
+    arg_merge_ff_only: "Endast snabbspola",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUELL",

@@ -5,7 +5,7 @@ use magi::{
     git::credential::CredentialType,
     model::{
         LineContent,
-        arguments::{Arguments, PushArgument, RebaseArgument, TagArgument},
+        arguments::{Arguments, MergeArgument, PushArgument, RebaseArgument, TagArgument},
         popup::{
             ApplyPopupState, CommitPopupState, ConfirmAction, ConfirmPopupState,
             CredentialPopupState, FetchPopupState, InputContext, InputPopupState, MergePopupState,
@@ -494,6 +494,22 @@ fn snapshot_merge_popup() {
         PopupContentCommand::Merge(MergePopupState { in_progress: false }),
     );
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_merge_popup_arg_mode() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Merge(MergePopupState { in_progress: false }),
+    );
+    model.arg_mode = true;
+    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+        MergeArgument::FfOnly,
+    ])));
+    // Argument mode only changes styling (key highlights, selected flags), so
+    // snapshot the styled buffer instead of the plain-text frame.
+    assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
 }
 
 #[test]

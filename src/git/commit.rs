@@ -67,7 +67,7 @@ fn abort_message(op: &str, stderr: &str) -> String {
 
 /// Runs a git command with stdin/stdout attached to the terminal (so the
 /// user's editor works) while capturing stderr for error reporting.
-fn status_capturing_stderr(cmd: &mut Command) -> std::io::Result<(ExitStatus, String)> {
+pub(crate) fn status_capturing_stderr(cmd: &mut Command) -> std::io::Result<(ExitStatus, String)> {
     let child = cmd.stderr(Stdio::piped()).spawn()?;
     let output = child.wait_with_output()?;
     Ok((

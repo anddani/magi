@@ -12,6 +12,7 @@ pub enum Arguments {
     LogArguments(HashSet<LogArgument>),
     TagArguments(HashSet<TagArgument>),
     RebaseArguments(HashSet<RebaseArgument>),
+    MergeArguments(HashSet<MergeArgument>),
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -25,6 +26,7 @@ pub enum Argument {
     Log(LogArgument),
     Tag(TagArgument),
     Rebase(RebaseArgument),
+    Merge(MergeArgument),
 }
 
 pub trait PopupArgument: Sized + Eq + Hash {
@@ -173,6 +175,22 @@ impl Arguments {
 
     pub fn rebase_mut(&mut self) -> Option<&mut HashSet<RebaseArgument>> {
         if let Arguments::RebaseArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn merge(&self) -> Option<&HashSet<MergeArgument>> {
+        if let Arguments::MergeArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn merge_mut(&mut self) -> Option<&mut HashSet<MergeArgument>> {
+        if let Arguments::MergeArguments(args) = self {
             Some(args)
         } else {
             None
@@ -569,6 +587,42 @@ impl PopupArgument for RebaseArgument {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum MergeArgument {
+    FfOnly,
+}
+
+impl MergeArgument {
+    pub fn from_key(key: char) -> Option<MergeArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for MergeArgument {
+    fn all() -> Vec<MergeArgument> {
+        vec![MergeArgument::FfOnly]
+    }
+
+    fn key(&self) -> char {
+        match self {
+            MergeArgument::FfOnly => 'f',
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        let t = i18n::t();
+        match self {
+            MergeArgument::FfOnly => t.arg_merge_ff_only,
+        }
+    }
+
+    fn flag(&self) -> &'static str {
+        match self {
+            MergeArgument::FfOnly => "--ff-only",
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum TagArgument {
     Force,
     Edit,
@@ -703,6 +757,23 @@ mod tests {
             Some(RebaseArgument::KeepEmpty)
         );
         assert_eq!(RebaseArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_merge_argument_key_and_flag() {
+        assert_eq!(MergeArgument::FfOnly.key(), 'f');
+        assert_eq!(MergeArgument::FfOnly.flag(), "--ff-only");
+    }
+
+    #[test]
+    fn test_merge_argument_from_key() {
+        assert_eq!(MergeArgument::from_key('f'), Some(MergeArgument::FfOnly));
+        assert_eq!(MergeArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_merge_argument_all_contains_ff_only() {
+        assert!(MergeArgument::all().contains(&MergeArgument::FfOnly));
     }
 
     #[test]
