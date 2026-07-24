@@ -202,6 +202,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Other reflog
         - [ ] HEAD reflog
         - [ ] Shortlog
+        - [x] Formatting arguments (--graph, --color, --decorate)
     - [x] Merge
     - [ ] Remote
     - [ ] Submodule

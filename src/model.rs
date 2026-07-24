@@ -139,6 +139,8 @@ pub enum ViewMode {
         graph: bool,
         /// Whether git colors the graph (--color); used when refreshing
         color: bool,
+        /// Whether refnames are shown (--decorate); used when refreshing
+        decorate: bool,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,
