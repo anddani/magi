@@ -436,6 +436,9 @@ pub enum Message {
     EnterArgMode,
     EnterEqualsArgMode,
     ToggleArgument(Argument),
+    /// Toggle the rebase `--rebase-merges=` argument: unsets it when set,
+    /// otherwise asks for the mode with a select popup
+    ToggleRebaseMerges,
     ExitArgMode,
 
     /// Select popup messages

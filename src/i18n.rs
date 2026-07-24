@@ -279,6 +279,7 @@ pub struct Strings {
     pub arg_revert_strategy: &'static str,
     pub select_revert_strategy: &'static str,
     pub arg_rebase_keep_empty: &'static str,
+    pub arg_rebase_rebase_merges: &'static str,
     pub arg_merge_ff_only: &'static str,
 
     // Mode labels shown in the status bar
@@ -552,6 +553,7 @@ static ENGLISH: Strings = Strings {
     arg_revert_strategy: "Strategy",
     select_revert_strategy: "Merge strategy",
     arg_rebase_keep_empty: "Keep empty commits",
+    arg_rebase_rebase_merges: "Rebase merges",
     arg_merge_ff_only: "Fast-forward only",
 
     mode_normal: "NORMAL",
@@ -812,6 +814,7 @@ static SWEDISH: Strings = Strings {
     arg_revert_strategy: "Strategi",
     select_revert_strategy: "Sammanslagningsstrategi",
     arg_rebase_keep_empty: "Behåll tomma förbindelser",
+    arg_rebase_rebase_merges: "Ympa sammanslagningar",
     arg_merge_ff_only: "Endast snabbspola",
 
     mode_normal: "NORMAL",

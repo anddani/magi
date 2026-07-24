@@ -6,7 +6,8 @@ use magi::{
     model::{
         LineContent,
         arguments::{
-            Arguments, LogArgument, MergeArgument, PushArgument, RebaseArgument, TagArgument,
+            Arguments, LogArgument, MergeArgument, PushArgument, RebaseArgument, RebaseMergesMode,
+            TagArgument,
         },
         popup::{
             ApplyPopupState, CommitPopupState, ConfirmAction, ConfirmPopupState,
@@ -466,6 +467,26 @@ fn snapshot_rebase_popup_arg_mode() {
     // Argument mode only changes styling (key highlights, selected flags), so
     // snapshot the styled buffer instead of the plain-text frame.
     assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_rebase_popup_rebase_merges_selected() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Rebase(RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            upstream: None,
+            push_remote: None,
+            sole_remote: None,
+        }),
+    );
+    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+        RebaseArgument::RebaseMerges(RebaseMergesMode::NoRebaseCousins),
+    ])));
+    // The selected mode is rendered as the flag value (--rebase-merges=<mode>)
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 
 #[test]

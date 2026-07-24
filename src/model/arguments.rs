@@ -586,9 +586,37 @@ impl PopupArgument for RevertArgument {
     }
 }
 
+/// Mode for `--rebase-merges=` (magit's `magit-rebase-merges-select-mode`)
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum RebaseMergesMode {
+    NoRebaseCousins,
+    RebaseCousins,
+}
+
+impl RebaseMergesMode {
+    pub fn all() -> Vec<RebaseMergesMode> {
+        vec![
+            RebaseMergesMode::NoRebaseCousins,
+            RebaseMergesMode::RebaseCousins,
+        ]
+    }
+
+    pub fn from_value(value: &str) -> Option<RebaseMergesMode> {
+        Self::all().into_iter().find(|mode| mode.value() == value)
+    }
+
+    pub fn value(&self) -> &'static str {
+        match self {
+            RebaseMergesMode::NoRebaseCousins => "no-rebase-cousins",
+            RebaseMergesMode::RebaseCousins => "rebase-cousins",
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum RebaseArgument {
     KeepEmpty,
+    RebaseMerges(RebaseMergesMode),
 }
 
 impl RebaseArgument {
@@ -598,6 +626,8 @@ impl RebaseArgument {
 }
 
 impl PopupArgument for RebaseArgument {
+    /// RebaseMerges is excluded: it carries a value, so it is rendered with
+    /// `argument_value_line` and toggled via `Message::ToggleRebaseMerges`.
     fn all() -> Vec<RebaseArgument> {
         vec![RebaseArgument::KeepEmpty]
     }
@@ -605,6 +635,7 @@ impl PopupArgument for RebaseArgument {
     fn key(&self) -> char {
         match self {
             RebaseArgument::KeepEmpty => 'k',
+            RebaseArgument::RebaseMerges(_) => 'r',
         }
     }
 
@@ -612,12 +643,19 @@ impl PopupArgument for RebaseArgument {
         let t = i18n::t();
         match self {
             RebaseArgument::KeepEmpty => t.arg_rebase_keep_empty,
+            RebaseArgument::RebaseMerges(_) => t.arg_rebase_rebase_merges,
         }
     }
 
     fn flag(&self) -> &'static str {
         match self {
             RebaseArgument::KeepEmpty => "--keep-empty",
+            RebaseArgument::RebaseMerges(RebaseMergesMode::NoRebaseCousins) => {
+                "--rebase-merges=no-rebase-cousins"
+            }
+            RebaseArgument::RebaseMerges(RebaseMergesMode::RebaseCousins) => {
+                "--rebase-merges=rebase-cousins"
+            }
         }
     }
 }
@@ -793,6 +831,35 @@ mod tests {
             Some(RebaseArgument::KeepEmpty)
         );
         assert_eq!(RebaseArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_rebase_merges_key_and_flags() {
+        let no_cousins = RebaseArgument::RebaseMerges(RebaseMergesMode::NoRebaseCousins);
+        let cousins = RebaseArgument::RebaseMerges(RebaseMergesMode::RebaseCousins);
+        assert_eq!(no_cousins.key(), 'r');
+        assert_eq!(cousins.key(), 'r');
+        assert_eq!(no_cousins.flag(), "--rebase-merges=no-rebase-cousins");
+        assert_eq!(cousins.flag(), "--rebase-merges=rebase-cousins");
+    }
+
+    #[test]
+    fn test_rebase_merges_mode_from_value() {
+        assert_eq!(
+            RebaseMergesMode::from_value("no-rebase-cousins"),
+            Some(RebaseMergesMode::NoRebaseCousins)
+        );
+        assert_eq!(
+            RebaseMergesMode::from_value("rebase-cousins"),
+            Some(RebaseMergesMode::RebaseCousins)
+        );
+        assert_eq!(RebaseMergesMode::from_value("bogus"), None);
+    }
+
+    #[test]
+    fn test_rebase_merges_not_toggled_via_from_key() {
+        // 'r' is handled by Message::ToggleRebaseMerges, not the generic toggle
+        assert_eq!(RebaseArgument::from_key('r'), None);
     }
 
     #[test]

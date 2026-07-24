@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crossterm::event::KeyCode;
 use magi::{
     git::{
@@ -8,7 +10,7 @@ use magi::{
     keys::handle_key,
     model::{
         Line, LineContent, Model, SectionType, ViewMode,
-        arguments::{Argument, RebaseArgument},
+        arguments::{Argument, Arguments, RebaseArgument, RebaseMergesMode},
         popup::{ConfirmAction, PopupContent, PopupContentCommand, RebasePopupState},
         select_popup::{OnSelect, SelectPopupState},
     },
@@ -2150,6 +2152,137 @@ fn test_toggle_keep_empty_twice_removes_argument() {
         .and_then(|a| a.rebase())
         .expect("Expected rebase arguments");
     assert!(!args.contains(&RebaseArgument::KeepEmpty));
+}
+
+#[test]
+fn test_r_in_arg_mode_returns_toggle_rebase_merges() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('r')), &model);
+    assert_eq!(result, Some(Message::ToggleRebaseMerges));
+}
+
+#[test]
+fn test_toggle_rebase_merges_unset_shows_mode_select_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    let result = update(&mut model, Message::ToggleRebaseMerges);
+
+    assert!(!model.arg_mode);
+    assert_eq!(
+        result,
+        Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Rebase merges".to_string(),
+            source: OptionsSource::RebaseMergesModes,
+            on_select: OnSelect::RebaseMergesMode,
+        }))
+    );
+
+    update(&mut model, result.unwrap());
+    let state = expect_select_popup(&model);
+    assert_eq!(
+        state.all_options,
+        vec![
+            "no-rebase-cousins".to_string(),
+            "rebase-cousins".to_string()
+        ]
+    );
+}
+
+#[test]
+fn test_select_confirm_rebase_merges_mode_sets_argument_and_reopens_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Rebase merges".to_string(),
+            vec![
+                "no-rebase-cousins".to_string(),
+                "rebase-cousins".to_string(),
+            ],
+            OnSelect::RebaseMergesMode,
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(result, Some(Message::ShowRebasePopup));
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.rebase())
+        .expect("Expected rebase arguments");
+    assert!(args.contains(&RebaseArgument::RebaseMerges(
+        RebaseMergesMode::NoRebaseCousins
+    )));
+}
+
+#[test]
+fn test_toggle_rebase_merges_when_set_removes_it_and_keeps_other_arguments() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+        RebaseArgument::KeepEmpty,
+        RebaseArgument::RebaseMerges(RebaseMergesMode::RebaseCousins),
+    ])));
+
+    let result = update(&mut model, Message::ToggleRebaseMerges);
+
+    assert_eq!(result, None);
+    assert!(!model.arg_mode);
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.rebase())
+        .expect("Expected rebase arguments");
+    assert!(
+        !args
+            .iter()
+            .any(|arg| matches!(arg, RebaseArgument::RebaseMerges(_)))
+    );
+    assert!(args.contains(&RebaseArgument::KeepEmpty));
+}
+
+#[test]
+fn test_select_confirm_rebase_merges_invalid_value_reopens_popup_without_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Rebase merges".to_string(),
+            vec!["bogus".to_string()],
+            OnSelect::RebaseMergesMode,
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(result, Some(Message::ShowRebasePopup));
+    assert!(model.arguments.is_none());
 }
 
 #[test]

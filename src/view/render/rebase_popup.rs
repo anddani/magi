@@ -11,7 +11,8 @@ use crate::{
     view::render::{
         popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
         util::{
-            argument_lines, command_description, push_remote_description, upstream_description,
+            argument_lines, argument_value_line, command_description, push_remote_description,
+            upstream_description,
         },
     },
 };
@@ -44,13 +45,26 @@ pub fn content<'a>(
         };
     }
 
+    let selected = model.arguments.as_ref().and_then(|a| a.rebase());
+    let rebase_merges_mode = selected.and_then(|args| {
+        args.iter().find_map(|arg| match arg {
+            RebaseArgument::RebaseMerges(mode) => Some(mode.value()),
+            _ => None,
+        })
+    });
+    let mut argument_content = argument_lines::<RebaseArgument>(theme, model.arg_mode, selected);
+    argument_content.push(argument_value_line(
+        theme,
+        '-',
+        'r',
+        t.arg_rebase_rebase_merges,
+        "--rebase-merges=",
+        rebase_merges_mode,
+        model.arg_mode,
+    ));
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),
-        content: argument_lines::<RebaseArgument>(
-            theme,
-            model.arg_mode,
-            model.arguments.as_ref().and_then(|a| a.rebase()),
-        ),
+        content: argument_content,
     };
 
     let rebase_onto_title = Line::from(vec![

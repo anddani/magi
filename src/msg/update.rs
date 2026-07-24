@@ -91,6 +91,7 @@ mod stage_all_modified;
 mod stage_selected;
 mod stash;
 mod toggle_argument;
+mod toggle_rebase_merges;
 mod toggle_section;
 mod unstage_all;
 mod unstage_selected;
@@ -178,6 +179,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::EnterEqualsArgMode => enter_equals_arg_mode::update(model),
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),
+        Message::ToggleRebaseMerges => toggle_rebase_merges::update(model),
         Message::Select(select_msg) => match select_msg {
             SelectMessage::Edit(op) => select_edit::update(model, op),
             SelectMessage::MoveUp => select_move_up::update(model),
