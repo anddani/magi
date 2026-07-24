@@ -344,6 +344,9 @@ pub struct RebasePopupState {
 pub struct CommitPopupState {
     /// Author override set via the `-A` argument (`--author=<value>`)
     pub author: Option<String>,
+    /// Commit whose message to reuse, set via the `-C` argument
+    /// (`--reuse-message=<value>`)
+    pub reuse_message: Option<String>,
 }
 
 /// State for the Revert popup

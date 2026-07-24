@@ -133,6 +133,14 @@ pub fn run_commit_with_editor<P: AsRef<Path>>(
     get_commit_result_with_stderr(repo_path, status, &stderr, "Commit")
 }
 
+/// Checks whether the given revision resolves to an object in the repository.
+pub fn rev_verify<P: AsRef<Path>>(repo_path: P, rev: &str) -> bool {
+    git_cmd(&repo_path, &["rev-parse", "--verify", "--quiet", rev])
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
+
 /// Lists authors from the commit history as `Name <email>` strings,
 /// deduplicated and ordered from most recent commit to oldest.
 pub fn list_authors<P: AsRef<Path>>(repo_path: P) -> MagiResult<Vec<String>> {

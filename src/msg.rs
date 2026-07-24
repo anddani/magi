@@ -159,6 +159,9 @@ pub enum Message {
     /// Show the author picker for the commit `-A` argument, or clear the
     /// author override if one is already set
     ShowCommitAuthorSelect,
+    /// Show the reference picker for the commit `-C` argument
+    /// (`--reuse-message=<rev>`), or clear the value if one is already set
+    ShowCommitReuseMessageSelect,
     /// Amend the last commit
     Amend(Vec<String>),
     /// Create a fixup or squash commit for the specified commit hash
