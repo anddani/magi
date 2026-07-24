@@ -81,6 +81,7 @@ mod show_revert_popup;
 mod show_select_popup;
 mod show_tag_popup;
 mod show_tag_release_input;
+mod show_tag_sign_as_select;
 mod spinoff_branch;
 mod spinout_branch;
 mod stage_all_modified;
@@ -229,6 +230,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         } => cherry_spinoff::update(model, commits, branch, root),
         Message::ShowMergePopup => show_merge_popup::update(model),
         Message::ShowTagPopup => show_tag_popup::update(model),
+        Message::ShowTagSignAsSelect => show_tag_sign_as_select::update(model),
         Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),
         Message::ShowTagReleaseInput => show_tag_release_input::update(model),
         Message::CreateTagRelease { name } => create_tag_release::update(model, name),

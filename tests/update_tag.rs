@@ -1,5 +1,7 @@
 use crossterm::event::KeyCode;
 use magi::model::InputField;
+use magi::model::select_popup::SelectPopupState;
+use magi::msg::SelectMessage;
 use magi::{
     git::test_repo::TestRepo,
     keys::handle_key,
@@ -366,7 +368,7 @@ fn test_create_tag_with_force_moves_existing_tag() {
 
     test_repo.commit_file("file2.txt", "content2", "Second commit");
 
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Force].into_iter().collect(),
     ));
 
@@ -404,7 +406,7 @@ fn test_create_tag_with_edit_returns_with_editor_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Edit].into_iter().collect(),
     ));
 
@@ -440,7 +442,7 @@ fn test_create_tag_with_edit_and_force_orders_flags() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Edit, TagArgument::Force]
             .into_iter()
             .collect(),
@@ -478,7 +480,7 @@ fn test_create_tag_with_annotate_returns_with_editor_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Annotate].into_iter().collect(),
     ));
 
@@ -514,7 +516,7 @@ fn test_create_tag_with_annotate_and_force_orders_flags() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Annotate, TagArgument::Force]
             .into_iter()
             .collect(),
@@ -552,7 +554,7 @@ fn test_create_tag_with_sign_returns_with_editor_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Sign].into_iter().collect(),
     ));
 
@@ -588,7 +590,7 @@ fn test_create_tag_with_sign_and_annotate_orders_flags() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Sign, TagArgument::Annotate]
             .into_iter()
             .collect(),
@@ -624,7 +626,7 @@ fn test_create_tag_without_edit_does_not_suspend() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Force].into_iter().collect(),
     ));
 
@@ -1185,7 +1187,7 @@ fn test_create_tag_release_annotate_derives_message_from_previous() {
     test_repo.commit_file("file2.txt", "content2", "Second commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Annotate].into_iter().collect(),
     ));
 
@@ -1226,7 +1228,7 @@ fn test_create_tag_release_annotate_falls_back_to_repo_name_message() {
     );
     test_repo.commit_file("file2.txt", "content2", "Second commit");
 
-    model.arguments = Some(Arguments::TagArguments(
+    model.arguments = Some(Arguments::tag_args(
         [TagArgument::Annotate].into_iter().collect(),
     ));
 
@@ -1309,5 +1311,265 @@ fn test_prune_tags_confirm_shows_confirm_popup() {
                 if matches!(&state.on_confirm, ConfirmAction::PruneTags { .. })
         ),
         "Confirm popup should hold PruneTags action"
+    );
+}
+
+// ── Sign as (-u, --local-user=) ────────────────────────────────────────────────
+
+#[test]
+fn test_u_in_tag_arg_mode_shows_sign_as_select() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('u')), &model);
+    assert_eq!(result, Some(Message::ShowTagSignAsSelect));
+}
+
+#[test]
+fn test_show_tag_sign_as_select_opens_select_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+    model.arg_mode = true;
+
+    let result = update(&mut model, Message::ShowTagSignAsSelect);
+
+    assert_eq!(result, None);
+    assert!(!model.arg_mode, "Argument mode should be exited");
+    let state = expect_select_popup(&model);
+    assert_eq!(state.title, "Sign as");
+    assert_eq!(state.on_select, OnSelect::TagSignAs);
+}
+
+#[test]
+fn test_tag_sign_as_select_confirm_sets_local_user_and_returns_to_tag_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Sign as".to_string(),
+            vec!["ABCD1234 Test User <test@example.com>".to_string()],
+            OnSelect::TagSignAs,
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(result, None);
+    // Only the leading keyid is kept
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.tag_local_user()),
+        Some("ABCD1234")
+    );
+    assert!(
+        matches!(
+            &model.popup,
+            Some(PopupContent::Command(PopupContentCommand::Tag))
+        ),
+        "Expected to return to the Tag popup"
+    );
+}
+
+#[test]
+fn test_tag_sign_as_select_confirm_uses_typed_text_when_no_match() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // Empty key list (gpg unavailable) with a manually typed key id
+    let mut state = SelectPopupState::new("Sign as".to_string(), vec![], OnSelect::TagSignAs);
+    state.input = InputField::from_text("test@example.com");
+    state.update_filter();
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(result, None);
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.tag_local_user()),
+        Some("test@example.com")
+    );
+}
+
+#[test]
+fn test_tag_sign_as_select_keeps_toggled_arguments() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::tag_args(
+        [TagArgument::Force].into_iter().collect(),
+    ));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Sign as".to_string(),
+            vec!["ABCD1234".to_string()],
+            OnSelect::TagSignAs,
+        ),
+    )));
+
+    update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    let arguments = model.arguments.as_ref().unwrap();
+    assert_eq!(arguments.tag_local_user(), Some("ABCD1234"));
+    assert!(arguments.tag().unwrap().contains(&TagArgument::Force));
+}
+
+#[test]
+fn test_toggling_argument_keeps_local_user() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments {
+        args: Default::default(),
+        local_user: Some("ABCD1234".to_string()),
+    });
+
+    update(
+        &mut model,
+        Message::ToggleArgument(Argument::Tag(TagArgument::Force)),
+    );
+
+    let arguments = model.arguments.as_ref().unwrap();
+    assert_eq!(arguments.tag_local_user(), Some("ABCD1234"));
+    assert!(arguments.tag().unwrap().contains(&TagArgument::Force));
+}
+
+#[test]
+fn test_show_tag_sign_as_select_clears_existing_value() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
+    model.arg_mode = true;
+    model.arguments = Some(Arguments::TagArguments {
+        args: Default::default(),
+        local_user: Some("ABCD1234".to_string()),
+    });
+
+    let result = update(&mut model, Message::ShowTagSignAsSelect);
+
+    assert_eq!(result, None);
+    assert!(!model.arg_mode, "Argument mode should be exited");
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.tag_local_user()),
+        None
+    );
+    assert!(
+        matches!(
+            &model.popup,
+            Some(PopupContent::Command(PopupContentCommand::Tag))
+        ),
+        "Tag popup should stay open when clearing the value"
+    );
+}
+
+#[test]
+fn test_create_tag_with_local_user_returns_with_editor_message() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments {
+        args: [TagArgument::Sign].into_iter().collect(),
+        local_user: Some("ABCD1234".to_string()),
+    });
+
+    let result = update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    // --local-user implies a signed (annotated) tag, so the editor opens
+    let expected = Message::CreateTagWithEditor {
+        name: "v1.0.0".to_string(),
+        args: vec![
+            "tag".to_string(),
+            "--sign".to_string(),
+            "--local-user=ABCD1234".to_string(),
+            "v1.0.0".to_string(),
+            "HEAD".to_string(),
+        ],
+    };
+    assert_eq!(result, Some(expected));
+    assert!(
+        model.arguments.is_none(),
+        "Arguments should be consumed when building the editor command"
+    );
+}
+
+#[test]
+fn test_create_tag_with_only_local_user_opens_editor() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments {
+        args: Default::default(),
+        local_user: Some("ABCD1234".to_string()),
+    });
+
+    let result = update(
+        &mut model,
+        Message::CreateTag {
+            name: "v1.0.0".to_string(),
+            target: "HEAD".to_string(),
+        },
+    );
+
+    let expected = Message::CreateTagWithEditor {
+        name: "v1.0.0".to_string(),
+        args: vec![
+            "tag".to_string(),
+            "--local-user=ABCD1234".to_string(),
+            "v1.0.0".to_string(),
+            "HEAD".to_string(),
+        ],
+    };
+    assert_eq!(result, Some(expected));
+}
+
+#[test]
+fn test_create_tag_release_with_local_user_is_annotated() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::TagArguments {
+        args: Default::default(),
+        local_user: Some("ABCD1234".to_string()),
+    });
+
+    let result = update(
+        &mut model,
+        Message::CreateTagRelease {
+            name: "v1.0.0".to_string(),
+        },
+    );
+
+    // The first release forces --edit, so the command is returned instead of
+    // run; --local-user counts as annotated and gets a derived -m message
+    let Some(Message::CreateTagWithEditor { name, args }) = result else {
+        panic!("Expected CreateTagWithEditor, got {:?}", result);
+    };
+    assert_eq!(name, "v1.0.0");
+    assert!(args.contains(&"--local-user=ABCD1234".to_string()));
+    assert!(
+        args.contains(&"-m".to_string()),
+        "--local-user should derive an annotation message, got {:?}",
+        args
     );
 }

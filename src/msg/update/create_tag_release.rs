@@ -59,7 +59,7 @@ pub fn update(model: &mut Model, name: String) -> Option<Message> {
 
     let annotated = flags
         .iter()
-        .any(|flag| flag == "--annotate" || flag == "--sign");
+        .any(|flag| flag == "--annotate" || flag == "--sign" || flag.starts_with("--local-user="));
     let message = annotated.then(|| match (previous, &version) {
         (Some(prev), Some(version)) if prev.message.contains(&prev.version) => {
             prev.message.replacen(&prev.version, version, 1)
