@@ -218,6 +218,7 @@ Here are a few features that the aforementioned applications lack:
     - [x] Stash
     - [ ] Worktree
         - [x] Create new worktree
+        - [x] Move worktree
         - [ ] Checkout/manage worktrees
 - [x] Applying changes
 

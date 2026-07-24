@@ -269,6 +269,15 @@ pub enum Message {
         branch_name: String,
         path: String,
     },
+    /// Show the input popup for the new location of an existing worktree
+    ShowWorktreeMovePathInput {
+        worktree: String,
+    },
+    /// Move an existing worktree to a new location
+    WorktreeMove {
+        worktree: String,
+        path: String,
+    },
     /// Show confirmation popup before deleting the selected branch
     DeleteBranch(String),
     /// Actually delete the branch after user confirmation
