@@ -216,6 +216,11 @@ Here are a few features that the aforementioned applications lack:
     - [x] Reset
     - [ ] Show refs
     - [x] Stash
+        - [x] Stash both/index/worktree/keeping index
+        - [x] Snapshot
+        - [x] Apply/pop/drop
+        - [x] List
+        - [x] Show
     - [ ] Worktree
         - [x] Create new worktree
         - [ ] Checkout/manage worktrees

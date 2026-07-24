@@ -65,6 +65,8 @@ pub enum OnSelect {
     PopStash,
     /// Select a stash to drop
     DropStash,
+    /// Select a stash to show the diff of
+    ShowStash,
     /// Select a commit to rebase onto (rebase elsewhere)
     RebaseElsewhere,
     /// Select the base commit for an interactive rebase (base inclusive)
