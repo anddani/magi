@@ -22,6 +22,25 @@ pub fn take_commit_author(model: &mut Model) -> Option<String> {
     }
 }
 
+/// When the gpg-sign argument is selected, verifies that git can actually
+/// sign before the editor opens, so a missing or broken key surfaces
+/// immediately instead of aborting the commit after the message is written.
+/// Returns the error message to show when signing does not work.
+pub fn check_signing(model: &Model) -> Option<String> {
+    let signing = matches!(
+        &model.arguments,
+        Some(CommitArguments(args)) if args.contains(&CommitArgument::GpgSign)
+    );
+    if !signing {
+        return None;
+    }
+    match commit::signing_error(&model.workdir) {
+        Ok(None) => None,
+        Ok(Some(err)) => Some(format!("Cannot sign commit:\n\n{}", err)),
+        Err(e) => Some(format!("Cannot sign commit:\n\n{}", e)),
+    }
+}
+
 pub fn update(model: &mut Model) -> Option<Message> {
     // Dismiss the commit popup, keeping the author override it carries
     let author = take_commit_author(model);
@@ -43,6 +62,11 @@ pub fn update(model: &mut Model) -> Option<Message> {
     }
 
     let repo_path = &model.workdir;
+
+    if let Some(message) = check_signing(model) {
+        model.popup = Some(PopupContent::Error { message });
+        return None;
+    }
 
     let mut flags: Vec<String> = if let Some(CommitArguments(arguments)) = model.arguments.take() {
         arguments

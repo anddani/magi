@@ -44,10 +44,18 @@ pub fn argument_lines<'a, A: PopupArgument>(
     arg_mode: bool,
     selected: Option<&HashSet<A>>,
 ) -> Vec<Line<'a>> {
+    argument_lines_for(theme, arg_mode, selected, &A::all())
+}
+
+pub fn argument_lines_for<'a, A: PopupArgument>(
+    theme: &Theme,
+    arg_mode: bool,
+    selected: Option<&HashSet<A>>,
+    args: &[A],
+) -> Vec<Line<'a>> {
     let empty = HashSet::new();
     let selected = selected.unwrap_or(&empty);
-    A::all()
-        .iter()
+    args.iter()
         .map(|arg| {
             argument_line(
                 theme,

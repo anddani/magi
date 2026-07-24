@@ -4,10 +4,14 @@ use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
     i18n,
-    model::{Model, arguments::CommitArgument, popup::CommitPopupState},
+    model::{
+        Model,
+        arguments::{CommitArgument, PopupArgument},
+        popup::CommitPopupState,
+    },
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::{argument_lines, argument_value_line, command_description},
+        util::{argument_lines_for, argument_value_line, command_description},
     },
 };
 
@@ -17,11 +21,12 @@ pub fn content<'a>(
     state: &'a CommitPopupState,
 ) -> CommandPopupContent<'a> {
     let t = i18n::t();
-    let mut arguments: Vec<Line<'_>> = argument_lines::<CommitArgument>(
-        theme,
-        model.arg_mode,
-        model.arguments.as_ref().and_then(|a| a.commit()),
-    );
+    let selected = model.arguments.as_ref().and_then(|a| a.commit());
+    // GpgSign is rendered below the author line to match magit's ordering.
+    let (gpg_sign, other): (Vec<_>, Vec<_>) = CommitArgument::all()
+        .into_iter()
+        .partition(|arg| *arg == CommitArgument::GpgSign);
+    let mut arguments: Vec<Line<'_>> = argument_lines_for(theme, model.arg_mode, selected, &other);
     arguments.push(argument_value_line(
         theme,
         'A',
@@ -29,6 +34,12 @@ pub fn content<'a>(
         "--author=",
         state.author.as_deref(),
         model.arg_mode,
+    ));
+    arguments.extend(argument_lines_for(
+        theme,
+        model.arg_mode,
+        selected,
+        &gpg_sign,
     ));
 
     let arguments_col = PopupColumn {
