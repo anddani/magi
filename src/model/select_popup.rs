@@ -101,6 +101,8 @@ pub enum OnSelect {
     /// Select the starting point for a new branch checked out in a new
     /// worktree (step 1 of 3; branch name and path are entered next)
     WorktreeBranch,
+    /// Select an existing worktree to move (the new path is entered next)
+    WorktreeMove,
     /// Select a revision to checkout a file from (step 1 of 2)
     FileCheckoutRevision,
     /// Select a file to checkout (step 2 of 2, carries the chosen revision)
@@ -192,6 +194,8 @@ pub enum OptionsSource {
     BranchesAndTags,
     /// Local branches (excluding already-checked-out) + local tags
     BranchesAndTagsExcludingCheckedOut,
+    /// Paths of linked worktrees (excluding the main working tree)
+    LinkedWorktrees,
     /// Local branches that have any configured remote
     LocalBranchesWithRemote,
     /// Local branches + remote branches + tags (for file checkout revision)

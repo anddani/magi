@@ -92,6 +92,7 @@ mod unstage_all;
 mod unstage_selected;
 mod worktree_branch;
 mod worktree_checkout;
+mod worktree_move;
 
 /// Processes a [`Message`], modifying the passed model.
 ///
@@ -283,6 +284,10 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             branch_name,
             path,
         } => worktree_branch::update(model, starting_point, branch_name, path),
+        Message::ShowWorktreeMovePathInput { worktree } => {
+            show_input_popup::update(model, InputContext::WorktreeMovePath { worktree })
+        }
+        Message::WorktreeMove { worktree, path } => worktree_move::update(model, worktree, path),
         Message::ShowPreview => show_preview::update(model),
         Message::ExitPreview => exit_preview::update(model),
         Message::FileCheckout { revision, file } => file_checkout::update(model, revision, file),
