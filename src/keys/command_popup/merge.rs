@@ -1,11 +1,14 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
-    model::popup::MergePopupState,
+    model::{
+        arguments::{Argument::Merge, MergeArgument},
+        popup::MergePopupState,
+    },
     msg::{MergeCommand, Message, OnSelect, OptionsSource, ShowSelectPopupConfig},
 };
 
-pub fn keys(key: KeyEvent, state: &MergePopupState) -> Option<Message> {
+pub fn keys(key: KeyEvent, arg_mode: bool, state: &MergePopupState) -> Option<Message> {
     if state.in_progress {
         return match key.code {
             KeyCode::Char('q') => Some(Message::DismissPopup),
@@ -15,8 +18,18 @@ pub fn keys(key: KeyEvent, state: &MergePopupState) -> Option<Message> {
         };
     }
 
+    if arg_mode {
+        return match key.code {
+            KeyCode::Char(c) => MergeArgument::from_key(c)
+                .map(|arg| Message::ToggleArgument(Merge(arg)))
+                .or(Some(Message::ExitArgMode)),
+            _ => Some(Message::ExitArgMode),
+        };
+    }
+
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
+        KeyCode::Char('-') => Some(Message::EnterArgMode),
         KeyCode::Char('m') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
             title: "Merge branch".to_string(),
             source: OptionsSource::LocalAndRemoteBranches,

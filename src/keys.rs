@@ -1738,6 +1738,57 @@ mod tests {
         );
     }
 
+    // Merge popup argument tests
+
+    #[test]
+    fn test_minus_in_merge_popup_enters_arg_mode() {
+        use crate::model::popup::MergePopupState;
+
+        let mut model = create_test_model();
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+            MergePopupState { in_progress: false },
+        )));
+
+        let key = create_key_event(NONE, Char('-'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::EnterArgMode));
+    }
+
+    #[test]
+    fn test_f_in_merge_arg_mode_toggles_ff_only() {
+        use crate::model::arguments::Argument::Merge;
+        use crate::model::arguments::MergeArgument;
+        use crate::model::popup::MergePopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+            MergePopupState { in_progress: false },
+        )));
+
+        let key = create_key_event(NONE, Char('f'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Merge(MergeArgument::FfOnly)))
+        );
+    }
+
+    #[test]
+    fn test_invalid_key_in_merge_arg_mode_exits_arg_mode() {
+        use crate::model::popup::MergePopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+            MergePopupState { in_progress: false },
+        )));
+
+        let key = create_key_event(NONE, Char('w'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitArgMode));
+    }
+
     // Log popup tests
 
     #[test]

@@ -19,6 +19,7 @@ pub fn content<'a>(theme: &Theme, model: &'a Model) -> CommandPopupContent<'a> {
     );
     arguments.push(argument_value_line(
         theme,
+        '-',
         'u',
         t.arg_tag_sign_as,
         "--local-user=",
