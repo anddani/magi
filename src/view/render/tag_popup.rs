@@ -6,17 +6,25 @@ use crate::{
     config::Theme,
     i18n,
     model::{Model, arguments::TagArgument},
-    view::render::util::{argument_lines, command_description},
+    view::render::util::{argument_lines, argument_value_line, command_description},
 };
 
-pub fn content<'a>(theme: &Theme, model: &Model) -> CommandPopupContent<'a> {
+pub fn content<'a>(theme: &Theme, model: &'a Model) -> CommandPopupContent<'a> {
     let t = i18n::t();
 
-    let arguments: Vec<Line<'_>> = argument_lines::<TagArgument>(
+    let mut arguments: Vec<Line<'_>> = argument_lines::<TagArgument>(
         theme,
         model.arg_mode,
         model.arguments.as_ref().and_then(|a| a.tag()),
     );
+    arguments.push(argument_value_line(
+        theme,
+        'u',
+        t.arg_tag_sign_as,
+        "--local-user=",
+        model.arguments.as_ref().and_then(|a| a.tag_local_user()),
+        model.arg_mode,
+    ));
 
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),

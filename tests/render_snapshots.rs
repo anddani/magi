@@ -534,10 +534,21 @@ fn snapshot_tag_popup_with_force_argument() {
     let test_repo = TestRepo::new();
     let mut model = create_command_popup_model(&test_repo, PopupContentCommand::Tag);
     model.arg_mode = true;
-    model.arguments = Some(Arguments::TagArguments(HashSet::from([TagArgument::Force])));
+    model.arguments = Some(Arguments::tag_args(HashSet::from([TagArgument::Force])));
     // Argument mode only changes styling (key highlights, selected flags), so
     // snapshot the styled buffer instead of the plain-text frame.
     assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_tag_popup_with_sign_as_value() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(&test_repo, PopupContentCommand::Tag);
+    model.arguments = Some(Arguments::TagArguments {
+        args: HashSet::new(),
+        local_user: Some("ABCD1234".to_string()),
+    });
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 
 #[test]

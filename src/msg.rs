@@ -337,6 +337,9 @@ pub enum Message {
     ShowMergePopup,
     /// Show tag popup
     ShowTagPopup,
+    /// Show the gpg key picker for the tag `-u` argument, or clear the
+    /// sign-as override if one is already set
+    ShowTagSignAsSelect,
     /// Show the input popup for entering a new tag name
     ShowCreateTagInput,
     /// Compute the next release tag from existing release tags and HEAD's

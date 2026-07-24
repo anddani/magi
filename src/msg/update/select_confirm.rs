@@ -2,6 +2,7 @@ use crate::{
     git::reset::has_uncommitted_changes,
     model::{
         LineContent, Model, ViewMode,
+        arguments::Arguments,
         popup::{
             CommitPopupState, ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand,
             SelectResult,
@@ -395,6 +396,32 @@ fn route_result(
                     author: Some(author),
                 },
             )));
+            None
+        }
+        (Some(OnSelect::TagSignAs), SelectResult::Selected(key)) => {
+            // Options are "<keyid> <user id>" entries; only the leading
+            // keyid is passed to git
+            let key = key
+                .split_whitespace()
+                .next()
+                .unwrap_or_default()
+                .to_string();
+            if !key.is_empty() {
+                match model
+                    .arguments
+                    .as_mut()
+                    .and_then(|a| a.tag_local_user_mut())
+                {
+                    Some(local_user) => *local_user = Some(key),
+                    None => {
+                        model.arguments = Some(Arguments::TagArguments {
+                            args: Default::default(),
+                            local_user: Some(key),
+                        })
+                    }
+                }
+            }
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Tag));
             None
         }
         (

@@ -8,6 +8,7 @@ use crate::{
 pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
     if arg_mode {
         return match key.code {
+            KeyCode::Char('u') => Some(Message::ShowTagSignAsSelect),
             KeyCode::Char(c) => TagArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Tag(arg)))
                 .or(Some(Message::ExitArgMode)),

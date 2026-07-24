@@ -166,6 +166,8 @@ pub enum OnSelect {
     PruneTagsRemotePick,
     /// Select an author to override the commit author with (`--author=`)
     CommitAuthor,
+    /// Select a gpg key to sign the tag with (`--local-user=`)
+    TagSignAs,
     /// Select the mainline parent number when reverting a merge commit
     RevertMergeMainline {
         hashes: Vec<String>,
