@@ -38,6 +38,7 @@ pub fn content<'a>(
 
     let mut arguments: Vec<Line<'_>> = vec![argument_value_line(
         theme,
+        '-',
         'm',
         t.arg_revert_mainline,
         "--mainline=",
@@ -49,6 +50,16 @@ pub fn content<'a>(
         theme,
         model.arg_mode,
         model.arguments.as_ref().and_then(|a| a.revert()),
+    ));
+
+    arguments.push(argument_value_line(
+        theme,
+        '=',
+        's',
+        t.arg_revert_strategy,
+        "--strategy=",
+        state.strategy.as_deref(),
+        model.equals_arg_mode,
     ));
 
     let arguments_col = PopupColumn {
@@ -66,8 +77,18 @@ pub fn content<'a>(
                 columns: vec![PopupColumn {
                     title: Some(t.col_actions.into()),
                     content: vec![
-                        command_description(theme, model.arg_mode, "_", t.cmd_revert_commits),
-                        command_description(theme, model.arg_mode, "s", t.cmd_skip),
+                        command_description(
+                            theme,
+                            model.arg_mode || model.equals_arg_mode,
+                            "_",
+                            t.cmd_revert_commits,
+                        ),
+                        command_description(
+                            theme,
+                            model.arg_mode || model.equals_arg_mode,
+                            "s",
+                            t.cmd_skip,
+                        ),
                     ],
                 }],
             },

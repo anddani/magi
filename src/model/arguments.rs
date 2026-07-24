@@ -10,7 +10,11 @@ pub enum Arguments {
     StashArguments(HashSet<StashArgument>),
     RevertArguments(HashSet<RevertArgument>),
     LogArguments(HashSet<LogArgument>),
-    TagArguments(HashSet<TagArgument>),
+    TagArguments {
+        args: HashSet<TagArgument>,
+        /// Key to sign the tag with, set via the `-u` argument (`--local-user=`)
+        local_user: Option<String>,
+    },
     RebaseArguments(HashSet<RebaseArgument>),
     MergeArguments(HashSet<MergeArgument>),
 }
@@ -149,8 +153,16 @@ impl Arguments {
         }
     }
 
+    /// Tag arguments with no `--local-user=` override set
+    pub fn tag_args(args: HashSet<TagArgument>) -> Arguments {
+        Arguments::TagArguments {
+            args,
+            local_user: None,
+        }
+    }
+
     pub fn tag(&self) -> Option<&HashSet<TagArgument>> {
-        if let Arguments::TagArguments(args) = self {
+        if let Arguments::TagArguments { args, .. } = self {
             Some(args)
         } else {
             None
@@ -158,8 +170,24 @@ impl Arguments {
     }
 
     pub fn tag_mut(&mut self) -> Option<&mut HashSet<TagArgument>> {
-        if let Arguments::TagArguments(args) = self {
+        if let Arguments::TagArguments { args, .. } = self {
             Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn tag_local_user(&self) -> Option<&str> {
+        if let Arguments::TagArguments { local_user, .. } = self {
+            local_user.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn tag_local_user_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::TagArguments { local_user, .. } = self {
+            Some(local_user)
         } else {
             None
         }
@@ -774,6 +802,29 @@ mod tests {
     #[test]
     fn test_merge_argument_all_contains_ff_only() {
         assert!(MergeArgument::all().contains(&MergeArgument::FfOnly));
+    }
+
+    #[test]
+    fn test_tag_args_has_no_local_user() {
+        let arguments = Arguments::tag_args([TagArgument::Force].into_iter().collect());
+        assert_eq!(arguments.tag_local_user(), None);
+        assert!(arguments.tag().unwrap().contains(&TagArgument::Force));
+    }
+
+    #[test]
+    fn test_tag_local_user_mut_sets_and_clears() {
+        let mut arguments = Arguments::tag_args(HashSet::new());
+        *arguments.tag_local_user_mut().unwrap() = Some("ABCD1234".to_string());
+        assert_eq!(arguments.tag_local_user(), Some("ABCD1234"));
+
+        *arguments.tag_local_user_mut().unwrap() = None;
+        assert_eq!(arguments.tag_local_user(), None);
+    }
+
+    #[test]
+    fn test_tag_local_user_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.tag_local_user(), None);
     }
 
     #[test]

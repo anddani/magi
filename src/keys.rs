@@ -129,7 +129,12 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
     }
 
     if let Some(PopupContent::Command(command)) = &model.popup {
-        return command_popup::handle_command_popup_key(key, command, model.arg_mode);
+        return command_popup::handle_command_popup_key(
+            key,
+            command,
+            model.arg_mode,
+            model.equals_arg_mode,
+        );
     }
 
     // Let commands from help popup open popups
@@ -380,6 +385,7 @@ mod tests {
             log_pick_on_select: None,
             pty_state: None,
             arg_mode: false,
+            equals_arg_mode: false,
             pending_g: false,
             arguments: None,
             view_mode: ViewMode::Status,
