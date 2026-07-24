@@ -303,11 +303,14 @@ mod tests {
     #[test]
     fn test_signing_error_none_when_signing_works() {
         let test_repo = TestRepo::new();
-        // Fake gpg that emits the SIG_CREATED status line git looks for.
+        // Fake gpg that emits the SIG_CREATED status line git looks for. It
+        // must drain stdin: git's pipe_command treats EPIPE on the child's
+        // stdin as a signing failure, so exiting before git finishes writing
+        // the payload makes the probe flaky (seen on loaded CI runners).
         let fake_gpg = test_repo.repo_path().join("fake-gpg.sh");
         std::fs::write(
             &fake_gpg,
-            "#!/bin/sh\necho \"[GNUPG:] SIG_CREATED \" >&2\necho fake-signature\n",
+            "#!/bin/sh\ncat >/dev/null\necho \"[GNUPG:] SIG_CREATED \" >&2\necho fake-signature\n",
         )
         .unwrap();
         #[cfg(unix)]
