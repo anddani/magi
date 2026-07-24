@@ -481,8 +481,40 @@ fn snapshot_revert_popup() {
             in_progress: false,
             selected_commits: vec!["1234567890abcdef1234567890abcdef12345678".to_string()],
             mainline: None,
+            strategy: None,
         }),
     );
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_revert_popup_with_strategy() {
+    let test_repo = TestRepo::new();
+    let model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Revert(RevertPopupState {
+            in_progress: false,
+            selected_commits: vec!["1234567890abcdef1234567890abcdef12345678".to_string()],
+            mainline: None,
+            strategy: Some("recursive".to_string()),
+        }),
+    );
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_revert_strategy_select_popup() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Revert(RevertPopupState {
+            in_progress: false,
+            selected_commits: vec!["1234567890abcdef1234567890abcdef12345678".to_string()],
+            mainline: None,
+            strategy: None,
+        }),
+    );
+    update(&mut model, Message::ShowRevertStrategySelect);
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 

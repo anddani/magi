@@ -170,6 +170,12 @@ pub enum OnSelect {
     RevertMergeMainline {
         hashes: Vec<String>,
         no_commit: bool,
+        strategy: Option<String>,
+    },
+    /// Select the merge strategy for a revert (`--strategy=`); restores the
+    /// revert popup with the chosen strategy set
+    RevertStrategy {
+        revert_state: crate::model::popup::RevertPopupState,
     },
 }
 

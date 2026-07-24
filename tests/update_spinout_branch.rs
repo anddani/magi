@@ -240,6 +240,7 @@ fn test_spinout_with_upstream_resets_current_branch_in_place() {
         log_pick_on_select: None,
         pty_state: None,
         arg_mode: false,
+        equals_arg_mode: false,
         pending_g: false,
         arguments: None,
         view_mode: magi::model::ViewMode::Status,

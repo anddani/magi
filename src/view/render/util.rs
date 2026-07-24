@@ -177,11 +177,12 @@ pub fn command_description<'a>(
 
 pub fn argument_value_line<'a>(
     theme: &Theme,
+    prefix: char,
     key: char,
     description: &'a str,
     flag_prefix: &'a str,
     value: Option<&'a str>,
-    arg_mode: bool,
+    prefix_pressed: bool,
 ) -> Line<'a> {
     let faded_style = Style::default().fg(theme.dim_text);
     let desc_style = Style::default();
@@ -189,7 +190,11 @@ pub fn argument_value_line<'a>(
         .fg(theme.diff_addition)
         .add_modifier(Modifier::BOLD);
 
-    let dash_style = if arg_mode { faded_style } else { key_style };
+    let prefix_style = if prefix_pressed {
+        faded_style
+    } else {
+        key_style
+    };
 
     let (flag_text, flag_style) = match value {
         Some(v) => (
@@ -199,7 +204,7 @@ pub fn argument_value_line<'a>(
         None => (flag_prefix.to_string(), faded_style),
     };
     Line::from(vec![
-        Span::styled(" -", dash_style),
+        Span::styled(format!(" {prefix}"), prefix_style),
         Span::styled(key.to_string(), key_style),
         Span::styled(format!(" {description} ("), desc_style),
         Span::styled(flag_text, flag_style),

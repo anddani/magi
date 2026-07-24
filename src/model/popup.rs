@@ -347,6 +347,8 @@ pub struct RevertPopupState {
     pub selected_commits: Vec<String>,
     /// Mainline parent number set via `-m` argument (bypasses the select popup when set)
     pub mainline: Option<String>,
+    /// Merge strategy set via `=s` argument (`--strategy=<value>`)
+    pub strategy: Option<String>,
 }
 
 /// State for the Apply (cherry-pick) popup
