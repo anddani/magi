@@ -11,25 +11,31 @@ use crate::{
 };
 
 /// Consumes the tag popup arguments, returning their git flags in a
-/// stable order (--force before --edit before --annotate before --sign).
+/// stable order (--force before --edit before --annotate before --sign
+/// before --local-user).
 pub(super) fn take_tag_flags(model: &mut Model) -> Vec<String> {
-    if let Some(TagArguments(arguments)) = model.arguments.take() {
-        TagArgument::all()
+    if let Some(TagArguments { args, local_user }) = model.arguments.take() {
+        let mut flags: Vec<String> = TagArgument::all()
             .into_iter()
-            .filter(|arg| arguments.contains(arg))
+            .filter(|arg| args.contains(arg))
             .map(|arg| arg.flag().to_string())
-            .collect()
+            .collect();
+        if let Some(local_user) = local_user {
+            flags.push(format!("--local-user={local_user}"));
+        }
+        flags
     } else {
         vec![]
     }
 }
 
 /// Create a new git tag pointing at `target`.
-/// Equivalent to `git tag [--force] [--edit] [--annotate] [--sign] <name> <target>`.
+/// Equivalent to `git tag [--force] [--edit] [--annotate] [--sign]
+/// [--local-user=<key>] <name> <target>`.
 ///
-/// With --edit, --annotate or --sign, `git tag` opens the editor for the
-/// tag message, so the command must run with the TUI suspended instead of
-/// capturing output.
+/// With --edit, --annotate, --sign or --local-user, `git tag` opens the
+/// editor for the tag message, so the command must run with the TUI
+/// suspended instead of capturing output.
 pub fn update(model: &mut Model, name: String, target: String) -> Option<Message> {
     let flags = take_tag_flags(model);
 
@@ -37,10 +43,12 @@ pub fn update(model: &mut Model, name: String, target: String) -> Option<Message
     args.extend(flags.iter().cloned());
     args.extend([name.clone(), target]);
 
-    if flags
-        .iter()
-        .any(|flag| flag == "--edit" || flag == "--annotate" || flag == "--sign")
-    {
+    if flags.iter().any(|flag| {
+        flag == "--edit"
+            || flag == "--annotate"
+            || flag == "--sign"
+            || flag.starts_with("--local-user=")
+    }) {
         return Some(Message::CreateTagWithEditor { name, args });
     }
 

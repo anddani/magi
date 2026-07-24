@@ -46,6 +46,8 @@ pub struct Model {
     pub pty_state: Option<PtyState>,
     /// When true, user is selecting an argument (pressed '-')
     pub arg_mode: bool,
+    /// When true, user is selecting a value argument (pressed '=')
+    pub equals_arg_mode: bool,
     /// When true, 'g' was pressed and we're waiting for the second 'g' to go to first line
     pub pending_g: bool,
     /// Flags to add to the next command
@@ -139,6 +141,8 @@ pub enum ViewMode {
         graph: bool,
         /// Whether git colors the graph (--color); used when refreshing
         color: bool,
+        /// Whether refnames are shown (--decorate); used when refreshing
+        decorate: bool,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,

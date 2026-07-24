@@ -93,6 +93,10 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             branch_name,
             path: input,
         }),
+        InputContext::WorktreeMovePath { worktree } => Some(Message::WorktreeMove {
+            worktree,
+            path: input,
+        }),
         InputContext::PushRefspec { remote } => Some(Message::Push(PushCommand::PushRefspecs {
             remote,
             refspecs: input,

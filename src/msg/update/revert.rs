@@ -15,14 +15,23 @@ const TOAST_DURATION: Duration = Duration::from_secs(5);
 
 pub fn update(model: &mut Model, cmd: RevertCommand) -> Option<Message> {
     match cmd {
-        RevertCommand::Commits { hashes, mainline } => commits(model, hashes, mainline),
+        RevertCommand::Commits {
+            hashes,
+            mainline,
+            strategy,
+        } => commits(model, hashes, mainline, strategy),
         RevertCommand::WithEditor { args } => with_editor(model, args),
-        RevertCommand::NoCommit { hashes, mainline } => no_commit(model, hashes, mainline),
+        RevertCommand::NoCommit {
+            hashes,
+            mainline,
+            strategy,
+        } => no_commit(model, hashes, mainline, strategy),
         RevertCommand::CommitsWithMainline {
             hashes,
             mainline,
             no_commit,
-        } => commits_with_mainline(model, hashes, mainline, no_commit),
+            strategy,
+        } => commits_with_mainline(model, hashes, mainline, no_commit, strategy),
         RevertCommand::Continue => continue_revert(model),
         RevertCommand::Skip => skip_revert(model),
         RevertCommand::Abort => abort_revert(model),
@@ -49,19 +58,25 @@ fn opens_editor(flags: &[String]) -> bool {
     !flags.iter().any(|flag| flag == "--no-edit")
 }
 
-fn commits(model: &mut Model, hashes: Vec<String>, mainline: Option<String>) -> Option<Message> {
+fn commits(
+    model: &mut Model,
+    hashes: Vec<String>,
+    mainline: Option<String>,
+    strategy: Option<String>,
+) -> Option<Message> {
     if hashes.is_empty() {
         return None;
     }
     if any_is_merge_commit(&model.workdir, &hashes) {
         if let Some(m) = mainline.as_deref().and_then(|s| s.parse::<u8>().ok()) {
-            return commits_with_mainline(model, hashes, m, false);
+            return commits_with_mainline(model, hashes, m, false, strategy);
         }
-        show_mainline_popup(model, hashes, false);
+        show_mainline_popup(model, hashes, false, strategy);
         return None;
     }
     let flags = take_revert_flags(model);
     let mut args = vec!["revert".to_string()];
+    args.extend(strategy_flag(strategy.as_deref()));
     args.extend(flags.iter().cloned());
     args.extend(hashes);
     if opens_editor(&flags) {
@@ -93,18 +108,24 @@ fn with_editor(model: &mut Model, args: Vec<String>) -> Option<Message> {
     Some(Message::Refresh)
 }
 
-fn no_commit(model: &mut Model, hashes: Vec<String>, mainline: Option<String>) -> Option<Message> {
+fn no_commit(
+    model: &mut Model,
+    hashes: Vec<String>,
+    mainline: Option<String>,
+    strategy: Option<String>,
+) -> Option<Message> {
     if hashes.is_empty() {
         return None;
     }
     if any_is_merge_commit(&model.workdir, &hashes) {
         if let Some(m) = mainline.as_deref().and_then(|s| s.parse::<u8>().ok()) {
-            return commits_with_mainline(model, hashes, m, true);
+            return commits_with_mainline(model, hashes, m, true, strategy);
         }
-        show_mainline_popup(model, hashes, true);
+        show_mainline_popup(model, hashes, true, strategy);
         return None;
     }
     let mut args = vec!["revert".to_string(), "--no-commit".to_string()];
+    args.extend(strategy_flag(strategy.as_deref()));
     args.extend(hashes);
     execute_pty_command(model, args, "Revert".to_string())
 }
@@ -114,11 +135,13 @@ fn commits_with_mainline(
     hashes: Vec<String>,
     mainline: u8,
     no_commit: bool,
+    strategy: Option<String>,
 ) -> Option<Message> {
     if hashes.is_empty() {
         return None;
     }
     let mut args = vec!["revert".to_string(), "-m".to_string(), mainline.to_string()];
+    args.extend(strategy_flag(strategy.as_deref()));
     if no_commit {
         args.push("--no-commit".to_string());
         args.extend(hashes);
@@ -133,7 +156,19 @@ fn commits_with_mainline(
     execute_pty_command(model, args, "Revert".to_string())
 }
 
-fn show_mainline_popup(model: &mut Model, hashes: Vec<String>, no_commit: bool) {
+/// Builds the `--strategy=<value>` flag set by the `=s` popup argument.
+fn strategy_flag(strategy: Option<&str>) -> Vec<String> {
+    strategy
+        .map(|s| vec![format!("--strategy={s}")])
+        .unwrap_or_default()
+}
+
+fn show_mainline_popup(
+    model: &mut Model,
+    hashes: Vec<String>,
+    no_commit: bool,
+    strategy: Option<String>,
+) {
     let options = if hashes.len() == 1 {
         let count = parent_count(&model.workdir, &hashes[0]);
         if count > 2 {
@@ -156,7 +191,11 @@ fn show_mainline_popup(model: &mut Model, hashes: Vec<String>, no_commit: bool) 
     let state = SelectPopupState::new(
         "Replay merges relative to parent".to_string(),
         options,
-        OnSelect::RevertMergeMainline { hashes, no_commit },
+        OnSelect::RevertMergeMainline {
+            hashes,
+            no_commit,
+            strategy,
+        },
     );
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));
 }

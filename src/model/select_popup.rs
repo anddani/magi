@@ -65,6 +65,8 @@ pub enum OnSelect {
     PopStash,
     /// Select a stash to drop
     DropStash,
+    /// Select a stash to show the diff of
+    ShowStash,
     /// Select a commit to rebase onto (rebase elsewhere)
     RebaseElsewhere,
     /// Select the base commit for an interactive rebase (base inclusive)
@@ -101,6 +103,8 @@ pub enum OnSelect {
     /// Select the starting point for a new branch checked out in a new
     /// worktree (step 1 of 3; branch name and path are entered next)
     WorktreeBranch,
+    /// Select an existing worktree to move (the new path is entered next)
+    WorktreeMove,
     /// Select a revision to checkout a file from (step 1 of 2)
     FileCheckoutRevision,
     /// Select a file to checkout (step 2 of 2, carries the chosen revision)
@@ -170,10 +174,18 @@ pub enum OnSelect {
     /// Select the commit whose message to reuse (`--reuse-message=`).
     /// Carries the rest of the commit popup state so it survives the picker.
     CommitReuseMessage { author: Option<String> },
+    /// Select a gpg key to sign the tag with (`--local-user=`)
+    TagSignAs,
     /// Select the mainline parent number when reverting a merge commit
     RevertMergeMainline {
         hashes: Vec<String>,
         no_commit: bool,
+        strategy: Option<String>,
+    },
+    /// Select the merge strategy for a revert (`--strategy=`); restores the
+    /// revert popup with the chosen strategy set
+    RevertStrategy {
+        revert_state: crate::model::popup::RevertPopupState,
     },
 }
 
@@ -196,6 +208,8 @@ pub enum OptionsSource {
     BranchesAndTags,
     /// Local branches (excluding already-checked-out) + local tags
     BranchesAndTagsExcludingCheckedOut,
+    /// Paths of linked worktrees (excluding the main working tree)
+    LinkedWorktrees,
     /// Local branches that have any configured remote
     LocalBranchesWithRemote,
     /// Local branches + remote branches + tags (for file checkout revision)

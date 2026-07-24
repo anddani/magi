@@ -29,6 +29,7 @@ pub fn content<'a>(
     let mut arguments: Vec<Line<'_>> = argument_lines_for(theme, model.arg_mode, selected, &other);
     arguments.push(argument_value_line(
         theme,
+        '-',
         'A',
         t.arg_commit_author,
         "--author=",
@@ -43,6 +44,7 @@ pub fn content<'a>(
     ));
     arguments.push(argument_value_line(
         theme,
+        '-',
         'C',
         t.arg_commit_reuse_message,
         "--reuse-message=",

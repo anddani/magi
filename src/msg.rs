@@ -272,6 +272,15 @@ pub enum Message {
         branch_name: String,
         path: String,
     },
+    /// Show the input popup for the new location of an existing worktree
+    ShowWorktreeMovePathInput {
+        worktree: String,
+    },
+    /// Move an existing worktree to a new location
+    WorktreeMove {
+        worktree: String,
+        path: String,
+    },
     /// Show confirmation popup before deleting the selected branch
     DeleteBranch(String),
     /// Actually delete the branch after user confirmation
@@ -296,6 +305,8 @@ pub enum Message {
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert
     ShowRevertMainlineInput,
+    /// Show select popup for picking the =s merge strategy for a revert
+    ShowRevertStrategySelect,
     /// Execute a revert command
     Revert(RevertCommand),
 
@@ -340,6 +351,9 @@ pub enum Message {
     ShowMergePopup,
     /// Show tag popup
     ShowTagPopup,
+    /// Show the gpg key picker for the tag `-u` argument, or clear the
+    /// sign-as override if one is already set
+    ShowTagSignAsSelect,
     /// Show the input popup for entering a new tag name
     ShowCreateTagInput,
     /// Compute the next release tag from existing release tags and HEAD's
@@ -420,6 +434,7 @@ pub enum Message {
     },
 
     EnterArgMode,
+    EnterEqualsArgMode,
     ToggleArgument(Argument),
     ExitArgMode,
 
@@ -444,6 +459,8 @@ pub enum Message {
 
     /// Enter preview mode for the commit/stash under cursor
     ShowPreview,
+    /// Enter preview mode for a specific stash (by index)
+    ShowStashDiff(usize),
     /// Exit preview mode and return to previous view
     ExitPreview,
 
@@ -662,6 +679,7 @@ pub enum RevertCommand {
     Commits {
         hashes: Vec<String>,
         mainline: Option<String>,
+        strategy: Option<String>,
     },
     /// Run a fully-built `git revert` command that opens the user's editor
     /// for the commit message. Requires the TUI to be suspended.
@@ -670,12 +688,14 @@ pub enum RevertCommand {
     NoCommit {
         hashes: Vec<String>,
         mainline: Option<String>,
+        strategy: Option<String>,
     },
     /// Revert merge commit(s) with an explicit mainline parent number (-m)
     CommitsWithMainline {
         hashes: Vec<String>,
         mainline: u8,
         no_commit: bool,
+        strategy: Option<String>,
     },
     /// Continue after resolving conflicts
     Continue,

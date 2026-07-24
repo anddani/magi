@@ -3,8 +3,8 @@ use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
 use crate::{
     config::Theme,
     i18n,
-    model::{Model, popup::MergePopupState},
-    view::render::util::command_description,
+    model::{Model, arguments::MergeArgument, popup::MergePopupState},
+    view::render::util::{argument_lines, command_description},
 };
 
 pub fn content<'a>(
@@ -30,6 +30,15 @@ pub fn content<'a>(
         };
     }
 
+    let arguments_col = PopupColumn {
+        title: Some(t.col_arguments.into()),
+        content: argument_lines::<MergeArgument>(
+            theme,
+            model.arg_mode,
+            model.arguments.as_ref().and_then(|a| a.merge()),
+        ),
+    };
+
     let actions_col = PopupColumn {
         title: Some(t.col_actions.into()),
         content: vec![
@@ -45,8 +54,13 @@ pub fn content<'a>(
 
     CommandPopupContent {
         title: t.popup_merge,
-        rows: vec![PopupRow {
-            columns: vec![actions_col],
-        }],
+        rows: vec![
+            PopupRow {
+                columns: vec![arguments_col],
+            },
+            PopupRow {
+                columns: vec![actions_col],
+            },
+        ],
     }
 }

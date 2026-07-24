@@ -22,6 +22,7 @@ pub fn handle_command_popup_key(
     key: KeyEvent,
     command: &PopupContentCommand,
     arg_mode: bool,
+    equals_arg_mode: bool,
 ) -> Option<Message> {
     if key.code == KeyCode::Esc
         || key.modifiers == KeyModifiers::CONTROL && key.code == KeyCode::Char('g')
@@ -40,8 +41,8 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Stash => stash::keys(key, arg_mode),
         PopupContentCommand::Reset => reset::keys(key),
         PopupContentCommand::Rebase(state) => rebase::keys(key, arg_mode, state),
-        PopupContentCommand::Revert(state) => revert::keys(key, arg_mode, state),
-        PopupContentCommand::Merge(state) => merge::keys(key, state),
+        PopupContentCommand::Revert(state) => revert::keys(key, arg_mode, equals_arg_mode, state),
+        PopupContentCommand::Merge(state) => merge::keys(key, arg_mode, state),
         PopupContentCommand::Apply(state) => apply::keys(key, state),
         PopupContentCommand::Tag => tag::keys(key, arg_mode),
         PopupContentCommand::Worktree => worktree::keys(key),

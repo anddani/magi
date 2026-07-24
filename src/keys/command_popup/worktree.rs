@@ -15,6 +15,11 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
             source: OptionsSource::BranchesAndTags,
             on_select: OnSelect::WorktreeBranch,
         })),
+        KeyCode::Char('m') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Move worktree".to_string(),
+            source: OptionsSource::LinkedWorktrees,
+            on_select: OnSelect::WorktreeMove,
+        })),
         _ => None,
     }
 }
