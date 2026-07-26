@@ -281,6 +281,8 @@ pub enum Message {
         worktree: String,
         path: String,
     },
+    /// Actually delete the worktree after user confirmation
+    ConfirmDeleteWorktree(String),
     /// Show confirmation popup before deleting the selected branch
     DeleteBranch(String),
     /// Actually delete the branch after user confirmation

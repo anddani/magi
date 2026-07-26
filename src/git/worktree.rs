@@ -51,6 +51,60 @@ pub fn list_linked_worktrees<P: AsRef<Path>>(repo_path: P) -> Vec<String> {
         .collect()
 }
 
+/// Returns the path of the main working tree (the first entry in
+/// `git worktree list --porcelain`).
+pub fn main_worktree_path<P: AsRef<Path>>(repo_path: P) -> Option<String> {
+    let output = git_cmd(&repo_path, &["worktree", "list", "--porcelain"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .ok()?;
+
+    let text = String::from_utf8_lossy(&output.stdout);
+    text.lines()
+        .find_map(|line| line.strip_prefix("worktree "))
+        .map(|path| path.to_string())
+}
+
+/// Returns true when the worktree at `worktree_path` has uncommitted
+/// changes (staged, unstaged, or untracked files).
+pub fn worktree_has_changes<P: AsRef<Path>>(worktree_path: P) -> bool {
+    let output = git_cmd(&worktree_path, &["status", "--porcelain"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output();
+
+    match output {
+        Ok(output) => output.status.success() && !output.stdout.is_empty(),
+        Err(_) => false,
+    }
+}
+
+/// Delete an existing worktree, discarding any uncommitted changes, then
+/// prune stale worktree administrative files.
+/// Runs: git worktree remove --force <worktree> && git worktree prune
+pub fn worktree_delete<P: AsRef<Path>>(repo_path: P, worktree: &str) -> MagiResult<WorktreeResult> {
+    let output = git_cmd(&repo_path, &["worktree", "remove", "--force", worktree])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+
+    if output.status.success() {
+        git_cmd(&repo_path, &["worktree", "prune"])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()?;
+        Ok(WorktreeResult::Success)
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        Ok(WorktreeResult::Error(if stderr.is_empty() {
+            "git worktree remove failed".to_string()
+        } else {
+            stderr
+        }))
+    }
+}
+
 /// Move an existing worktree to a new location.
 /// Runs: git worktree move <worktree> <new_path>
 pub fn worktree_move<P: AsRef<Path>>(
@@ -327,6 +381,122 @@ mod tests {
         let repo_path = test_repo.repo_path();
 
         let result = worktree_move(repo_path, "/nonexistent/worktree", "/tmp/nowhere").unwrap();
+        assert!(matches!(result, WorktreeResult::Error(_)));
+    }
+
+    #[test]
+    fn test_main_worktree_path_returns_main() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        let main = main_worktree_path(repo_path).unwrap();
+        assert_eq!(
+            std::path::Path::new(&main).canonicalize().unwrap(),
+            repo_path.canonicalize().unwrap()
+        );
+    }
+
+    #[test]
+    fn test_main_worktree_path_from_linked_worktree() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        crate::git::git_cmd(repo_path, &["branch", "feature"])
+            .output()
+            .unwrap();
+        let worktree_path_str = {
+            let tmp = tempfile::tempdir().unwrap();
+            tmp.path().to_str().unwrap().to_string()
+        };
+        worktree_add(repo_path, &worktree_path_str, "feature").unwrap();
+
+        // Asking from within the linked worktree still yields the main one
+        let main = main_worktree_path(&worktree_path_str).unwrap();
+        assert_eq!(
+            std::path::Path::new(&main).canonicalize().unwrap(),
+            repo_path.canonicalize().unwrap()
+        );
+    }
+
+    #[test]
+    fn test_worktree_has_changes_clean_worktree() {
+        let test_repo = TestRepo::new();
+        assert!(!worktree_has_changes(test_repo.repo_path()));
+    }
+
+    #[test]
+    fn test_worktree_has_changes_untracked_file() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        std::fs::write(repo_path.join("untracked.txt"), "content").unwrap();
+        assert!(worktree_has_changes(repo_path));
+    }
+
+    #[test]
+    fn test_worktree_delete_success() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        crate::git::git_cmd(repo_path, &["branch", "feature"])
+            .output()
+            .unwrap();
+        let worktree_path_str = {
+            let tmp = tempfile::tempdir().unwrap();
+            tmp.path().to_str().unwrap().to_string()
+        };
+        worktree_add(repo_path, &worktree_path_str, "feature").unwrap();
+
+        let result = worktree_delete(repo_path, &worktree_path_str).unwrap();
+        if let WorktreeResult::Error(ref e) = result {
+            panic!("Expected success but got error: {e}");
+        }
+        assert!(!std::path::Path::new(&worktree_path_str).exists());
+        assert!(list_linked_worktrees(repo_path).is_empty());
+    }
+
+    #[test]
+    fn test_worktree_delete_with_uncommitted_changes_succeeds() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        crate::git::git_cmd(repo_path, &["branch", "feature"])
+            .output()
+            .unwrap();
+        let worktree_path_str = {
+            let tmp = tempfile::tempdir().unwrap();
+            tmp.path().to_str().unwrap().to_string()
+        };
+        worktree_add(repo_path, &worktree_path_str, "feature").unwrap();
+
+        // --force removes the worktree even with uncommitted changes
+        std::fs::write(
+            std::path::Path::new(&worktree_path_str).join("dirty.txt"),
+            "uncommitted",
+        )
+        .unwrap();
+
+        let result = worktree_delete(repo_path, &worktree_path_str).unwrap();
+        assert!(matches!(result, WorktreeResult::Success));
+        assert!(!std::path::Path::new(&worktree_path_str).exists());
+    }
+
+    #[test]
+    fn test_worktree_delete_main_worktree_returns_error() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        let result = worktree_delete(repo_path, repo_path.to_str().unwrap()).unwrap();
+        assert!(matches!(result, WorktreeResult::Error(_)));
+        assert!(repo_path.exists());
+    }
+
+    #[test]
+    fn test_worktree_delete_nonexistent_worktree_returns_error() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        let result = worktree_delete(repo_path, "/nonexistent/worktree").unwrap();
         assert!(matches!(result, WorktreeResult::Error(_)));
     }
 

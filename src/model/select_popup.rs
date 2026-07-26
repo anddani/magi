@@ -109,6 +109,8 @@ pub enum OnSelect {
     WorktreeBranch,
     /// Select an existing worktree to move (the new path is entered next)
     WorktreeMove,
+    /// Select an existing worktree to delete (a confirmation follows)
+    WorktreeDelete,
     /// Select a revision to checkout a file from (step 1 of 2)
     FileCheckoutRevision,
     /// Select a file to checkout (step 2 of 2, carries the chosen revision)

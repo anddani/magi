@@ -43,6 +43,8 @@ pub enum ConfirmAction {
         target: String,
         mode: crate::msg::ResetMode,
     },
+    /// Delete a worktree (stores the worktree path)
+    DeleteWorktree(String),
     /// Prune tags: delete local-only tags and push-delete remote-only tags
     PruneTags {
         local_tags: Vec<String>,

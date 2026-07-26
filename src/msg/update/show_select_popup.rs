@@ -615,7 +615,9 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         OnSelect::WorktreeAdd { .. }
         | OnSelect::WorktreeBranch
         | OnSelect::CreateNewBranchBase { .. } => "No branches or tags found".to_string(),
-        OnSelect::WorktreeMove => "No linked worktrees found".to_string(),
+        OnSelect::WorktreeMove | OnSelect::WorktreeDelete => {
+            "No linked worktrees found".to_string()
+        }
         OnSelect::FileCheckoutRevision
         | OnSelect::LogOther
         | OnSelect::ReflogOther

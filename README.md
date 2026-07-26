@@ -231,6 +231,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Worktree
         - [x] Create new worktree
         - [x] Move worktree
+        - [x] Delete worktree
         - [ ] Checkout/manage worktrees
 - [x] Applying changes
 

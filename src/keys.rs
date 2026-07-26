@@ -101,6 +101,9 @@ pub fn handle_key(key: event::KeyEvent, model: &Model) -> Option<Message> {
                         target: target.clone(),
                         mode: *mode,
                     },
+                    ConfirmAction::DeleteWorktree(worktree) => {
+                        Message::ConfirmDeleteWorktree(worktree.clone())
+                    }
                     ConfirmAction::PruneTags {
                         local_tags,
                         remote_tags,
