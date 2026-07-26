@@ -213,6 +213,7 @@ Here are a few features that the aforementioned applications lack:
     - [x] Push
     - [x] Rebase
         - [x] Update branches argument (`--update-refs`)
+        - [x] Use author date as committer date argument (`-d`, `--committer-date-is-author-date`)
     - [x] Tag
     - [ ] Note
     - [x] Revert

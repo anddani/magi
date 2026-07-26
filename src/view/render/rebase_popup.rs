@@ -73,7 +73,10 @@ pub fn content<'a>(
         theme,
         model.arg_mode,
         selected,
-        &[RebaseArgument::UpdateRefs],
+        &[
+            RebaseArgument::UpdateRefs,
+            RebaseArgument::CommitterDateIsAuthorDate,
+        ],
     ));
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),

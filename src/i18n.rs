@@ -287,6 +287,7 @@ pub struct Strings {
     pub arg_rebase_keep_empty: &'static str,
     pub arg_rebase_rebase_merges: &'static str,
     pub arg_rebase_update_refs: &'static str,
+    pub arg_rebase_committer_date_is_author_date: &'static str,
     pub arg_merge_ff_only: &'static str,
     pub arg_merge_no_ff: &'static str,
 
@@ -569,6 +570,7 @@ static ENGLISH: Strings = Strings {
     arg_rebase_keep_empty: "Keep empty commits",
     arg_rebase_rebase_merges: "Rebase merges",
     arg_rebase_update_refs: "Update branches",
+    arg_rebase_committer_date_is_author_date: "Use author date as committer date",
     arg_merge_ff_only: "Fast-forward only",
     arg_merge_no_ff: "No fast-forward",
 
@@ -838,6 +840,7 @@ static SWEDISH: Strings = Strings {
     arg_rebase_keep_empty: "Behåll tomma förbindelser",
     arg_rebase_rebase_merges: "Ympa sammanslagningar",
     arg_rebase_update_refs: "Uppdatera grenar",
+    arg_rebase_committer_date_is_author_date: "Använd upphovsdatum som förbindelsedatum",
     arg_merge_ff_only: "Endast snabbspola",
     arg_merge_no_ff: "Ingen snabbspolning",
 
