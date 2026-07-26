@@ -307,6 +307,8 @@ pub enum Message {
     ShowRevertMainlineInput,
     /// Show select popup for picking the =s merge strategy for a revert
     ShowRevertStrategySelect,
+    /// Show select popup for picking the -S gpg signing key for a revert
+    ShowRevertGpgSignSelect,
     /// Execute a revert command
     Revert(RevertCommand),
 
@@ -683,6 +685,7 @@ pub enum RevertCommand {
         hashes: Vec<String>,
         mainline: Option<String>,
         strategy: Option<String>,
+        gpg_sign: Option<String>,
     },
     /// Run a fully-built `git revert` command that opens the user's editor
     /// for the commit message. Requires the TUI to be suspended.
@@ -692,6 +695,7 @@ pub enum RevertCommand {
         hashes: Vec<String>,
         mainline: Option<String>,
         strategy: Option<String>,
+        gpg_sign: Option<String>,
     },
     /// Revert merge commit(s) with an explicit mainline parent number (-m)
     CommitsWithMainline {
@@ -699,6 +703,7 @@ pub enum RevertCommand {
         mainline: u8,
         no_commit: bool,
         strategy: Option<String>,
+        gpg_sign: Option<String>,
     },
     /// Continue after resolving conflicts
     Continue,

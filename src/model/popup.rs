@@ -360,6 +360,8 @@ pub struct RevertPopupState {
     pub mainline: Option<String>,
     /// Merge strategy set via `=s` argument (`--strategy=<value>`)
     pub strategy: Option<String>,
+    /// Gpg key to sign with, set via the `-S` argument (`--gpg-sign=<value>`)
+    pub gpg_sign: Option<String>,
 }
 
 /// State for the Apply (cherry-pick) popup

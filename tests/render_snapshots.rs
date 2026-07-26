@@ -534,6 +534,7 @@ fn snapshot_revert_popup() {
             selected_commits: vec!["1234567890abcdef1234567890abcdef12345678".to_string()],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         }),
     );
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
@@ -549,6 +550,23 @@ fn snapshot_revert_popup_with_strategy() {
             selected_commits: vec!["1234567890abcdef1234567890abcdef12345678".to_string()],
             mainline: None,
             strategy: Some("recursive".to_string()),
+            gpg_sign: None,
+        }),
+    );
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_revert_popup_with_gpg_sign() {
+    let test_repo = TestRepo::new();
+    let model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Revert(RevertPopupState {
+            in_progress: false,
+            selected_commits: vec!["1234567890abcdef1234567890abcdef12345678".to_string()],
+            mainline: None,
+            strategy: None,
+            gpg_sign: Some("ABCD1234".to_string()),
         }),
     );
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
@@ -564,6 +582,7 @@ fn snapshot_revert_strategy_select_popup() {
             selected_commits: vec!["1234567890abcdef1234567890abcdef12345678".to_string()],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         }),
     );
     update(&mut model, Message::ShowRevertStrategySelect);

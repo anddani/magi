@@ -3,20 +3,24 @@ use std::process::Command;
 
 use super::git_cmd;
 
-/// Returns the gpg program git is configured to use (`gpg.program`),
-/// falling back to "gpg".
-fn gpg_program<P: AsRef<Path>>(repo_path: P) -> String {
-    match git_cmd(&repo_path, &["config", "--get", "gpg.program"]).output() {
+/// Returns the value of a git config key, if set to a non-empty value.
+fn config_value<P: AsRef<Path>>(repo_path: P, key: &str) -> Option<String> {
+    match git_cmd(&repo_path, &["config", "--get", key]).output() {
         Ok(out) if out.status.success() => {
-            let program = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            if program.is_empty() {
-                "gpg".to_string()
-            } else {
-                program
-            }
+            let value = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            (!value.is_empty()).then_some(value)
         }
-        _ => "gpg".to_string(),
+        _ => None,
     }
+}
+
+/// Returns the gpg program git would use for openpgp signing, following
+/// git's own lookup order: `gpg.openpgp.program`, then `gpg.program`,
+/// then "gpg" from PATH.
+fn gpg_program<P: AsRef<Path>>(repo_path: P) -> String {
+    config_value(&repo_path, "gpg.openpgp.program")
+        .or_else(|| config_value(&repo_path, "gpg.program"))
+        .unwrap_or_else(|| "gpg".to_string())
 }
 
 /// Lists the secret gpg keys available for signing as "<keyid> <user id>"
@@ -77,6 +81,44 @@ fn parse_secret_keys(output: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::git::test_repo::TestRepo;
+
+    /// Local-scope values (including empty strings, which read as unset)
+    /// shadow any global config, keeping these tests hermetic on machines
+    /// where the user's global config sets a gpg program.
+    fn repo_with_gpg_config(openpgp_program: &str, program: &str) -> TestRepo {
+        let test_repo = TestRepo::new();
+        let mut config = test_repo.repo.config().unwrap();
+        config
+            .set_str("gpg.openpgp.program", openpgp_program)
+            .unwrap();
+        config.set_str("gpg.program", program).unwrap();
+        test_repo
+    }
+
+    #[test]
+    fn test_gpg_program_prefers_openpgp_program() {
+        let test_repo = repo_with_gpg_config("/opt/openpgp-gpg", "/opt/plain-gpg");
+        assert_eq!(
+            gpg_program(test_repo.repo.workdir().unwrap()),
+            "/opt/openpgp-gpg"
+        );
+    }
+
+    #[test]
+    fn test_gpg_program_falls_back_to_gpg_program() {
+        let test_repo = repo_with_gpg_config("", "/opt/plain-gpg");
+        assert_eq!(
+            gpg_program(test_repo.repo.workdir().unwrap()),
+            "/opt/plain-gpg"
+        );
+    }
+
+    #[test]
+    fn test_gpg_program_defaults_to_gpg() {
+        let test_repo = repo_with_gpg_config("", "");
+        assert_eq!(gpg_program(test_repo.repo.workdir().unwrap()), "gpg");
+    }
 
     #[test]
     fn test_parse_secret_keys_with_separate_uid_records() {

@@ -214,6 +214,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Note
     - [x] Revert
         - [x] Strategy argument (`=s`, `--strategy=`)
+        - [x] Sign using gpg argument (`-S`, `--gpg-sign=`)
     - [ ] Apply patches
     - [ ] Format patches
     - [x] Reset

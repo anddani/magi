@@ -219,6 +219,7 @@ fn test_underscore_in_revert_popup_with_commits_triggers_revert() {
             selected_commits: vec!["abc1234".to_string()],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -229,6 +230,7 @@ fn test_underscore_in_revert_popup_with_commits_triggers_revert() {
             hashes: vec!["abc1234".to_string()],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         }))
     );
 }
@@ -245,6 +247,7 @@ fn test_underscore_in_revert_popup_without_commits_does_nothing() {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -264,6 +267,7 @@ fn test_underscore_in_revert_popup_in_progress_triggers_continue() {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -283,6 +287,7 @@ fn test_s_in_revert_popup_in_progress_triggers_skip() {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -302,6 +307,7 @@ fn test_a_in_revert_popup_in_progress_triggers_abort() {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -321,6 +327,7 @@ fn test_s_in_revert_popup_not_in_progress_does_nothing() {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -340,6 +347,7 @@ fn test_q_dismisses_revert_popup() {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -359,6 +367,7 @@ fn test_esc_dismisses_revert_popup() {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -380,6 +389,7 @@ fn test_v_in_revert_popup_with_commits_triggers_no_commit_revert() {
             selected_commits: vec!["abc1234".to_string()],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -390,6 +400,7 @@ fn test_v_in_revert_popup_with_commits_triggers_no_commit_revert() {
             hashes: vec!["abc1234".to_string()],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         }))
     );
 }
@@ -406,6 +417,7 @@ fn test_v_in_revert_popup_without_commits_does_nothing() {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -425,6 +437,7 @@ fn test_v_in_revert_popup_in_progress_does_nothing() {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
 
@@ -443,6 +456,7 @@ fn revert_popup_model(test_repo: &TestRepo) -> magi::model::Model {
             selected_commits: vec![],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         },
     )));
     model
@@ -525,6 +539,7 @@ fn test_revert_commits_with_edit_returns_with_editor_command() {
             hashes: vec![hash.clone()],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         }),
     );
 
@@ -555,6 +570,7 @@ fn test_revert_commits_with_no_edit_runs_in_pty() {
             hashes: vec![hash],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         }),
     );
 
@@ -582,6 +598,7 @@ fn test_revert_commits_with_both_edit_flags_favors_no_edit() {
             hashes: vec![hash],
             mainline: None,
             strategy: None,
+            gpg_sign: None,
         }),
     );
 
@@ -639,6 +656,7 @@ fn revert_popup_state(strategy: Option<String>) -> RevertPopupState {
         selected_commits: vec!["abc1234".to_string()],
         mainline: None,
         strategy,
+        gpg_sign: None,
     }
 }
 
@@ -779,6 +797,7 @@ fn test_underscore_with_strategy_includes_strategy_in_command() {
             hashes: vec!["abc1234".to_string()],
             mainline: None,
             strategy: Some("recursive".to_string()),
+            gpg_sign: None,
         }))
     );
 }
@@ -801,6 +820,7 @@ fn test_revert_commits_with_strategy_passes_flag_to_git() {
             hashes: vec![hash.clone()],
             mainline: None,
             strategy: Some("ours".to_string()),
+            gpg_sign: None,
         }),
     );
 
@@ -808,6 +828,166 @@ fn test_revert_commits_with_strategy_passes_flag_to_git() {
         args: vec![
             "revert".to_string(),
             "--strategy=ours".to_string(),
+            "--edit".to_string(),
+            hash,
+        ],
+    });
+    assert_eq!(result, Some(expected));
+}
+
+// ── Gpg sign argument (-S) ────────────────────────────────────────────────────
+
+fn revert_popup_state_with_gpg_sign(gpg_sign: Option<String>) -> RevertPopupState {
+    RevertPopupState {
+        in_progress: false,
+        selected_commits: vec!["abc1234".to_string()],
+        mainline: None,
+        strategy: None,
+        gpg_sign,
+    }
+}
+
+#[test]
+fn test_capital_s_in_arg_mode_shows_gpg_sign_select() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state_with_gpg_sign(None),
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('S')), &model);
+    assert_eq!(result, Some(Message::ShowRevertGpgSignSelect));
+}
+
+#[test]
+fn test_show_revert_gpg_sign_select_opens_picker() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state_with_gpg_sign(None),
+    )));
+    model.arg_mode = true;
+
+    let result = update(&mut model, Message::ShowRevertGpgSignSelect);
+    assert_eq!(result, None);
+    assert!(!model.arg_mode);
+
+    // The option list comes from the host's gpg keyring, so only the popup
+    // kind and its on_select routing are asserted
+    match &model.popup {
+        Some(PopupContent::Command(PopupContentCommand::Select(state))) => {
+            assert!(matches!(
+                state.on_select,
+                magi::model::select_popup::OnSelect::RevertGpgSign { .. }
+            ));
+        }
+        _ => panic!("Expected gpg sign select popup"),
+    }
+}
+
+#[test]
+fn test_confirming_gpg_sign_select_restores_revert_popup_with_keyid() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // Construct the select popup directly with a fixed option list, since
+    // the real one is populated from the host's gpg keyring
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        magi::model::select_popup::SelectPopupState::new(
+            "Sign with key".to_string(),
+            vec!["ABCD1234 Test User <test@example.com>".to_string()],
+            magi::model::select_popup::OnSelect::RevertGpgSign {
+                revert_state: revert_popup_state_with_gpg_sign(None),
+            },
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(result, None);
+
+    if let Some(PopupContent::Command(PopupContentCommand::Revert(state))) = &model.popup {
+        // Only the leading keyid is kept, not the user id
+        assert_eq!(state.gpg_sign.as_deref(), Some("ABCD1234"));
+        assert_eq!(state.selected_commits, vec!["abc1234".to_string()]);
+    } else {
+        panic!("Expected revert popup with gpg key set");
+    }
+}
+
+#[test]
+fn test_show_revert_gpg_sign_select_clears_already_set_key() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state_with_gpg_sign(Some("ABCD1234".to_string())),
+    )));
+
+    let result = update(&mut model, Message::ShowRevertGpgSignSelect);
+    assert_eq!(result, None);
+
+    if let Some(PopupContent::Command(PopupContentCommand::Revert(state))) = &model.popup {
+        assert_eq!(state.gpg_sign, None);
+    } else {
+        panic!("Expected revert popup with gpg key cleared");
+    }
+}
+
+#[test]
+fn test_underscore_with_gpg_sign_includes_key_in_command() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+        revert_popup_state_with_gpg_sign(Some("ABCD1234".to_string())),
+    )));
+
+    let result = handle_key(key(KeyCode::Char('_')), &model);
+    assert_eq!(
+        result,
+        Some(Message::Revert(RevertCommand::Commits {
+            hashes: vec!["abc1234".to_string()],
+            mainline: None,
+            strategy: None,
+            gpg_sign: Some("ABCD1234".to_string()),
+        }))
+    );
+}
+
+#[test]
+fn test_revert_commits_with_gpg_sign_passes_flag_to_git() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+    test_repo.commit_file("file1.txt", "content2", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::RevertArguments(
+        [RevertArgument::Edit].into_iter().collect(),
+    ));
+
+    let hash = test_repo.repo.head().unwrap().target().unwrap().to_string();
+    let result = update(
+        &mut model,
+        Message::Revert(RevertCommand::Commits {
+            hashes: vec![hash.clone()],
+            mainline: None,
+            strategy: None,
+            gpg_sign: Some("ABCD1234".to_string()),
+        }),
+    );
+
+    let expected = Message::Revert(RevertCommand::WithEditor {
+        args: vec![
+            "revert".to_string(),
+            "--gpg-sign=ABCD1234".to_string(),
             "--edit".to_string(),
             hash,
         ],

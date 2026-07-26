@@ -183,10 +183,16 @@ pub enum OnSelect {
         hashes: Vec<String>,
         no_commit: bool,
         strategy: Option<String>,
+        gpg_sign: Option<String>,
     },
     /// Select the merge strategy for a revert (`--strategy=`); restores the
     /// revert popup with the chosen strategy set
     RevertStrategy {
+        revert_state: crate::model::popup::RevertPopupState,
+    },
+    /// Select a gpg key to sign the revert commits with (`--gpg-sign=`);
+    /// restores the revert popup with the chosen key set
+    RevertGpgSign {
         revert_state: crate::model::popup::RevertPopupState,
     },
 }

@@ -19,19 +19,22 @@ pub fn update(model: &mut Model, cmd: RevertCommand) -> Option<Message> {
             hashes,
             mainline,
             strategy,
-        } => commits(model, hashes, mainline, strategy),
+            gpg_sign,
+        } => commits(model, hashes, mainline, strategy, gpg_sign),
         RevertCommand::WithEditor { args } => with_editor(model, args),
         RevertCommand::NoCommit {
             hashes,
             mainline,
             strategy,
-        } => no_commit(model, hashes, mainline, strategy),
+            gpg_sign,
+        } => no_commit(model, hashes, mainline, strategy, gpg_sign),
         RevertCommand::CommitsWithMainline {
             hashes,
             mainline,
             no_commit,
             strategy,
-        } => commits_with_mainline(model, hashes, mainline, no_commit, strategy),
+            gpg_sign,
+        } => commits_with_mainline(model, hashes, mainline, no_commit, strategy, gpg_sign),
         RevertCommand::Continue => continue_revert(model),
         RevertCommand::Skip => skip_revert(model),
         RevertCommand::Abort => abort_revert(model),
@@ -63,20 +66,22 @@ fn commits(
     hashes: Vec<String>,
     mainline: Option<String>,
     strategy: Option<String>,
+    gpg_sign: Option<String>,
 ) -> Option<Message> {
     if hashes.is_empty() {
         return None;
     }
     if any_is_merge_commit(&model.workdir, &hashes) {
         if let Some(m) = mainline.as_deref().and_then(|s| s.parse::<u8>().ok()) {
-            return commits_with_mainline(model, hashes, m, false, strategy);
+            return commits_with_mainline(model, hashes, m, false, strategy, gpg_sign);
         }
-        show_mainline_popup(model, hashes, false, strategy);
+        show_mainline_popup(model, hashes, false, strategy, gpg_sign);
         return None;
     }
     let flags = take_revert_flags(model);
     let mut args = vec!["revert".to_string()];
     args.extend(strategy_flag(strategy.as_deref()));
+    args.extend(gpg_sign_flag(gpg_sign.as_deref()));
     args.extend(flags.iter().cloned());
     args.extend(hashes);
     if opens_editor(&flags) {
@@ -113,19 +118,21 @@ fn no_commit(
     hashes: Vec<String>,
     mainline: Option<String>,
     strategy: Option<String>,
+    gpg_sign: Option<String>,
 ) -> Option<Message> {
     if hashes.is_empty() {
         return None;
     }
     if any_is_merge_commit(&model.workdir, &hashes) {
         if let Some(m) = mainline.as_deref().and_then(|s| s.parse::<u8>().ok()) {
-            return commits_with_mainline(model, hashes, m, true, strategy);
+            return commits_with_mainline(model, hashes, m, true, strategy, gpg_sign);
         }
-        show_mainline_popup(model, hashes, true, strategy);
+        show_mainline_popup(model, hashes, true, strategy, gpg_sign);
         return None;
     }
     let mut args = vec!["revert".to_string(), "--no-commit".to_string()];
     args.extend(strategy_flag(strategy.as_deref()));
+    args.extend(gpg_sign_flag(gpg_sign.as_deref()));
     args.extend(hashes);
     execute_pty_command(model, args, "Revert".to_string())
 }
@@ -136,12 +143,14 @@ fn commits_with_mainline(
     mainline: u8,
     no_commit: bool,
     strategy: Option<String>,
+    gpg_sign: Option<String>,
 ) -> Option<Message> {
     if hashes.is_empty() {
         return None;
     }
     let mut args = vec!["revert".to_string(), "-m".to_string(), mainline.to_string()];
     args.extend(strategy_flag(strategy.as_deref()));
+    args.extend(gpg_sign_flag(gpg_sign.as_deref()));
     if no_commit {
         args.push("--no-commit".to_string());
         args.extend(hashes);
@@ -163,11 +172,19 @@ fn strategy_flag(strategy: Option<&str>) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// Builds the `--gpg-sign=<key>` flag set by the `-S` popup argument.
+fn gpg_sign_flag(gpg_sign: Option<&str>) -> Vec<String> {
+    gpg_sign
+        .map(|key| vec![format!("--gpg-sign={key}")])
+        .unwrap_or_default()
+}
+
 fn show_mainline_popup(
     model: &mut Model,
     hashes: Vec<String>,
     no_commit: bool,
     strategy: Option<String>,
+    gpg_sign: Option<String>,
 ) {
     let options = if hashes.len() == 1 {
         let count = parent_count(&model.workdir, &hashes[0]);
@@ -195,6 +212,7 @@ fn show_mainline_popup(
             hashes,
             no_commit,
             strategy,
+            gpg_sign,
         },
     );
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(state)));

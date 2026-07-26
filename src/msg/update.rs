@@ -78,6 +78,7 @@ mod show_pull_popup;
 mod show_push_popup;
 mod show_rebase_popup;
 mod show_reset_popup;
+mod show_revert_gpg_sign_select;
 mod show_revert_mainline_input;
 mod show_revert_popup;
 mod show_revert_strategy_select;
@@ -215,6 +216,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowRevertPopup => show_revert_popup::update(model),
         Message::ShowRevertMainlineInput => show_revert_mainline_input::update(model),
         Message::ShowRevertStrategySelect => show_revert_strategy_select::update(model),
+        Message::ShowRevertGpgSignSelect => show_revert_gpg_sign_select::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),
         Message::ShowApplyPopup => show_apply_popup::update(model),
         Message::Apply(apply_command) => apply::update(model, apply_command),
