@@ -4,8 +4,8 @@ use crate::{
         LineContent, Model, ViewMode,
         arguments::{Arguments, RebaseArgument, RebaseMergesMode},
         popup::{
-            CommitPopupState, ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand,
-            SelectResult,
+            CommitPopupState, ConfirmAction, ConfirmPopupState, InputContext, PopupContent,
+            PopupContentCommand, SelectResult,
         },
         select_popup::OnSelect,
     },
@@ -318,6 +318,17 @@ fn route_result(
         }
         (Some(OnSelect::ShowStash), SelectResult::Selected(stash_display)) => {
             parse_stash_index(&stash_display).map(Message::ShowStashDiff)
+        }
+        (Some(OnSelect::BranchStash), SelectResult::Selected(stash_display)) => {
+            let stash_ref = stash_display
+                .split(": ")
+                .next()
+                .unwrap_or(&stash_display)
+                .to_string();
+            model.popup = Some(PopupContent::input_popup(InputContext::StashBranch {
+                stash_ref,
+            }));
+            None
         }
         (Some(OnSelect::MergeElsewhere), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Branch(branch)))

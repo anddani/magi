@@ -76,6 +76,7 @@ pub struct Strings {
     pub col_apply_elsewhere: &'static str,
     pub col_reflog: &'static str,
     pub col_inspect: &'static str,
+    pub col_transform: &'static str,
 
     // Dynamic styled title parts used in push/pull/rebase popups.
     // The branch name is coloured separately between pre and post.
@@ -106,6 +107,7 @@ pub struct Strings {
     pub input_push_refspec_fmt: &'static str,
     pub input_fetch_refspec_fmt: &'static str,
     pub input_release_tag_fmt: &'static str,
+    pub input_stash_branch_fmt: &'static str,
 
     /// Version line shown at the bottom of the help popup.
     pub help_version_fmt: &'static str,
@@ -372,6 +374,7 @@ static ENGLISH: Strings = Strings {
     col_apply_elsewhere: "Apply elsewhere",
     col_reflog: "Reflog",
     col_inspect: "Inspect",
+    col_transform: "Transform",
 
     push_to_pre: "Push ",
     push_to_post: " to",
@@ -397,6 +400,7 @@ static ENGLISH: Strings = Strings {
     input_push_refspec_fmt: "Push refspec(s) to '{}' (comma-separated)",
     input_fetch_refspec_fmt: "Fetch refspec(s) from '{}' (comma-separated)",
     input_release_tag_fmt: "Create release tag (previous was {})",
+    input_stash_branch_fmt: "Name for new branch from {}",
     help_version_fmt: "Magi version {}",
     cmd_branch_revision: "Branch/revision",
     cmd_local_branch: "Local branch",
@@ -635,6 +639,7 @@ static SWEDISH: Strings = Strings {
     col_apply_elsewhere: "Plocka russin någon annanstans",
     col_reflog: "Reflogg",
     col_inspect: "Inspektera",
+    col_transform: "Transformera",
 
     push_to_pre: "Knuffa ",
     push_to_post: " till",
@@ -660,6 +665,7 @@ static SWEDISH: Strings = Strings {
     input_push_refspec_fmt: "Knuffa refspec(er) till '{}' (kommaseparerade)",
     input_fetch_refspec_fmt: "Hämta refspec(er) från '{}' (kommaseparerade)",
     input_release_tag_fmt: "Skapa utgåvomärke (föregående var {})",
+    input_stash_branch_fmt: "Namnge ny gren från {}",
     help_version_fmt: "Magi version {}",
     cmd_branch_revision: "Gren/revision",
     cmd_local_branch: "Lokal gren",

@@ -67,6 +67,8 @@ pub enum OnSelect {
     DropStash,
     /// Select a stash to show the diff of
     ShowStash,
+    /// Select a stash to convert into a branch (the branch name is entered next)
+    BranchStash,
     /// Select a commit to rebase onto (rebase elsewhere)
     RebaseElsewhere,
     /// Select the base commit for an interactive rebase (base inclusive)

@@ -774,6 +774,12 @@ pub enum StashCommand {
     SnapshotWorktree,
     /// Commit the index and working tree states to the wip refs, without resetting them
     ToWipRef,
+    /// Create and checkout a new branch from the commit the stash was created at,
+    /// then apply and drop the stash (`git stash branch <name> <stash>`)
+    Branch {
+        stash_ref: String,
+        branch_name: String,
+    },
 }
 
 /// Messages for commit select

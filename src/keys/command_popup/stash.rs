@@ -41,6 +41,11 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
             source: OptionsSource::Stashes,
             on_select: OnSelect::DropStash,
         })),
+        KeyCode::Char('b') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Branch stash".to_string(),
+            source: OptionsSource::Stashes,
+            on_select: OnSelect::BranchStash,
+        })),
         KeyCode::Char('l') => Some(Message::ShowLog(LogType::Stashes)),
         KeyCode::Char('v') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
             title: "Show stash".to_string(),
@@ -67,6 +72,20 @@ mod tests {
                 title: "Show stash".to_string(),
                 source: OptionsSource::Stashes,
                 on_select: OnSelect::ShowStash,
+            }))
+        );
+    }
+
+    #[test]
+    fn test_b_shows_branch_stash_select_popup() {
+        let key = KeyEvent::new(KeyCode::Char('b'), KeyModifiers::NONE);
+        let result = keys(key, false);
+        assert_eq!(
+            result,
+            Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+                title: "Branch stash".to_string(),
+                source: OptionsSource::Stashes,
+                on_select: OnSelect::BranchStash,
             }))
         );
     }
