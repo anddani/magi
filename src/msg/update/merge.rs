@@ -46,7 +46,8 @@ fn merge_branch(
     model.popup = None;
     let result = if edit_message {
         // `merge --edit --no-ff` always creates a merge commit, so a selected
-        // `--ff-only` cannot be honored and is dropped, like in magit.
+        // `--no-ff` is already implied and a selected `--ff-only` cannot be
+        // honored; both are dropped, like in magit.
         merge::run_merge_edit_with_editor(&model.workdir, &branch)
     } else {
         merge::run_merge_with_editor(&model.workdir, &branch, &extra_args)

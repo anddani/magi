@@ -287,6 +287,33 @@ mod tests {
     }
 
     #[test]
+    fn test_merge_branch_no_ff_creates_merge_commit() {
+        let test_repo = TestRepo::new();
+        disable_editor(&test_repo);
+        test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+        // Put a commit on feature only: without --no-ff this would
+        // fast-forward, so a merge commit proves the flag was passed.
+        assert!(
+            run_git(&test_repo, &["checkout", "-b", "feature"])
+                .status
+                .success()
+        );
+        test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+        assert!(run_git(&test_repo, &["checkout", "main"]).status.success());
+
+        let result =
+            run_merge_with_editor(test_repo.repo_path(), "feature", &["--no-ff".to_string()])
+                .unwrap();
+
+        assert!(result.success);
+        let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+        assert_eq!(head.parent_count(), 2);
+        assert!(test_repo.repo_path().join("feature.txt").exists());
+        assert!(!merge_in_progress(&test_repo));
+    }
+
+    #[test]
     fn test_merge_branch_divergent_creates_merge_commit() {
         let test_repo = TestRepo::new();
         disable_editor(&test_repo);
