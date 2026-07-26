@@ -119,6 +119,12 @@ pub enum InputContext {
     },
     /// Stash push input — carries which kind of stash to create
     Stash(StashType),
+    /// Entering the name for a new branch created from a stash
+    /// (`git stash branch <name> <stash>`)
+    StashBranch {
+        /// The stash to branch from, e.g. "stash@{0}"
+        stash_ref: String,
+    },
     /// Creating a new spin-off branch from the current HEAD
     SpinoffBranch,
     /// Creating a new spin-out branch from the current HEAD (stays on current branch)
@@ -206,6 +212,7 @@ impl InputPopupState {
             InputContext::CreateNewBranch { .. } => t.input_new_branch.to_string(),
             InputContext::RenameBranch { old_name } => t.fmt1(t.input_rename_branch_fmt, old_name),
             InputContext::Stash(stash_type) => stash_type.title().to_string(),
+            InputContext::StashBranch { stash_ref } => t.fmt1(t.input_stash_branch_fmt, stash_ref),
             InputContext::SpinoffBranch => t.input_spinoff_branch.to_string(),
             InputContext::SpinoutBranch => t.input_spinout_branch.to_string(),
             InputContext::CherrySpinout { .. } => t.input_cherry_spinout.to_string(),

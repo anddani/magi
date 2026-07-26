@@ -27,7 +27,21 @@ pub fn update(model: &mut Model, stash_command: StashCommand) -> Option<Message>
         StashCommand::SnapshotIndex => snapshot(model, create_index_snapshot),
         StashCommand::SnapshotWorktree => snapshot(model, create_worktree_snapshot),
         StashCommand::ToWipRef => snapshot(model, commit_to_wip_refs),
+        StashCommand::Branch {
+            stash_ref,
+            branch_name,
+        } => branch(model, stash_ref, branch_name),
     }
+}
+
+fn branch(model: &mut Model, stash_ref: String, branch_name: String) -> Option<Message> {
+    let args = vec![
+        "stash".to_string(),
+        "branch".to_string(),
+        branch_name,
+        stash_ref,
+    ];
+    execute_pty_command(model, args, "Stash branch".to_string())
 }
 
 fn snapshot(

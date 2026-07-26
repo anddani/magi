@@ -113,6 +113,10 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             on_select: OnSelect::CreateTagTarget { name: input },
         })),
         InputContext::TagRelease { .. } => Some(Message::CreateTagRelease { name: input }),
+        InputContext::StashBranch { stash_ref } => Some(Message::Stash(StashCommand::Branch {
+            stash_ref,
+            branch_name: input,
+        })),
         InputContext::Stash(_) | InputContext::RevertMainline { .. } => unreachable!(),
     }
 }

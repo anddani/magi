@@ -16,7 +16,9 @@ use crate::{
     model::{
         BranchSuggestion, LineContent, Model, Toast, ToastStyle,
         arguments::RebaseMergesMode,
-        popup::{ConfirmAction, ConfirmPopupState, PopupContent, PopupContentCommand},
+        popup::{
+            ConfirmAction, ConfirmPopupState, InputContext, PopupContent, PopupContentCommand,
+        },
         select_popup::{OnSelect, OptionsSource, SelectPopupState},
         suggestions_from_line,
     },
@@ -447,6 +449,7 @@ fn handle_stash_cursor(
         OnSelect::PopStash => StashOp::Pop,
         OnSelect::DropStash => StashOp::Drop,
         OnSelect::ShowStash => StashOp::Show,
+        OnSelect::BranchStash => StashOp::Branch,
         _ => return None,
     };
 
@@ -503,6 +506,12 @@ fn handle_stash_cursor(
                 None
             }
             StashOp::Show => Some(Message::ShowStashDiff(entry.index)),
+            StashOp::Branch => {
+                model.popup = Some(PopupContent::input_popup(InputContext::StashBranch {
+                    stash_ref,
+                }));
+                None
+            }
         };
         return Some(msg);
     }
@@ -515,6 +524,7 @@ enum StashOp {
     Pop,
     Drop,
     Show,
+    Branch,
 }
 
 // ── Skip-if-one-remote shortcuts ──────────────────────────────────────────────
@@ -616,9 +626,11 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::CreateTagTarget { .. }
         | OnSelect::RebaseSubsetOnto => "No references found".to_string(),
         OnSelect::FileCheckoutFile { .. } => "No tracked files found".to_string(),
-        OnSelect::ApplyStash | OnSelect::PopStash | OnSelect::DropStash | OnSelect::ShowStash => {
-            "No stashes found".to_string()
-        }
+        OnSelect::ApplyStash
+        | OnSelect::PopStash
+        | OnSelect::DropStash
+        | OnSelect::ShowStash
+        | OnSelect::BranchStash => "No stashes found".to_string(),
         OnSelect::ApplyPick
         | OnSelect::ApplyApply
         | OnSelect::ApplySquash

@@ -224,6 +224,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Apply/pop/drop
         - [x] List
         - [x] Show
+        - [x] Branch (checkout new branch from stash)
     - [ ] Worktree
         - [x] Create new worktree
         - [x] Move worktree
