@@ -10,27 +10,31 @@ use crate::{
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
     // Graph and refnames are shown by default; only disabled when toggled off
     // in the log popup
-    let (graph, color, decorate, show_signature) = match model.arguments.take() {
+    let (graph, color, decorate, show_header, show_signature) = match model.arguments.take() {
         Some(LogArguments(args)) => (
             args.contains(&LogArgument::Graph),
             args.contains(&LogArgument::Color),
             args.contains(&LogArgument::Decorate),
+            args.contains(&LogArgument::ShowHeader),
             args.contains(&LogArgument::ShowSignature),
         ),
-        _ => (true, false, true, false),
+        _ => (true, false, true, false, false),
     };
+    let reflog = matches!(
+        log_type,
+        LogType::Reflog | LogType::ReflogOther(_) | LogType::Stashes
+    );
     // Reflogs cannot be drawn as a graph (git rejects --graph with --walk-reflogs)
-    let graph = graph
-        && !matches!(
-            log_type,
-            LogType::Reflog | LogType::ReflogOther(_) | LogType::Stashes
-        );
+    let graph = graph && !reflog;
+    // Like Magit's reflog format, headers are never shown for reflogs
+    let show_header = show_header && !reflog;
     match get_log_entries(
         &model.git_info.repository,
         &log_type,
         graph,
         color,
         decorate,
+        show_header,
         show_signature,
     ) {
         Ok(entries) => {
@@ -59,6 +63,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 graph,
                 color,
                 decorate,
+                show_header,
                 show_signature,
             };
 

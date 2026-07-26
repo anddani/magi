@@ -143,6 +143,9 @@ pub enum ViewMode {
         color: bool,
         /// Whether refnames are shown (--decorate); used when refreshing
         decorate: bool,
+        /// Whether revision headers are shown after each commit (++header);
+        /// used when refreshing
+        show_header: bool,
         /// Whether signature statuses are shown (--show-signature); used when
         /// refreshing
         show_signature: bool,

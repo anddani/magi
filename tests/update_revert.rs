@@ -164,14 +164,15 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
 
     // Populate the model with log-view lines (as ShowLog does)
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let log_lines: Vec<Line> = get_log_entries(&repo, &LogType::Current, true, false, true, false)
-        .unwrap()
-        .into_iter()
-        .map(|entry| Line {
-            content: LineContent::LogLine(entry),
-            section: None,
-        })
-        .collect();
+    let log_lines: Vec<Line> =
+        get_log_entries(&repo, &LogType::Current, true, false, true, false, false)
+            .unwrap()
+            .into_iter()
+            .map(|entry| Line {
+                content: LineContent::LogLine(entry),
+                section: None,
+            })
+            .collect();
 
     // Find a log line that has a hash
     let log_commit_pos = log_lines
@@ -192,6 +193,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
         graph: true,
         color: false,
         decorate: true,
+        show_header: false,
         show_signature: false,
     };
     model.ui_model.cursor_position = log_commit_pos;

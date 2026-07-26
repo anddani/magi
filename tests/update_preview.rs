@@ -133,6 +133,7 @@ fn test_show_preview_on_graph_only_log_line_is_noop() {
         graph: true,
         color: false,
         decorate: true,
+        show_header: false,
         show_signature: false,
     };
 
