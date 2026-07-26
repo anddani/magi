@@ -181,7 +181,7 @@ fn run_loop(
             // Process external command (blocking). Dispatched directly to
             // `update` (not `process_messages`) so the message that triggered
             // the suspension is not re-suspended.
-            let follow_up = update(&mut model, msg);
+            let follow_up = update(&mut model, *msg);
 
             // Resume TUI
             terminal = init_terminal();
@@ -215,7 +215,7 @@ fn run_loop(
 pub fn process_messages(model: &mut Model, mut current_msg: Option<Message>) {
     while let Some(msg) = current_msg {
         if is_external_command(&msg) {
-            model.running_state = RunningState::LaunchExternalCommand(msg);
+            model.running_state = RunningState::LaunchExternalCommand(Box::new(msg));
             return;
         }
         current_msg = update(model, msg);

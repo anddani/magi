@@ -482,6 +482,7 @@ fn route_result(
                 hashes,
                 no_commit,
                 strategy,
+                gpg_sign,
             }),
             SelectResult::Selected(selection),
         ) => {
@@ -495,12 +496,29 @@ fn route_result(
                 mainline,
                 no_commit,
                 strategy,
+                gpg_sign,
             }))
         }
         (Some(OnSelect::RevertStrategy { mut revert_state }), result) => {
             // Enter on an empty filter clears the strategy; a selection sets it
             revert_state.strategy = match result {
                 SelectResult::Selected(strategy) => Some(strategy),
+                _ => None,
+            };
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
+                revert_state,
+            )));
+            None
+        }
+        (Some(OnSelect::RevertGpgSign { mut revert_state }), result) => {
+            // Options are "<keyid> <user id>" entries; only the leading keyid
+            // is passed to git. Enter on an empty filter clears the key.
+            revert_state.gpg_sign = match result {
+                SelectResult::Selected(key) => key
+                    .split_whitespace()
+                    .next()
+                    .filter(|keyid| !keyid.is_empty())
+                    .map(|keyid| keyid.to_string()),
                 _ => None,
             };
             model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(

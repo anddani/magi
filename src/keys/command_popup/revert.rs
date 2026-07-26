@@ -15,6 +15,7 @@ pub fn keys(
     if arg_mode {
         return match key.code {
             KeyCode::Char('m') => Some(Message::ShowRevertMainlineInput),
+            KeyCode::Char('S') => Some(Message::ShowRevertGpgSignSelect),
             KeyCode::Char(c) => RevertArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Revert(arg)))
                 .or(Some(Message::ExitArgMode)),
@@ -44,11 +45,13 @@ pub fn keys(
             hashes: state.selected_commits.clone(),
             mainline: state.mainline.clone(),
             strategy: state.strategy.clone(),
+            gpg_sign: state.gpg_sign.clone(),
         })),
         KeyCode::Char('v') if has_commits => Some(Message::Revert(RevertCommand::NoCommit {
             hashes: state.selected_commits.clone(),
             mainline: state.mainline.clone(),
             strategy: state.strategy.clone(),
+            gpg_sign: state.gpg_sign.clone(),
         })),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         KeyCode::Char('=') => Some(Message::EnterEqualsArgMode),

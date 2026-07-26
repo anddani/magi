@@ -26,6 +26,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
         selected_commits,
         mainline: None,
         strategy: None,
+        gpg_sign: None,
     };
     model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(state)));
     None
