@@ -54,6 +54,20 @@ impl LogEntry {
         }
     }
 
+    /// Create a revision header entry (++header): a body, notes, Author or
+    /// Committer line following a commit line
+    pub fn header_text(graph: String, text: String) -> Self {
+        Self {
+            graph,
+            hash: None,
+            refs: Vec::new(),
+            author: None,
+            time: None,
+            message: Some(text),
+            signature: None,
+        }
+    }
+
     /// Returns true if this entry has commit information (not just graph lines)
     pub fn is_commit(&self) -> bool {
         self.hash.is_some()

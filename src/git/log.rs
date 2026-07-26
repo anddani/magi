@@ -13,13 +13,15 @@ const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
 /// Fetches git log entries, optionally with graph, colored graph lines,
-/// refnames (--decorate) and signature statuses (--show-signature)
+/// refnames (--decorate), revision headers (++header) and signature statuses
+/// (--show-signature)
 pub fn get_log_entries(
     repository: &Repository,
     log_type: &LogType,
     graph: bool,
     color: bool,
     decorate: bool,
+    show_header: bool,
     show_signature: bool,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
@@ -59,8 +61,17 @@ pub fn get_log_entries(
     let message_format = if reflog { "%gs" } else { "%s" };
     let refs_format = if decorate { "%D" } else { "" };
     let gpg_format = if show_signature { "%G?" } else { "" };
+    // Like Magit's reflog format, headers are never shown for reflogs
+    let show_header = show_header && !reflog;
+    // Extra lines after each commit, like Magit's
+    // magit-log-revision-headers-format used with "++header"
+    let header_format = if show_header {
+        "\n%+b%+N\nAuthor:    %aN <%aE>\nCommitter: %cN <%cE>\n"
+    } else {
+        ""
+    };
     let format = format!(
-        "%h{}{}{}{}{}%aN{}%ar{}{}",
+        "%h{}{}{}{}{}%aN{}%ar{}{}{}",
         SEPARATOR,
         refs_format,
         SEPARATOR,
@@ -68,7 +79,8 @@ pub fn get_log_entries(
         SEPARATOR,
         SEPARATOR,
         SEPARATOR,
-        message_format
+        message_format,
+        header_format
     );
 
     let mut args = vec![
@@ -137,7 +149,7 @@ pub fn get_log_entries(
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let mut entries = parse_log_output(&stdout, &remotes);
+    let mut entries = parse_log_output(&stdout, &remotes, show_header);
 
     // Enrich refs with push remote info (split-colored labels)
     let push_remote_map = build_push_remote_map(repository);
@@ -254,12 +266,13 @@ fn previous_branch(repository: &Repository) -> Option<String> {
 }
 
 /// Parse the output of git log into LogEntry structs
-/// Works with both --graph and non-graph output
-pub fn parse_log_output(output: &str, remotes: &[String]) -> Vec<LogEntry> {
+/// Works with both --graph and non-graph output. With `header`, lines without
+/// separators are revision header lines (++header) instead of commit lines
+pub fn parse_log_output(output: &str, remotes: &[String], header: bool) -> Vec<LogEntry> {
     let mut entries = Vec::new();
 
     for line in output.lines() {
-        let entry = parse_log_line(line, remotes);
+        let entry = parse_log_line(line, remotes, header);
         entries.push(entry);
     }
 
@@ -275,7 +288,7 @@ fn none_if_empty(s: &str) -> Option<String> {
 }
 
 /// Parse a single line from git log --graph output
-fn parse_log_line(line: &str, remotes: &[String]) -> LogEntry {
+fn parse_log_line(line: &str, remotes: &[String], header: bool) -> LogEntry {
     // The line format is: <graph><hash><sep><refs><sep><gpg><sep><author><sep><date><sep><message>
     // The graph part is everything before the first non-graph character that looks like a hash
 
@@ -293,6 +306,12 @@ fn parse_log_line(line: &str, remotes: &[String]) -> LogEntry {
 
     // Split by separator
     let parts: Vec<&str> = rest.split(SEPARATOR).collect();
+
+    // With ++header, lines without separators are the extra header lines
+    // (body, notes, Author and Committer) following a commit line
+    if header && parts.len() < 6 {
+        return LogEntry::header_text(graph, rest.to_string());
+    }
 
     if parts.len() >= 6 {
         let hash = none_if_empty(parts[0]);
@@ -479,6 +498,7 @@ mod tests {
             false,
             true,
             false,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -497,8 +517,16 @@ mod tests {
             .stage_files(&["file.txt"])
             .commit("Second commit");
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Reflog, true, false, true, false).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Reflog,
+            true,
+            false,
+            true,
+            false,
+            false,
+        )
+        .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         // Reflog entries use the reflog subject ("<command>: <rest>")
@@ -525,6 +553,7 @@ mod tests {
             true,
             false,
             true,
+            false,
             false,
         )
         .unwrap();
@@ -553,6 +582,7 @@ mod tests {
             false,
             true,
             false,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -575,8 +605,16 @@ mod tests {
             .write_file_content("file.txt", "second")
             .create_stash("Second stash");
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Stashes, true, false, true, false).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Stashes,
+            true,
+            false,
+            true,
+            false,
+            false,
+        )
+        .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         // Both stashes are listed, most recent first
@@ -593,8 +631,16 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Stashes, true, false, true, false).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Stashes,
+            true,
+            false,
+            true,
+            false,
+            false,
+        )
+        .unwrap();
         assert!(entries.is_empty());
     }
 
@@ -741,8 +787,16 @@ mod tests {
             .stage_files(&["file.txt"])
             .commit("Second commit");
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Related, true, false, true, false).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Related,
+            true,
+            false,
+            true,
+            false,
+            false,
+        )
+        .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         assert!(messages.contains(&"Initial commit".to_string()));
@@ -756,7 +810,7 @@ mod tests {
             "* abc1234{}main{}{}John Doe{}2 hours ago{}Fix bug",
             SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
         );
-        let entry = parse_log_line(&line, &remotes);
+        let entry = parse_log_line(&line, &remotes, false);
 
         assert_eq!(entry.graph, "* ");
         assert_eq!(entry.hash, Some("abc1234".to_string()));
@@ -776,7 +830,7 @@ mod tests {
             "* abc1234{}main{}G{}John Doe{}2 hours ago{}Fix bug",
             SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
         );
-        let entry = parse_log_line(&line, &remotes);
+        let entry = parse_log_line(&line, &remotes, false);
 
         assert_eq!(entry.hash, Some("abc1234".to_string()));
         assert_eq!(entry.signature, Some('G'));
@@ -790,7 +844,7 @@ mod tests {
             "\x1b[31m|\x1b[m * abc1234{}main{}{}John Doe{}2 hours ago{}Fix bug",
             SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
         );
-        let entry = parse_log_line(&line, &remotes);
+        let entry = parse_log_line(&line, &remotes, false);
 
         assert_eq!(entry.graph, "\x1b[31m|\x1b[m * ");
         assert_eq!(entry.hash, Some("abc1234".to_string()));
@@ -807,8 +861,16 @@ mod tests {
             .stage_files(&["file.txt"])
             .commit("Second commit");
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Current, true, true, true, false).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Current,
+            true,
+            true,
+            true,
+            false,
+            false,
+        )
+        .unwrap();
 
         // The graph is colored with ANSI codes, but the commit info is not
         let entry = entries.first().unwrap();
@@ -823,8 +885,16 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Current, true, false, true, false).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Current,
+            true,
+            false,
+            true,
+            false,
+            false,
+        )
+        .unwrap();
 
         // HEAD is on main, so the commit is decorated with the branch name
         let entry = entries.first().unwrap();
@@ -845,6 +915,7 @@ mod tests {
             false,
             false,
             false,
+            false,
         )
         .unwrap();
 
@@ -861,8 +932,16 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Current, true, false, true, true).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Current,
+            true,
+            false,
+            true,
+            false,
+            true,
+        )
+        .unwrap();
 
         // The test commit is unsigned, so %G? reports 'N' (no signature)
         let entry = entries.first().unwrap();
@@ -876,16 +955,178 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Current, true, false, true, false).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Current,
+            true,
+            false,
+            true,
+            false,
+            false,
+        )
+        .unwrap();
 
         assert_eq!(entries.first().unwrap().signature, None);
     }
 
     #[test]
+    fn test_get_log_entries_show_header() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Second commit");
+
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Current,
+            true,
+            false,
+            true,
+            true,
+            false,
+        )
+        .unwrap();
+
+        // Each commit is followed by Author and Committer header lines,
+        // which are not commits themselves
+        let commits: Vec<_> = entries.iter().filter(|e| e.is_commit()).collect();
+        assert_eq!(commits.len(), 2);
+        let headers: Vec<&str> = entries
+            .iter()
+            .filter(|e| !e.is_commit())
+            .filter_map(|e| e.message.as_deref())
+            .collect();
+        assert_eq!(
+            headers
+                .iter()
+                .filter(|h| h.starts_with("Author:    "))
+                .count(),
+            2
+        );
+        assert_eq!(
+            headers
+                .iter()
+                .filter(|h| h.starts_with("Committer: "))
+                .count(),
+            2
+        );
+    }
+
+    #[test]
+    fn test_get_log_entries_show_header_includes_body() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Subject line\n\nBody first line\nBody second line");
+
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Current,
+            true,
+            false,
+            true,
+            true,
+            false,
+        )
+        .unwrap();
+
+        let headers: Vec<&str> = entries
+            .iter()
+            .filter(|e| !e.is_commit())
+            .filter_map(|e| e.message.as_deref())
+            .collect();
+        assert!(headers.contains(&"Body first line"));
+        assert!(headers.contains(&"Body second line"));
+        // The subject stays on the commit line
+        let subjects: Vec<_> = entries
+            .iter()
+            .filter_map(|e| e.message.as_deref())
+            .collect();
+        assert!(subjects.contains(&"Subject line"));
+    }
+
+    #[test]
+    fn test_get_log_entries_no_show_header() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Current,
+            true,
+            false,
+            true,
+            false,
+            false,
+        )
+        .unwrap();
+
+        // Without ++header every entry is a commit line
+        assert!(entries.iter().all(|e| e.is_commit()));
+    }
+
+    #[test]
+    fn test_get_log_entries_show_header_ignored_for_reflog() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+        test_repo
+            .write_file_content("file.txt", "content")
+            .stage_files(&["file.txt"])
+            .commit("Second commit");
+
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Reflog,
+            true,
+            false,
+            true,
+            true,
+            false,
+        )
+        .unwrap();
+
+        // Like Magit, reflogs never show headers
+        assert!(entries.iter().all(|e| e.is_commit()));
+    }
+
+    #[test]
+    fn test_parse_log_line_header_text() {
+        let remotes = vec!["origin".to_string()];
+        let entry = parse_log_line("Author:    Jane Smith <jane@example.com>", &remotes, true);
+
+        assert!(entry.hash.is_none());
+        assert!(!entry.is_commit());
+        assert_eq!(
+            entry.message,
+            Some("Author:    Jane Smith <jane@example.com>".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_log_line_header_text_with_graph_prefix() {
+        let remotes = vec!["origin".to_string()];
+        let entry = parse_log_line("| Committer: Jane Smith <jane@example.com>", &remotes, true);
+
+        assert_eq!(entry.graph, "| ");
+        assert!(!entry.is_commit());
+        assert_eq!(
+            entry.message,
+            Some("Committer: Jane Smith <jane@example.com>".to_string())
+        );
+    }
+
+    #[test]
     fn test_parse_log_line_graph_only() {
         let remotes = vec!["origin".to_string()];
-        let entry = parse_log_line("| |", &remotes);
+        let entry = parse_log_line("| |", &remotes, false);
 
         assert_eq!(entry.graph, "| |");
         assert!(entry.hash.is_none());
@@ -899,7 +1140,7 @@ mod tests {
             "* def5678{}{}{}Jane Smith{}1 day ago{}Initial commit",
             SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
         );
-        let entry = parse_log_line(&line, &remotes);
+        let entry = parse_log_line(&line, &remotes, false);
 
         assert_eq!(entry.hash, Some("def5678".to_string()));
         assert!(entry.refs.is_empty());

@@ -515,6 +515,7 @@ pub enum LogArgument {
     Graph,
     Color,
     Decorate,
+    ShowHeader,
     ShowSignature,
 }
 
@@ -532,6 +533,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Graph,
             LogArgument::Color,
             LogArgument::Decorate,
+            LogArgument::ShowHeader,
         ]
     }
 
@@ -540,6 +542,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Graph => 'g',
             LogArgument::Color => 'c',
             LogArgument::Decorate => 'd',
+            LogArgument::ShowHeader => 'h',
             LogArgument::ShowSignature => 'S',
         }
     }
@@ -550,6 +553,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Graph => t.arg_log_graph,
             LogArgument::Color => t.arg_log_color,
             LogArgument::Decorate => t.arg_log_decorate,
+            LogArgument::ShowHeader => t.arg_log_show_header,
             LogArgument::ShowSignature => t.arg_log_show_signature,
         }
     }
@@ -559,6 +563,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Graph => "--graph",
             LogArgument::Color => "--color",
             LogArgument::Decorate => "--decorate",
+            LogArgument::ShowHeader => "++header",
             LogArgument::ShowSignature => "--show-signature",
         }
     }
@@ -905,7 +910,14 @@ mod tests {
         assert_eq!(LogArgument::from_key('g'), Some(LogArgument::Graph));
         assert_eq!(LogArgument::from_key('c'), Some(LogArgument::Color));
         assert_eq!(LogArgument::from_key('d'), Some(LogArgument::Decorate));
+        assert_eq!(LogArgument::from_key('h'), Some(LogArgument::ShowHeader));
         assert_eq!(LogArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_log_argument_show_header_key_and_flag() {
+        assert_eq!(LogArgument::ShowHeader.key(), 'h');
+        assert_eq!(LogArgument::ShowHeader.flag(), "++header");
     }
 
     #[test]
@@ -927,7 +939,8 @@ mod tests {
             vec![
                 LogArgument::Graph,
                 LogArgument::Color,
-                LogArgument::Decorate
+                LogArgument::Decorate,
+                LogArgument::ShowHeader
             ]
         );
     }

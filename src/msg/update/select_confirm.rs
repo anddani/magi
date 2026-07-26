@@ -604,6 +604,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![
@@ -635,6 +636,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![
@@ -665,6 +667,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![Line {
@@ -700,6 +703,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![make_log_line("deadbeef", "Some commit")];
@@ -800,6 +804,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![make_log_line("abc1234", "First commit")];
@@ -818,6 +823,7 @@ mod tests {
                 graph: true,
                 color: false,
                 decorate: true,
+                show_header: false,
                 show_signature: false
             }
         );

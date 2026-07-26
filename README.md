@@ -203,6 +203,7 @@ Here are a few features that the aforementioned applications lack:
         - [ ] HEAD reflog
         - [ ] Shortlog
         - [x] Formatting arguments (--graph, --color, --decorate)
+        - [x] Show header argument (`-h`, `++header`)
         - [x] Show signatures argument (`=S`, `--show-signature`)
     - [x] Merge
         - [x] Fast-forward only argument (`--ff-only`)
