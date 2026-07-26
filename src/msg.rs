@@ -353,6 +353,9 @@ pub enum Message {
 
     /// Show merge popup
     ShowMergePopup,
+    /// Show select popup for picking the -s merge strategy for a merge, or
+    /// clear the strategy if one is already set
+    ShowMergeStrategySelect,
     /// Show tag popup
     ShowTagPopup,
     /// Show the gpg key picker for the tag `-u` argument, or clear the

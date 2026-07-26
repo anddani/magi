@@ -5,30 +5,32 @@ use crate::{
         popup::{PopupContent, PopupContentCommand},
         select_popup::{OnSelect, SelectPopupState},
     },
-    msg::{Message, update::show_merge_strategy_select::MERGE_STRATEGIES},
+    msg::Message,
 };
 
+/// The merge strategies offered by `git merge --strategy=`, as in Magit.
+/// `git revert --strategy=` accepts the same values.
+pub const MERGE_STRATEGIES: [&str; 5] = ["resolve", "recursive", "octopus", "ours", "subtree"];
+
 pub fn update(model: &mut Model) -> Option<Message> {
-    let Some(PopupContent::Command(PopupContentCommand::Revert(mut state))) = model.popup.take()
-    else {
-        return None;
-    };
-    model.equals_arg_mode = false;
+    model.arg_mode = false;
 
     // Selecting the argument when a value is already set clears it
-    if state.strategy.is_some() {
-        state.strategy = None;
-        model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(state)));
+    if let Some(strategy) = model
+        .arguments
+        .as_mut()
+        .and_then(|a| a.merge_strategy_mut())
+        && strategy.is_some()
+    {
+        *strategy = None;
         return None;
     }
 
     let options = MERGE_STRATEGIES.iter().map(|s| s.to_string()).collect();
     let select_state = SelectPopupState::new(
-        i18n::t().select_revert_strategy.to_string(),
+        i18n::t().select_merge_strategy.to_string(),
         options,
-        OnSelect::RevertStrategy {
-            revert_state: state,
-        },
+        OnSelect::MergeStrategy,
     );
     model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
         select_state,

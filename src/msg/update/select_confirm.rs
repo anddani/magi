@@ -363,6 +363,28 @@ fn route_result(
         (Some(OnSelect::MergeDissolve), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Dissolve(branch)))
         }
+        (Some(OnSelect::MergeStrategy), result) => {
+            // Enter on an empty filter clears the strategy; a selection sets it
+            let strategy = match result {
+                SelectResult::Selected(strategy) => Some(strategy),
+                _ => None,
+            };
+            match model
+                .arguments
+                .as_mut()
+                .and_then(|a| a.merge_strategy_mut())
+            {
+                Some(slot) => *slot = strategy,
+                None => {
+                    model.arguments = Some(Arguments::MergeArguments {
+                        args: Default::default(),
+                        strategy,
+                    })
+                }
+            }
+            // Return to the merge popup, now showing the argument as set
+            Some(Message::ShowMergePopup)
+        }
         (Some(OnSelect::ApplyPick), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Pick(vec![hash])))
         }
