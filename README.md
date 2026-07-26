@@ -212,6 +212,7 @@ Here are a few features that the aforementioned applications lack:
     - [ ] Subtree
     - [x] Push
     - [x] Rebase
+        - [x] Update branches argument (`--update-refs`)
     - [x] Tag
     - [ ] Note
     - [x] Revert

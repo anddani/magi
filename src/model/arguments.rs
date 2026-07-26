@@ -623,6 +623,7 @@ impl RebaseMergesMode {
 pub enum RebaseArgument {
     KeepEmpty,
     RebaseMerges(RebaseMergesMode),
+    UpdateRefs,
 }
 
 impl RebaseArgument {
@@ -635,13 +636,14 @@ impl PopupArgument for RebaseArgument {
     /// RebaseMerges is excluded: it carries a value, so it is rendered with
     /// `argument_value_line` and toggled via `Message::ToggleRebaseMerges`.
     fn all() -> Vec<RebaseArgument> {
-        vec![RebaseArgument::KeepEmpty]
+        vec![RebaseArgument::KeepEmpty, RebaseArgument::UpdateRefs]
     }
 
     fn key(&self) -> char {
         match self {
             RebaseArgument::KeepEmpty => 'k',
             RebaseArgument::RebaseMerges(_) => 'r',
+            RebaseArgument::UpdateRefs => 'u',
         }
     }
 
@@ -650,6 +652,7 @@ impl PopupArgument for RebaseArgument {
         match self {
             RebaseArgument::KeepEmpty => t.arg_rebase_keep_empty,
             RebaseArgument::RebaseMerges(_) => t.arg_rebase_rebase_merges,
+            RebaseArgument::UpdateRefs => t.arg_rebase_update_refs,
         }
     }
 
@@ -662,6 +665,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::RebaseMerges(RebaseMergesMode::RebaseCousins) => {
                 "--rebase-merges=rebase-cousins"
             }
+            RebaseArgument::UpdateRefs => "--update-refs",
         }
     }
 }
@@ -840,7 +844,25 @@ mod tests {
             RebaseArgument::from_key('k'),
             Some(RebaseArgument::KeepEmpty)
         );
+        assert_eq!(
+            RebaseArgument::from_key('u'),
+            Some(RebaseArgument::UpdateRefs)
+        );
         assert_eq!(RebaseArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_rebase_argument_update_refs_key_and_flag() {
+        assert_eq!(RebaseArgument::UpdateRefs.key(), 'u');
+        assert_eq!(RebaseArgument::UpdateRefs.flag(), "--update-refs");
+    }
+
+    #[test]
+    fn test_rebase_argument_all_order() {
+        assert_eq!(
+            RebaseArgument::all(),
+            vec![RebaseArgument::KeepEmpty, RebaseArgument::UpdateRefs]
+        );
     }
 
     #[test]
