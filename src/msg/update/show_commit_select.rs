@@ -197,7 +197,14 @@ pub fn show_select_revise_commit(model: &mut Model) -> Option<Message> {
 
 fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) -> Option<Message> {
     // Commit picking always shows the graph and refnames, without color
-    match get_log_entries(&model.git_info.repository, &log_type, true, false, true) {
+    match get_log_entries(
+        &model.git_info.repository,
+        &log_type,
+        true,
+        false,
+        true,
+        false,
+    ) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
 
@@ -224,6 +231,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
                     graph: true,
                     color: false,
                     decorate: true,
+                    show_signature: false,
                 };
                 model.popup = None;
                 model.log_pick_on_select = Some(on_select);

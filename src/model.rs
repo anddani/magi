@@ -143,6 +143,9 @@ pub enum ViewMode {
         color: bool,
         /// Whether refnames are shown (--decorate); used when refreshing
         decorate: bool,
+        /// Whether signature statuses are shown (--show-signature); used when
+        /// refreshing
+        show_signature: bool,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,

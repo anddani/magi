@@ -15,6 +15,9 @@ pub struct LogEntry {
     pub time: Option<String>,
     /// The commit message subject
     pub message: Option<String>,
+    /// The signature status character (`%G?`: G, B, U, X, Y, R, E or N) when
+    /// the log was requested with --show-signature
+    pub signature: Option<char>,
 }
 
 impl LogEntry {
@@ -34,6 +37,7 @@ impl LogEntry {
             author,
             time,
             message,
+            signature: None,
         }
     }
 
@@ -46,6 +50,7 @@ impl LogEntry {
             author: None,
             time: None,
             message: None,
+            signature: None,
         }
     }
 

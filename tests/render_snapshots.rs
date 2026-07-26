@@ -386,6 +386,21 @@ fn snapshot_log_popup_arg_mode() {
 }
 
 #[test]
+fn snapshot_log_popup_equals_arg_mode() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(&test_repo, PopupContentCommand::Log);
+    model.equals_arg_mode = true;
+    model.arguments = Some(Arguments::LogArguments(HashSet::from([
+        LogArgument::Graph,
+        LogArgument::Decorate,
+        LogArgument::ShowSignature,
+    ])));
+    // Equals-arg mode only changes styling (key highlights, selected flags),
+    // so snapshot the styled buffer instead of the plain-text frame.
+    assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_stash_popup() {
     let test_repo = TestRepo::new();
     let model = create_command_popup_model(&test_repo, PopupContentCommand::Stash);

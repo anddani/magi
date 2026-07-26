@@ -12,8 +12,9 @@ pub fn update(model: &mut Model) -> Option<Message> {
             graph,
             color,
             decorate,
+            show_signature,
             ..
-        } => refresh_log(model, &log_type, graph, color, decorate),
+        } => refresh_log(model, &log_type, graph, color, decorate, show_signature),
         // In preview mode, refresh is a no-op (preview content is static)
         ViewMode::Preview => {}
         // The rebase todo editor holds in-memory state; nothing to refresh
@@ -91,10 +92,16 @@ fn refresh_log(
     graph: bool,
     color: bool,
     decorate: bool,
+    show_signature: bool,
 ) {
-    if let Ok(entries) =
-        get_log_entries(&model.git_info.repository, log_type, graph, color, decorate)
-    {
+    if let Ok(entries) = get_log_entries(
+        &model.git_info.repository,
+        log_type,
+        graph,
+        color,
+        decorate,
+        show_signature,
+    ) {
         let lines: Vec<Line> = entries
             .into_iter()
             .map(|entry| Line {

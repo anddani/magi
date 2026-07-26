@@ -6,12 +6,18 @@ use crate::{
 };
 
 /// Handle key events for the Log command popup
-pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
+pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Message> {
     if arg_mode {
         return match key.code {
             KeyCode::Char(c) => LogArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Log(arg)))
                 .or(Some(Message::ExitArgMode)),
+            _ => Some(Message::ExitArgMode),
+        };
+    }
+    if equals_arg_mode {
+        return match key.code {
+            KeyCode::Char('S') => Some(Message::ToggleArgument(Log(LogArgument::ShowSignature))),
             _ => Some(Message::ExitArgMode),
         };
     }
@@ -36,6 +42,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         })),
         KeyCode::Char('H') => Some(Message::ShowLog(LogType::ReflogOther("HEAD".to_string()))),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
+        KeyCode::Char('=') => Some(Message::EnterEqualsArgMode),
         _ => None,
     }
 }

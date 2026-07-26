@@ -73,6 +73,7 @@ pub fn update(model: &mut Model, argument: Argument) -> Option<Message> {
         ),
     }
     model.arg_mode = false;
+    model.equals_arg_mode = false;
     None
 }
 

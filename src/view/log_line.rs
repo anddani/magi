@@ -24,12 +24,13 @@ pub fn get_lines(
         ));
     }
 
-    // Hash
+    // Hash - colored by signature status when the log was requested with
+    // --show-signature, like magit's magit-signature-* faces
     if let Some(ref hash) = entry.hash {
         spans.push(Span::styled(
             hash.clone(),
             Style::default()
-                .fg(theme.commit_hash)
+                .fg(signature_color(entry.signature, theme))
                 .add_modifier(Modifier::BOLD),
         ));
         spans.push(Span::raw(" "));
@@ -89,6 +90,19 @@ pub fn get_lines(
     }
 
     vec![Line::from(spans)]
+}
+
+/// Color for a commit hash based on its `%G?` signature status:
+/// good signatures are green, broken ones (bad, revoked, error) red and
+/// questionable ones (untrusted, expired) yellow. Unsigned commits (N)
+/// and logs without --show-signature use the normal hash color.
+fn signature_color(signature: Option<char>, theme: &Theme) -> Color {
+    match signature {
+        Some('G') => theme.diff_addition,
+        Some('B') | Some('R') | Some('E') => theme.diff_deletion,
+        Some('U') | Some('X') | Some('Y') => theme.section_header,
+        _ => theme.commit_hash,
+    }
 }
 
 /// Split a graph string on the ANSI color codes emitted by `git log --color`
@@ -229,5 +243,20 @@ mod tests {
         let spans = graph_spans("\x1b[4m|\x1b[m *", default_style());
         let text: String = spans.iter().map(|s| s.content.as_ref()).collect();
         assert_eq!(text, "| *");
+    }
+
+    #[test]
+    fn test_signature_color() {
+        let theme = crate::config::Theme::default();
+        assert_eq!(signature_color(Some('G'), &theme), theme.diff_addition);
+        assert_eq!(signature_color(Some('B'), &theme), theme.diff_deletion);
+        assert_eq!(signature_color(Some('R'), &theme), theme.diff_deletion);
+        assert_eq!(signature_color(Some('E'), &theme), theme.diff_deletion);
+        assert_eq!(signature_color(Some('U'), &theme), theme.section_header);
+        assert_eq!(signature_color(Some('X'), &theme), theme.section_header);
+        assert_eq!(signature_color(Some('Y'), &theme), theme.section_header);
+        // Unsigned commits and logs without --show-signature keep the hash color
+        assert_eq!(signature_color(Some('N'), &theme), theme.commit_hash);
+        assert_eq!(signature_color(None, &theme), theme.commit_hash);
     }
 }

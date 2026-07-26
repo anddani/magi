@@ -1,6 +1,9 @@
 use magi::{
     git::test_repo::TestRepo,
-    model::ViewMode,
+    model::{
+        LineContent, ViewMode,
+        arguments::{Arguments, LogArgument},
+    },
     msg::{CommitSelect, FixupType, LogType, Message, SelectMessage, update::update},
 };
 
@@ -95,4 +98,67 @@ fn test_log_pick_confirm_restores_status_cursor_and_scroll() {
     assert_eq!(model.view_mode, ViewMode::Status);
     assert_eq!(model.ui_model.cursor_position, 3);
     assert_eq!(model.ui_model.scroll_offset, 2);
+}
+
+// ── Show signatures argument (=S, --show-signature) ───────────────────────────
+
+#[test]
+fn test_show_log_with_show_signature_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::LogArguments(
+        [
+            LogArgument::Graph,
+            LogArgument::Decorate,
+            LogArgument::ShowSignature,
+        ]
+        .into_iter()
+        .collect(),
+    ));
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            show_signature: true,
+            ..
+        }
+    ));
+    // The test commits are unsigned, so every commit reports 'N'
+    let signatures: Vec<Option<char>> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|line| match &line.content {
+            LineContent::LogLine(entry) if entry.is_commit() => Some(entry.signature),
+            _ => None,
+        })
+        .collect();
+    assert!(!signatures.is_empty());
+    assert!(signatures.iter().all(|s| *s == Some('N')));
+}
+
+#[test]
+fn test_show_log_without_show_signature_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            show_signature: false,
+            ..
+        }
+    ));
+    assert!(model.ui_model.lines.iter().all(|line| match &line.content {
+        LineContent::LogLine(entry) => entry.signature.is_none(),
+        _ => true,
+    }));
 }

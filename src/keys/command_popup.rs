@@ -35,7 +35,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Commit(_) => commit::keys(key, arg_mode),
         PopupContentCommand::Branch => branch::keys(key),
         PopupContentCommand::Fetch(state) => fetch::keys(key, arg_mode, state),
-        PopupContentCommand::Log => log::keys(key, arg_mode),
+        PopupContentCommand::Log => log::keys(key, arg_mode, equals_arg_mode),
         PopupContentCommand::Pull(state) => pull::keys(key, arg_mode, state),
         PopupContentCommand::Push(state) => push::keys(key, arg_mode, state),
         PopupContentCommand::Stash => stash::keys(key, arg_mode),

@@ -220,13 +220,31 @@ pub fn argument_line<'a>(
     arg_mode: bool,
     selected: bool,
 ) -> Line<'a> {
+    prefixed_argument_line(theme, '-', key, description, flag, arg_mode, selected)
+}
+
+/// An argument toggle line whose key uses a prefix other than `-`,
+/// e.g. magit's `=S` for `--show-signature`
+pub fn prefixed_argument_line<'a>(
+    theme: &Theme,
+    prefix: char,
+    key: char,
+    description: &'a str,
+    flag: &'a str,
+    prefix_pressed: bool,
+    selected: bool,
+) -> Line<'a> {
     let faded_style = Style::default().fg(theme.dim_text);
     let desc_style = Style::default();
     let key_style = Style::default()
         .fg(theme.diff_addition)
         .add_modifier(Modifier::BOLD);
 
-    let dash_style = if arg_mode { faded_style } else { key_style };
+    let prefix_style = if prefix_pressed {
+        faded_style
+    } else {
+        key_style
+    };
 
     let flag_style = if selected {
         Style::default().fg(theme.diff_addition) // Green when selected
@@ -234,7 +252,7 @@ pub fn argument_line<'a>(
         faded_style // Gray when not selected
     };
     Line::from(vec![
-        Span::styled(" -", dash_style),
+        Span::styled(format!(" {prefix}"), prefix_style),
         Span::styled(key.to_string(), key_style),
         Span::styled(format!(" {description} ("), desc_style),
         Span::styled(flag, flag_style),

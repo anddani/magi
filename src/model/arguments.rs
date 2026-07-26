@@ -515,6 +515,7 @@ pub enum LogArgument {
     Graph,
     Color,
     Decorate,
+    ShowSignature,
 }
 
 impl LogArgument {
@@ -524,6 +525,8 @@ impl LogArgument {
 }
 
 impl PopupArgument for LogArgument {
+    /// ShowSignature is excluded: it uses the `=` prefix (magit's `=S`), so it
+    /// is rendered with `prefixed_argument_line` and toggled in equals-arg mode.
     fn all() -> Vec<LogArgument> {
         vec![
             LogArgument::Graph,
@@ -537,6 +540,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Graph => 'g',
             LogArgument::Color => 'c',
             LogArgument::Decorate => 'd',
+            LogArgument::ShowSignature => 'S',
         }
     }
 
@@ -546,6 +550,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Graph => t.arg_log_graph,
             LogArgument::Color => t.arg_log_color,
             LogArgument::Decorate => t.arg_log_decorate,
+            LogArgument::ShowSignature => t.arg_log_show_signature,
         }
     }
 
@@ -554,6 +559,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Graph => "--graph",
             LogArgument::Color => "--color",
             LogArgument::Decorate => "--decorate",
+            LogArgument::ShowSignature => "--show-signature",
         }
     }
 }
@@ -878,6 +884,18 @@ mod tests {
         assert_eq!(LogArgument::from_key('c'), Some(LogArgument::Color));
         assert_eq!(LogArgument::from_key('d'), Some(LogArgument::Decorate));
         assert_eq!(LogArgument::from_key('x'), None);
+    }
+
+    #[test]
+    fn test_log_argument_show_signature_key_and_flag() {
+        assert_eq!(LogArgument::ShowSignature.key(), 'S');
+        assert_eq!(LogArgument::ShowSignature.flag(), "--show-signature");
+    }
+
+    #[test]
+    fn test_log_argument_show_signature_not_toggled_via_from_key() {
+        // 'S' is handled in equals-arg mode (`=S`), not the generic `-` toggle
+        assert_eq!(LogArgument::from_key('S'), None);
     }
 
     #[test]
