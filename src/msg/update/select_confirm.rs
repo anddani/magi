@@ -1,5 +1,5 @@
 use crate::{
-    git::reset::has_uncommitted_changes,
+    git::{reset::has_uncommitted_changes, worktree::worktree_has_changes},
     model::{
         LineContent, Model, ViewMode,
         arguments::{Arguments, RebaseArgument, RebaseMergesMode},
@@ -161,6 +161,18 @@ fn route_result(
         }
         (Some(OnSelect::WorktreeMove), SelectResult::Selected(worktree)) => {
             Some(Message::ShowWorktreeMovePathInput { worktree })
+        }
+        (Some(OnSelect::WorktreeDelete), SelectResult::Selected(worktree)) => {
+            let message = if worktree_has_changes(&worktree) {
+                format!("Delete worktree \"{worktree}\" despite uncommitted changes?")
+            } else {
+                format!("Delete worktree \"{worktree}\"?")
+            };
+            model.popup = Some(PopupContent::Confirm(ConfirmPopupState {
+                message,
+                on_confirm: ConfirmAction::DeleteWorktree(worktree),
+            }));
+            None
         }
         (Some(OnSelect::ResetBranchPick), SelectResult::Selected(branch)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {

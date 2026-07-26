@@ -20,6 +20,11 @@ pub fn keys(key: KeyEvent) -> Option<Message> {
             source: OptionsSource::LinkedWorktrees,
             on_select: OnSelect::WorktreeMove,
         })),
+        KeyCode::Char('k') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Delete worktree".to_string(),
+            source: OptionsSource::LinkedWorktrees,
+            on_select: OnSelect::WorktreeDelete,
+        })),
         _ => None,
     }
 }
