@@ -11,7 +11,7 @@ use crate::{
     view::render::{
         popup_content::{PopupColumn, PopupColumnTitle, PopupRow},
         util::{
-            argument_lines, argument_value_line, command_description, push_remote_description,
+            argument_lines_for, argument_value_line, command_description, push_remote_description,
             upstream_description,
         },
     },
@@ -52,7 +52,14 @@ pub fn content<'a>(
             _ => None,
         })
     });
-    let mut argument_content = argument_lines::<RebaseArgument>(theme, model.arg_mode, selected);
+    // Explicit lists to keep magit's order: the value-carrying rebase-merges
+    // line sits between --keep-empty and --update-refs
+    let mut argument_content = argument_lines_for(
+        theme,
+        model.arg_mode,
+        selected,
+        &[RebaseArgument::KeepEmpty],
+    );
     argument_content.push(argument_value_line(
         theme,
         '-',
@@ -61,6 +68,12 @@ pub fn content<'a>(
         "--rebase-merges=",
         rebase_merges_mode,
         model.arg_mode,
+    ));
+    argument_content.extend(argument_lines_for(
+        theme,
+        model.arg_mode,
+        selected,
+        &[RebaseArgument::UpdateRefs],
     ));
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),

@@ -490,6 +490,27 @@ fn snapshot_rebase_popup_rebase_merges_selected() {
 }
 
 #[test]
+fn snapshot_rebase_popup_update_refs_selected() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Rebase(RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            upstream: None,
+            push_remote: None,
+            sole_remote: None,
+        }),
+    );
+    model.arg_mode = true;
+    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+        RebaseArgument::UpdateRefs,
+    ])));
+    // Styled buffer shows the selected --update-refs flag highlighted
+    assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_rebase_todo_view() {
     use magi::git::rebase::RebaseAction;
     use magi::msg::RebaseTodoMessage;
