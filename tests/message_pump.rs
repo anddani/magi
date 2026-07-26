@@ -35,9 +35,9 @@ fn test_select_confirm_merge_branch_suspends_tui() {
 
     assert_eq!(
         model.running_state,
-        RunningState::LaunchExternalCommand(Message::Merge(MergeCommand::Branch(
+        RunningState::LaunchExternalCommand(Box::new(Message::Merge(MergeCommand::Branch(
             "feature".to_string()
-        )))
+        ))))
     );
     assert!(model.pty_state.is_none());
 }
@@ -63,9 +63,9 @@ fn test_select_confirm_merge_edit_message_suspends_tui() {
 
     assert_eq!(
         model.running_state,
-        RunningState::LaunchExternalCommand(Message::Merge(MergeCommand::EditMessage(
+        RunningState::LaunchExternalCommand(Box::new(Message::Merge(MergeCommand::EditMessage(
             "feature".to_string()
-        )))
+        ))))
     );
     assert!(model.pty_state.is_none());
 }

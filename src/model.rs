@@ -524,7 +524,7 @@ pub enum RunningState {
     /// Signal to main loop to launch the an external command
     /// so that it can pause the Ratatui rendering and then
     /// resume it when the application returns to [`Running`].
-    LaunchExternalCommand(Message),
+    LaunchExternalCommand(Box<Message>),
     Done,
 }
 
