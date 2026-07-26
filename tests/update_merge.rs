@@ -10,7 +10,9 @@ use magi::{
         popup::{MergePopupState, PopupContent, PopupContentCommand},
         select_popup::OnSelect,
     },
-    msg::{MergeCommand, Message, OptionsSource, ShowSelectPopupConfig, update::update},
+    msg::{
+        MergeCommand, Message, OptionsSource, SelectMessage, ShowSelectPopupConfig, update::update,
+    },
 };
 
 mod utils;
@@ -518,7 +520,7 @@ fn test_merge_branch_ff_only_fast_forwards_without_merge_commit() {
     );
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+    model.arguments = Some(Arguments::merge_args(HashSet::from([
         MergeArgument::FfOnly,
     ])));
 
@@ -552,7 +554,7 @@ fn test_merge_branch_ff_only_refuses_divergent_branches() {
     let head_before = test_repo.head_hash();
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+    model.arguments = Some(Arguments::merge_args(HashSet::from([
         MergeArgument::FfOnly,
     ])));
 
@@ -589,7 +591,7 @@ fn test_merge_edit_message_drops_ff_only() {
     );
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+    model.arguments = Some(Arguments::merge_args(HashSet::from([
         MergeArgument::FfOnly,
     ])));
 
@@ -633,9 +635,7 @@ fn test_merge_branch_no_ff_creates_merge_commit() {
     );
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
-        MergeArgument::NoFf,
-    ])));
+    model.arguments = Some(Arguments::merge_args(HashSet::from([MergeArgument::NoFf])));
 
     let result = update(
         &mut model,
@@ -678,9 +678,7 @@ fn test_merge_absorb_no_ff_creates_merge_commit() {
     );
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
-        MergeArgument::NoFf,
-    ])));
+    model.arguments = Some(Arguments::merge_args(HashSet::from([MergeArgument::NoFf])));
 
     let result = update(
         &mut model,
@@ -700,6 +698,137 @@ fn test_merge_absorb_no_ff_creates_merge_commit() {
             .find_branch("feature", git2::BranchType::Local)
             .is_err()
     );
+}
+
+// ── Merge popup — -s strategy argument ────────────────────────────────────────
+
+#[test]
+fn test_s_in_arg_mode_shows_strategy_select() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('s')), &model);
+    assert_eq!(result, Some(Message::ShowMergeStrategySelect));
+}
+
+#[test]
+fn test_show_merge_strategy_select_opens_picker_with_strategies() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arg_mode = true;
+
+    let result = update(&mut model, Message::ShowMergeStrategySelect);
+    assert_eq!(result, None);
+    assert!(!model.arg_mode);
+
+    let state = expect_select_popup(&model);
+    assert_eq!(
+        state.all_options,
+        vec!["resolve", "recursive", "octopus", "ours", "subtree"]
+    );
+    assert_eq!(state.on_select, OnSelect::MergeStrategy);
+}
+
+#[test]
+fn test_confirming_strategy_select_sets_argument_and_restores_merge_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    update(&mut model, Message::ShowMergeStrategySelect);
+
+    // First option ("resolve") is selected by default
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(result, Some(Message::ShowMergePopup));
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.merge_strategy()),
+        Some("resolve")
+    );
+
+    let result = update(&mut model, Message::ShowMergePopup);
+    assert_eq!(result, None);
+    assert!(matches!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Merge(_)))
+    ));
+}
+
+#[test]
+fn test_show_merge_strategy_select_clears_already_set_strategy() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: Some("ours".to_string()),
+    });
+
+    let result = update(&mut model, Message::ShowMergeStrategySelect);
+    assert_eq!(result, None);
+
+    // The value is cleared and the merge popup stays open
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.merge_strategy()),
+        None
+    );
+    assert!(matches!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Merge(_)))
+    ));
+}
+
+#[test]
+fn test_merge_branch_with_strategy_ours_ignores_their_changes() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    // Both branches add the same file with different content: an add/add
+    // conflict without a strategy, but `--strategy=ours` keeps main's version.
+    setup_divergent_branches(
+        &test_repo,
+        ("conflict.txt", "main content\n"),
+        ("conflict.txt", "feature content\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: Some("ours".to_string()),
+    });
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Branch("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    let toast = model.toast.expect("Expected a toast after merging");
+    assert_eq!(toast.style, ToastStyle::Success);
+
+    // The merge succeeded and kept main's version of the conflicting file.
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head.parent_count(), 2);
+    let content = std::fs::read_to_string(test_repo.repo_path().join("conflict.txt")).unwrap();
+    assert_eq!(content, "main content\n");
+    // The arguments are consumed by the merge.
+    assert!(model.arguments.is_none());
 }
 
 // ── MergeCommand::EditMessage — execution ─────────────────────────────────────

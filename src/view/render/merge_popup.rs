@@ -4,12 +4,12 @@ use crate::{
     config::Theme,
     i18n,
     model::{Model, arguments::MergeArgument, popup::MergePopupState},
-    view::render::util::{argument_lines, command_description},
+    view::render::util::{argument_lines, argument_value_line, command_description},
 };
 
 pub fn content<'a>(
     theme: &Theme,
-    model: &Model,
+    model: &'a Model,
     state: &'a MergePopupState,
 ) -> CommandPopupContent<'a> {
     let t = i18n::t();
@@ -30,13 +30,25 @@ pub fn content<'a>(
         };
     }
 
+    let mut arguments = argument_lines::<MergeArgument>(
+        theme,
+        model.arg_mode,
+        model.arguments.as_ref().and_then(|a| a.merge()),
+    );
+
+    arguments.push(argument_value_line(
+        theme,
+        '-',
+        's',
+        t.arg_merge_strategy,
+        "--strategy=",
+        model.arguments.as_ref().and_then(|a| a.merge_strategy()),
+        model.arg_mode,
+    ));
+
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),
-        content: argument_lines::<MergeArgument>(
-            theme,
-            model.arg_mode,
-            model.arguments.as_ref().and_then(|a| a.merge()),
-        ),
+        content: arguments,
     };
 
     let actions_col = PopupColumn {

@@ -16,7 +16,11 @@ pub enum Arguments {
         local_user: Option<String>,
     },
     RebaseArguments(HashSet<RebaseArgument>),
-    MergeArguments(HashSet<MergeArgument>),
+    MergeArguments {
+        args: HashSet<MergeArgument>,
+        /// Merge strategy set via the `-s` argument (`--strategy=`)
+        strategy: Option<String>,
+    },
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
@@ -209,8 +213,16 @@ impl Arguments {
         }
     }
 
+    /// Merge arguments with no `--strategy=` override set
+    pub fn merge_args(args: HashSet<MergeArgument>) -> Arguments {
+        Arguments::MergeArguments {
+            args,
+            strategy: None,
+        }
+    }
+
     pub fn merge(&self) -> Option<&HashSet<MergeArgument>> {
-        if let Arguments::MergeArguments(args) = self {
+        if let Arguments::MergeArguments { args, .. } = self {
             Some(args)
         } else {
             None
@@ -218,8 +230,24 @@ impl Arguments {
     }
 
     pub fn merge_mut(&mut self) -> Option<&mut HashSet<MergeArgument>> {
-        if let Arguments::MergeArguments(args) = self {
+        if let Arguments::MergeArguments { args, .. } = self {
             Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn merge_strategy(&self) -> Option<&str> {
+        if let Arguments::MergeArguments { strategy, .. } = self {
+            strategy.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn merge_strategy_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::MergeArguments { strategy, .. } = self {
+            Some(strategy)
         } else {
             None
         }
@@ -951,6 +979,29 @@ mod tests {
     fn test_merge_argument_all_contains_all_variants() {
         assert!(MergeArgument::all().contains(&MergeArgument::FfOnly));
         assert!(MergeArgument::all().contains(&MergeArgument::NoFf));
+    }
+
+    #[test]
+    fn test_merge_args_has_no_strategy() {
+        let arguments = Arguments::merge_args([MergeArgument::NoFf].into_iter().collect());
+        assert_eq!(arguments.merge_strategy(), None);
+        assert!(arguments.merge().unwrap().contains(&MergeArgument::NoFf));
+    }
+
+    #[test]
+    fn test_merge_strategy_mut_sets_and_clears() {
+        let mut arguments = Arguments::merge_args(HashSet::new());
+        *arguments.merge_strategy_mut().unwrap() = Some("ours".to_string());
+        assert_eq!(arguments.merge_strategy(), Some("ours"));
+
+        *arguments.merge_strategy_mut().unwrap() = None;
+        assert_eq!(arguments.merge_strategy(), None);
+    }
+
+    #[test]
+    fn test_merge_strategy_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.merge_strategy(), None);
     }
 
     #[test]

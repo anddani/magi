@@ -289,6 +289,8 @@ pub struct Strings {
     pub arg_rebase_update_refs: &'static str,
     pub arg_merge_ff_only: &'static str,
     pub arg_merge_no_ff: &'static str,
+    pub arg_merge_strategy: &'static str,
+    pub select_merge_strategy: &'static str,
 
     // Mode labels shown in the status bar
     pub mode_normal: &'static str,
@@ -571,6 +573,8 @@ static ENGLISH: Strings = Strings {
     arg_rebase_update_refs: "Update branches",
     arg_merge_ff_only: "Fast-forward only",
     arg_merge_no_ff: "No fast-forward",
+    arg_merge_strategy: "Strategy",
+    select_merge_strategy: "Merge strategy",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUAL",
@@ -840,6 +844,8 @@ static SWEDISH: Strings = Strings {
     arg_rebase_update_refs: "Uppdatera grenar",
     arg_merge_ff_only: "Endast snabbspola",
     arg_merge_no_ff: "Ingen snabbspolning",
+    arg_merge_strategy: "Strategi",
+    select_merge_strategy: "Sammanslagningsstrategi",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUELL",
