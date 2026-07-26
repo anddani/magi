@@ -12,14 +12,15 @@ use super::commit_utils::{build_push_remote_map, enrich_refs_with_push_remote, s
 const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
-/// Fetches git log entries, optionally with graph, colored graph lines and
-/// refnames (--decorate)
+/// Fetches git log entries, optionally with graph, colored graph lines,
+/// refnames (--decorate) and signature statuses (--show-signature)
 pub fn get_log_entries(
     repository: &Repository,
     log_type: &LogType,
     graph: bool,
     color: bool,
     decorate: bool,
+    show_signature: bool,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
@@ -49,15 +50,25 @@ pub fn get_log_entries(
     }
 
     // Build the git log command similar to Magit
-    // Format: hash<sep>refs<sep>author<sep>date<sep>message
+    // Format: hash<sep>refs<sep>gpg<sep>author<sep>date<sep>message
     // Reflogs use the reflog subject (%gs, e.g. "commit: fix bug") as message
     // Without --decorate the refs field is left empty, like Magit's "%s"-only
-    // format when "--decorate" is absent from the arguments
+    // format when "--decorate" is absent from the arguments. Like Magit,
+    // "--show-signature" is not passed to git (its multi-line gpg output would
+    // break parsing); the "%G?" status character is requested instead
     let message_format = if reflog { "%gs" } else { "%s" };
     let refs_format = if decorate { "%D" } else { "" };
+    let gpg_format = if show_signature { "%G?" } else { "" };
     let format = format!(
-        "%h{}{}{}%aN{}%ar{}{}",
-        SEPARATOR, refs_format, SEPARATOR, SEPARATOR, SEPARATOR, message_format
+        "%h{}{}{}{}{}%aN{}%ar{}{}",
+        SEPARATOR,
+        refs_format,
+        SEPARATOR,
+        gpg_format,
+        SEPARATOR,
+        SEPARATOR,
+        SEPARATOR,
+        message_format
     );
 
     let mut args = vec![
@@ -265,7 +276,7 @@ fn none_if_empty(s: &str) -> Option<String> {
 
 /// Parse a single line from git log --graph output
 fn parse_log_line(line: &str, remotes: &[String]) -> LogEntry {
-    // The line format is: <graph><hash><sep><refs><sep><author><sep><date><sep><message>
+    // The line format is: <graph><hash><sep><refs><sep><gpg><sep><author><sep><date><sep><message>
     // The graph part is everything before the first non-graph character that looks like a hash
 
     // Find where the graph ends and the commit info begins
@@ -283,13 +294,16 @@ fn parse_log_line(line: &str, remotes: &[String]) -> LogEntry {
     // Split by separator
     let parts: Vec<&str> = rest.split(SEPARATOR).collect();
 
-    if parts.len() >= 5 {
+    if parts.len() >= 6 {
         let hash = none_if_empty(parts[0]);
         let refs = parse_refs(parts[1], remotes);
-        let author = none_if_empty(parts[2]);
-        let time = none_if_empty(parts[3]).and_then(|t| t.strip_suffix(" ago").map(String::from));
-        let message = none_if_empty(parts[4]);
-        LogEntry::new(graph, hash, refs, author, time, message)
+        let signature = parts[2].chars().next();
+        let author = none_if_empty(parts[3]);
+        let time = none_if_empty(parts[4]).and_then(|t| t.strip_suffix(" ago").map(String::from));
+        let message = none_if_empty(parts[5]);
+        let mut entry = LogEntry::new(graph, hash, refs, author, time, message);
+        entry.signature = signature;
+        entry
     } else if !parts[0].is_empty() {
         // Has some content but not in expected format
         // Treat as a commit with just a hash/message
@@ -464,6 +478,7 @@ mod tests {
             true,
             false,
             true,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -483,7 +498,7 @@ mod tests {
             .commit("Second commit");
 
         let entries =
-            get_log_entries(&test_repo.repo, &LogType::Reflog, true, false, true).unwrap();
+            get_log_entries(&test_repo.repo, &LogType::Reflog, true, false, true, false).unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         // Reflog entries use the reflog subject ("<command>: <rest>")
@@ -510,6 +525,7 @@ mod tests {
             true,
             false,
             true,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -536,6 +552,7 @@ mod tests {
             true,
             false,
             true,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -559,7 +576,7 @@ mod tests {
             .create_stash("Second stash");
 
         let entries =
-            get_log_entries(&test_repo.repo, &LogType::Stashes, true, false, true).unwrap();
+            get_log_entries(&test_repo.repo, &LogType::Stashes, true, false, true, false).unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         // Both stashes are listed, most recent first
@@ -577,7 +594,7 @@ mod tests {
         let test_repo = TestRepo::new();
 
         let entries =
-            get_log_entries(&test_repo.repo, &LogType::Stashes, true, false, true).unwrap();
+            get_log_entries(&test_repo.repo, &LogType::Stashes, true, false, true, false).unwrap();
         assert!(entries.is_empty());
     }
 
@@ -725,7 +742,7 @@ mod tests {
             .commit("Second commit");
 
         let entries =
-            get_log_entries(&test_repo.repo, &LogType::Related, true, false, true).unwrap();
+            get_log_entries(&test_repo.repo, &LogType::Related, true, false, true, false).unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         assert!(messages.contains(&"Initial commit".to_string()));
@@ -736,8 +753,8 @@ mod tests {
     fn test_parse_log_line_commit() {
         let remotes = vec!["origin".to_string()];
         let line = format!(
-            "* abc1234{}main{}John Doe{}2 hours ago{}Fix bug",
-            SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
+            "* abc1234{}main{}{}John Doe{}2 hours ago{}Fix bug",
+            SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
         );
         let entry = parse_log_line(&line, &remotes);
 
@@ -746,8 +763,23 @@ mod tests {
         assert_eq!(entry.refs.len(), 1);
         assert_eq!(entry.refs[0].name, "main");
         assert_eq!(entry.refs[0].ref_type, CommitRefType::LocalBranch);
+        assert_eq!(entry.signature, None);
         assert_eq!(entry.author, Some("John Doe".to_string()));
         assert_eq!(entry.time, Some("2 hours".to_string()));
+        assert_eq!(entry.message, Some("Fix bug".to_string()));
+    }
+
+    #[test]
+    fn test_parse_log_line_with_signature() {
+        let remotes = vec!["origin".to_string()];
+        let line = format!(
+            "* abc1234{}main{}G{}John Doe{}2 hours ago{}Fix bug",
+            SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
+        );
+        let entry = parse_log_line(&line, &remotes);
+
+        assert_eq!(entry.hash, Some("abc1234".to_string()));
+        assert_eq!(entry.signature, Some('G'));
         assert_eq!(entry.message, Some("Fix bug".to_string()));
     }
 
@@ -755,8 +787,8 @@ mod tests {
     fn test_parse_log_line_colored_graph() {
         let remotes = vec!["origin".to_string()];
         let line = format!(
-            "\x1b[31m|\x1b[m * abc1234{}main{}John Doe{}2 hours ago{}Fix bug",
-            SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
+            "\x1b[31m|\x1b[m * abc1234{}main{}{}John Doe{}2 hours ago{}Fix bug",
+            SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
         );
         let entry = parse_log_line(&line, &remotes);
 
@@ -776,7 +808,7 @@ mod tests {
             .commit("Second commit");
 
         let entries =
-            get_log_entries(&test_repo.repo, &LogType::Current, true, true, true).unwrap();
+            get_log_entries(&test_repo.repo, &LogType::Current, true, true, true, false).unwrap();
 
         // The graph is colored with ANSI codes, but the commit info is not
         let entry = entries.first().unwrap();
@@ -792,7 +824,7 @@ mod tests {
         let test_repo = TestRepo::new();
 
         let entries =
-            get_log_entries(&test_repo.repo, &LogType::Current, true, false, true).unwrap();
+            get_log_entries(&test_repo.repo, &LogType::Current, true, false, true, false).unwrap();
 
         // HEAD is on main, so the commit is decorated with the branch name
         let entry = entries.first().unwrap();
@@ -806,14 +838,48 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries =
-            get_log_entries(&test_repo.repo, &LogType::Current, true, false, false).unwrap();
+        let entries = get_log_entries(
+            &test_repo.repo,
+            &LogType::Current,
+            true,
+            false,
+            false,
+            false,
+        )
+        .unwrap();
 
         // Without --decorate no refs are attached, but the rest is intact
         let entry = entries.first().unwrap();
         assert!(entry.refs.is_empty());
         assert!(entry.hash.is_some());
         assert_eq!(entry.message, Some("Initial commit".to_string()));
+    }
+
+    #[test]
+    fn test_get_log_entries_show_signature() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Current, true, false, true, true).unwrap();
+
+        // The test commit is unsigned, so %G? reports 'N' (no signature)
+        let entry = entries.first().unwrap();
+        assert_eq!(entry.signature, Some('N'));
+        assert_eq!(entry.message, Some("Initial commit".to_string()));
+    }
+
+    #[test]
+    fn test_get_log_entries_no_show_signature() {
+        use crate::git::test_repo::TestRepo;
+
+        let test_repo = TestRepo::new();
+
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Current, true, false, true, false).unwrap();
+
+        assert_eq!(entries.first().unwrap().signature, None);
     }
 
     #[test]
@@ -830,8 +896,8 @@ mod tests {
     fn test_parse_log_line_no_refs() {
         let remotes = vec!["origin".to_string()];
         let line = format!(
-            "* def5678{}{}Jane Smith{}1 day ago{}Initial commit",
-            SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
+            "* def5678{}{}{}Jane Smith{}1 day ago{}Initial commit",
+            SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR
         );
         let entry = parse_log_line(&line, &remotes);
 

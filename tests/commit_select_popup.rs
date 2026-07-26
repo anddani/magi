@@ -13,7 +13,7 @@ use utils::create_model_from_test_repo;
 /// Helper to get log entries for testing (filters out graph-only entries)
 fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> {
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut entries = get_log_entries(&repo, &LogType::Current, true, false, true).unwrap();
+    let mut entries = get_log_entries(&repo, &LogType::Current, true, false, true, false).unwrap();
     entries.retain(|e| e.is_commit());
     entries
 }
@@ -88,7 +88,8 @@ fn test_commit_select_popup_confirm_returns_hash() {
             picking: true,
             graph: true,
             color: false,
-            decorate: true
+            decorate: true,
+            show_signature: false
         }
     ));
 
@@ -138,7 +139,8 @@ fn test_commit_select_popup_navigation() {
             picking: true,
             graph: true,
             color: false,
-            decorate: true
+            decorate: true,
+            show_signature: false
         }
     ));
     assert_eq!(model.ui_model.cursor_position, 0);

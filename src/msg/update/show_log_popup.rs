@@ -65,6 +65,7 @@ mod tests {
         assert!(args.contains(&LogArgument::Graph));
         assert!(args.contains(&LogArgument::Decorate));
         assert!(!args.contains(&LogArgument::Color));
+        assert!(!args.contains(&LogArgument::ShowSignature));
         assert_eq!(
             model.popup,
             Some(PopupContent::Command(PopupContentCommand::Log))

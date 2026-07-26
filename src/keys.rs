@@ -1965,6 +1965,40 @@ mod tests {
     }
 
     #[test]
+    fn test_equals_in_log_popup_enters_equals_arg_mode() {
+        let model = create_log_popup_model();
+
+        let key = create_key_event(NONE, Char('='));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::EnterEqualsArgMode));
+    }
+
+    #[test]
+    fn test_s_in_log_equals_arg_mode_toggles_show_signature() {
+        use crate::model::arguments::{Argument::Log, LogArgument};
+
+        let mut model = create_log_popup_model();
+        model.equals_arg_mode = true;
+
+        let key = create_key_event(NONE, Char('S'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Log(LogArgument::ShowSignature)))
+        );
+    }
+
+    #[test]
+    fn test_other_key_in_log_equals_arg_mode_exits_arg_mode() {
+        let mut model = create_log_popup_model();
+        model.equals_arg_mode = true;
+
+        let key = create_key_event(NONE, Char('x'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ExitArgMode));
+    }
+
+    #[test]
     fn test_esc_dismisses_log_popup() {
         let model = create_log_popup_model();
 
@@ -1995,6 +2029,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_signature: false,
         };
         model
     }
@@ -2076,6 +2111,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_signature: false,
         };
         model
     }
@@ -2493,6 +2529,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_signature: false,
         };
         model.ui_model.lines = vec![crate::model::Line {
             content: crate::model::LineContent::LogLine(LogEntry::new(

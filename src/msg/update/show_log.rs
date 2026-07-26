@@ -10,13 +10,14 @@ use crate::{
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
     // Graph and refnames are shown by default; only disabled when toggled off
     // in the log popup
-    let (graph, color, decorate) = match model.arguments.take() {
+    let (graph, color, decorate, show_signature) = match model.arguments.take() {
         Some(LogArguments(args)) => (
             args.contains(&LogArgument::Graph),
             args.contains(&LogArgument::Color),
             args.contains(&LogArgument::Decorate),
+            args.contains(&LogArgument::ShowSignature),
         ),
-        _ => (true, false, true),
+        _ => (true, false, true, false),
     };
     // Reflogs cannot be drawn as a graph (git rejects --graph with --walk-reflogs)
     let graph = graph
@@ -30,6 +31,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         graph,
         color,
         decorate,
+        show_signature,
     ) {
         Ok(entries) => {
             // Convert log entries to lines
@@ -57,6 +59,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 graph,
                 color,
                 decorate,
+                show_signature,
             };
 
             // Dismiss the log popup

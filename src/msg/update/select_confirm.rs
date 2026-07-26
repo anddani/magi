@@ -548,6 +548,7 @@ mod tests {
                 time: None,
                 refs: vec![],
                 graph: String::new(),
+                signature: None,
             }),
             section: None,
         }
@@ -562,6 +563,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_signature: false,
         };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
@@ -592,6 +594,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_signature: false,
         };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
@@ -621,6 +624,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_signature: false,
         };
         model.ui_model.lines = vec![Line {
             content: LineContent::LogLine(LogEntry {
@@ -630,6 +634,7 @@ mod tests {
                 time: None,
                 refs: vec![],
                 graph: String::new(),
+                signature: None,
             }),
             section: None,
         }];
@@ -654,6 +659,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_signature: false,
         };
         model.ui_model.lines = vec![make_log_line("deadbeef", "Some commit")];
         model.ui_model.cursor_position = 0;
@@ -753,6 +759,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_signature: false,
         };
         model.ui_model.lines = vec![make_log_line("abc1234", "First commit")];
         model.log_pick_on_select = Some(OnSelect::FixupCommit(FixupType::Fixup));
@@ -769,7 +776,8 @@ mod tests {
                 picking: false,
                 graph: true,
                 color: false,
-                decorate: true
+                decorate: true,
+                show_signature: false
             }
         );
         // log_pick_on_select still set (not consumed)

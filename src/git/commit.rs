@@ -271,6 +271,7 @@ mod tests {
             true,
             false,
             true,
+            false,
         )
         .unwrap();
         entries.retain(|e| e.is_commit());
