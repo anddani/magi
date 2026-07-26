@@ -69,6 +69,9 @@ pub enum OnSelect {
     ShowStash,
     /// Select a stash to convert into a branch (the branch name is entered next)
     BranchStash,
+    /// Select a stash to apply on a new branch created at HEAD
+    /// (the branch name is entered next)
+    BranchStashHere,
     /// Select a commit to rebase onto (rebase elsewhere)
     RebaseElsewhere,
     /// Select the base commit for an interactive rebase (base inclusive)

@@ -127,6 +127,12 @@ pub enum InputContext {
         /// The stash to branch from, e.g. "stash@{0}"
         stash_ref: String,
     },
+    /// Entering the name for a new branch created at HEAD onto which the
+    /// stash is applied (`git checkout -b <name>` + `git stash pop <stash>`)
+    StashBranchHere {
+        /// The stash to apply on the new branch, e.g. "stash@{0}"
+        stash_ref: String,
+    },
     /// Creating a new spin-off branch from the current HEAD
     SpinoffBranch,
     /// Creating a new spin-out branch from the current HEAD (stays on current branch)
@@ -215,6 +221,9 @@ impl InputPopupState {
             InputContext::RenameBranch { old_name } => t.fmt1(t.input_rename_branch_fmt, old_name),
             InputContext::Stash(stash_type) => stash_type.title().to_string(),
             InputContext::StashBranch { stash_ref } => t.fmt1(t.input_stash_branch_fmt, stash_ref),
+            InputContext::StashBranchHere { stash_ref } => {
+                t.fmt1(t.input_stash_branch_here_fmt, stash_ref)
+            }
             InputContext::SpinoffBranch => t.input_spinoff_branch.to_string(),
             InputContext::SpinoutBranch => t.input_spinout_branch.to_string(),
             InputContext::CherrySpinout { .. } => t.input_cherry_spinout.to_string(),

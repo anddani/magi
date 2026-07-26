@@ -787,6 +787,13 @@ pub enum StashCommand {
         stash_ref: String,
         branch_name: String,
     },
+    /// Create and checkout a new branch from the current HEAD, then apply the
+    /// stash and drop it if it applies cleanly
+    /// (`git checkout -b <name>` followed by `git stash pop <stash>`)
+    BranchHere {
+        stash_ref: String,
+        branch_name: String,
+    },
 }
 
 /// Messages for commit select

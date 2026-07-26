@@ -229,6 +229,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] List
         - [x] Show
         - [x] Branch (checkout new branch from stash)
+        - [x] Branch here (checkout new branch at HEAD, then apply stash)
     - [ ] Worktree
         - [x] Create new worktree
         - [x] Move worktree
