@@ -606,6 +606,102 @@ fn test_merge_edit_message_drops_ff_only() {
     assert_eq!(head.parent_count(), 2);
 }
 
+// ── MergeCommand::Branch — --no-ff argument ───────────────────────────────────
+
+#[test]
+fn test_merge_branch_no_ff_creates_merge_commit() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+    // Put a commit on feature only: without --no-ff this would fast-forward,
+    // so a merge commit proves the flag was passed.
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "-b", "feature"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "main"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+        MergeArgument::NoFf,
+    ])));
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Branch("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    let toast = model.toast.expect("Expected a toast after merging");
+    assert_eq!(toast.style, ToastStyle::Success);
+
+    // Not fast-forwarded: HEAD is a merge commit with two parents.
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head.parent_count(), 2);
+    assert!(test_repo.repo_path().join("feature.txt").exists());
+    // The argument is consumed by the merge.
+    assert!(model.arguments.is_none());
+}
+
+#[test]
+fn test_merge_absorb_no_ff_creates_merge_commit() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    test_repo.commit_file("base.txt", "base\n", "Base commit");
+
+    // Put a commit on feature only, so absorb would fast-forward by default.
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "-b", "feature"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    test_repo.commit_file("feature.txt", "feature content\n", "Feature commit");
+    assert!(
+        git_cmd(test_repo.repo_path(), &["checkout", "main"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+        MergeArgument::NoFf,
+    ])));
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Absorb("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    let toast = model.toast.expect("Expected a toast after absorbing");
+    assert_eq!(toast.style, ToastStyle::Success);
+
+    // Not fast-forwarded, and the absorbed branch is deleted.
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head.parent_count(), 2);
+    assert!(
+        test_repo
+            .repo
+            .find_branch("feature", git2::BranchType::Local)
+            .is_err()
+    );
+}
+
 // ── MergeCommand::EditMessage — execution ─────────────────────────────────────
 
 #[test]

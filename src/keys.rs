@@ -1775,6 +1775,26 @@ mod tests {
     }
 
     #[test]
+    fn test_n_in_merge_arg_mode_toggles_no_ff() {
+        use crate::model::arguments::Argument::Merge;
+        use crate::model::arguments::MergeArgument;
+        use crate::model::popup::MergePopupState;
+
+        let mut model = create_test_model();
+        model.arg_mode = true;
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+            MergePopupState { in_progress: false },
+        )));
+
+        let key = create_key_event(NONE, Char('n'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Merge(MergeArgument::NoFf)))
+        );
+    }
+
+    #[test]
     fn test_invalid_key_in_merge_arg_mode_exits_arg_mode() {
         use crate::model::popup::MergePopupState;
 

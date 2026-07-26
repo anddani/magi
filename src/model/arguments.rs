@@ -663,6 +663,7 @@ impl PopupArgument for RebaseArgument {
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub enum MergeArgument {
     FfOnly,
+    NoFf,
 }
 
 impl MergeArgument {
@@ -673,12 +674,13 @@ impl MergeArgument {
 
 impl PopupArgument for MergeArgument {
     fn all() -> Vec<MergeArgument> {
-        vec![MergeArgument::FfOnly]
+        vec![MergeArgument::FfOnly, MergeArgument::NoFf]
     }
 
     fn key(&self) -> char {
         match self {
             MergeArgument::FfOnly => 'f',
+            MergeArgument::NoFf => 'n',
         }
     }
 
@@ -686,12 +688,14 @@ impl PopupArgument for MergeArgument {
         let t = i18n::t();
         match self {
             MergeArgument::FfOnly => t.arg_merge_ff_only,
+            MergeArgument::NoFf => t.arg_merge_no_ff,
         }
     }
 
     fn flag(&self) -> &'static str {
         match self {
             MergeArgument::FfOnly => "--ff-only",
+            MergeArgument::NoFf => "--no-ff",
         }
     }
 }
@@ -892,17 +896,21 @@ mod tests {
     fn test_merge_argument_key_and_flag() {
         assert_eq!(MergeArgument::FfOnly.key(), 'f');
         assert_eq!(MergeArgument::FfOnly.flag(), "--ff-only");
+        assert_eq!(MergeArgument::NoFf.key(), 'n');
+        assert_eq!(MergeArgument::NoFf.flag(), "--no-ff");
     }
 
     #[test]
     fn test_merge_argument_from_key() {
         assert_eq!(MergeArgument::from_key('f'), Some(MergeArgument::FfOnly));
+        assert_eq!(MergeArgument::from_key('n'), Some(MergeArgument::NoFf));
         assert_eq!(MergeArgument::from_key('x'), None);
     }
 
     #[test]
-    fn test_merge_argument_all_contains_ff_only() {
+    fn test_merge_argument_all_contains_all_variants() {
         assert!(MergeArgument::all().contains(&MergeArgument::FfOnly));
+        assert!(MergeArgument::all().contains(&MergeArgument::NoFf));
     }
 
     #[test]

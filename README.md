@@ -205,6 +205,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Formatting arguments (--graph, --color, --decorate)
     - [x] Merge
         - [x] Fast-forward only argument (`--ff-only`)
+        - [x] No fast-forward argument (`--no-ff`)
     - [ ] Remote
     - [ ] Submodule
     - [ ] Subtree

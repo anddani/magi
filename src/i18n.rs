@@ -281,6 +281,7 @@ pub struct Strings {
     pub arg_rebase_keep_empty: &'static str,
     pub arg_rebase_rebase_merges: &'static str,
     pub arg_merge_ff_only: &'static str,
+    pub arg_merge_no_ff: &'static str,
 
     // Mode labels shown in the status bar
     pub mode_normal: &'static str,
@@ -555,6 +556,7 @@ static ENGLISH: Strings = Strings {
     arg_rebase_keep_empty: "Keep empty commits",
     arg_rebase_rebase_merges: "Rebase merges",
     arg_merge_ff_only: "Fast-forward only",
+    arg_merge_no_ff: "No fast-forward",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUAL",
@@ -816,6 +818,7 @@ static SWEDISH: Strings = Strings {
     arg_rebase_keep_empty: "Behåll tomma förbindelser",
     arg_rebase_rebase_merges: "Ympa sammanslagningar",
     arg_merge_ff_only: "Endast snabbspola",
+    arg_merge_no_ff: "Ingen snabbspolning",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUELL",
