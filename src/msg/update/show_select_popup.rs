@@ -10,7 +10,7 @@ use crate::{
         file_checkout::get_tracked_files,
         open_pr::has_any_remote,
         push::{get_current_branch, get_local_tags, get_remotes, get_upstream_branch},
-        worktree::{get_checked_out_branches, list_linked_worktrees},
+        worktree::{get_checked_out_branches, list_linked_worktrees, list_other_worktrees},
     },
     i18n,
     model::{
@@ -148,6 +148,7 @@ fn fetch_options(model: &Model, source: &OptionsSource) -> Vec<String> {
             .map(|mode| mode.value().to_string())
             .collect(),
         OptionsSource::LinkedWorktrees => list_linked_worktrees(&model.workdir),
+        OptionsSource::OtherWorktrees => list_other_worktrees(&model.workdir),
     }
 }
 
@@ -626,6 +627,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         OnSelect::WorktreeMove | OnSelect::WorktreeDelete => {
             "No linked worktrees found".to_string()
         }
+        OnSelect::WorktreeVisit => "No other worktrees found".to_string(),
         OnSelect::FileCheckoutRevision
         | OnSelect::LogOther
         | OnSelect::ReflogOther

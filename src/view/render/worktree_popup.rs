@@ -17,6 +17,7 @@ pub fn content(theme: &Theme) -> CommandPopupContent<'static> {
         content: vec![
             command_description(theme, false, "m", t.cmd_move_worktree),
             command_description(theme, false, "k", t.cmd_delete_worktree),
+            command_description(theme, false, "g", t.cmd_visit_worktree),
         ],
     };
 

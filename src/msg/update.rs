@@ -101,6 +101,7 @@ mod worktree_branch;
 mod worktree_checkout;
 mod worktree_delete;
 mod worktree_move;
+mod worktree_visit;
 
 /// Processes a [`Message`], modifying the passed model.
 ///
@@ -304,6 +305,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         }
         Message::WorktreeMove { worktree, path } => worktree_move::update(model, worktree, path),
         Message::ConfirmDeleteWorktree(worktree) => worktree_delete::update(model, worktree),
+        Message::VisitWorktree(worktree) => worktree_visit::update(model, worktree),
         Message::ShowPreview => show_preview::update(model),
         Message::ShowStashDiff(index) => show_preview::show_stash(model, index),
         Message::ExitPreview => exit_preview::update(model),

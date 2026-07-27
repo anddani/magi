@@ -114,6 +114,8 @@ pub enum OnSelect {
     WorktreeMove,
     /// Select an existing worktree to delete (a confirmation follows)
     WorktreeDelete,
+    /// Select another worktree to switch the status view to
+    WorktreeVisit,
     /// Select a revision to checkout a file from (step 1 of 2)
     FileCheckoutRevision,
     /// Select a file to checkout (step 2 of 2, carries the chosen revision)
@@ -228,6 +230,9 @@ pub enum OptionsSource {
     BranchesAndTagsExcludingCheckedOut,
     /// Paths of linked worktrees (excluding the main working tree)
     LinkedWorktrees,
+    /// Paths of all worktrees except the current one (includes the main
+    /// working tree when the current one is linked)
+    OtherWorktrees,
     /// Local branches that have any configured remote
     LocalBranchesWithRemote,
     /// Local branches + remote branches + tags (for file checkout revision)

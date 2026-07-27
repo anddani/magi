@@ -51,6 +51,32 @@ pub fn list_linked_worktrees<P: AsRef<Path>>(repo_path: P) -> Vec<String> {
         .collect()
 }
 
+/// Returns the paths of all worktrees except the one containing
+/// `current_workdir`, starting with the main working tree. Unlike
+/// [`list_linked_worktrees`], the main working tree is included when
+/// `current_workdir` is a linked worktree — it is a valid target to visit.
+pub fn list_other_worktrees<P: AsRef<Path>>(current_workdir: P) -> Vec<String> {
+    let current = current_workdir.as_ref().canonicalize().ok();
+    let output = git_cmd(&current_workdir, &["worktree", "list", "--porcelain"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output();
+
+    let Ok(output) = output else {
+        return Vec::new();
+    };
+
+    let text = String::from_utf8_lossy(&output.stdout);
+    text.lines()
+        .filter_map(|line| line.strip_prefix("worktree "))
+        .filter(|path| match (&current, Path::new(path).canonicalize()) {
+            (Some(current), Ok(path)) => &path != current,
+            _ => true,
+        })
+        .map(|path| path.to_string())
+        .collect()
+}
+
 /// Returns the path of the main working tree (the first entry in
 /// `git worktree list --porcelain`).
 pub fn main_worktree_path<P: AsRef<Path>>(repo_path: P) -> Option<String> {
@@ -324,6 +350,57 @@ mod tests {
             std::path::Path::new(&worktree_path_str)
                 .canonicalize()
                 .unwrap()
+        );
+    }
+
+    #[test]
+    fn test_list_other_worktrees_from_main_lists_linked_only() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        // Only the main working tree exists — nothing else to visit
+        assert!(list_other_worktrees(repo_path).is_empty());
+
+        crate::git::git_cmd(repo_path, &["branch", "feature"])
+            .output()
+            .unwrap();
+        let worktree_path_str = {
+            let tmp = tempfile::tempdir().unwrap();
+            tmp.path().to_str().unwrap().to_string()
+        };
+        worktree_add(repo_path, &worktree_path_str, "feature").unwrap();
+
+        let others = list_other_worktrees(repo_path);
+        assert_eq!(others.len(), 1);
+        assert_eq!(
+            std::path::Path::new(&others[0]).canonicalize().unwrap(),
+            std::path::Path::new(&worktree_path_str)
+                .canonicalize()
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn test_list_other_worktrees_from_linked_includes_main() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo_path();
+
+        crate::git::git_cmd(repo_path, &["branch", "feature"])
+            .output()
+            .unwrap();
+        let worktree_path_str = {
+            let tmp = tempfile::tempdir().unwrap();
+            tmp.path().to_str().unwrap().to_string()
+        };
+        worktree_add(repo_path, &worktree_path_str, "feature").unwrap();
+
+        // From inside the linked worktree, the main working tree is the
+        // only other worktree — and the linked one excludes itself
+        let others = list_other_worktrees(&worktree_path_str);
+        assert_eq!(others.len(), 1);
+        assert_eq!(
+            std::path::Path::new(&others[0]).canonicalize().unwrap(),
+            repo_path.canonicalize().unwrap()
         );
     }
 

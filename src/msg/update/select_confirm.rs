@@ -162,6 +162,9 @@ fn route_result(
         (Some(OnSelect::WorktreeMove), SelectResult::Selected(worktree)) => {
             Some(Message::ShowWorktreeMovePathInput { worktree })
         }
+        (Some(OnSelect::WorktreeVisit), SelectResult::Selected(worktree)) => {
+            Some(Message::VisitWorktree(worktree))
+        }
         (Some(OnSelect::WorktreeDelete), SelectResult::Selected(worktree)) => {
             let message = if worktree_has_changes(&worktree) {
                 format!("Delete worktree \"{worktree}\" despite uncommitted changes?")
