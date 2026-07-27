@@ -229,11 +229,11 @@ Here are a few features that the aforementioned applications lack:
         - [x] List
         - [x] Show
         - [x] Branch (checkout new branch from stash)
-    - [ ] Worktree
+    - [x] Worktree
         - [x] Create new worktree
         - [x] Move worktree
         - [x] Delete worktree
-        - [ ] Checkout/manage worktrees
+        - [x] Visit worktree
 - [x] Applying changes
 
 

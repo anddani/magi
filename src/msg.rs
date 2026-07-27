@@ -283,6 +283,8 @@ pub enum Message {
     },
     /// Actually delete the worktree after user confirmation
     ConfirmDeleteWorktree(String),
+    /// Switch the status view to the worktree at the given path
+    VisitWorktree(String),
     /// Show confirmation popup before deleting the selected branch
     DeleteBranch(String),
     /// Actually delete the branch after user confirmation
