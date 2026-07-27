@@ -1,6 +1,7 @@
 use crate::model::arguments::{Arguments::StashArguments, PopupArgument};
 use crate::{
     git::{
+        checkout::{CheckoutResult, checkout_new_branch},
         snapshot::{create_index_snapshot, create_snapshot, create_worktree_snapshot},
         wip::commit_to_wip_refs,
         worktree_stash::create_worktree_stash,
@@ -31,6 +32,10 @@ pub fn update(model: &mut Model, stash_command: StashCommand) -> Option<Message>
             stash_ref,
             branch_name,
         } => branch(model, stash_ref, branch_name),
+        StashCommand::BranchHere {
+            stash_ref,
+            branch_name,
+        } => branch_here(model, stash_ref, branch_name),
     }
 }
 
@@ -42,6 +47,27 @@ fn branch(model: &mut Model, stash_ref: String, branch_name: String) -> Option<M
         stash_ref,
     ];
     execute_pty_command(model, args, "Stash branch".to_string())
+}
+
+fn branch_here(model: &mut Model, stash_ref: String, branch_name: String) -> Option<Message> {
+    // Unlike `git stash branch`, the new branch starts at the current HEAD
+    // instead of the commit the stash was created on top of.
+    match checkout_new_branch(&model.workdir, &branch_name, "HEAD") {
+        Ok(CheckoutResult::Success) => {
+            let args = vec!["stash".to_string(), "pop".to_string(), stash_ref];
+            execute_pty_command(model, args, "Stash branch here".to_string())
+        }
+        Ok(CheckoutResult::Error(message)) => {
+            model.popup = Some(PopupContent::Error { message });
+            None
+        }
+        Err(error) => {
+            model.popup = Some(PopupContent::Error {
+                message: error.to_string(),
+            });
+            None
+        }
+    }
 }
 
 fn snapshot(
