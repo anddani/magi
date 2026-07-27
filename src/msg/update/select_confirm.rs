@@ -345,6 +345,17 @@ fn route_result(
             }));
             None
         }
+        (Some(OnSelect::BranchStashHere), SelectResult::Selected(stash_display)) => {
+            let stash_ref = stash_display
+                .split(": ")
+                .next()
+                .unwrap_or(&stash_display)
+                .to_string();
+            model.popup = Some(PopupContent::input_popup(InputContext::StashBranchHere {
+                stash_ref,
+            }));
+            None
+        }
         (Some(OnSelect::MergeElsewhere), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Branch(branch)))
         }
@@ -365,6 +376,28 @@ fn route_result(
         }
         (Some(OnSelect::MergeDissolve), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Dissolve(branch)))
+        }
+        (Some(OnSelect::MergeStrategy), result) => {
+            // Enter on an empty filter clears the strategy; a selection sets it
+            let strategy = match result {
+                SelectResult::Selected(strategy) => Some(strategy),
+                _ => None,
+            };
+            match model
+                .arguments
+                .as_mut()
+                .and_then(|a| a.merge_strategy_mut())
+            {
+                Some(slot) => *slot = strategy,
+                None => {
+                    model.arguments = Some(Arguments::MergeArguments {
+                        args: Default::default(),
+                        strategy,
+                    })
+                }
+            }
+            // Return to the merge popup, now showing the argument as set
+            Some(Message::ShowMergePopup)
         }
         (Some(OnSelect::ApplyPick), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Pick(vec![hash])))
@@ -607,6 +640,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![
@@ -638,6 +672,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![
@@ -668,6 +703,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![Line {
@@ -703,6 +739,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![make_log_line("deadbeef", "Some commit")];
@@ -803,6 +840,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![make_log_line("abc1234", "First commit")];
@@ -821,6 +859,7 @@ mod tests {
                 graph: true,
                 color: false,
                 decorate: true,
+                show_header: false,
                 show_signature: false
             }
         );

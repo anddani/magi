@@ -348,7 +348,8 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(&repo, &LogType::Current, true, false, true, false).unwrap();
+    let mut commits =
+        get_log_entries(&repo, &LogType::Current, true, false, true, false, false).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -370,6 +371,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
         graph: true,
         color: false,
         decorate: true,
+        show_header: false,
         show_signature: false,
     };
     model.log_pick_on_select = Some(OnSelect::RebaseElsewhere);
@@ -642,7 +644,8 @@ fn test_select_confirm_rebase_subset_start_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(&repo, &LogType::Current, true, false, true, false).unwrap();
+    let mut commits =
+        get_log_entries(&repo, &LogType::Current, true, false, true, false, false).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -663,6 +666,7 @@ fn test_select_confirm_rebase_subset_start_returns_rebase_message() {
         graph: true,
         color: false,
         decorate: true,
+        show_header: false,
         show_signature: false,
     };
     model.log_pick_on_select = Some(OnSelect::RebaseSubsetStart {
@@ -1454,7 +1458,8 @@ fn test_select_confirm_modify_commit_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(&repo, &LogType::Current, true, false, true, false).unwrap();
+    let mut commits =
+        get_log_entries(&repo, &LogType::Current, true, false, true, false, false).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -1475,6 +1480,7 @@ fn test_select_confirm_modify_commit_returns_rebase_message() {
         graph: true,
         color: false,
         decorate: true,
+        show_header: false,
         show_signature: false,
     };
     model.log_pick_on_select = Some(OnSelect::ModifyCommit);
@@ -1623,7 +1629,8 @@ fn test_select_confirm_reword_commit_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(&repo, &LogType::Current, true, false, true, false).unwrap();
+    let mut commits =
+        get_log_entries(&repo, &LogType::Current, true, false, true, false, false).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -1644,6 +1651,7 @@ fn test_select_confirm_reword_commit_returns_rebase_message() {
         graph: true,
         color: false,
         decorate: true,
+        show_header: false,
         show_signature: false,
     };
     model.log_pick_on_select = Some(OnSelect::RewordCommit);
@@ -1808,7 +1816,8 @@ fn test_select_confirm_remove_commit_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(&repo, &LogType::Current, true, false, true, false).unwrap();
+    let mut commits =
+        get_log_entries(&repo, &LogType::Current, true, false, true, false, false).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -1829,6 +1838,7 @@ fn test_select_confirm_remove_commit_returns_rebase_message() {
         graph: true,
         color: false,
         decorate: true,
+        show_header: false,
         show_signature: false,
     };
     model.log_pick_on_select = Some(OnSelect::RemoveCommit);
@@ -1983,7 +1993,8 @@ fn test_select_confirm_autosquash_returns_autosquash_into_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(&repo, &LogType::Current, true, false, true, false).unwrap();
+    let mut commits =
+        get_log_entries(&repo, &LogType::Current, true, false, true, false, false).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -2004,6 +2015,7 @@ fn test_select_confirm_autosquash_returns_autosquash_into_message() {
         graph: true,
         color: false,
         decorate: true,
+        show_header: false,
         show_signature: false,
     };
     model.log_pick_on_select = Some(OnSelect::AutosquashCommit);
@@ -2228,6 +2240,76 @@ fn test_toggle_update_refs_twice_removes_argument() {
         .and_then(|a| a.rebase())
         .expect("Expected rebase arguments");
     assert!(!args.contains(&RebaseArgument::UpdateRefs));
+}
+
+#[test]
+fn test_d_in_arg_mode_toggles_committer_date_is_author_date() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('d')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ToggleArgument(Argument::Rebase(
+            RebaseArgument::CommitterDateIsAuthorDate
+        )))
+    );
+}
+
+#[test]
+fn test_toggle_committer_date_is_author_date_updates_arguments_and_exits_arg_mode() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    update(
+        &mut model,
+        Message::ToggleArgument(Argument::Rebase(RebaseArgument::CommitterDateIsAuthorDate)),
+    );
+
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.rebase())
+        .expect("Expected rebase arguments");
+    assert!(args.contains(&RebaseArgument::CommitterDateIsAuthorDate));
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_toggle_committer_date_is_author_date_twice_removes_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+
+    for _ in 0..2 {
+        update(
+            &mut model,
+            Message::ToggleArgument(Argument::Rebase(RebaseArgument::CommitterDateIsAuthorDate)),
+        );
+    }
+
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.rebase())
+        .expect("Expected rebase arguments");
+    assert!(!args.contains(&RebaseArgument::CommitterDateIsAuthorDate));
 }
 
 #[test]

@@ -2052,6 +2052,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model
@@ -2134,6 +2135,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model
@@ -2552,6 +2554,7 @@ mod tests {
             graph: true,
             color: false,
             decorate: true,
+            show_header: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![crate::model::Line {

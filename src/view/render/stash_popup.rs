@@ -62,12 +62,10 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
 
     let transform = PopupColumn {
         title: Some(t.col_transform.into()),
-        content: vec![command_description(
-            theme,
-            model.arg_mode,
-            "b",
-            t.cmd_branch,
-        )],
+        content: vec![
+            command_description(theme, model.arg_mode, "b", t.cmd_branch),
+            command_description(theme, model.arg_mode, "B", t.cmd_branch_here),
+        ],
     };
 
     CommandPopupContent {

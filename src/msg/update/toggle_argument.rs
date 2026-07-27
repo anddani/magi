@@ -69,7 +69,7 @@ pub fn update(model: &mut Model, argument: Argument) -> Option<Message> {
             &mut model.arguments,
             arg,
             |a| a.merge_mut(),
-            Arguments::MergeArguments,
+            Arguments::merge_args,
         ),
     }
     model.arg_mode = false;

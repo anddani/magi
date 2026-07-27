@@ -129,6 +129,30 @@ fn snapshot_log_view() {
 }
 
 #[test]
+fn snapshot_log_view_with_header() {
+    let test_repo = TestRepo::new();
+    test_repo
+        .commit_file("first.txt", "one", "Add first file")
+        .commit_file("second.txt", "two", "Add second file");
+
+    let mut model = create_snapshot_model(&test_repo);
+    model.arguments = Some(Arguments::LogArguments(HashSet::from([
+        LogArgument::Graph,
+        LogArgument::Decorate,
+        LogArgument::ShowHeader,
+    ])));
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    // Pin the relative commit times so the frame stays deterministic.
+    for line in &mut model.ui_model.lines {
+        if let LineContent::LogLine(entry) = &mut line.content {
+            entry.time = entry.time.as_ref().map(|_| "2 days".to_string());
+        }
+    }
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_log_pick_view_rebase_subset() {
     let test_repo = TestRepo::new();
     test_repo
@@ -526,6 +550,27 @@ fn snapshot_rebase_popup_update_refs_selected() {
 }
 
 #[test]
+fn snapshot_rebase_popup_committer_date_is_author_date_selected() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Rebase(RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            upstream: None,
+            push_remote: None,
+            sole_remote: None,
+        }),
+    );
+    model.arg_mode = true;
+    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+        RebaseArgument::CommitterDateIsAuthorDate,
+    ])));
+    // Styled buffer shows the selected --committer-date-is-author-date flag highlighted
+    assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_rebase_todo_view() {
     use magi::git::rebase::RebaseAction;
     use magi::msg::RebaseTodoMessage;
@@ -643,12 +688,38 @@ fn snapshot_merge_popup_arg_mode() {
         PopupContentCommand::Merge(MergePopupState { in_progress: false }),
     );
     model.arg_mode = true;
-    model.arguments = Some(Arguments::MergeArguments(HashSet::from([
+    model.arguments = Some(Arguments::merge_args(HashSet::from([
         MergeArgument::FfOnly,
     ])));
     // Argument mode only changes styling (key highlights, selected flags), so
     // snapshot the styled buffer instead of the plain-text frame.
     assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_merge_popup_with_strategy() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Merge(MergePopupState { in_progress: false }),
+    );
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: Some("recursive".to_string()),
+    });
+    // The selected strategy is rendered as the flag value (--strategy=<value>)
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_merge_strategy_select_popup() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Merge(MergePopupState { in_progress: false }),
+    );
+    update(&mut model, Message::ShowMergeStrategySelect);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 
 #[test]

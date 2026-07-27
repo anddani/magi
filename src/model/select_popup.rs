@@ -69,6 +69,9 @@ pub enum OnSelect {
     ShowStash,
     /// Select a stash to convert into a branch (the branch name is entered next)
     BranchStash,
+    /// Select a stash to apply on a new branch created at HEAD
+    /// (the branch name is entered next)
+    BranchStashHere,
     /// Select a commit to rebase onto (rebase elsewhere)
     RebaseElsewhere,
     /// Select the base commit for an interactive rebase (base inclusive)
@@ -144,6 +147,9 @@ pub enum OnSelect {
     /// Select a local branch to merge the current branch into; the current
     /// branch is deleted after the merge
     MergeDissolve,
+    /// Select the merge strategy for a merge (`--strategy=`); the value is
+    /// stored in the merge arguments and the merge popup is restored
+    MergeStrategy,
     /// Select a commit to cherry-pick onto the current branch
     ApplyPick,
     /// Select a commit to apply (--no-commit) onto the current branch

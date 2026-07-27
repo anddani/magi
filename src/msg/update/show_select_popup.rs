@@ -451,6 +451,7 @@ fn handle_stash_cursor(
         OnSelect::DropStash => StashOp::Drop,
         OnSelect::ShowStash => StashOp::Show,
         OnSelect::BranchStash => StashOp::Branch,
+        OnSelect::BranchStashHere => StashOp::BranchHere,
         _ => return None,
     };
 
@@ -513,6 +514,12 @@ fn handle_stash_cursor(
                 }));
                 None
             }
+            StashOp::BranchHere => {
+                model.popup = Some(PopupContent::input_popup(InputContext::StashBranchHere {
+                    stash_ref,
+                }));
+                None
+            }
         };
         return Some(msg);
     }
@@ -526,6 +533,7 @@ enum StashOp {
     Drop,
     Show,
     Branch,
+    BranchHere,
 }
 
 // ── Skip-if-one-remote shortcuts ──────────────────────────────────────────────
@@ -634,7 +642,8 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::PopStash
         | OnSelect::DropStash
         | OnSelect::ShowStash
-        | OnSelect::BranchStash => "No stashes found".to_string(),
+        | OnSelect::BranchStash
+        | OnSelect::BranchStashHere => "No stashes found".to_string(),
         OnSelect::ApplyPick
         | OnSelect::ApplyApply
         | OnSelect::ApplySquash

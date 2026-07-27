@@ -203,16 +203,19 @@ Here are a few features that the aforementioned applications lack:
         - [ ] HEAD reflog
         - [ ] Shortlog
         - [x] Formatting arguments (--graph, --color, --decorate)
+        - [x] Show header argument (`-h`, `++header`)
         - [x] Show signatures argument (`=S`, `--show-signature`)
     - [x] Merge
         - [x] Fast-forward only argument (`--ff-only`)
         - [x] No fast-forward argument (`--no-ff`)
+        - [x] Strategy argument (`-s`, `--strategy=`)
     - [ ] Remote
     - [ ] Submodule
     - [ ] Subtree
     - [x] Push
     - [x] Rebase
         - [x] Update branches argument (`--update-refs`)
+        - [x] Use author date as committer date argument (`-d`, `--committer-date-is-author-date`)
     - [x] Tag
     - [ ] Note
     - [x] Revert
@@ -229,6 +232,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] List
         - [x] Show
         - [x] Branch (checkout new branch from stash)
+        - [x] Branch here (checkout new branch at HEAD, then apply stash)
     - [x] Worktree
         - [x] Create new worktree
         - [x] Move worktree

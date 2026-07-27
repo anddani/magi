@@ -355,6 +355,9 @@ pub enum Message {
 
     /// Show merge popup
     ShowMergePopup,
+    /// Show select popup for picking the -s merge strategy for a merge, or
+    /// clear the strategy if one is already set
+    ShowMergeStrategySelect,
     /// Show tag popup
     ShowTagPopup,
     /// Show the gpg key picker for the tag `-u` argument, or clear the
@@ -786,6 +789,13 @@ pub enum StashCommand {
     /// Create and checkout a new branch from the commit the stash was created at,
     /// then apply and drop the stash (`git stash branch <name> <stash>`)
     Branch {
+        stash_ref: String,
+        branch_name: String,
+    },
+    /// Create and checkout a new branch from the current HEAD, then apply the
+    /// stash and drop it if it applies cleanly
+    /// (`git checkout -b <name>` followed by `git stash pop <stash>`)
+    BranchHere {
         stash_ref: String,
         branch_name: String,
     },

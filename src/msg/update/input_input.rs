@@ -117,6 +117,12 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             stash_ref,
             branch_name: input,
         })),
+        InputContext::StashBranchHere { stash_ref } => {
+            Some(Message::Stash(StashCommand::BranchHere {
+                stash_ref,
+                branch_name: input,
+            }))
+        }
         InputContext::Stash(_) | InputContext::RevertMainline { .. } => unreachable!(),
     }
 }

@@ -16,11 +16,14 @@ use crate::{
 };
 
 pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
-    let extra_args: Vec<String> = if let Some(MergeArguments(arguments)) = model.arguments.take() {
-        arguments
-            .into_iter()
-            .map(|a| a.flag().to_string())
-            .collect()
+    let extra_args: Vec<String> = if let Some(MergeArguments { args, strategy }) =
+        model.arguments.take()
+    {
+        let mut extra_args: Vec<String> = args.into_iter().map(|a| a.flag().to_string()).collect();
+        if let Some(strategy) = strategy {
+            extra_args.push(format!("--strategy={strategy}"));
+        }
+        extra_args
     } else {
         vec![]
     };

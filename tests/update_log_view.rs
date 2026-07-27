@@ -141,6 +141,102 @@ fn test_show_log_with_show_signature_argument() {
     assert!(signatures.iter().all(|s| *s == Some('N')));
 }
 
+// ── Show header argument (-h, ++header) ───────────────────────────────────────
+
+#[test]
+fn test_show_log_with_show_header_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::LogArguments(
+        [
+            LogArgument::Graph,
+            LogArgument::Decorate,
+            LogArgument::ShowHeader,
+        ]
+        .into_iter()
+        .collect(),
+    ));
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            show_header: true,
+            ..
+        }
+    ));
+    // Every commit is followed by Author and Committer header lines
+    let headers: Vec<String> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|line| match &line.content {
+            LineContent::LogLine(entry) if !entry.is_commit() => entry.message.clone(),
+            _ => None,
+        })
+        .collect();
+    assert!(headers.iter().any(|h| h.starts_with("Author:    ")));
+    assert!(headers.iter().any(|h| h.starts_with("Committer: ")));
+}
+
+#[test]
+fn test_show_log_without_show_header_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            show_header: false,
+            ..
+        }
+    ));
+    // Without ++header every log line is a commit or a graph-only line
+    assert!(model.ui_model.lines.iter().all(|line| match &line.content {
+        LineContent::LogLine(entry) => entry.is_commit() || entry.message.is_none(),
+        _ => true,
+    }));
+}
+
+#[test]
+fn test_show_log_reflog_ignores_show_header_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::LogArguments(
+        [
+            LogArgument::Graph,
+            LogArgument::Decorate,
+            LogArgument::ShowHeader,
+        ]
+        .into_iter()
+        .collect(),
+    ));
+
+    update(&mut model, Message::ShowLog(LogType::Reflog));
+
+    // Like Magit, reflogs never show headers
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            show_header: false,
+            ..
+        }
+    ));
+    assert!(model.ui_model.lines.iter().all(|line| match &line.content {
+        LineContent::LogLine(entry) => entry.is_commit(),
+        _ => true,
+    }));
+}
+
 #[test]
 fn test_show_log_without_show_signature_argument() {
     let test_repo = TestRepo::new();
