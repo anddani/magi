@@ -799,6 +799,8 @@ pub enum StashCommand {
         stash_ref: String,
         branch_name: String,
     },
+    /// Write the stash diff to a patch file named `0001-<subject>.patch`
+    FormatPatch(String),
 }
 
 /// Messages for commit select

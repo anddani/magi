@@ -72,6 +72,8 @@ pub enum OnSelect {
     /// Select a stash to apply on a new branch created at HEAD
     /// (the branch name is entered next)
     BranchStashHere,
+    /// Select a stash to write as a patch file (0001-<subject>.patch)
+    FormatPatchStash,
     /// Select a commit to rebase onto (rebase elsewhere)
     RebaseElsewhere,
     /// Select the base commit for an interactive rebase (base inclusive)
