@@ -356,6 +356,14 @@ fn route_result(
             }));
             None
         }
+        (Some(OnSelect::FormatPatchStash), SelectResult::Selected(stash_display)) => {
+            let stash_ref = stash_display
+                .split(": ")
+                .next()
+                .unwrap_or(&stash_display)
+                .to_string();
+            Some(Message::Stash(StashCommand::FormatPatch(stash_ref)))
+        }
         (Some(OnSelect::MergeElsewhere), SelectResult::Selected(branch)) => {
             Some(Message::Merge(MergeCommand::Branch(branch)))
         }

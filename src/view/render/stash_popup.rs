@@ -65,6 +65,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         content: vec![
             command_description(theme, model.arg_mode, "b", t.cmd_branch),
             command_description(theme, model.arg_mode, "B", t.cmd_branch_here),
+            command_description(theme, model.arg_mode, "f", t.cmd_format_patch),
         ],
     };
 

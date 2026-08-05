@@ -1,7 +1,10 @@
+use std::fs;
+
 use crate::model::arguments::{Arguments::StashArguments, PopupArgument};
 use crate::{
     git::{
         checkout::{CheckoutResult, checkout_new_branch},
+        git_cmd,
         snapshot::{create_index_snapshot, create_snapshot, create_worktree_snapshot},
         wip::commit_to_wip_refs,
         worktree_stash::create_worktree_stash,
@@ -36,6 +39,7 @@ pub fn update(model: &mut Model, stash_command: StashCommand) -> Option<Message>
             stash_ref,
             branch_name,
         } => branch_here(model, stash_ref, branch_name),
+        StashCommand::FormatPatch(stash_ref) => format_patch(model, stash_ref),
     }
 }
 
@@ -146,4 +150,59 @@ fn drop(model: &mut Model, stash_ref: String) -> Option<Message> {
         )
     };
     execute_pty_command(model, args, title)
+}
+
+fn format_patch(model: &mut Model, stash_ref: String) -> Option<Message> {
+    model.popup = None;
+
+    let subject_output = git_cmd(&model.workdir, &["log", "--format=%f", "-1", &stash_ref])
+        .output()
+        .map_err(|e| e.to_string())
+        .and_then(|o| {
+            if o.status.success() {
+                Ok(String::from_utf8_lossy(&o.stdout).trim().to_string())
+            } else {
+                Err(String::from_utf8_lossy(&o.stderr).trim().to_string())
+            }
+        });
+
+    let subject = match subject_output {
+        Ok(s) if !s.is_empty() => s,
+        Ok(_) => "stash".to_string(),
+        Err(err) => {
+            model.popup = Some(PopupContent::Error { message: err });
+            return None;
+        }
+    };
+
+    let patch_output = git_cmd(&model.workdir, &["stash", "show", "-p", &stash_ref])
+        .output()
+        .map_err(|e| e.to_string())
+        .and_then(|o| {
+            if o.status.success() {
+                Ok(o.stdout)
+            } else {
+                Err(String::from_utf8_lossy(&o.stderr).trim().to_string())
+            }
+        });
+
+    let patch_content = match patch_output {
+        Ok(c) => c,
+        Err(err) => {
+            model.popup = Some(PopupContent::Error { message: err });
+            return None;
+        }
+    };
+
+    let filename = format!("0001-{subject}.patch");
+    let path = model.workdir.join(&filename);
+
+    if let Err(err) = fs::write(&path, patch_content) {
+        model.popup = Some(PopupContent::Error {
+            message: err.to_string(),
+        });
+        return None;
+    }
+
+    Some(Message::Refresh)
 }

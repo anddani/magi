@@ -233,6 +233,7 @@ Here are a few features that the aforementioned applications lack:
         - [x] Show
         - [x] Branch (checkout new branch from stash)
         - [x] Branch here (checkout new branch at HEAD, then apply stash)
+        - [x] Format patch (write stash diff to `0001-<subject>.patch`)
     - [x] Worktree
         - [x] Create new worktree
         - [x] Move worktree
