@@ -3,8 +3,14 @@ use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
 use crate::{
     config::Theme,
     i18n,
-    model::{Model, arguments::{MergeArgument, PopupArgument}, popup::MergePopupState},
-    view::render::util::{argument_line, argument_lines_for, argument_value_line, command_description},
+    model::{
+        Model,
+        arguments::{MergeArgument, PopupArgument},
+        popup::MergePopupState,
+    },
+    view::render::util::{
+        argument_line, argument_lines_for, argument_value_line, command_description,
+    },
 };
 
 pub fn content<'a>(
