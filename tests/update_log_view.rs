@@ -258,3 +258,46 @@ fn test_show_log_without_show_signature_argument() {
         _ => true,
     }));
 }
+
+// ── Patch argument (-p, --patch) ──────────────────────────────────────────────
+
+#[test]
+fn test_show_log_with_patch_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::LogArguments(
+        [LogArgument::Graph, LogArgument::Decorate, LogArgument::Patch]
+            .into_iter()
+            .collect(),
+    ));
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            patch: true,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_show_log_without_patch_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            patch: false,
+            ..
+        }
+    ));
+}

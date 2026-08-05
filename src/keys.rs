@@ -1978,6 +1978,21 @@ mod tests {
     }
 
     #[test]
+    fn test_p_in_log_arg_mode_toggles_patch() {
+        use crate::model::arguments::{Argument::Log, LogArgument};
+
+        let mut model = create_log_popup_model();
+        model.arg_mode = true;
+
+        let key = create_key_event(NONE, Char('p'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Log(LogArgument::Patch)))
+        );
+    }
+
+    #[test]
     fn test_other_key_in_log_arg_mode_exits_arg_mode() {
         let mut model = create_log_popup_model();
         model.arg_mode = true;
@@ -2053,6 +2068,7 @@ mod tests {
             color: false,
             decorate: true,
             show_header: false,
+            patch: false,
             show_signature: false,
         };
         model
@@ -2136,6 +2152,7 @@ mod tests {
             color: false,
             decorate: true,
             show_header: false,
+            patch: false,
             show_signature: false,
         };
         model
@@ -2555,6 +2572,7 @@ mod tests {
             color: false,
             decorate: true,
             show_header: false,
+            patch: false,
             show_signature: false,
         };
         model.ui_model.lines = vec![crate::model::Line {

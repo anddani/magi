@@ -205,6 +205,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
         true,
         false,
         false,
+        false,
     ) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
@@ -233,6 +234,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
                     color: false,
                     decorate: true,
                     show_header: false,
+                    patch: false,
                     show_signature: false,
                 };
                 model.popup = None;
