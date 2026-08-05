@@ -3,8 +3,8 @@ use super::popup_content::{CommandPopupContent, PopupColumn, PopupRow};
 use crate::{
     config::Theme,
     i18n,
-    model::{Model, arguments::MergeArgument, popup::MergePopupState},
-    view::render::util::{argument_lines, argument_value_line, command_description},
+    model::{Model, arguments::{MergeArgument, PopupArgument}, popup::MergePopupState},
+    view::render::util::{argument_line, argument_lines_for, argument_value_line, command_description},
 };
 
 pub fn content<'a>(
@@ -30,10 +30,13 @@ pub fn content<'a>(
         };
     }
 
-    let mut arguments = argument_lines::<MergeArgument>(
+    let merge_args = model.arguments.as_ref().and_then(|a| a.merge());
+
+    let mut arguments = argument_lines_for::<MergeArgument>(
         theme,
         model.arg_mode,
-        model.arguments.as_ref().and_then(|a| a.merge()),
+        merge_args,
+        &[MergeArgument::FfOnly, MergeArgument::NoFf],
     );
 
     arguments.push(argument_value_line(
@@ -44,6 +47,15 @@ pub fn content<'a>(
         "--strategy=",
         model.arguments.as_ref().and_then(|a| a.merge_strategy()),
         model.arg_mode,
+    ));
+
+    arguments.push(argument_line(
+        theme,
+        MergeArgument::IgnoreSpaceChange.key(),
+        t.arg_merge_ignore_space_change,
+        MergeArgument::IgnoreSpaceChange.flag(),
+        model.arg_mode,
+        merge_args.is_some_and(|s| s.contains(&MergeArgument::IgnoreSpaceChange)),
     ));
 
     let arguments_col = PopupColumn {
