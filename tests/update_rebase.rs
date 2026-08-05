@@ -2313,6 +2313,76 @@ fn test_toggle_committer_date_is_author_date_twice_removes_argument() {
 }
 
 #[test]
+fn test_t_in_arg_mode_toggles_ignore_date() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('t')), &model);
+    assert_eq!(
+        result,
+        Some(Message::ToggleArgument(Argument::Rebase(
+            RebaseArgument::IgnoreDate
+        )))
+    );
+}
+
+#[test]
+fn test_toggle_ignore_date_updates_arguments_and_exits_arg_mode() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    update(
+        &mut model,
+        Message::ToggleArgument(Argument::Rebase(RebaseArgument::IgnoreDate)),
+    );
+
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.rebase())
+        .expect("Expected rebase arguments");
+    assert!(args.contains(&RebaseArgument::IgnoreDate));
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_toggle_ignore_date_twice_removes_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+
+    for _ in 0..2 {
+        update(
+            &mut model,
+            Message::ToggleArgument(Argument::Rebase(RebaseArgument::IgnoreDate)),
+        );
+    }
+
+    let args = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.rebase())
+        .expect("Expected rebase arguments");
+    assert!(!args.contains(&RebaseArgument::IgnoreDate));
+}
+
+#[test]
 fn test_r_in_arg_mode_returns_toggle_rebase_merges() {
     let test_repo = TestRepo::new();
     test_repo.commit_file("file1.txt", "content1", "First commit");

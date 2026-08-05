@@ -658,6 +658,7 @@ pub enum RebaseArgument {
     RebaseMerges(RebaseMergesMode),
     UpdateRefs,
     CommitterDateIsAuthorDate,
+    IgnoreDate,
 }
 
 impl RebaseArgument {
@@ -674,6 +675,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::KeepEmpty,
             RebaseArgument::UpdateRefs,
             RebaseArgument::CommitterDateIsAuthorDate,
+            RebaseArgument::IgnoreDate,
         ]
     }
 
@@ -683,6 +685,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::RebaseMerges(_) => 'r',
             RebaseArgument::UpdateRefs => 'u',
             RebaseArgument::CommitterDateIsAuthorDate => 'd',
+            RebaseArgument::IgnoreDate => 't',
         }
     }
 
@@ -693,6 +696,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::RebaseMerges(_) => t.arg_rebase_rebase_merges,
             RebaseArgument::UpdateRefs => t.arg_rebase_update_refs,
             RebaseArgument::CommitterDateIsAuthorDate => t.arg_rebase_committer_date_is_author_date,
+            RebaseArgument::IgnoreDate => t.arg_rebase_ignore_date,
         }
     }
 
@@ -707,6 +711,7 @@ impl PopupArgument for RebaseArgument {
             }
             RebaseArgument::UpdateRefs => "--update-refs",
             RebaseArgument::CommitterDateIsAuthorDate => "--committer-date-is-author-date",
+            RebaseArgument::IgnoreDate => "--ignore-date",
         }
     }
 }
@@ -893,6 +898,10 @@ mod tests {
             RebaseArgument::from_key('d'),
             Some(RebaseArgument::CommitterDateIsAuthorDate)
         );
+        assert_eq!(
+            RebaseArgument::from_key('t'),
+            Some(RebaseArgument::IgnoreDate)
+        );
         assert_eq!(RebaseArgument::from_key('x'), None);
     }
 
@@ -919,6 +928,7 @@ mod tests {
                 RebaseArgument::KeepEmpty,
                 RebaseArgument::UpdateRefs,
                 RebaseArgument::CommitterDateIsAuthorDate,
+                RebaseArgument::IgnoreDate,
             ]
         );
     }
@@ -944,6 +954,12 @@ mod tests {
             Some(RebaseMergesMode::RebaseCousins)
         );
         assert_eq!(RebaseMergesMode::from_value("bogus"), None);
+    }
+
+    #[test]
+    fn test_rebase_argument_ignore_date_key_and_flag() {
+        assert_eq!(RebaseArgument::IgnoreDate.key(), 't');
+        assert_eq!(RebaseArgument::IgnoreDate.flag(), "--ignore-date");
     }
 
     #[test]
