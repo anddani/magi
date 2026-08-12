@@ -17,16 +17,21 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     let args = model.arguments.as_ref().and_then(|a| a.log());
     let dim_commands = model.arg_mode || model.equals_arg_mode;
 
+    // LogArgument::all() order: Graph, Color, Decorate, ShowHeader, Patch
+    // Insert =S after Decorate (index 2), before ShowHeader
     let mut formatting: Vec<Line<'_>> = argument_lines::<LogArgument>(theme, model.arg_mode, args);
-    formatting.push(prefixed_argument_line(
-        theme,
-        '=',
-        'S',
-        t.arg_log_show_signature,
-        "--show-signature",
-        model.equals_arg_mode,
-        args.is_some_and(|a| a.contains(&LogArgument::ShowSignature)),
-    ));
+    formatting.insert(
+        3,
+        prefixed_argument_line(
+            theme,
+            '=',
+            'S',
+            t.arg_log_show_signature,
+            "--show-signature",
+            model.equals_arg_mode,
+            args.is_some_and(|a| a.contains(&LogArgument::ShowSignature)),
+        ),
+    );
 
     let formatting_col = PopupColumn {
         title: Some(t.col_formatting.into()),

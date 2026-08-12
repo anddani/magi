@@ -544,6 +544,7 @@ pub enum LogArgument {
     Color,
     Decorate,
     ShowHeader,
+    Patch,
     ShowSignature,
 }
 
@@ -562,6 +563,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Color,
             LogArgument::Decorate,
             LogArgument::ShowHeader,
+            LogArgument::Patch,
         ]
     }
 
@@ -571,6 +573,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Color => 'c',
             LogArgument::Decorate => 'd',
             LogArgument::ShowHeader => 'h',
+            LogArgument::Patch => 'p',
             LogArgument::ShowSignature => 'S',
         }
     }
@@ -582,6 +585,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Color => t.arg_log_color,
             LogArgument::Decorate => t.arg_log_decorate,
             LogArgument::ShowHeader => t.arg_log_show_header,
+            LogArgument::Patch => t.arg_log_patch,
             LogArgument::ShowSignature => t.arg_log_show_signature,
         }
     }
@@ -592,6 +596,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Color => "--color",
             LogArgument::Decorate => "--decorate",
             LogArgument::ShowHeader => "++header",
+            LogArgument::Patch => "--patch",
             LogArgument::ShowSignature => "--show-signature",
         }
     }
@@ -1009,7 +1014,8 @@ mod tests {
                 LogArgument::Graph,
                 LogArgument::Color,
                 LogArgument::Decorate,
-                LogArgument::ShowHeader
+                LogArgument::ShowHeader,
+                LogArgument::Patch,
             ]
         );
     }

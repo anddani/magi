@@ -146,6 +146,9 @@ pub enum ViewMode {
         /// Whether revision headers are shown after each commit (++header);
         /// used when refreshing
         show_header: bool,
+        /// Whether diffs are shown inline for each commit (--patch); used when
+        /// refreshing
+        patch: bool,
         /// Whether signature statuses are shown (--show-signature); used when
         /// refreshing
         show_signature: bool,

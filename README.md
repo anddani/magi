@@ -204,6 +204,7 @@ Here are a few features that the aforementioned applications lack:
         - [ ] Shortlog
         - [x] Formatting arguments (--graph, --color, --decorate)
         - [x] Show header argument (`-h`, `++header`)
+        - [x] Show diffs argument (`-p`, `--patch`)
         - [x] Show signatures argument (`=S`, `--show-signature`)
     - [x] Merge
         - [x] Fast-forward only argument (`--ff-only`)

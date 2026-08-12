@@ -13,6 +13,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             color,
             decorate,
             show_header,
+            patch,
             show_signature,
             ..
         } => refresh_log(
@@ -22,6 +23,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             color,
             decorate,
             show_header,
+            patch,
             show_signature,
         ),
         // In preview mode, refresh is a no-op (preview content is static)
@@ -95,6 +97,7 @@ fn refresh_status(model: &mut Model) {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn refresh_log(
     model: &mut Model,
     log_type: &crate::msg::LogType,
@@ -102,6 +105,7 @@ fn refresh_log(
     color: bool,
     decorate: bool,
     show_header: bool,
+    patch: bool,
     show_signature: bool,
 ) {
     if let Ok(entries) = get_log_entries(
@@ -111,6 +115,7 @@ fn refresh_log(
         color,
         decorate,
         show_header,
+        patch,
         show_signature,
     ) {
         let lines: Vec<Line> = entries

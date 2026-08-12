@@ -10,15 +10,17 @@ use crate::{
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
     // Graph and refnames are shown by default; only disabled when toggled off
     // in the log popup
-    let (graph, color, decorate, show_header, show_signature) = match model.arguments.take() {
+    let (graph, color, decorate, show_header, patch, show_signature) = match model.arguments.take()
+    {
         Some(LogArguments(args)) => (
             args.contains(&LogArgument::Graph),
             args.contains(&LogArgument::Color),
             args.contains(&LogArgument::Decorate),
             args.contains(&LogArgument::ShowHeader),
+            args.contains(&LogArgument::Patch),
             args.contains(&LogArgument::ShowSignature),
         ),
-        _ => (true, false, true, false, false),
+        _ => (true, false, true, false, false, false),
     };
     let reflog = matches!(
         log_type,
@@ -35,6 +37,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         color,
         decorate,
         show_header,
+        patch,
         show_signature,
     ) {
         Ok(entries) => {
@@ -64,6 +67,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 color,
                 decorate,
                 show_header,
+                patch,
                 show_signature,
             };
 
