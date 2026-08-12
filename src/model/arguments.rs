@@ -725,6 +725,7 @@ impl PopupArgument for RebaseArgument {
 pub enum MergeArgument {
     FfOnly,
     NoFf,
+    IgnoreSpaceChange,
 }
 
 impl MergeArgument {
@@ -735,13 +736,18 @@ impl MergeArgument {
 
 impl PopupArgument for MergeArgument {
     fn all() -> Vec<MergeArgument> {
-        vec![MergeArgument::FfOnly, MergeArgument::NoFf]
+        vec![
+            MergeArgument::FfOnly,
+            MergeArgument::NoFf,
+            MergeArgument::IgnoreSpaceChange,
+        ]
     }
 
     fn key(&self) -> char {
         match self {
             MergeArgument::FfOnly => 'f',
             MergeArgument::NoFf => 'n',
+            MergeArgument::IgnoreSpaceChange => 'b',
         }
     }
 
@@ -750,6 +756,7 @@ impl PopupArgument for MergeArgument {
         match self {
             MergeArgument::FfOnly => t.arg_merge_ff_only,
             MergeArgument::NoFf => t.arg_merge_no_ff,
+            MergeArgument::IgnoreSpaceChange => t.arg_merge_ignore_space_change,
         }
     }
 
@@ -757,6 +764,7 @@ impl PopupArgument for MergeArgument {
         match self {
             MergeArgument::FfOnly => "--ff-only",
             MergeArgument::NoFf => "--no-ff",
+            MergeArgument::IgnoreSpaceChange => "-Xignore-space-change",
         }
     }
 }
