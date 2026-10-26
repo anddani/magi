@@ -131,8 +131,8 @@ Available color keys:
 
 ## Localization
 
-Magi can display its entire UI — section headers, popup titles, command and argument
-descriptions, mode labels, hints, and toast messages — in different languages.
+Magi can display its entire UI such as section headers, popup titles, command and argument
+descriptions, mode labels, hints, and toast messages in different languages.
 
 Currently supported languages:
 
