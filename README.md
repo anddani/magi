@@ -129,6 +129,35 @@ Available color keys:
 | `status_mode_search_bg` / `status_mode_search_fg` | SEARCH mode indicator |
 | `search_match_bg` / `search_match_fg` | Search match highlight |
 
+## Localization
+
+Magi can display its entire UI — section headers, popup titles, command and argument
+descriptions, mode labels, hints, and toast messages — in different languages.
+
+Currently supported languages:
+
+| Code | Language |
+|---|---|
+| `en` | English (default) |
+| `sv` | Swedish |
+
+### Choosing a language
+
+Set it in the config file at `~/.config/magi/config.toml`:
+
+```toml
+language = "sv"
+```
+
+Or override it per invocation with the `--language` flag:
+
+```
+magi --language sv
+```
+
+The CLI flag takes priority over the config file. If no language is set (or an
+unrecognized value is given), Magi falls back to English.
+
 ## Motivation
 
 There are many Git TUIs out there. Here are a couple:
