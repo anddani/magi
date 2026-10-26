@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use magi::{
     git::credential::CredentialType,
     model::{
-        LineContent,
+        Line, LineContent, PreviewLineType, ViewMode,
         arguments::{
             Arguments, LogArgument, MergeArgument, PushArgument, RebaseArgument, RebaseMergesMode,
             TagArgument,
@@ -893,4 +893,74 @@ fn snapshot_input_popup_mid_text_cursor() {
         },
     }));
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+// ── Preview virtualization ──────────────────────────────────────────────────────
+
+/// Build a model in Preview mode holding `count` synthetic diff lines, as a
+/// huge commit's `git show` output would produce. Used to exercise the
+/// virtualized renderer, which must only build the lines inside the viewport
+/// regardless of how large the buffer is.
+fn preview_model_with_lines(test_repo: &TestRepo, count: usize) -> Model {
+    let mut model = create_snapshot_model(test_repo);
+    model.view_mode = ViewMode::Preview;
+    model.ui_model.lines = (0..count)
+        .map(|i| Line {
+            content: LineContent::PreviewLine {
+                content: format!("+added content on line {i}"),
+                line_type: PreviewLineType::Addition,
+            },
+            section: None,
+        })
+        .collect();
+    model.ui_model.viewport_height = 22;
+    model
+}
+
+#[test]
+fn snapshot_preview_large_diff_top() {
+    let test_repo = TestRepo::new();
+    let model = preview_model_with_lines(&test_repo, 50_000);
+    // At the top of a 50k-line diff we should see the first lines.
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_preview_large_diff_scrolled() {
+    let test_repo = TestRepo::new();
+    let mut model = preview_model_with_lines(&test_repo, 50_000);
+    // Scrolled deep into the diff: the window must start at the scroll offset,
+    // not the top of the buffer.
+    model.ui_model.scroll_offset = 25_000;
+    model.ui_model.cursor_position = 25_000;
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+/// Regression test for the virtualized renderer: scrolling deep into a very
+/// large diff must render the window at the scroll offset and nothing from the
+/// far ends of the buffer. Before virtualization the whole buffer was rebuilt
+/// every frame, which is what made browsing huge commits laggy.
+#[test]
+fn preview_large_diff_renders_only_visible_window() {
+    let test_repo = TestRepo::new();
+    let mut model = preview_model_with_lines(&test_repo, 50_000);
+    model.ui_model.scroll_offset = 25_000;
+    model.ui_model.cursor_position = 25_000;
+
+    let frame = render_to_string(&model, 80, 24);
+
+    // The line at the scroll offset is visible...
+    assert!(
+        frame.contains("line 25000"),
+        "expected the line at the scroll offset to be visible:\n{frame}"
+    );
+    // ...while lines from the top and bottom of the buffer are not.
+    assert!(
+        !frame.contains("line 0 "),
+        "did not expect the top of the buffer to render when scrolled:\n{frame}"
+    );
+    assert!(
+        !frame.contains("line 49999"),
+        "did not expect the bottom of the buffer to render when scrolled:\n{frame}"
+    );
 }

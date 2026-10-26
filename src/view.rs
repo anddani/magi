@@ -10,7 +10,7 @@ use crate::{
     model::{InputMode, Model, ViewMode, select_popup::OnSelect},
     view::{
         render::{render_popup, render_toast, util::input_spans},
-        util::{apply_search_highlight, apply_selection_style, visible_scroll_offset},
+        util::{apply_search_highlight, apply_selection_style},
     },
 };
 
@@ -82,6 +82,11 @@ pub fn view(model: &Model, frame: &mut Frame) {
 
     // Content width is area width minus 2 for borders
     let content_width = area.width.saturating_sub(2) as usize;
+    // Content height is area height minus 2 for borders. We only build the
+    // lines that fit in this viewport (virtualized rendering): for commits
+    // with tens of thousands of diff lines, building the whole buffer every
+    // frame is what makes browsing laggy.
+    let content_height = area.height.saturating_sub(2) as usize;
 
     // Get visual selection range if visual mode is active
     let visual_range = model.ui_model.visual_selection_range();
@@ -93,7 +98,16 @@ pub fn view(model: &Model, frame: &mut Frame) {
 
     let collapsed_sections = &model.ui_model.collapsed_sections;
 
-    for (index, line) in model.ui_model.lines.iter().enumerate() {
+    // Start building at the top visible line (scroll_offset) rather than from
+    // the very first line. Combined with the viewport-height break below this
+    // bounds per-frame work to the visible window instead of the whole buffer.
+    for (index, line) in model
+        .ui_model
+        .lines
+        .iter()
+        .enumerate()
+        .skip(model.ui_model.scroll_offset)
+    {
         // Skip hidden lines (lines whose parent section is collapsed)
         if line.is_hidden(collapsed_sections) {
             continue;
@@ -213,13 +227,14 @@ pub fn view(model: &Model, frame: &mut Frame) {
         }
 
         text.extend(line_texts);
-    }
 
-    let scroll = visible_scroll_offset(
-        &model.ui_model.lines,
-        model.ui_model.scroll_offset,
-        collapsed_sections,
-    ) as u16;
+        // Virtualized rendering: once enough rows to fill the viewport have
+        // been built, stop. The remaining (possibly tens of thousands of)
+        // lines are off-screen and don't need to be laid out this frame.
+        if text.len() >= content_height {
+            break;
+        }
+    }
 
     let directory = model.workdir.to_str().unwrap_or(".");
 
@@ -306,15 +321,13 @@ pub fn view(model: &Model, frame: &mut Frame) {
         TextLine::from(mode_pill)
     };
 
-    let paragraph = Paragraph::new(text)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(title)
-                .title_top(TextLine::from(directory).right_aligned())
-                .title_bottom(bottom_title),
-        )
-        .scroll((scroll, 0));
+    let paragraph = Paragraph::new(text).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(title)
+            .title_top(TextLine::from(directory).right_aligned())
+            .title_bottom(bottom_title),
+    );
 
     frame.render_widget(paragraph, area);
 
