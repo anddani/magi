@@ -34,6 +34,15 @@ pub struct Strings {
     /// The prefix before the remote name in "Unpulled from <remote>" (includes trailing space).
     pub section_unpulled_from_prefix: &'static str,
 
+    // Status buffer ref header labels (Head/Push/Merge/Tag lines at the top of
+    // the status view). Rendered with a leading indicator or space at the call
+    // site; the trailing padding baked in here keeps every label — and the ref
+    // values that follow — aligned to the same column within a language.
+    pub ref_head: &'static str,
+    pub ref_push: &'static str,
+    pub ref_merge: &'static str,
+    pub ref_tag: &'static str,
+
     // Popup window titles
     pub popup_branch: &'static str,
     pub popup_commit: &'static str,
@@ -349,6 +358,11 @@ static ENGLISH: Strings = Strings {
     section_cherry_picking: "Cherry Picking",
     section_unpulled_from_prefix: "Unpulled from ",
 
+    ref_head: "Head:    ",
+    ref_push: "Push:    ",
+    ref_merge: "Merge:   ",
+    ref_tag: "Tag:     ",
+
     popup_branch: "Branch",
     popup_commit: "Commit",
     popup_push: "Push",
@@ -628,6 +642,11 @@ static SWEDISH: Strings = Strings {
     section_reverting: "Återgår",
     section_cherry_picking: "Plockar russin",
     section_unpulled_from_prefix: "Ej ryckta från ",
+
+    ref_head: "Huvud:       ",
+    ref_push: "Knuffa:      ",
+    ref_merge: "Sammanfoga:  ",
+    ref_tag: "Märke:       ",
 
     popup_branch: "Grena",
     popup_commit: "Förbinda",
