@@ -178,6 +178,7 @@ Here are a few features that the aforementioned applications lack:
 - [x] Keyboard navigation
     - [x] Move up/down
     - [x] Scroll viewport
+        - [x] Virtualized rendering (only the visible window is built each frame, so browsing huge commit diffs stays responsive)
     - [x] Visual select
 - [x] User dismissable popup
 - [x] Toast
