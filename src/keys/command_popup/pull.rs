@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    i18n,
     model::{
         arguments::{Argument::Pull, PullArgument},
         popup::PullPopupState,
@@ -26,7 +27,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PullPopupState) -> Option<Mes
                 )))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Pull from push remote".to_string(),
+                    title: i18n::t().title_pull_from_push_remote.to_string(),
                     source: OptionsSource::Remotes,
                     on_select: OnSelect::PullPushRemote,
                 }))
@@ -37,14 +38,14 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PullPopupState) -> Option<Mes
                 Some(Message::Pull(PullCommand::PullUpstream))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Pull from".to_string(),
+                    title: i18n::t().title_pull_from.to_string(),
                     source: OptionsSource::UpstreamBranches,
                     on_select: OnSelect::PullUpstream,
                 }))
             }
         }
         KeyCode::Char('e') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Pull from".to_string(),
+            title: i18n::t().title_pull_from.to_string(),
             source: OptionsSource::UpstreamBranches,
             on_select: OnSelect::PullElsewhere,
         })),

@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    i18n,
     model::popup::ApplyPopupState,
     msg::{ApplyCommand, Message, OnSelect, OptionsSource, ShowSelectPopupConfig},
 };
@@ -21,7 +22,7 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
         KeyCode::Char('A') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Apply (cherry-pick)".to_string(),
+                    title: i18n::t().title_apply_cherry_pick.to_string(),
                     source: OptionsSource::AllRefs,
                     on_select: OnSelect::ApplyPick,
                 }))
@@ -34,7 +35,7 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
         KeyCode::Char('a') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Apply without committing".to_string(),
+                    title: i18n::t().title_apply_without_committing.to_string(),
                     source: OptionsSource::AllRefs,
                     on_select: OnSelect::ApplyApply,
                 }))
@@ -47,7 +48,7 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
         KeyCode::Char('m') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Squash commit".to_string(),
+                    title: i18n::t().title_squash_commit.to_string(),
                     source: OptionsSource::AllRefs,
                     on_select: OnSelect::ApplySquash,
                 }))
@@ -60,13 +61,13 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
         KeyCode::Char('n') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Spinout commit".to_string(),
+                    title: i18n::t().title_spinout_commit.to_string(),
                     source: OptionsSource::AllRefs,
                     on_select: OnSelect::CherrySpinoutCommitPick,
                 }))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Spinout root".to_string(),
+                    title: i18n::t().title_spinout_root.to_string(),
                     source: OptionsSource::AllRefs,
                     on_select: OnSelect::CherrySpinoutRootPick {
                         commits: state.selected_commits.clone(),
@@ -77,13 +78,13 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
         KeyCode::Char('s') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Spinoff commit".to_string(),
+                    title: i18n::t().title_spinoff_commit.to_string(),
                     source: OptionsSource::AllRefs,
                     on_select: OnSelect::CherrySpinoffCommitPick,
                 }))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Spinoff root".to_string(),
+                    title: i18n::t().title_spinoff_root.to_string(),
                     source: OptionsSource::AllRefs,
                     on_select: OnSelect::CherrySpinoffRootPick {
                         commits: state.selected_commits.clone(),
@@ -94,13 +95,13 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
         KeyCode::Char('d') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Donate commit".to_string(),
+                    title: i18n::t().title_donate_commit.to_string(),
                     source: OptionsSource::AllRefs,
                     on_select: OnSelect::DonateCommitPick,
                 }))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Donate to branch".to_string(),
+                    title: i18n::t().title_donate_to_branch.to_string(),
                     source: OptionsSource::LocalBranches,
                     on_select: OnSelect::DonateTargetBranch {
                         commits: state.selected_commits.clone(),
@@ -111,13 +112,13 @@ pub fn keys(key: KeyEvent, state: &ApplyPopupState) -> Option<Message> {
         KeyCode::Char('h') => {
             if state.selected_commits.is_empty() {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Harvest commit".to_string(),
+                    title: i18n::t().title_harvest_commit.to_string(),
                     source: OptionsSource::AllRefs,
                     on_select: OnSelect::HarvestCommitPick,
                 }))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Harvest from branch".to_string(),
+                    title: i18n::t().title_harvest_from_branch.to_string(),
                     source: OptionsSource::LocalBranches,
                     on_select: OnSelect::HarvestSourceBranch {
                         commits: state.selected_commits.clone(),

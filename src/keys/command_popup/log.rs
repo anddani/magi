@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    i18n,
     model::arguments::{Argument::Log, LogArgument},
     msg::{LogType, Message, OnSelect, OptionsSource, ShowSelectPopupConfig},
 };
@@ -26,7 +27,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Mess
         KeyCode::Char('q') => Some(Message::DismissPopup),
         KeyCode::Char('l') => Some(Message::ShowLog(LogType::Current)),
         KeyCode::Char('o') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Log revision".to_string(),
+            title: i18n::t().title_log_revision.to_string(),
             source: OptionsSource::AllRefs,
             on_select: OnSelect::LogOther,
         })),
@@ -36,7 +37,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Mess
         KeyCode::Char('a') => Some(Message::ShowLog(LogType::AllReferences)),
         KeyCode::Char('r') => Some(Message::ShowLog(LogType::Reflog)),
         KeyCode::Char('O') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Show reflog for".to_string(),
+            title: i18n::t().title_show_reflog_for.to_string(),
             source: OptionsSource::AllRefs,
             on_select: OnSelect::ReflogOther,
         })),

@@ -1,5 +1,6 @@
 use crate::{
     git::{reset::has_uncommitted_changes, worktree::worktree_has_changes},
+    i18n,
     model::{
         LineContent, Model, ViewMode,
         arguments::{Arguments, RebaseArgument, RebaseMergesMode},
@@ -108,7 +109,7 @@ fn route_result(
         }),
         (Some(OnSelect::OpenPrBranchWithTarget), SelectResult::Selected(branch)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Open PR to".to_string(),
+                title: i18n::t().title_open_pr_to.to_string(),
                 source: OptionsSource::LocalBranches,
                 on_select: OnSelect::OpenPrTarget {
                     source_branch: branch,
@@ -179,14 +180,14 @@ fn route_result(
         }
         (Some(OnSelect::ResetBranchPick), SelectResult::Selected(branch)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Reset branch to".to_string(),
+                title: i18n::t().title_reset_branch_to.to_string(),
                 source: OptionsSource::AllRefs,
                 on_select: OnSelect::ResetBranchTarget { branch },
             }))
         }
         (Some(OnSelect::FileCheckoutRevision), SelectResult::Selected(revision)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "File to checkout".to_string(),
+                title: i18n::t().title_file_to_checkout.to_string(),
                 source: OptionsSource::TrackedFiles,
                 on_select: OnSelect::FileCheckoutFile { revision },
             }))
@@ -261,7 +262,7 @@ fn route_result(
         }
         (Some(OnSelect::PushOtherBranchPick), SelectResult::Selected(branch)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Push to".to_string(),
+                title: i18n::t().title_push_to.to_string(),
                 source: OptionsSource::UpstreamBranches,
                 on_select: OnSelect::PushOtherBranchTarget { local: branch },
             }))
@@ -289,7 +290,7 @@ fn route_result(
         }
         (Some(OnSelect::FetchAnotherBranchRemote), SelectResult::Selected(remote)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: format!("Fetch branch from {}", remote),
+                title: i18n::t().fmt1(i18n::t().title_fetch_branch_from_fmt, &remote),
                 source: OptionsSource::RemoteBranches {
                     remote: remote.clone(),
                 },
@@ -424,7 +425,7 @@ fn route_result(
         }
         (Some(OnSelect::CherrySpinoffCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Spinoff root".to_string(),
+                title: i18n::t().title_spinoff_root.to_string(),
                 source: OptionsSource::AllRefs,
                 on_select: OnSelect::CherrySpinoffRootPick {
                     commits: vec![hash],
@@ -436,7 +437,7 @@ fn route_result(
         }
         (Some(OnSelect::CherrySpinoutCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Spinout root".to_string(),
+                title: i18n::t().title_spinout_root.to_string(),
                 source: OptionsSource::AllRefs,
                 on_select: OnSelect::CherrySpinoutRootPick {
                     commits: vec![hash],
@@ -448,7 +449,7 @@ fn route_result(
         }
         (Some(OnSelect::DonateCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Donate to branch".to_string(),
+                title: i18n::t().title_donate_to_branch.to_string(),
                 source: OptionsSource::LocalBranches,
                 on_select: OnSelect::DonateTargetBranch {
                     commits: vec![hash],
@@ -460,7 +461,7 @@ fn route_result(
         }
         (Some(OnSelect::HarvestCommitPick), SelectResult::Selected(hash)) => {
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Harvest from branch".to_string(),
+                title: i18n::t().title_harvest_from_branch.to_string(),
                 source: OptionsSource::LocalBranches,
                 on_select: OnSelect::HarvestSourceBranch {
                     commits: vec![hash],

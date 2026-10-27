@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    i18n,
     model::arguments::{Argument::Rebase, RebaseArgument},
     model::popup::RebasePopupState,
     msg::{CommitSelect, Message, OnSelect, OptionsSource, RebaseCommand, ShowSelectPopupConfig},
@@ -36,7 +37,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &RebasePopupState) -> Option<M
                 )))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Rebase onto push remote".to_string(),
+                    title: i18n::t().title_rebase_onto_push_remote.to_string(),
                     source: OptionsSource::Remotes,
                     on_select: OnSelect::RebasePushRemote,
                 }))
@@ -47,7 +48,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &RebasePopupState) -> Option<M
                 Some(Message::Rebase(RebaseCommand::OntoUpstream))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Rebase onto".to_string(),
+                    title: i18n::t().title_rebase_onto.to_string(),
                     source: OptionsSource::UpstreamBranches,
                     on_select: OnSelect::RebaseUpstream,
                 }))
@@ -60,7 +61,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &RebasePopupState) -> Option<M
         KeyCode::Char('k') => Some(Message::ShowCommitSelect(CommitSelect::RemoveCommit)),
         KeyCode::Char('f') => Some(Message::ShowCommitSelect(CommitSelect::Autosquash)),
         KeyCode::Char('s') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Rebase subset onto".to_string(),
+            title: i18n::t().title_rebase_subset_onto.to_string(),
             source: OptionsSource::AllRefs,
             on_select: OnSelect::RebaseSubsetOnto,
         })),
