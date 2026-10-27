@@ -2,6 +2,7 @@ use std::time::Instant;
 
 use crate::{
     git::apply::apply_patch,
+    i18n,
     model::{
         Line, LineContent, Model, PreviewLineType, Toast, ToastStyle, ViewMode, popup::PopupContent,
     },
@@ -43,7 +44,7 @@ fn reject_worktree_change(model: &mut Model) -> Option<Message> {
 
     if !matches!(selection, Selection::None) {
         model.toast = Some(Toast {
-            message: "Change is already in the working tree".to_string(),
+            message: i18n::t().err_change_already_in_worktree.to_string(),
             style: ToastStyle::Warning,
             expires_at: Instant::now() + TOAST_DURATION,
         });
@@ -70,14 +71,14 @@ fn apply_from_preview(model: &mut Model) -> Option<Message> {
     match apply_patch(&model.workdir, &patch) {
         Ok(()) => {
             model.toast = Some(Toast {
-                message: "Changes applied to the working tree".to_string(),
+                message: i18n::t().status_changes_applied.to_string(),
                 style: ToastStyle::Success,
                 expires_at: Instant::now() + TOAST_DURATION,
             });
         }
         Err(e) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Error applying: {}", e),
+                message: format!("{}: {}", i18n::t().err_applying_failed, e),
             });
         }
     }

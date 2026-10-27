@@ -99,7 +99,7 @@ fn run_loop(
     let workdir = git_info
         .repository
         .workdir()
-        .ok_or_else(|| MagiError::Generic("Cannot run in a bare repository".into()))?
+        .ok_or_else(|| MagiError::Generic(i18n::t().err_bare_repository.into()))?
         .to_path_buf();
 
     // On huge repositories `git log --graph` (used by the log view) implies
@@ -275,7 +275,7 @@ fn handle_pty_result(model: &mut Model, result: PtyCommandResult) -> Option<Mess
         }
         PtyCommandResult::CredentialRequired => {
             model.popup = Some(PopupContent::Error {
-                message: "Authentication required but not available".to_string(),
+                message: i18n::t().err_auth_required.to_string(),
             });
         }
     }

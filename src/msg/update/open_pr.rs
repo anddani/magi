@@ -3,6 +3,7 @@ use crate::{
         config::{get_remote, get_remote_url},
         open_pr::{build_pr_url, detect_service, open_in_browser, parse_remote_url},
     },
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -15,7 +16,7 @@ pub fn update(model: &mut Model, branch: String, target: Option<String>) -> Opti
         Some(url) => url,
         None => {
             model.popup = Some(PopupContent::Error {
-                message: "Unable to find remote URL".to_string(),
+                message: i18n::t().err_unable_to_find_remote_url.to_string(),
             });
             return None;
         }
@@ -33,7 +34,7 @@ pub fn update(model: &mut Model, branch: String, target: Option<String>) -> Opti
         Some(s) => s,
         None => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Unsupported hosting service: {}", host),
+                message: format!("{}: {}", i18n::t().err_unsupported_host, host),
             });
             return None;
         }

@@ -2,6 +2,7 @@ use std::time::Instant;
 
 use crate::{
     git::{log::get_log_entries, rebase::get_upstream_merge_base},
+    i18n,
     model::{
         Line, LineContent, Model, Toast, ToastStyle, ViewMode,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent},
@@ -117,7 +118,7 @@ pub fn show_select_autosquash(model: &mut Model) -> Option<Message> {
 pub fn show_select_fixup_commit(model: &mut Model, fixup_type: FixupType) -> Option<Message> {
     if let Ok(false) = model.git_info.has_staged_changes() {
         model.toast = Some(Toast {
-            message: "Nothing staged to fixup".to_string(),
+            message: i18n::t().err_nothing_staged_to_fixup.to_string(),
             style: ToastStyle::Warning,
             expires_at: Instant::now() + TOAST_DURATION,
         });
@@ -212,7 +213,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
 
             if commits.is_empty() {
                 model.popup = Some(PopupContent::Error {
-                    message: "No commits found".to_string(),
+                    message: i18n::t().err_no_commits_found.to_string(),
                 });
                 None
             } else {
@@ -244,7 +245,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to get commits: {}", err),
+                message: format!("{}: {}", i18n::t().err_get_commits_failed, err),
             });
             None
         }

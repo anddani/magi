@@ -5,6 +5,7 @@ use crate::{
         reverse_patch, reverse_staged_files, reverse_staged_hunk, reverse_staged_hunks,
         reverse_staged_lines,
     },
+    i18n,
     model::{Model, Toast, ToastStyle, popup::PopupContent},
     msg::{Message, ReverseTarget, update::commit::TOAST_DURATION},
 };
@@ -18,14 +19,14 @@ pub fn update(model: &mut Model, target: ReverseTarget) -> Option<Message> {
     match apply_reverse(&repo_path, target) {
         Ok(()) => {
             model.toast = Some(Toast {
-                message: "Changes reversed in the working tree".to_string(),
+                message: i18n::t().status_changes_reversed.to_string(),
                 style: ToastStyle::Success,
                 expires_at: Instant::now() + TOAST_DURATION,
             });
         }
         Err(e) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Error reversing: {}", e),
+                message: format!("{}: {}", i18n::t().err_reversing_failed, e),
             });
         }
     }

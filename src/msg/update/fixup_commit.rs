@@ -1,5 +1,6 @@
 use crate::{
     git::commit::{run_alter_commit, run_augment_commit, run_fixup_commit, run_squash_commit},
+    i18n,
     model::{Model, popup::PopupContent},
     msg::{FixupType, Message},
 };
@@ -9,7 +10,7 @@ pub fn update(model: &mut Model, commit_ref: String, fixup_type: FixupType) -> O
         Some(path) => path,
         None => {
             model.popup = Some(PopupContent::Error {
-                message: "No working directory found".to_string(),
+                message: i18n::t().err_no_working_directory.to_string(),
             });
             return None;
         }
@@ -44,13 +45,17 @@ pub fn update(model: &mut Model, commit_ref: String, fixup_type: FixupType) -> O
         }
         Err(err) => {
             let operation = match fixup_type {
-                FixupType::Fixup => "Fixup",
-                FixupType::Squash => "Squash",
-                FixupType::Alter => "Alter",
-                FixupType::Augment => "Augment",
+                FixupType::Fixup => i18n::t().cmd_fixup,
+                FixupType::Squash => i18n::t().cmd_squash,
+                FixupType::Alter => i18n::t().cmd_alter,
+                FixupType::Augment => i18n::t().cmd_augment,
             };
             model.popup = Some(PopupContent::Error {
-                message: format!("{} commit failed: {}", operation, err),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_commit_failed_fmt, operation),
+                    err
+                ),
             });
             None
         }

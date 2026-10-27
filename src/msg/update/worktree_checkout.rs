@@ -5,6 +5,7 @@ use crate::{
         GitInfo,
         worktree::{WorktreeResult, worktree_add},
     },
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -24,7 +25,7 @@ pub fn update(model: &mut Model, branch: String, path: String, checkout: bool) -
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Worktree add failed: {err}"),
+                message: format!("{}: {err}", i18n::t().err_worktree_add_failed),
             });
             None
         }

@@ -2,6 +2,7 @@ use std::process::Stdio;
 
 use crate::{
     git::git_cmd,
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -29,13 +30,21 @@ pub fn update(model: &mut Model, target: String) -> Option<Message> {
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to reset worktree to {}: {}", target, stderr),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_reset_worktree_failed_fmt, &target),
+                    stderr
+                ),
             });
             None
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to reset worktree to {}: {}", target, err),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_reset_worktree_failed_fmt, &target),
+                    err
+                ),
             });
             None
         }

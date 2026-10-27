@@ -225,7 +225,7 @@ fn onto_push_remote(model: &mut Model, remote: String, extra_args: Vec<String>) 
         Some(branch) => branch,
         None => {
             model.popup = Some(PopupContent::Error {
-                message: "No branch is checked out".to_string(),
+                message: i18n::t().err_no_branch_checked_out.to_string(),
             });
             return None;
         }
@@ -233,7 +233,7 @@ fn onto_push_remote(model: &mut Model, remote: String, extra_args: Vec<String>) 
 
     if let Err(e) = set_push_remote(&model.git_info.repository, &current_branch, &remote) {
         model.popup = Some(PopupContent::Error {
-            message: format!("Failed to set push remote: {}", e),
+            message: format!("{}: {}", i18n::t().err_set_push_remote_failed, e),
         });
         return None;
     }
@@ -279,7 +279,7 @@ fn onto_upstream_setting(
 ) -> Option<Message> {
     if let Err(e) = set_upstream_branch(&model.git_info.repository, &upstream) {
         model.popup = Some(PopupContent::Error {
-            message: format!("Failed to set upstream: {}", e),
+            message: format!("{}: {}", i18n::t().err_set_upstream_failed, e),
         });
         return None;
     }

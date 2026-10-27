@@ -2,6 +2,7 @@ use std::process::Stdio;
 
 use crate::{
     git::git_cmd,
+    i18n,
     model::{Model, popup::PopupContent},
     msg::{Message, ResetMode},
 };
@@ -35,13 +36,21 @@ pub fn update(
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to reset {} to {}: {}", branch, target, stderr),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt2(i18n::t().err_reset_branch_failed_fmt, &branch, &target),
+                    stderr
+                ),
             });
             None
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to reset {} to {}: {}", branch, target, err),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt2(i18n::t().err_reset_branch_failed_fmt, &branch, &target),
+                    err
+                ),
             });
             None
         }

@@ -1,5 +1,6 @@
 use crate::{
     git::file_checkout::file_checkout,
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -11,13 +12,21 @@ pub fn update(model: &mut Model, revision: String, file: String) -> Option<Messa
         Ok(Ok(())) => Some(Message::Refresh),
         Ok(Err(err)) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to checkout {} from {}: {}", file, revision, err),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt2(i18n::t().err_file_checkout_failed_fmt, &file, &revision),
+                    err
+                ),
             });
             None
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to checkout {} from {}: {}", file, revision, err),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt2(i18n::t().err_file_checkout_failed_fmt, &file, &revision),
+                    err
+                ),
             });
             None
         }

@@ -1,4 +1,5 @@
 use crate::{
+    i18n,
     model::{LineContent, Model, popup::PopupContent},
     msg::Message,
 };
@@ -16,7 +17,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
         .collect();
     if let Err(e) = crate::git::stage::unstage_files(repo_path, &files) {
         model.popup = Some(PopupContent::Error {
-            message: format!("Error unstaging files: {}", e),
+            message: format!("{}: {}", i18n::t().err_unstaging_files_failed, e),
         });
     }
     Some(Message::Refresh)

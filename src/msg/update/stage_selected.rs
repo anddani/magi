@@ -1,5 +1,6 @@
 use crate::{
     git::stage::{stage_files, stage_hunk, stage_lines},
+    i18n,
     model::{Model, cursor_context::CursorContext, popup::PopupContent},
     msg::Message,
 };
@@ -41,7 +42,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
 
     if let Err(e) = result {
         model.popup = Some(PopupContent::Error {
-            message: format!("Error staging: {}", e),
+            message: format!("{}: {}", i18n::t().err_staging_failed, e),
         });
         // Clear cursor context on error
         model.cursor_reposition_context = None;

@@ -15,6 +15,7 @@ use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use super::credential::{
     CredentialResponse, CredentialStrategy, CredentialType, check_for_credential_request,
 };
+use crate::i18n;
 
 /// Result of a PTY command execution.
 #[derive(Debug)]
@@ -98,7 +99,7 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
         Ok(pair) => pair,
         Err(e) => {
             return PtyCommandResult::Error {
-                message: format!("Failed to open PTY: {}", e),
+                message: format!("{}: {}", i18n::t().err_open_pty_failed, e),
             };
         }
     };
@@ -125,7 +126,7 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
         Ok(child) => child,
         Err(e) => {
             return PtyCommandResult::Error {
-                message: format!("Failed to spawn command: {}", e),
+                message: format!("{}: {}", i18n::t().err_spawn_command_failed, e),
             };
         }
     };
@@ -138,7 +139,7 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
         Ok(reader) => reader,
         Err(e) => {
             return PtyCommandResult::Error {
-                message: format!("Failed to get PTY reader: {}", e),
+                message: format!("{}: {}", i18n::t().err_get_pty_reader_failed, e),
             };
         }
     };
@@ -147,7 +148,7 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
         Ok(writer) => writer,
         Err(e) => {
             return PtyCommandResult::Error {
-                message: format!("Failed to get PTY writer: {}", e),
+                message: format!("{}: {}", i18n::t().err_get_pty_writer_failed, e),
             };
         }
     };
@@ -179,7 +180,9 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
                                     // UI channel closed, terminate
                                     let _ = child.kill();
                                     return PtyCommandResult::Error {
-                                        message: "Credential channel closed".to_string(),
+                                        message: i18n::t()
+                                            .err_credential_channel_closed
+                                            .to_string(),
                                     };
                                 }
 
@@ -191,7 +194,8 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
                                         if writer.write_all(input_with_newline.as_bytes()).is_err()
                                         {
                                             return PtyCommandResult::Error {
-                                                message: "Failed to write credential to PTY"
+                                                message: i18n::t()
+                                                    .err_credential_write_failed
                                                     .to_string(),
                                             };
                                         }
@@ -206,7 +210,8 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
                                         // Channel closed, terminate
                                         let _ = child.kill();
                                         return PtyCommandResult::Error {
-                                            message: "Credential response channel closed"
+                                            message: i18n::t()
+                                                .err_credential_response_channel_closed
                                                 .to_string(),
                                         };
                                     }
@@ -215,8 +220,7 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
                                 // No channels but Prompt strategy - shouldn't happen
                                 let _ = child.kill();
                                 return PtyCommandResult::Error {
-                                    message: "Credential prompt detected but no channel provided"
-                                        .to_string(),
+                                    message: i18n::t().err_credential_prompt_no_channel.to_string(),
                                 };
                             }
                         }
@@ -253,7 +257,7 @@ pub fn execute_git_with_pty<P: AsRef<Path>>(
             }
         }
         Err(e) => PtyCommandResult::Error {
-            message: format!("Failed to wait for command: {}", e),
+            message: format!("{}: {}", i18n::t().err_wait_command_failed, e),
         },
     }
 }
