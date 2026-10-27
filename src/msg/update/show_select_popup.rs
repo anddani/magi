@@ -10,7 +10,10 @@ use crate::{
         file_checkout::get_tracked_files,
         open_pr::has_any_remote,
         push::{get_current_branch, get_local_tags, get_remotes, get_upstream_branch},
-        worktree::{get_checked_out_branches, list_linked_worktrees, list_other_worktrees},
+        worktree::{
+            get_checked_out_branches, list_linked_worktrees, list_other_worktrees,
+            worktree_path_for_branch,
+        },
     },
     i18n,
     model::{
@@ -398,6 +401,20 @@ fn compute_preferred(model: &Model, on_select: &OnSelect) -> Option<String> {
                 })
                 .map(|s| s.name().to_string())
                 .or_else(|| current_branch.map(|b| b.to_string()))
+        }
+        OnSelect::WorktreeVisit | OnSelect::WorktreeMove | OnSelect::WorktreeDelete => {
+            // The worktree that has the local branch under the cursor checked out.
+            cursor_line.and_then(|line| {
+                suggestions_from_line(line)
+                    .into_iter()
+                    .filter_map(|s| match s {
+                        BranchSuggestion::LocalBranch(name) => {
+                            worktree_path_for_branch(&model.workdir, &name)
+                        }
+                        _ => None,
+                    })
+                    .next()
+            })
         }
         // No preferred for remotes, upstream branches (pre-sorted), stashes, tags, etc.
         _ => None,
