@@ -664,6 +664,7 @@ pub enum RebaseArgument {
     UpdateRefs,
     CommitterDateIsAuthorDate,
     IgnoreDate,
+    Autosquash,
 }
 
 impl RebaseArgument {
@@ -681,6 +682,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::UpdateRefs,
             RebaseArgument::CommitterDateIsAuthorDate,
             RebaseArgument::IgnoreDate,
+            RebaseArgument::Autosquash,
         ]
     }
 
@@ -691,6 +693,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::UpdateRefs => 'u',
             RebaseArgument::CommitterDateIsAuthorDate => 'd',
             RebaseArgument::IgnoreDate => 't',
+            RebaseArgument::Autosquash => 'a',
         }
     }
 
@@ -702,6 +705,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::UpdateRefs => t.arg_rebase_update_refs,
             RebaseArgument::CommitterDateIsAuthorDate => t.arg_rebase_committer_date_is_author_date,
             RebaseArgument::IgnoreDate => t.arg_rebase_ignore_date,
+            RebaseArgument::Autosquash => t.arg_rebase_autosquash,
         }
     }
 
@@ -717,6 +721,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::UpdateRefs => "--update-refs",
             RebaseArgument::CommitterDateIsAuthorDate => "--committer-date-is-author-date",
             RebaseArgument::IgnoreDate => "--ignore-date",
+            RebaseArgument::Autosquash => "--autosquash",
         }
     }
 }
@@ -920,6 +925,10 @@ mod tests {
             RebaseArgument::from_key('t'),
             Some(RebaseArgument::IgnoreDate)
         );
+        assert_eq!(
+            RebaseArgument::from_key('a'),
+            Some(RebaseArgument::Autosquash)
+        );
         assert_eq!(RebaseArgument::from_key('x'), None);
     }
 
@@ -947,8 +956,15 @@ mod tests {
                 RebaseArgument::UpdateRefs,
                 RebaseArgument::CommitterDateIsAuthorDate,
                 RebaseArgument::IgnoreDate,
+                RebaseArgument::Autosquash,
             ]
         );
+    }
+
+    #[test]
+    fn test_rebase_argument_autosquash_key_and_flag() {
+        assert_eq!(RebaseArgument::Autosquash.key(), 'a');
+        assert_eq!(RebaseArgument::Autosquash.flag(), "--autosquash");
     }
 
     #[test]
