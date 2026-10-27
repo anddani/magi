@@ -30,6 +30,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             command_description(theme, model.arg_mode, "i", t.cmd_index),
             command_description(theme, model.arg_mode, "w", t.cmd_worktree),
             command_description(theme, model.arg_mode, "x", t.cmd_keeping_index),
+            command_description(theme, model.arg_mode, "P", t.cmd_stash_push),
         ],
     };
 

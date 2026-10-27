@@ -8,6 +8,7 @@ mod commit;
 mod fetch;
 mod log;
 mod merge;
+mod multi_select;
 mod pull;
 mod push;
 mod rebase;
@@ -15,6 +16,7 @@ mod reset;
 mod revert;
 mod select;
 mod stash;
+mod stash_push;
 mod tag;
 mod worktree;
 
@@ -39,6 +41,7 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Pull(state) => pull::keys(key, arg_mode, state),
         PopupContentCommand::Push(state) => push::keys(key, arg_mode, state),
         PopupContentCommand::Stash => stash::keys(key, arg_mode),
+        PopupContentCommand::StashPush => stash_push::keys(key, arg_mode),
         PopupContentCommand::Reset => reset::keys(key),
         PopupContentCommand::Rebase(state) => rebase::keys(key, arg_mode, state),
         PopupContentCommand::Revert(state) => revert::keys(key, arg_mode, equals_arg_mode, state),
@@ -47,5 +50,6 @@ pub fn handle_command_popup_key(
         PopupContentCommand::Tag => tag::keys(key, arg_mode),
         PopupContentCommand::Worktree => worktree::keys(key),
         PopupContentCommand::Select(_) => select::keys(key),
+        PopupContentCommand::MultiSelect(_) => multi_select::keys(key),
     }
 }

@@ -18,6 +18,25 @@ pub fn get_tracked_files(repo: &Repository) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// Returns the list of tracked files that differ from HEAD (staged or
+/// unstaged), equivalent to magit's `magit-modified-files`
+/// (`git diff-index --name-only HEAD`). Untracked files are not included.
+pub fn get_modified_files<P: AsRef<Path>>(repo_path: P) -> Vec<String> {
+    let output = git_cmd(&repo_path, &["diff-index", "--name-only", "HEAD"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .output();
+
+    match output {
+        Ok(output) if output.status.success() => String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(|line| line.to_string())
+            .filter(|line| !line.is_empty())
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
 /// Restore a single file to its state at the given revision.
 /// Equivalent to `git checkout <revision> -- <file>`.
 pub fn file_checkout<P: AsRef<Path>>(
@@ -66,6 +85,39 @@ mod tests {
         let files = get_tracked_files(&test_repo.repo);
         // TestRepo::new() commits an initial file
         assert!(!files.is_empty());
+    }
+
+    #[test]
+    fn test_get_modified_files_lists_tracked_changes() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        test_repo
+            .write_file_content("tracked.txt", "v1")
+            .stage_files(&["tracked.txt"])
+            .commit("Add tracked file");
+
+        // No modifications yet.
+        assert!(get_modified_files(repo_path).is_empty());
+
+        // Modify the tracked file (unstaged) — should be reported.
+        test_repo.write_file_content("tracked.txt", "v2");
+        let files = get_modified_files(repo_path);
+        assert!(files.iter().any(|f| f == "tracked.txt"), "got {:?}", files);
+    }
+
+    #[test]
+    fn test_get_modified_files_excludes_untracked() {
+        let test_repo = TestRepo::new();
+        let repo_path = test_repo.repo.workdir().unwrap();
+
+        test_repo.write_file_content("untracked.txt", "new");
+        let files = get_modified_files(repo_path);
+        assert!(
+            !files.iter().any(|f| f == "untracked.txt"),
+            "untracked files should not be listed, got {:?}",
+            files
+        );
     }
 
     #[test]

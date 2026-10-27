@@ -24,6 +24,7 @@ mod help_popup;
 mod input_popup;
 mod log_popup;
 mod merge_popup;
+mod multi_select_popup;
 mod popup_content;
 mod pull_popup;
 mod push_popup;
@@ -32,6 +33,7 @@ mod reset_popup;
 mod revert_popup;
 mod select_popup;
 mod stash_popup;
+mod stash_push_popup;
 mod tag_popup;
 pub mod util;
 mod worktree_popup;
@@ -105,6 +107,7 @@ pub fn render_popup(
                 PopupContentCommand::Branch => branch_popup::content(theme),
                 PopupContentCommand::Log => log_popup::content(theme, model),
                 PopupContentCommand::Stash => stash_popup::content(theme, model),
+                PopupContentCommand::StashPush => stash_push_popup::content(theme, model),
 
                 PopupContentCommand::Reset => reset_popup::content(theme, model),
                 PopupContentCommand::Rebase(state) => rebase_popup::content(theme, model, state),
@@ -117,6 +120,11 @@ pub fn render_popup(
                 // Select popup uses custom rendering, not the column layout
                 PopupContentCommand::Select(state) => {
                     select_popup::render(state, frame, area, theme);
+                    return;
+                }
+                // Multi-select popup also uses custom rendering
+                PopupContentCommand::MultiSelect(state) => {
+                    multi_select_popup::render(state, frame, area, theme);
                     return;
                 }
             };

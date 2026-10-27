@@ -1,6 +1,6 @@
 use crate::{
     model::{InputContext, Model},
-    msg::{InputMessage, Message, SearchMessage, SelectMessage},
+    msg::{InputMessage, Message, MultiSelectMessage, SearchMessage, SelectMessage},
 };
 
 mod amend;
@@ -38,6 +38,7 @@ mod fixup_commit;
 mod harvest;
 mod input_input;
 mod merge;
+mod multi_select;
 mod navigation;
 mod open_pr;
 mod pending_g;
@@ -84,6 +85,7 @@ mod show_revert_mainline_input;
 mod show_revert_popup;
 mod show_revert_strategy_select;
 mod show_select_popup;
+mod show_stash_push_files;
 mod show_tag_popup;
 mod show_tag_release_input;
 mod show_tag_sign_as_select;
@@ -189,6 +191,14 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
             SelectMessage::MoveUp => select_move_up::update(model),
             SelectMessage::MoveDown => select_move_down::update(model),
             SelectMessage::Confirm => select_confirm::update(model),
+        },
+        Message::ShowStashPushFiles => show_stash_push_files::update(model),
+        Message::MultiSelect(multi_select_msg) => match multi_select_msg {
+            MultiSelectMessage::Edit(op) => multi_select::edit(model, op),
+            MultiSelectMessage::MoveUp => multi_select::move_up(model),
+            MultiSelectMessage::MoveDown => multi_select::move_down(model),
+            MultiSelectMessage::ToggleCurrent => multi_select::toggle_current(model),
+            MultiSelectMessage::Confirm => multi_select::confirm(model),
         },
         Message::Input(input_msg) => match input_msg {
             InputMessage::Edit(op) => input_input::edit(model, op),

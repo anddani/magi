@@ -25,6 +25,7 @@ pub fn update(model: &mut Model, stash_command: StashCommand) -> Option<Message>
     };
     match stash_command {
         StashCommand::Push(stash_type, message) => push(model, stash_type, message, extra_args),
+        StashCommand::PushFiles { files, flags } => push_files(model, files, flags),
         StashCommand::Apply(stash_ref) => apply(model, stash_ref, extra_args),
         StashCommand::Pop(stash_ref) => pop(model, stash_ref, extra_args),
         StashCommand::Drop(stash_ref) => drop(model, stash_ref),
@@ -124,6 +125,20 @@ fn push(
     }
 
     execute_pty_command(model, args, stash_type.pty_title().to_string())
+}
+
+/// Stash a specific list of files: `git stash push <flags> -- <files>`.
+/// An empty `files` list omits the `--` separator and stashes everything.
+fn push_files(model: &mut Model, files: Vec<String>, flags: Vec<String>) -> Option<Message> {
+    let mut args = vec!["stash".to_string(), "push".to_string()];
+    args.extend(flags);
+
+    if !files.is_empty() {
+        args.push("--".to_string());
+        args.extend(files);
+    }
+
+    execute_pty_command(model, args, i18n::t().op_stash_push.to_string())
 }
 
 fn apply(model: &mut Model, stash_ref: String, extra_args: Vec<String>) -> Option<Message> {

@@ -1,3 +1,4 @@
+pub use super::multi_select_popup::{MultiSelectPopupState, OnMultiSelect};
 pub use super::select_popup::{OnSelect, OptionsSource, SelectPopupState, SelectResult};
 
 use crate::git::credential::CredentialType;
@@ -407,6 +408,10 @@ pub enum PopupContentCommand {
     Branch,
     Log,
     Stash,
+    /// The nested "Stash push" popup (`git stash push`), with its own
+    /// `-u`/`-a`/`-k`/`-K` argument toggles and a push action that opens the
+    /// file picker. Mirrors magit's dedicated `magit-stash-push` transient.
+    StashPush,
     Reset,
     Rebase(RebasePopupState),
     Revert(RevertPopupState),
@@ -415,6 +420,8 @@ pub enum PopupContentCommand {
     Tag,
     Worktree,
     Select(SelectPopupState),
+    /// Multi-select fuzzy picker (e.g. choosing which files to stash)
+    MultiSelect(MultiSelectPopupState),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

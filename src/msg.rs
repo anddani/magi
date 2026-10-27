@@ -428,6 +428,9 @@ pub enum Message {
 
     /// Show a select popup
     ShowSelectPopup(ShowSelectPopupConfig),
+    /// Open the multi-select file picker for "Stash push", snapshotting the
+    /// stash-push argument flags currently toggled in the popup.
+    ShowStashPushFiles,
     /// Show the input popup for entering refspec(s) to push to the given remote
     ShowPushRefspecInput(String),
     /// Show the input popup for entering refspec(s) to fetch from the given remote
@@ -452,6 +455,9 @@ pub enum Message {
 
     /// Select popup messages
     Select(SelectMessage),
+
+    /// Multi-select popup messages
+    MultiSelect(MultiSelectMessage),
 
     /// Input popup messages
     Input(InputMessage),
@@ -772,6 +778,12 @@ impl StashType {
 pub enum StashCommand {
     /// Stash changes according to the given type and optional message
     Push(StashType, String),
+    /// Stash a specific list of files with `git stash push <flags> -- <files>`
+    /// (magit's `magit-stash-push`). An empty `files` list stashes everything.
+    PushFiles {
+        files: Vec<String>,
+        flags: Vec<String>,
+    },
     /// Apply a stash by its reference (e.g. "stash@{0}")
     Apply(String),
     /// Pop a stash by its reference (e.g. "stash@{0}") - applies and removes it
@@ -857,6 +869,21 @@ pub enum SelectMessage {
     /// Move selection down in select popup
     MoveDown,
     /// Confirm selection in select popup
+    Confirm,
+}
+
+/// Messages for the multi-select popup
+#[derive(PartialEq, Eq, Debug)]
+pub enum MultiSelectMessage {
+    /// Apply a text editing operation to the multi-select filter
+    Edit(EditOp),
+    /// Move the cursor up
+    MoveUp,
+    /// Move the cursor down
+    MoveDown,
+    /// Toggle the checked state of the item under the cursor
+    ToggleCurrent,
+    /// Confirm the selection
     Confirm,
 }
 

@@ -2,7 +2,10 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     i18n,
-    model::arguments::{Argument::Stash, StashArgument},
+    model::{
+        arguments::{Argument::Stash, StashArgument},
+        popup::{PopupContent, PopupContentCommand},
+    },
     msg::{
         LogType, Message, OnSelect, OptionsSource, ShowSelectPopupConfig, StashCommand, StashType,
     },
@@ -23,6 +26,9 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('i') => Some(Message::ShowStashInput(StashType::Index)),
         KeyCode::Char('w') => Some(Message::ShowStashInput(StashType::Worktree)),
         KeyCode::Char('x') => Some(Message::ShowStashInput(StashType::KeepingIndex)),
+        KeyCode::Char('P') => Some(Message::ShowPopup(PopupContent::Command(
+            PopupContentCommand::StashPush,
+        ))),
         KeyCode::Char('Z') => Some(Message::Stash(StashCommand::Snapshot)),
         KeyCode::Char('I') => Some(Message::Stash(StashCommand::SnapshotIndex)),
         KeyCode::Char('W') => Some(Message::Stash(StashCommand::SnapshotWorktree)),
@@ -112,6 +118,18 @@ mod tests {
                 source: OptionsSource::Stashes,
                 on_select: OnSelect::BranchStash,
             }))
+        );
+    }
+
+    #[test]
+    fn test_shift_p_opens_stash_push_popup() {
+        let key = KeyEvent::new(KeyCode::Char('P'), KeyModifiers::SHIFT);
+        let result = keys(key, false);
+        assert_eq!(
+            result,
+            Some(Message::ShowPopup(PopupContent::Command(
+                PopupContentCommand::StashPush
+            )))
         );
     }
 

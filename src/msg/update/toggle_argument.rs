@@ -35,6 +35,12 @@ pub fn update(model: &mut Model, argument: Argument) -> Option<Message> {
             |a| a.stash_mut(),
             Arguments::StashArguments,
         ),
+        Argument::StashPush(arg) => toggle_set(
+            &mut model.arguments,
+            arg,
+            |a| a.stash_push_mut(),
+            Arguments::StashPushArguments,
+        ),
         Argument::Pull(arg) => toggle_set(
             &mut model.arguments,
             arg,
