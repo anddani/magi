@@ -175,6 +175,7 @@ Here are a few features that the aforementioned applications lack:
 - **Faithful keybindings**: Magi will preserve the default keybindings in Magit+Evil (and potentially Emacs bindings) in order to make onboarding easier
 - **Legible commit graph**: Easy navigation and overview of the commit graph
 - **Contextual commands**: All commands are available at any time, using the highlighted or selected line(s) as context to automatically figure out intent
+- **Fast on large repositories**: The log view stays responsive even on repositories with millions of commits.
 
 ## License
 

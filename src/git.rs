@@ -29,6 +29,7 @@ pub mod apply;
 pub mod checkout;
 pub mod cherry_pick;
 pub mod commit;
+pub mod commit_graph;
 mod commit_utils;
 pub mod config;
 pub mod credential;
@@ -59,6 +60,7 @@ pub mod unpulled_commits;
 pub mod unstaged_changes;
 pub mod untracked_files;
 pub mod wip;
+pub mod working_tree;
 pub mod worktree;
 pub mod worktree_stash;
 
@@ -102,8 +104,12 @@ impl GitInfo {
         let rebasing_lines = rebase::get_rebasing_lines(workdir)?;
         let reverting_lines = revert::get_reverting_lines(workdir)?;
         let cherry_picking_lines = cherry_pick::get_cherry_picking_lines(workdir)?;
-        let untracked_files = untracked_files::get_lines(&self.repository)?;
-        let unstaged_changes = unstaged_changes::get_lines(&self.repository)?;
+        // Untracked and unstaged sections share a single working-tree walk;
+        // scanning tens of thousands of files three times per refresh was the
+        // main cause of a slow status view on large repositories.
+        let working_tree = working_tree::get_sections(&self.repository)?;
+        let untracked_files = working_tree.untracked;
+        let unstaged_changes = working_tree.unstaged;
         let staged_changes = staged_changes::get_lines(&self.repository)?;
         let stashes = stashes::get_lines(&self.repository)?;
         let unpulled_commits = unpulled_commits::get_lines(&self.repository)?;

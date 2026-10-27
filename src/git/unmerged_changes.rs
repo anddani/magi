@@ -30,6 +30,18 @@ pub fn collect_unmerged_changes(repository: &Repository) -> MagiResult<FileChang
         })
         .collect();
 
+    collect_unmerged_from_paths(repository, conflicted_paths)
+}
+
+/// Collects combined diffs for the given conflicted paths.
+///
+/// Split out from [`collect_unmerged_changes`] so the status view can pass the
+/// conflicted paths it already found in its single working-tree diff, instead of
+/// running a second `statuses` scan of the whole tree.
+pub fn collect_unmerged_from_paths(
+    repository: &Repository,
+    conflicted_paths: Vec<String>,
+) -> MagiResult<FileChangesWithDiffs> {
     let workdir = repository
         .workdir()
         .unwrap_or_else(|| std::path::Path::new("."));
