@@ -144,13 +144,15 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
     let message_lines: Vec<&str> = message.lines().collect();
     let line_count = message_lines.len();
 
-    // Calculate popup size based on content
+    // Calculate popup size based on content. The dismiss hint is often wider
+    // than the message itself, so it must be part of the width calculation.
+    let hint = i18n::t().hint_dismiss;
     let max_line_width = message_lines
         .iter()
         .map(|line| line.len())
         .max()
         .unwrap_or(0);
-    let content_width = max_line_width.max(title.len()) + 4; // padding
+    let content_width = max_line_width.max(hint.len()).max(title.len()) + 4; // padding
     let popup_width = (content_width as u16).clamp(30, area.width.saturating_sub(4));
     let popup_height = (line_count + 4) as u16; // border + content lines + empty line + hint + border
 
@@ -160,7 +162,6 @@ fn render_error_popup(message: &str, frame: &mut Frame, area: Rect, theme: &crat
     frame.render_widget(Clear, popup_area);
 
     // Build popup content with hint
-    let hint = i18n::t().hint_dismiss;
     let mut popup_text: Vec<TextLine> = message_lines.into_iter().map(TextLine::from).collect();
     popup_text.push(TextLine::from(""));
     popup_text.push(TextLine::from(Span::styled(
