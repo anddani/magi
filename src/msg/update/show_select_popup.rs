@@ -561,7 +561,9 @@ where
     let remotes = get_remotes(&model.git_info.repository);
 
     if remotes.is_empty() {
-        model.popup = Some(PopupContent::error("No remotes configured".to_string()));
+        model.popup = Some(PopupContent::error(
+            i18n::t().err_no_remotes_configured.to_string(),
+        ));
         return Some(None);
     }
 
@@ -614,7 +616,7 @@ fn handle_open_pr(model: &mut Model, config: &ShowSelectPopupConfig) -> Option<O
     model.popup = None;
     if model.git_info.current_branch().is_none() {
         model.toast = Some(Toast {
-            message: "Not checked out to a branch (detached HEAD)".to_string(),
+            message: i18n::t().err_detached_head.to_string(),
             style: ToastStyle::Warning,
             expires_at: Instant::now() + TOAST_DURATION,
         });
@@ -631,20 +633,22 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::MergeElsewhere
         | OnSelect::MergeEditMessage
         | OnSelect::MergeNoCommit
-        | OnSelect::DeleteBranch => "No branches found".to_string(),
+        | OnSelect::DeleteBranch => i18n::t().err_no_branches_found.to_string(),
         OnSelect::CheckoutLocalBranch
         | OnSelect::RenameBranch
         | OnSelect::ResetBranchPick
         | OnSelect::MergeAbsorb
         | OnSelect::MergeDissolve
-        | OnSelect::PushOtherBranchPick => "No local branches found".to_string(),
+        | OnSelect::PushOtherBranchPick => i18n::t().err_no_local_branches_found.to_string(),
         OnSelect::WorktreeAdd { .. }
         | OnSelect::WorktreeBranch
-        | OnSelect::CreateNewBranchBase { .. } => "No branches or tags found".to_string(),
-        OnSelect::WorktreeMove | OnSelect::WorktreeDelete => {
-            "No linked worktrees found".to_string()
+        | OnSelect::CreateNewBranchBase { .. } => {
+            i18n::t().err_no_branches_or_tags_found.to_string()
         }
-        OnSelect::WorktreeVisit => "No other worktrees found".to_string(),
+        OnSelect::WorktreeMove | OnSelect::WorktreeDelete => {
+            i18n::t().err_no_linked_worktrees_found.to_string()
+        }
+        OnSelect::WorktreeVisit => i18n::t().err_no_other_worktrees_found.to_string(),
         OnSelect::FileCheckoutRevision
         | OnSelect::LogOther
         | OnSelect::ReflogOther
@@ -653,14 +657,14 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::ResetIndex
         | OnSelect::ResetWorktree
         | OnSelect::CreateTagTarget { .. }
-        | OnSelect::RebaseSubsetOnto => "No references found".to_string(),
-        OnSelect::FileCheckoutFile { .. } => "No tracked files found".to_string(),
+        | OnSelect::RebaseSubsetOnto => i18n::t().err_no_references_found.to_string(),
+        OnSelect::FileCheckoutFile { .. } => i18n::t().err_no_tracked_files_found.to_string(),
         OnSelect::ApplyStash
         | OnSelect::PopStash
         | OnSelect::DropStash
         | OnSelect::ShowStash
         | OnSelect::BranchStash
-        | OnSelect::BranchStashHere => "No stashes found".to_string(),
+        | OnSelect::BranchStashHere => i18n::t().err_no_stashes_found.to_string(),
         OnSelect::ApplyPick
         | OnSelect::ApplyApply
         | OnSelect::ApplySquash
@@ -669,20 +673,20 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::CherrySpinoutRootPick { .. }
         | OnSelect::CherrySpinoffCommitPick
         | OnSelect::CherrySpinoffRootPick { .. }
-        | OnSelect::HarvestCommitPick => "No commits or references found".to_string(),
+        | OnSelect::HarvestCommitPick => i18n::t().err_no_commits_or_references_found.to_string(),
         OnSelect::HarvestSourceBranch { .. } | OnSelect::DonateTargetBranch { .. } => {
-            "No local branches found".to_string()
+            i18n::t().err_no_local_branches_found.to_string()
         }
-        OnSelect::DeleteTag => "No tags found".to_string(),
-        OnSelect::PushTag => "No tags to push".to_string(),
+        OnSelect::DeleteTag => i18n::t().err_no_tags_found.to_string(),
+        OnSelect::PushTag => i18n::t().err_no_tags_to_push.to_string(),
         OnSelect::OpenPrBranch | OnSelect::OpenPrBranchWithTarget => {
-            "No branches with upstream found".to_string()
+            i18n::t().err_no_branches_with_upstream_found.to_string()
         }
         OnSelect::FetchAnotherBranch => {
             if let OptionsSource::RemoteBranches { remote } = &config.source {
-                format!("No branches found for remote '{}'", remote)
+                i18n::t().fmt1(i18n::t().err_no_branches_for_remote_fmt, remote)
             } else {
-                "No remote branches found".to_string()
+                i18n::t().err_no_remote_branches_found.to_string()
             }
         }
         OnSelect::FetchUpstream
@@ -691,7 +695,9 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::RebaseUpstream
         | OnSelect::PullElsewhere
         | OnSelect::PushElsewhere
-        | OnSelect::PushOtherBranchTarget { .. } => "No remote branches found".to_string(),
-        _ => "No options found".to_string(),
+        | OnSelect::PushOtherBranchTarget { .. } => {
+            i18n::t().err_no_remote_branches_found.to_string()
+        }
+        _ => i18n::t().err_no_options_found.to_string(),
     }
 }

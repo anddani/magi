@@ -1,5 +1,6 @@
 use crate::{
     git::commit::run_revise_commit,
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -9,7 +10,7 @@ pub fn update(model: &mut Model, commit_hash: String) -> Option<Message> {
         Some(path) => path,
         None => {
             model.popup = Some(PopupContent::Error {
-                message: "No working directory found".to_string(),
+                message: i18n::t().err_no_working_directory.to_string(),
             });
             return None;
         }
@@ -28,7 +29,7 @@ pub fn update(model: &mut Model, commit_hash: String) -> Option<Message> {
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Revise commit failed: {}", err),
+                message: format!("{}: {}", i18n::t().err_revise_commit_failed, err),
             });
             None
         }

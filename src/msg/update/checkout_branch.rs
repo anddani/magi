@@ -1,5 +1,6 @@
 use crate::{
     git::checkout::{CheckoutResult, checkout},
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -16,7 +17,7 @@ pub fn update(model: &mut Model, branch_name: String) -> Option<Message> {
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Checkout failed: {}", err),
+                message: format!("{}: {}", i18n::t().err_checkout_failed, err),
             });
             None
         }

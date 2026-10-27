@@ -1,5 +1,6 @@
 use crate::{
     git::log::get_log_entries,
+    i18n,
     model::{
         Line, LineContent, Model, PopupContent, ViewMode,
         arguments::{Arguments::LogArguments, LogArgument},
@@ -78,7 +79,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         }
         Err(e) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to get log: {}", e),
+                message: format!("{}: {}", i18n::t().err_get_log_failed, e),
             });
             None
         }

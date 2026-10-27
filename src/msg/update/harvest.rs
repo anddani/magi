@@ -1,5 +1,6 @@
 use crate::{
     git::git_cmd,
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -30,7 +31,7 @@ pub fn update(model: &mut Model, commits: Vec<String>, source: String) -> Option
     match cherry_pick_output {
         Err(e) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to run cherry-pick: {}", e),
+                message: format!("{}: {}", i18n::t().err_run_cherry_pick_failed, e),
             });
             return Some(Message::Refresh);
         }
@@ -38,7 +39,8 @@ pub fn update(model: &mut Model, commits: Vec<String>, source: String) -> Option
             let stderr = String::from_utf8_lossy(&output.stderr);
             model.popup = Some(PopupContent::Error {
                 message: format!(
-                    "Cherry-pick failed (resolve conflicts manually):\n{}",
+                    "{}:\n{}",
+                    i18n::t().err_cherry_pick_conflicts,
                     stderr.trim()
                 ),
             });
@@ -70,7 +72,7 @@ pub fn update(model: &mut Model, commits: Vec<String>, source: String) -> Option
     let rebase_ok = match rebase_output {
         Err(e) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Cherry-pick succeeded but source cleanup failed: {}", e),
+                message: format!("{}: {}", i18n::t().err_cherry_pick_cleanup_failed, e),
             });
             false
         }
@@ -78,7 +80,8 @@ pub fn update(model: &mut Model, commits: Vec<String>, source: String) -> Option
             let stderr = String::from_utf8_lossy(&output.stderr);
             model.popup = Some(PopupContent::Error {
                 message: format!(
-                    "Cherry-pick succeeded but source cleanup failed:\n{}",
+                    "{}:\n{}",
+                    i18n::t().err_cherry_pick_cleanup_failed,
                     stderr.trim()
                 ),
             });

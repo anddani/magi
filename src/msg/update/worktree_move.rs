@@ -1,5 +1,6 @@
 use crate::{
     git::worktree::{WorktreeResult, worktree_move},
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
     msg::update::worktree_checkout::{resolve_path, switch_to_worktree},
@@ -22,7 +23,7 @@ pub fn update(model: &mut Model, worktree: String, path: String) -> Option<Messa
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Worktree move failed: {err}"),
+                message: format!("{}: {err}", i18n::t().err_worktree_move_failed),
             });
             None
         }

@@ -1,5 +1,6 @@
 use crate::{
     git::{credential::CredentialStrategy, pty_command::spawn_git_with_pty},
+    i18n,
     model::{Model, PtyState, popup::PopupContent},
     msg::Message,
 };
@@ -25,7 +26,7 @@ pub fn execute_pty_command(
 
     if model.pty_state.is_some() {
         model.popup = Some(PopupContent::Error {
-            message: "A command is already in progress".to_string(),
+            message: i18n::t().err_command_in_progress.to_string(),
         });
         return None;
     }
@@ -47,7 +48,7 @@ pub fn execute_pty_command(
     } else {
         // This shouldn't happen with Prompt strategy, but handle it
         model.popup = Some(PopupContent::Error {
-            message: "Failed to initialize credential handling".to_string(),
+            message: i18n::t().err_credential_init_failed.to_string(),
         });
     }
 

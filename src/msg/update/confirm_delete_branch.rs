@@ -1,5 +1,6 @@
 use crate::{
     git::checkout::{DeleteBranchResult, delete_branch},
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -16,7 +17,7 @@ pub fn update(model: &mut Model, branch_name: String) -> Option<Message> {
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Delete branch failed: {}", err),
+                message: format!("{}: {}", i18n::t().err_delete_branch_failed, err),
             });
             None
         }

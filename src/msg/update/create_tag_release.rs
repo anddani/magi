@@ -6,6 +6,7 @@ use crate::{
         git_cmd,
         releases::{list_releases, parse_release_tag},
     },
+    i18n,
     model::{Model, popup::PopupContent},
     msg::{Message, update::create_tag::take_tag_flags},
 };
@@ -101,13 +102,21 @@ pub fn update(model: &mut Model, name: String) -> Option<Message> {
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to create tag '{}': {}", name, stderr),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_create_tag_failed_fmt, &name),
+                    stderr
+                ),
             });
             None
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to create tag '{}': {}", name, err),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_create_tag_failed_fmt, &name),
+                    err
+                ),
             });
             None
         }

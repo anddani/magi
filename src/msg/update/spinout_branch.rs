@@ -1,5 +1,6 @@
 use crate::{
     git::checkout::{SpinoutResult, spinout_branch},
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -13,7 +14,7 @@ pub fn update(model: &mut Model, branch_name: String) -> Option<Message> {
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Spin-out failed: {err}"),
+                message: format!("{}: {err}", i18n::t().err_spinout_failed),
             });
             None
         }

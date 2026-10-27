@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     git::worktree::{WorktreeResult, main_worktree_path, worktree_delete},
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
     msg::update::worktree_checkout::switch_to_worktree,
@@ -31,7 +32,7 @@ pub fn update(model: &mut Model, worktree: String) -> Option<Message> {
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Worktree delete failed: {err}"),
+                message: format!("{}: {err}", i18n::t().err_worktree_delete_failed),
             });
             None
         }

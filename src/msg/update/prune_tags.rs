@@ -3,6 +3,7 @@ use std::time::Instant;
 
 use crate::{
     git::git_cmd,
+    i18n,
     model::{Model, Toast, ToastStyle, popup::PopupContent},
     msg::Message,
     msg::update::commit::TOAST_DURATION,
@@ -33,13 +34,13 @@ pub fn update(
             Ok(out) if !out.status.success() => {
                 let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
                 model.popup = Some(PopupContent::Error {
-                    message: format!("Failed to delete local tags: {}", stderr),
+                    message: format!("{}: {}", i18n::t().err_delete_local_tags_failed, stderr),
                 });
                 return None;
             }
             Err(err) => {
                 model.popup = Some(PopupContent::Error {
-                    message: format!("Failed to delete local tags: {}", err),
+                    message: format!("{}: {}", i18n::t().err_delete_local_tags_failed, err),
                 });
                 return None;
             }
@@ -63,13 +64,21 @@ pub fn update(
             Ok(out) if !out.status.success() => {
                 let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
                 model.popup = Some(PopupContent::Error {
-                    message: format!("Failed to delete remote tags from '{}': {}", remote, stderr),
+                    message: format!(
+                        "{}: {}",
+                        i18n::t().fmt1(i18n::t().err_delete_remote_tags_failed_fmt, &remote),
+                        stderr
+                    ),
                 });
                 return None;
             }
             Err(err) => {
                 model.popup = Some(PopupContent::Error {
-                    message: format!("Failed to delete remote tags from '{}': {}", remote, err),
+                    message: format!(
+                        "{}: {}",
+                        i18n::t().fmt1(i18n::t().err_delete_remote_tags_failed_fmt, &remote),
+                        err
+                    ),
                 });
                 return None;
             }
@@ -78,7 +87,7 @@ pub fn update(
     }
 
     model.toast = Some(Toast {
-        message: format!("Pruned tags against '{}'", remote),
+        message: i18n::t().fmt1(i18n::t().status_pruned_tags_fmt, &remote),
         style: ToastStyle::Success,
         expires_at: Instant::now() + TOAST_DURATION,
     });

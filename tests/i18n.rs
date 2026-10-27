@@ -5,7 +5,7 @@ use magi::i18n::{self, Language, Strings};
 /// is enforced by the compiler (every `Strings` field must be populated), but
 /// nothing stops a translation from dropping the placeholder — this list does.
 /// Keep in sync with the `*_fmt` fields in src/i18n.rs.
-const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 21] = [
+const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 35] = [
     ("input_rename_branch_fmt", |s| s.input_rename_branch_fmt),
     ("help_version_fmt", |s| s.help_version_fmt),
     ("input_worktree_path_fmt", |s| s.input_worktree_path_fmt),
@@ -41,11 +41,50 @@ const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 21] = [
     ("op_pull_from_fmt", |s| s.op_pull_from_fmt),
     ("op_rebase_onto_fmt", |s| s.op_rebase_onto_fmt),
     ("op_rebase_subset_onto_fmt", |s| s.op_rebase_subset_onto_fmt),
+    ("err_create_tag_failed_fmt", |s| s.err_create_tag_failed_fmt),
+    ("err_delete_tag_failed_fmt", |s| s.err_delete_tag_failed_fmt),
+    ("err_create_branch_named_failed_fmt", |s| {
+        s.err_create_branch_named_failed_fmt
+    }),
+    ("err_checkout_named_failed_fmt", |s| {
+        s.err_checkout_named_failed_fmt
+    }),
+    ("err_reset_index_failed_fmt", |s| {
+        s.err_reset_index_failed_fmt
+    }),
+    ("err_reset_worktree_failed_fmt", |s| {
+        s.err_reset_worktree_failed_fmt
+    }),
+    ("err_delete_remote_tags_failed_fmt", |s| {
+        s.err_delete_remote_tags_failed_fmt
+    }),
+    ("err_cherry_pick_return_failed_fmt", |s| {
+        s.err_cherry_pick_return_failed_fmt
+    }),
+    ("err_no_branches_for_remote_fmt", |s| {
+        s.err_no_branches_for_remote_fmt
+    }),
+    ("status_pruned_tags_fmt", |s| s.status_pruned_tags_fmt),
+    ("err_fetch_tags_failed_fmt", |s| s.err_fetch_tags_failed_fmt),
+    ("status_same_tags_exist_fmt", |s| {
+        s.status_same_tags_exist_fmt
+    }),
+    ("err_worktree_does_not_exist_fmt", |s| {
+        s.err_worktree_does_not_exist_fmt
+    }),
+    ("err_commit_failed_fmt", |s| s.err_commit_failed_fmt),
 ];
 
 /// `*_fmt` fields that take exactly two `{}` placeholders via fmt2().
-const FMT2_FIELDS: [(&str, fn(&Strings) -> &'static str); 1] =
-    [("op_push_local_to_fmt", |s| s.op_push_local_to_fmt)];
+const FMT2_FIELDS: [(&str, fn(&Strings) -> &'static str); 3] = [
+    ("op_push_local_to_fmt", |s| s.op_push_local_to_fmt),
+    ("err_file_checkout_failed_fmt", |s| {
+        s.err_file_checkout_failed_fmt
+    }),
+    ("err_reset_branch_failed_fmt", |s| {
+        s.err_reset_branch_failed_fmt
+    }),
+];
 
 #[test]
 fn test_fmt2_fields_have_exactly_two_placeholders_in_all_languages() {
@@ -329,6 +368,72 @@ fn test_swedish_operation_names() {
     assert_eq!(
         s.fmt2(s.op_push_local_to_fmt, "topic", "origin"),
         "Knuffa topic till origin"
+    );
+}
+
+#[test]
+fn test_english_error_messages() {
+    let s = i18n::english();
+    assert_eq!(s.err_no_branch_checked_out, "No branch is checked out");
+    assert_eq!(s.err_nothing_staged_to_commit, "Nothing staged to commit");
+    assert_eq!(s.err_no_stashes_found, "No stashes found");
+    assert_eq!(
+        s.err_detached_head,
+        "Not checked out to a branch (detached HEAD)"
+    );
+    // Error fields are the prefix only; detail is appended by call sites.
+    assert_eq!(s.err_set_push_remote_failed, "Failed to set push remote");
+    assert_eq!(
+        format!("{}: {}", s.err_set_push_remote_failed, "boom"),
+        "Failed to set push remote: boom"
+    );
+    assert_eq!(
+        s.fmt1(s.err_create_tag_failed_fmt, "v1.0"),
+        "Failed to create tag 'v1.0'"
+    );
+    assert_eq!(
+        s.fmt2(s.err_reset_branch_failed_fmt, "main", "HEAD~1"),
+        "Failed to reset main to HEAD~1"
+    );
+    assert_eq!(
+        s.status_changes_applied,
+        "Changes applied to the working tree"
+    );
+    assert_eq!(
+        s.fmt1(s.status_pruned_tags_fmt, "origin"),
+        "Pruned tags against 'origin'"
+    );
+}
+
+#[test]
+fn test_swedish_error_messages() {
+    let s = i18n::swedish();
+    assert_eq!(s.err_no_branch_checked_out, "Ingen gren är utcheckad");
+    assert_eq!(
+        s.err_nothing_staged_to_commit,
+        "Inget klarmarkerat att förbinda"
+    );
+    assert_eq!(s.err_no_stashes_found, "Inga gömmor hittades");
+    assert_eq!(s.err_set_push_remote_failed, "Kunde inte sätta knuffjärr");
+    assert_eq!(
+        format!("{}: {}", s.err_set_push_remote_failed, "boom"),
+        "Kunde inte sätta knuffjärr: boom"
+    );
+    assert_eq!(
+        s.fmt1(s.err_create_tag_failed_fmt, "v1.0"),
+        "Kunde inte skapa märke 'v1.0'"
+    );
+    assert_eq!(
+        s.fmt2(s.err_reset_branch_failed_fmt, "main", "HEAD~1"),
+        "Kunde inte återställa main till HEAD~1"
+    );
+    assert_eq!(
+        s.status_changes_applied,
+        "Ändringar applicerade i arbetsträdet"
+    );
+    assert_eq!(
+        s.fmt1(s.status_pruned_tags_fmt, "origin"),
+        "Beskar märken mot 'origin'"
     );
 }
 

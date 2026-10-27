@@ -2,6 +2,7 @@ use std::process::Stdio;
 
 use crate::{
     git::git_cmd,
+    i18n,
     model::{
         Model,
         arguments::{Arguments::TagArguments, PopupArgument, TagArgument},
@@ -66,13 +67,21 @@ pub fn update(model: &mut Model, name: String, target: String) -> Option<Message
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to create tag '{}': {}", name, stderr),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_create_tag_failed_fmt, &name),
+                    stderr
+                ),
             });
             None
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to create tag '{}': {}", name, err),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_create_tag_failed_fmt, &name),
+                    err
+                ),
             });
             None
         }
@@ -92,13 +101,17 @@ pub fn with_editor(model: &mut Model, name: String, args: Vec<String>) -> Option
         Ok(status) if status.success() => Some(Message::Refresh),
         Ok(_) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to create tag '{}'", name),
+                message: i18n::t().fmt1(i18n::t().err_create_tag_failed_fmt, &name),
             });
             None
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to create tag '{}': {}", name, err),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_create_tag_failed_fmt, &name),
+                    err
+                ),
             });
             None
         }

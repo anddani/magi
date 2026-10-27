@@ -2,6 +2,7 @@ use std::process::Stdio;
 
 use crate::{
     git::git_cmd,
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -21,13 +22,21 @@ pub fn update(model: &mut Model, name: String) -> Option<Message> {
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to delete tag '{}': {}", name, stderr),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_delete_tag_failed_fmt, &name),
+                    stderr
+                ),
             });
             None
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to delete tag '{}': {}", name, err),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_delete_tag_failed_fmt, &name),
+                    err
+                ),
             });
             None
         }

@@ -1,5 +1,6 @@
 use crate::{
     git::checkout::{CheckoutResult, checkout_new_branch, create_branch},
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -27,7 +28,7 @@ pub fn update(
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to create branch: {}", err),
+                message: format!("{}: {}", i18n::t().err_create_branch_failed, err),
             });
             None
         }

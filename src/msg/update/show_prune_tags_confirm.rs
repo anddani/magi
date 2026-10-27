@@ -2,6 +2,7 @@ use std::time::Instant;
 
 use crate::{
     git::push::{get_local_tags, get_remote_tags},
+    i18n,
     model::{
         Model, Toast, ToastStyle,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent},
@@ -19,7 +20,7 @@ pub fn update(model: &mut Model, remote: String) -> Option<Message> {
         Some(tags) => tags,
         None => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to fetch tags from remote '{}'", remote),
+                message: i18n::t().fmt1(i18n::t().err_fetch_tags_failed_fmt, &remote),
             });
             return None;
         }
@@ -41,7 +42,7 @@ pub fn update(model: &mut Model, remote: String) -> Option<Message> {
 
     if local_only.is_empty() && remote_only.is_empty() {
         model.toast = Some(Toast {
-            message: format!("Same tags exist locally and on '{}'", remote),
+            message: i18n::t().fmt1(i18n::t().status_same_tags_exist_fmt, &remote),
             style: ToastStyle::Info,
             expires_at: Instant::now() + TOAST_DURATION,
         });

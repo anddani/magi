@@ -1,5 +1,6 @@
 use crate::{
     git::git_cmd,
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -38,14 +39,22 @@ pub fn update(
     match create_output {
         Err(e) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to create branch '{}': {}", branch, e),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_create_branch_named_failed_fmt, &branch),
+                    e
+                ),
             });
             return Some(Message::Refresh);
         }
         Ok(output) if !output.status.success() => {
             let stderr = String::from_utf8_lossy(&output.stderr);
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to create branch '{}': {}", branch, stderr.trim()),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_create_branch_named_failed_fmt, &branch),
+                    stderr.trim()
+                ),
             });
             return Some(Message::Refresh);
         }
@@ -58,14 +67,22 @@ pub fn update(
     match checkout_output {
         Err(e) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to checkout '{}': {}", branch, e),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_checkout_named_failed_fmt, &branch),
+                    e
+                ),
             });
             return Some(Message::Refresh);
         }
         Ok(output) if !output.status.success() => {
             let stderr = String::from_utf8_lossy(&output.stderr);
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to checkout '{}': {}", branch, stderr.trim()),
+                message: format!(
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_checkout_named_failed_fmt, &branch),
+                    stderr.trim()
+                ),
             });
             return Some(Message::Refresh);
         }
@@ -82,7 +99,7 @@ pub fn update(
     match cherry_pick_output {
         Err(e) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Failed to run cherry-pick: {}", e),
+                message: format!("{}: {}", i18n::t().err_run_cherry_pick_failed, e),
             });
             return Some(Message::Refresh);
         }
@@ -90,7 +107,8 @@ pub fn update(
             let stderr = String::from_utf8_lossy(&output.stderr);
             model.popup = Some(PopupContent::Error {
                 message: format!(
-                    "Cherry-pick failed (resolve conflicts manually):\n{}",
+                    "{}:\n{}",
+                    i18n::t().err_cherry_pick_conflicts,
                     stderr.trim()
                 ),
             });
@@ -110,8 +128,9 @@ pub fn update(
         Err(e) => {
             model.popup = Some(PopupContent::Error {
                 message: format!(
-                    "Cherry-pick succeeded but failed to return to '{}': {}",
-                    src, e
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_cherry_pick_return_failed_fmt, src),
+                    e
                 ),
             });
             return Some(Message::Refresh);
@@ -120,8 +139,8 @@ pub fn update(
             let stderr = String::from_utf8_lossy(&output.stderr);
             model.popup = Some(PopupContent::Error {
                 message: format!(
-                    "Cherry-pick succeeded but failed to return to '{}': {}",
-                    src,
+                    "{}: {}",
+                    i18n::t().fmt1(i18n::t().err_cherry_pick_return_failed_fmt, src),
                     stderr.trim()
                 ),
             });
@@ -149,13 +168,17 @@ pub fn update(
     match rebase_output {
         Err(e) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Spun out but source cleanup failed: {}", e),
+                message: format!("{}: {}", i18n::t().err_spun_out_cleanup_failed, e),
             });
         }
         Ok(output) if !output.status.success() => {
             let stderr = String::from_utf8_lossy(&output.stderr);
             model.popup = Some(PopupContent::Error {
-                message: format!("Spun out but source cleanup failed:\n{}", stderr.trim()),
+                message: format!(
+                    "{}:\n{}",
+                    i18n::t().err_spun_out_cleanup_failed,
+                    stderr.trim()
+                ),
             });
         }
         Ok(_) => {}

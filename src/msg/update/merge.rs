@@ -144,7 +144,7 @@ fn dissolve_branch(model: &mut Model, target: String, extra_args: Vec<String>) -
     let detached = model.git_info.repository.head_detached().unwrap_or(false);
     let Some(current) = model.git_info.current_branch().filter(|_| !detached) else {
         model.popup = Some(PopupContent::Error {
-            message: "Cannot dissolve: no branch is checked out".to_string(),
+            message: i18n::t().err_cannot_dissolve_no_branch.to_string(),
         });
         return Some(Message::Refresh);
     };

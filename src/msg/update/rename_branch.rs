@@ -1,5 +1,6 @@
 use crate::{
     git::checkout::{RenameBranchResult, rename_branch},
+    i18n,
     model::{Model, popup::PopupContent},
     msg::Message,
 };
@@ -16,7 +17,7 @@ pub fn update(model: &mut Model, old_name: String, new_name: String) -> Option<M
         }
         Err(err) => {
             model.popup = Some(PopupContent::Error {
-                message: format!("Rename branch failed: {}", err),
+                message: format!("{}: {}", i18n::t().err_rename_branch_failed, err),
             });
             None
         }

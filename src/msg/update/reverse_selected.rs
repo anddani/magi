@@ -1,6 +1,7 @@
 use std::time::Instant;
 
 use crate::{
+    i18n,
     model::{
         Model, Toast, ToastStyle, ViewMode,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent},
@@ -58,7 +59,7 @@ fn reverse_from_status(model: &mut Model) -> Option<Message> {
     // for uncommitted ones. Mirror magit's error message.
     if source != DiscardSource::Staged {
         model.toast = Some(Toast {
-            message: "Cannot reverse uncommitted changes".to_string(),
+            message: i18n::t().err_cannot_reverse_uncommitted.to_string(),
             style: ToastStyle::Warning,
             expires_at: Instant::now() + TOAST_DURATION,
         });

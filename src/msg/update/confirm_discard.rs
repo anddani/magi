@@ -3,6 +3,7 @@ use crate::{
         discard_files, discard_hunk, discard_lines, discard_staged_files, discard_staged_hunk,
         discard_staged_lines, discard_untracked_files,
     },
+    i18n,
     model::{Model, popup::PopupContent},
     msg::{DiscardSource, DiscardTarget, Message},
 };
@@ -17,7 +18,7 @@ pub fn update(model: &mut Model, target: DiscardTarget) -> Option<Message> {
 
     if let Err(e) = result {
         model.popup = Some(PopupContent::Error {
-            message: format!("Error discarding: {}", e),
+            message: format!("{}: {}", i18n::t().err_discarding_failed, e),
         });
     }
 

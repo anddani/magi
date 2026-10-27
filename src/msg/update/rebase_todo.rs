@@ -18,7 +18,7 @@ pub fn show(model: &mut Model, base: String) -> Option<Message> {
     match rebase::get_interactive_rebase_commits(&model.workdir, &base, base_has_parent) {
         Ok(entries) if entries.is_empty() => {
             model.popup = Some(PopupContent::Error {
-                message: "No commits to rebase".to_string(),
+                message: i18n::t().err_no_commits_to_rebase.to_string(),
             });
             None
         }
@@ -86,7 +86,7 @@ fn command_invalid(model: &mut Model) -> Option<Message> {
     let state = model.rebase_todo.as_mut()?;
     if let Some(cmd) = state.command_input.take() {
         model.toast = Some(Toast {
-            message: format!("Not an editor command: :{}", cmd),
+            message: format!("{}: :{}", i18n::t().err_not_an_editor_command, cmd),
             style: ToastStyle::Warning,
             expires_at: Instant::now() + TOAST_DURATION,
         });
@@ -105,7 +105,7 @@ fn set_action(model: &mut Model, action: RebaseAction) -> Option<Message> {
         model.ui_model.lines = todo_lines(&state.entries);
     } else if index == 0 && action.is_fold() {
         model.toast = Some(Toast {
-            message: "Cannot squash/fixup without a previous commit".to_string(),
+            message: i18n::t().err_cannot_squash_without_previous.to_string(),
             style: ToastStyle::Warning,
             expires_at: Instant::now() + TOAST_DURATION,
         });
