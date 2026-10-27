@@ -2,12 +2,15 @@ use crossterm::event::KeyCode;
 use magi::{
     git::{GitInfo, test_repo::TestRepo, worktree::worktree_add},
     keys::handle_key,
-    model::popup::{PopupContent, PopupContentCommand},
+    model::{
+        LineContent,
+        popup::{PopupContent, PopupContentCommand},
+    },
     msg::{Message, OnSelect, OptionsSource, SelectMessage, ShowSelectPopupConfig, update::update},
 };
 
 mod utils;
-use utils::{create_model_from_test_repo, expect_error_popup, expect_select_popup, key};
+use utils::{create_model_from_test_repo, expect_error_popup, expect_select_popup, find_line, key};
 
 /// Creates a linked worktree for `branch` and returns its path.
 fn add_linked_worktree(test_repo: &TestRepo, branch: &str) -> String {
@@ -66,6 +69,57 @@ fn test_select_popup_lists_other_worktrees() {
             .canonicalize()
             .unwrap(),
         std::path::Path::new(&worktree_path).canonicalize().unwrap()
+    );
+}
+
+// ── The worktree of the branch under the cursor is suggested first ────────────
+
+#[test]
+fn test_select_popup_prioritizes_worktree_of_cursor_branch() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file.txt", "content", "Initial commit");
+
+    // Two linked worktrees on two branches, each pointing at a distinct commit.
+    let feature_path = add_linked_worktree(&test_repo, "feature");
+    test_repo.commit_file("file.txt", "second", "Second commit");
+    let feature2_path = add_linked_worktree(&test_repo, "feature2");
+    test_repo.commit_file("file.txt", "third", "Third commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    // Put the cursor on the commit labelled with "feature2".
+    let pos = find_line(
+        &model,
+        |c| matches!(c, LineContent::Commit(info) if info.refs.iter().any(|r| r.name == "feature2")),
+    )
+    .expect("a commit line carrying the feature2 ref");
+    model.ui_model.cursor_position = pos;
+
+    update(
+        &mut model,
+        Message::ShowSelectPopup(ShowSelectPopupConfig {
+            title: "Visit worktree".to_string(),
+            source: OptionsSource::OtherWorktrees,
+            on_select: OnSelect::WorktreeVisit,
+        }),
+    );
+
+    let state = expect_select_popup(&model);
+    // feature2's worktree is suggested first; feature's is still listed.
+    assert_eq!(
+        std::path::Path::new(&state.all_options[0])
+            .canonicalize()
+            .unwrap(),
+        std::path::Path::new(&feature2_path).canonicalize().unwrap(),
+        "the worktree of the branch under the cursor should be first"
+    );
+    assert!(
+        state
+            .all_options
+            .iter()
+            .any(|o| std::path::Path::new(o).canonicalize().unwrap()
+                == std::path::Path::new(&feature_path).canonicalize().unwrap()),
+        "the other worktree should still be present"
     );
 }
 

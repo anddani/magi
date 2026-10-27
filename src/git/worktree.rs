@@ -77,6 +77,30 @@ pub fn list_other_worktrees<P: AsRef<Path>>(current_workdir: P) -> Vec<String> {
         .collect()
 }
 
+/// Returns the path of the worktree that currently has `branch` checked out,
+/// if any. `branch` is a short local branch name (e.g. "feature/x").
+pub fn worktree_path_for_branch<P: AsRef<Path>>(repo_path: P, branch: &str) -> Option<String> {
+    let output = git_cmd(&repo_path, &["worktree", "list", "--porcelain"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .ok()?;
+
+    let text = String::from_utf8_lossy(&output.stdout);
+    let target = format!("refs/heads/{branch}");
+    // Each worktree is a block of lines starting with `worktree <path>`,
+    // optionally followed by a `branch <ref>` line (absent when detached).
+    let mut current_path: Option<&str> = None;
+    for line in text.lines() {
+        if let Some(path) = line.strip_prefix("worktree ") {
+            current_path = Some(path);
+        } else if line.strip_prefix("branch ") == Some(target.as_str()) {
+            return current_path.map(|p| p.to_string());
+        }
+    }
+    None
+}
+
 /// Returns the path of the main working tree (the first entry in
 /// `git worktree list --porcelain`).
 pub fn main_worktree_path<P: AsRef<Path>>(repo_path: P) -> Option<String> {
