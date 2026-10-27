@@ -18,6 +18,9 @@ fn line_searchable_text(line: &Line) -> String {
         LineContent::UnpulledSectionHeader { remote_name, count } => {
             format!("Unpulled from {} ({})", remote_name, count)
         }
+        LineContent::UnmergedIntoSectionHeader { branch_name, count } => {
+            format!("Unmerged into {} ({})", branch_name, count)
+        }
         LineContent::UntrackedFile(path) => path.clone(),
         LineContent::UnstagedFile(fc) | LineContent::StagedFile(fc) => fc.path.clone(),
         LineContent::DiffHunk(h) => h.header.clone(),

@@ -33,6 +33,8 @@ pub struct Strings {
     pub section_cherry_picking: &'static str,
     /// The prefix before the remote name in "Unpulled from <remote>" (includes trailing space).
     pub section_unpulled_from_prefix: &'static str,
+    /// The prefix before the branch name in "Unmerged into <branch>" (includes trailing space).
+    pub section_unmerged_into_prefix: &'static str,
 
     // Status buffer ref header labels (Head/Push/Merge/Tag lines at the top of
     // the status view). Rendered with a leading indicator or space at the call
@@ -470,6 +472,7 @@ static ENGLISH: Strings = Strings {
     section_reverting: "Reverting",
     section_cherry_picking: "Cherry Picking",
     section_unpulled_from_prefix: "Unpulled from ",
+    section_unmerged_into_prefix: "Unmerged into ",
 
     ref_head: "Head:    ",
     ref_push: "Push:    ",
@@ -854,6 +857,7 @@ static SWEDISH: Strings = Strings {
     section_reverting: "Återgår",
     section_cherry_picking: "Plockar russin",
     section_unpulled_from_prefix: "Ej ryckta från ",
+    section_unmerged_into_prefix: "Ej sammanslagna i ",
 
     ref_head: "Huvud:       ",
     ref_push: "Knuffa:      ",
@@ -1286,6 +1290,8 @@ mod tests {
         assert_eq!(s.section_unstaged_changes, "Unstaged changes");
         assert_eq!(s.section_staged_changes, "Staged changes");
         assert_eq!(s.section_recent_commits, "Recent commits");
+        assert_eq!(s.section_unpulled_from_prefix, "Unpulled from ");
+        assert_eq!(s.section_unmerged_into_prefix, "Unmerged into ");
         assert_eq!(s.section_stashes, "Stashes");
         assert_eq!(s.popup_branch, "Branch");
         assert_eq!(s.popup_commit, "Commit");
@@ -1304,6 +1310,8 @@ mod tests {
         assert_eq!(s.section_unstaged_changes, "Ej klarmarkerade ändringar");
         assert_eq!(s.section_staged_changes, "Klarmarkerade ändringar");
         assert_eq!(s.section_recent_commits, "Senaste förbindelser");
+        assert_eq!(s.section_unpulled_from_prefix, "Ej ryckta från ");
+        assert_eq!(s.section_unmerged_into_prefix, "Ej sammanslagna i ");
         assert_eq!(s.section_stashes, "Gömda ändringar");
         assert_eq!(s.popup_branch, "Grena");
         assert_eq!(s.popup_commit, "Förbinda");

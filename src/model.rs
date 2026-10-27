@@ -231,6 +231,11 @@ pub enum LineContent {
         remote_name: String,
         count: usize,
     },
+    /// Section header for "Unmerged into [branch]" with separate branch name for coloring
+    UnmergedIntoSectionHeader {
+        branch_name: String,
+        count: usize,
+    },
     UntrackedFile(String),
     UnstagedFile(FileChange),
     StagedFile(FileChange),
@@ -401,6 +406,7 @@ impl Line {
                     self.content,
                     LineContent::SectionHeader { .. }
                         | LineContent::UnpulledSectionHeader { .. }
+                        | LineContent::UnmergedIntoSectionHeader { .. }
                         | LineContent::UnstagedFile(_)
                         | LineContent::StagedFile(_)
                         | LineContent::HeadRef(_)
@@ -418,6 +424,7 @@ impl Line {
         match (&self.content, &self.section) {
             (LineContent::SectionHeader { .. }, Some(section)) => Some(section.clone()),
             (LineContent::UnpulledSectionHeader { .. }, Some(section)) => Some(section.clone()),
+            (LineContent::UnmergedIntoSectionHeader { .. }, Some(section)) => Some(section.clone()),
             (LineContent::HeadRef(_), _) => Some(SectionType::Info),
             (LineContent::UnstagedFile(file_change), _) => Some(SectionType::UnstagedFile {
                 path: file_change.path.clone(),

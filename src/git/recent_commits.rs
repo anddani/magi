@@ -14,7 +14,13 @@ use super::{CommitRef, CommitRefType};
 
 const MAX_COMMITS: usize = 10;
 
-/// Returns the lines representing recent commits in the Git repository
+/// Returns the lines for the recent-commits slot of the status buffer.
+///
+/// Mirrors magit's `magit-insert-unpushed-to-upstream-or-recent`: when the current
+/// branch has an upstream (the "Merge" ref) that is behind HEAD, this shows the commits
+/// that have not yet been merged into it under an "Unmerged into <upstream>" header.
+/// Otherwise (no upstream, or the upstream is not behind HEAD) it falls back to showing
+/// the most recent commits under a "Recent commits" header.
 pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     let mut lines = Vec::new();
 
@@ -46,26 +52,43 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     // Build push remote map for split-colored labels
     let push_remote_map = build_push_remote_map(repository);
 
-    // Walk through commits
-    let mut revwalk = repository.revwalk()?;
-    revwalk.push(head_commit.id())?;
+    // Decide between the "Unmerged into <upstream>" and "Recent commits" variants.
+    let (commits, header) = match unmerged_into_upstream(repository, &head, &head_commit)? {
+        Some((upstream_shorthand, oids)) => {
+            let header = Line {
+                content: LineContent::UnmergedIntoSectionHeader {
+                    branch_name: upstream_shorthand,
+                    count: oids.len(),
+                },
+                section: Some(SectionType::RecentCommits),
+            };
+            (oids, header)
+        }
+        None => {
+            // Walk through recent commits starting from HEAD
+            let mut revwalk = repository.revwalk()?;
+            revwalk.push(head_commit.id())?;
+            let oids: Vec<_> = revwalk
+                .take(MAX_COMMITS)
+                .filter_map(|oid| oid.ok())
+                .collect();
 
-    let commits: Vec<_> = revwalk
-        .take(MAX_COMMITS)
-        .filter_map(|oid| oid.ok())
-        .collect();
+            let header = Line {
+                content: LineContent::SectionHeader {
+                    title: i18n::t().section_recent_commits.to_string(),
+                    count: None,
+                },
+                section: Some(SectionType::RecentCommits),
+            };
+            (oids, header)
+        }
+    };
 
     if commits.is_empty() {
         return Ok(lines);
     }
 
-    lines.push(Line {
-        content: LineContent::SectionHeader {
-            title: i18n::t().section_recent_commits.to_string(),
-            count: None,
-        },
-        section: Some(SectionType::RecentCommits),
-    });
+    lines.push(header);
 
     for (index, oid) in commits.iter().enumerate() {
         let commit = match repository.find_commit(*oid) {
@@ -99,6 +122,71 @@ pub fn get_lines(repository: &Repository) -> MagiResult<Vec<Line>> {
     }
 
     Ok(lines)
+}
+
+/// If the current branch has an upstream (the "Merge" ref) that is behind HEAD, returns
+/// the upstream shorthand (e.g. "origin/main") together with the commits on HEAD that are
+/// not yet merged into it (newest first, capped at `MAX_COMMITS`).
+///
+/// Returns `None` when there is no upstream configured, or when HEAD is an ancestor of the
+/// upstream (nothing unmerged) — in which case the caller shows recent commits instead.
+fn unmerged_into_upstream(
+    repository: &Repository,
+    head: &git2::Reference,
+    head_commit: &git2::Commit,
+) -> MagiResult<Option<(String, Vec<git2::Oid>)>> {
+    if !head.is_branch() {
+        return Ok(None);
+    }
+
+    let branch_ref = head.resolve()?;
+    let branch_name = branch_ref.name().unwrap_or("unknown");
+
+    let Some(upstream_name) = repository
+        .branch_upstream_name(branch_name)
+        .ok()
+        .and_then(|n| n.as_str().ok().map(|s| s.to_string()))
+    else {
+        return Ok(None); // No upstream configured
+    };
+
+    let upstream_ref = match repository.find_reference(&upstream_name) {
+        Ok(r) => r,
+        Err(_) => return Ok(None),
+    };
+
+    let upstream_commit = match upstream_ref.peel_to_commit() {
+        Ok(c) => c,
+        Err(_) => return Ok(None),
+    };
+
+    // When HEAD is an ancestor of (or equal to) the upstream there is nothing unmerged,
+    // so fall back to recent commits (matching magit's `magit-rev-ancestor-p "HEAD" ...`).
+    if head_commit.id() == upstream_commit.id()
+        || repository.graph_descendant_of(upstream_commit.id(), head_commit.id())?
+    {
+        return Ok(None);
+    }
+
+    let upstream_shorthand = upstream_ref
+        .shorthand()
+        .unwrap_or(&upstream_name)
+        .to_string();
+
+    // Commits reachable from HEAD but not from the upstream — i.e. not yet merged into it.
+    let mut revwalk = repository.revwalk()?;
+    revwalk.push(head_commit.id())?;
+    revwalk.hide(upstream_commit.id())?;
+    let oids: Vec<_> = revwalk
+        .take(MAX_COMMITS)
+        .filter_map(|oid| oid.ok())
+        .collect();
+
+    if oids.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some((upstream_shorthand, oids)))
 }
 
 #[cfg(test)]
@@ -219,5 +307,134 @@ mod tests {
         } else {
             panic!("Expected Commit content");
         }
+    }
+
+    /// Sets up upstream tracking main -> origin/main, with origin/main pointing at `upstream_oid`.
+    fn setup_upstream(repo: &Repository, upstream_oid: git2::Oid) {
+        repo.remote("origin", "https://example.com/repo.git")
+            .unwrap();
+        repo.reference(
+            "refs/remotes/origin/main",
+            upstream_oid,
+            false,
+            "create remote branch",
+        )
+        .unwrap();
+        let mut branch = repo.find_branch("main", git2::BranchType::Local).unwrap();
+        branch.set_upstream(Some("origin/main")).unwrap();
+    }
+
+    #[test]
+    fn test_unmerged_into_upstream_when_ahead() {
+        let file_name = "test.txt";
+        let test_repo = TestRepo::new();
+
+        // Pin the upstream at the initial commit, then advance the local branch past it.
+        let upstream_oid = test_repo
+            .repo
+            .head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id();
+        setup_upstream(&test_repo.repo, upstream_oid);
+
+        test_repo
+            .create_file(file_name)
+            .stage_files(&[file_name])
+            .commit("Second commit");
+        test_repo
+            .write_file_content(file_name, "more")
+            .commit("Third commit");
+
+        let lines = get_lines(&test_repo.repo).unwrap();
+
+        // Header should be "Unmerged into origin/main (2)" + 2 commits
+        assert_eq!(lines.len(), 3);
+        match &lines[0].content {
+            LineContent::UnmergedIntoSectionHeader { branch_name, count } => {
+                assert_eq!(branch_name, "origin/main");
+                assert_eq!(*count, 2);
+            }
+            _ => panic!("Expected UnmergedIntoSectionHeader"),
+        }
+
+        // Newest-first ordering
+        if let LineContent::Commit(ref info) = lines[1].content {
+            assert_eq!(info.message, "Third commit");
+        } else {
+            panic!("Expected Commit content");
+        }
+        if let LineContent::Commit(ref info) = lines[2].content {
+            assert_eq!(info.message, "Second commit");
+        } else {
+            panic!("Expected Commit content");
+        }
+
+        // All lines belong to the RecentCommits section (shared collapsible slot)
+        for line in &lines {
+            assert_eq!(line.section, Some(SectionType::RecentCommits));
+        }
+    }
+
+    #[test]
+    fn test_recent_commits_when_upstream_up_to_date() {
+        let test_repo = TestRepo::new();
+
+        // Upstream points at HEAD — nothing is unmerged, so we fall back to recent commits.
+        let head_oid = test_repo
+            .repo
+            .head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id();
+        setup_upstream(&test_repo.repo, head_oid);
+
+        let lines = get_lines(&test_repo.repo).unwrap();
+
+        assert_eq!(lines.len(), 2);
+        assert!(matches!(
+            lines[0].content,
+            LineContent::SectionHeader { ref title, .. } if title == "Recent commits"
+        ));
+    }
+
+    #[test]
+    fn test_recent_commits_when_upstream_ahead() {
+        let test_repo = TestRepo::new();
+
+        // Create a separate commit the upstream points at, which is ahead of HEAD.
+        let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+        let sig = git2::Signature::now("Test", "test@test.com").unwrap();
+        let path = test_repo.repo.workdir().unwrap().join("ahead.txt");
+        std::fs::write(&path, "ahead").unwrap();
+        let mut index = test_repo.repo.index().unwrap();
+        index.add_path(std::path::Path::new("ahead.txt")).unwrap();
+        index.write().unwrap();
+        let tree = test_repo
+            .repo
+            .find_tree(index.write_tree().unwrap())
+            .unwrap();
+        let ahead_oid = test_repo
+            .repo
+            .commit(None, &sig, &sig, "Upstream ahead", &tree, &[&head])
+            .unwrap();
+        // Reset the working index back so it doesn't interfere.
+        let head_tree = head.tree().unwrap();
+        test_repo
+            .repo
+            .checkout_tree(head_tree.as_object(), None)
+            .unwrap();
+
+        setup_upstream(&test_repo.repo, ahead_oid);
+
+        let lines = get_lines(&test_repo.repo).unwrap();
+
+        // HEAD is an ancestor of the upstream → nothing unmerged → "Recent commits".
+        assert!(matches!(
+            lines[0].content,
+            LineContent::SectionHeader { ref title, .. } if title == "Recent commits"
+        ));
     }
 }
