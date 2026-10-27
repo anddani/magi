@@ -232,6 +232,16 @@ pub enum LineContent {
         remote_name: String,
         count: usize,
     },
+    /// Section header for "Unpushed to [remote]" with separate remote name for coloring
+    UnpushedSectionHeader {
+        remote_name: String,
+        count: usize,
+    },
+    /// Section header for "Unmerged into [branch]" with separate branch name for coloring
+    UnmergedIntoSectionHeader {
+        branch_name: String,
+        count: usize,
+    },
     UntrackedFile(String),
     UnstagedFile(FileChange),
     StagedFile(FileChange),
@@ -402,6 +412,8 @@ impl Line {
                     self.content,
                     LineContent::SectionHeader { .. }
                         | LineContent::UnpulledSectionHeader { .. }
+                        | LineContent::UnpushedSectionHeader { .. }
+                        | LineContent::UnmergedIntoSectionHeader { .. }
                         | LineContent::UnstagedFile(_)
                         | LineContent::StagedFile(_)
                         | LineContent::HeadRef(_)
@@ -419,6 +431,8 @@ impl Line {
         match (&self.content, &self.section) {
             (LineContent::SectionHeader { .. }, Some(section)) => Some(section.clone()),
             (LineContent::UnpulledSectionHeader { .. }, Some(section)) => Some(section.clone()),
+            (LineContent::UnpushedSectionHeader { .. }, Some(section)) => Some(section.clone()),
+            (LineContent::UnmergedIntoSectionHeader { .. }, Some(section)) => Some(section.clone()),
             (LineContent::HeadRef(_), _) => Some(SectionType::Info),
             (LineContent::UnstagedFile(file_change), _) => Some(SectionType::UnstagedFile {
                 path: file_change.path.clone(),
@@ -461,6 +475,10 @@ pub enum SectionType {
     RecentCommits,
     /// The "Unpulled from upstream" section
     Unpulled,
+    /// The "Unpushed to <push-remote>" section
+    UnpushedToPushremote,
+    /// The "Unpulled from <push-remote>" section
+    UnpulledFromPushremote,
     /// The "Stashes" section
     Stashes,
     /// The "Reverting" sequencer section
@@ -490,6 +508,8 @@ impl SectionType {
             }
             SectionType::RecentCommits => None,
             SectionType::Unpulled => None,
+            SectionType::UnpushedToPushremote => None,
+            SectionType::UnpulledFromPushremote => None,
             SectionType::Stashes => None,
             SectionType::Reverting => None,
             SectionType::Rebasing => None,

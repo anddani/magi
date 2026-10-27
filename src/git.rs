@@ -44,6 +44,7 @@ pub mod open_pr;
 pub mod preview;
 pub mod pty_command;
 pub mod push;
+pub mod pushremote_commits;
 pub mod rebase;
 pub mod recent_commits;
 pub mod releases;
@@ -112,8 +113,12 @@ impl GitInfo {
         let unstaged_changes = working_tree.unstaged;
         let staged_changes = staged_changes::get_lines(&self.repository)?;
         let stashes = stashes::get_lines(&self.repository)?;
-        let unpulled_commits = unpulled_commits::get_lines(&self.repository)?;
+        // Outgoing-then-incoming ordering, matching magit's default
+        // `magit-status-sections-hook`: unpushed/unmerged first, then unpulled.
+        let unpushed_to_pushremote = pushremote_commits::get_unpushed_lines(&self.repository)?;
         let recent_commits = recent_commits::get_lines(&self.repository)?;
+        let unpulled_from_pushremote = pushremote_commits::get_unpulled_lines(&self.repository)?;
+        let unpulled_commits = unpulled_commits::get_lines(&self.repository)?;
 
         let all_sections = [
             info_lines,
@@ -124,8 +129,10 @@ impl GitInfo {
             unstaged_changes,
             staged_changes,
             stashes,
-            unpulled_commits,
+            unpushed_to_pushremote,
             recent_commits,
+            unpulled_from_pushremote,
+            unpulled_commits,
         ];
         let result = all_sections
             .into_iter()

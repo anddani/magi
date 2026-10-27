@@ -87,6 +87,95 @@ fn snapshot_status_view_with_all_sections() {
 }
 
 #[test]
+fn snapshot_status_view_with_unmerged_into() {
+    let test_repo = TestRepo::new();
+
+    // Configure an upstream (origin/main) pinned at the initial commit...
+    let upstream_oid = test_repo
+        .repo
+        .head()
+        .unwrap()
+        .peel_to_commit()
+        .unwrap()
+        .id();
+    test_repo
+        .repo
+        .remote("origin", "https://example.com/repo.git")
+        .unwrap();
+    test_repo
+        .repo
+        .reference(
+            "refs/remotes/origin/main",
+            upstream_oid,
+            false,
+            "create remote branch",
+        )
+        .unwrap();
+    test_repo
+        .repo
+        .find_branch("main", git2::BranchType::Local)
+        .unwrap()
+        .set_upstream(Some("origin/main"))
+        .unwrap();
+
+    // ...then advance the local branch so there is a commit unmerged into the upstream.
+    test_repo.commit_file("feature.txt", "feature", "Add feature");
+
+    let model = create_snapshot_model(&test_repo);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_status_view_with_pushremote_sections() {
+    let test_repo = TestRepo::new();
+    let base_oid = test_repo
+        .repo
+        .head()
+        .unwrap()
+        .peel_to_commit()
+        .unwrap()
+        .id();
+
+    test_repo
+        .repo
+        .remote("origin", "https://example.com/repo.git")
+        .unwrap();
+    // A push branch (origin/main) and a *different* upstream branch (origin/upstream),
+    // both pinned behind HEAD so each produces its own outgoing section.
+    test_repo
+        .repo
+        .reference("refs/remotes/origin/main", base_oid, false, "push branch")
+        .unwrap();
+    test_repo
+        .repo
+        .reference(
+            "refs/remotes/origin/upstream",
+            base_oid,
+            false,
+            "upstream branch",
+        )
+        .unwrap();
+    test_repo
+        .repo
+        .config()
+        .unwrap()
+        .set_str("branch.main.pushRemote", "origin")
+        .unwrap();
+    test_repo
+        .repo
+        .find_branch("main", git2::BranchType::Local)
+        .unwrap()
+        .set_upstream(Some("origin/upstream"))
+        .unwrap();
+
+    // Advance HEAD so both the push branch and the upstream are behind by one commit.
+    test_repo.commit_file("feature.txt", "feature", "Add feature");
+
+    let model = create_snapshot_model(&test_repo);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_status_view_with_merge_conflict() {
     let test_repo = TestRepo::new();
     test_repo.create_merge_conflict("conflict.txt");
