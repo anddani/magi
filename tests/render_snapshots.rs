@@ -592,6 +592,27 @@ fn snapshot_rebase_popup_ignore_date_selected() {
 }
 
 #[test]
+fn snapshot_rebase_popup_autosquash_selected() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Rebase(RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            upstream: None,
+            push_remote: None,
+            sole_remote: None,
+        }),
+    );
+    model.arg_mode = true;
+    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+        RebaseArgument::Autosquash,
+    ])));
+    // Styled buffer shows the selected --autosquash flag highlighted
+    assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_rebase_todo_view() {
     use magi::git::rebase::RebaseAction;
     use magi::msg::RebaseTodoMessage;
