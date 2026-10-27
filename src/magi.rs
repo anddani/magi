@@ -102,6 +102,12 @@ fn run_loop(
         .ok_or_else(|| MagiError::Generic("Cannot run in a bare repository".into()))?
         .to_path_buf();
 
+    // On huge repositories `git log --graph` (used by the log view) implies
+    // --topo-order, which walks all of history and is very slow without a
+    // commit-graph. Kick off a background write if one is missing so the log
+    // view becomes fast; this is a no-op when a commit-graph already exists.
+    crate::git::commit_graph::ensure_commit_graph(&git_info.repository, &workdir);
+
     let lines = git_info.get_lines()?;
     let collapsed_sections = lines
         .iter()

@@ -20,6 +20,14 @@ pub fn collect_file_changes(diff: &Diff) -> MagiResult<FileChangesWithDiffs> {
             return true;
         }
 
+        // Untracked files are listed in their own section without hunks. They
+        // only appear here when the diff was created with `include_untracked`
+        // (so a single working-tree walk can feed both sections); skip them so
+        // they don't leak into the modified-file list.
+        if delta.status() == git2::Delta::Untracked {
+            return true;
+        }
+
         let file_path = delta
             .new_file()
             .path()
