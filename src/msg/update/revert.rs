@@ -2,6 +2,7 @@ use std::time::{Duration, Instant};
 
 use crate::{
     git::revert::{self, CommitResult, any_is_merge_commit, parent_count},
+    i18n,
     model::{
         Model, Toast, ToastStyle,
         arguments::{Arguments::RevertArguments, PopupArgument, RevertArgument},
@@ -87,7 +88,7 @@ fn commits(
     if opens_editor(&flags) {
         return Some(Message::Revert(RevertCommand::WithEditor { args }));
     }
-    execute_pty_command(model, args, "Revert".to_string())
+    execute_pty_command(model, args, i18n::t().op_revert.to_string())
 }
 
 fn with_editor(model: &mut Model, args: Vec<String>) -> Option<Message> {
@@ -134,7 +135,7 @@ fn no_commit(
     args.extend(strategy_flag(strategy.as_deref()));
     args.extend(gpg_sign_flag(gpg_sign.as_deref()));
     args.extend(hashes);
-    execute_pty_command(model, args, "Revert".to_string())
+    execute_pty_command(model, args, i18n::t().op_revert.to_string())
 }
 
 fn commits_with_mainline(
@@ -154,7 +155,7 @@ fn commits_with_mainline(
     if no_commit {
         args.push("--no-commit".to_string());
         args.extend(hashes);
-        return execute_pty_command(model, args, "Revert".to_string());
+        return execute_pty_command(model, args, i18n::t().op_revert.to_string());
     }
     let flags = take_revert_flags(model);
     args.extend(flags.iter().cloned());
@@ -162,7 +163,7 @@ fn commits_with_mainline(
     if opens_editor(&flags) {
         return Some(Message::Revert(RevertCommand::WithEditor { args }));
     }
-    execute_pty_command(model, args, "Revert".to_string())
+    execute_pty_command(model, args, i18n::t().op_revert.to_string())
 }
 
 /// Builds the `--strategy=<value>` flag set by the `=s` popup argument.
@@ -245,7 +246,7 @@ fn skip_revert(model: &mut Model) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["revert".to_string(), "--skip".to_string()],
-        "Revert".to_string(),
+        i18n::t().op_revert.to_string(),
     )
 }
 
@@ -253,6 +254,6 @@ fn abort_revert(model: &mut Model) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["revert".to_string(), "--abort".to_string()],
-        "Revert".to_string(),
+        i18n::t().op_revert.to_string(),
     )
 }

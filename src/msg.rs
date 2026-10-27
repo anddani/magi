@@ -759,10 +759,10 @@ impl StashType {
     /// Title shown in the PTY output panel
     pub fn pty_title(self) -> &'static str {
         match self {
-            StashType::Both => "Stash",
-            StashType::Index => "Stash index",
-            StashType::Worktree => "Stash worktree",
-            StashType::KeepingIndex => "Stash keeping index",
+            StashType::Both => i18n::t().op_stash,
+            StashType::Index => i18n::t().op_stash_index,
+            StashType::Worktree => i18n::t().op_stash_worktree,
+            StashType::KeepingIndex => i18n::t().op_stash_keeping_index,
         }
     }
 }

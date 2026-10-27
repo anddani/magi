@@ -2,6 +2,7 @@ use std::time::Instant;
 
 use crate::{
     git::{commit::CommitResult, merge, preview},
+    i18n,
     model::{
         Model, PopupContent, Toast, ToastStyle, ViewMode,
         arguments::{Arguments::MergeArguments, PopupArgument},
@@ -212,14 +213,14 @@ fn merge_no_commit(model: &mut Model, branch: String, extra_args: Vec<String>) -
     ];
     args.extend(extra_args);
     args.push(branch);
-    execute_pty_command(model, args, "Merge".to_string())
+    execute_pty_command(model, args, i18n::t().op_merge.to_string())
 }
 
 fn squash_merge(model: &mut Model, branch: String) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["merge".to_string(), "--squash".to_string(), branch],
-        "Merge".to_string(),
+        i18n::t().op_merge.to_string(),
     )
 }
 
@@ -260,6 +261,6 @@ fn abort_merge(model: &mut Model) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["merge".to_string(), "--abort".to_string()],
-        "Merge".to_string(),
+        i18n::t().op_merge.to_string(),
     )
 }

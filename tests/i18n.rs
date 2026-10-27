@@ -5,7 +5,7 @@ use magi::i18n::{self, Language, Strings};
 /// is enforced by the compiler (every `Strings` field must be populated), but
 /// nothing stops a translation from dropping the placeholder — this list does.
 /// Keep in sync with the `*_fmt` fields in src/i18n.rs.
-const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 12] = [
+const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 21] = [
     ("input_rename_branch_fmt", |s| s.input_rename_branch_fmt),
     ("help_version_fmt", |s| s.help_version_fmt),
     ("input_worktree_path_fmt", |s| s.input_worktree_path_fmt),
@@ -28,7 +28,41 @@ const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 12] = [
     ("title_fetch_branch_from_fmt", |s| {
         s.title_fetch_branch_from_fmt
     }),
+    ("op_fetch_from_fmt", |s| s.op_fetch_from_fmt),
+    ("op_fetch_refspecs_from_fmt", |s| {
+        s.op_fetch_refspecs_from_fmt
+    }),
+    ("op_push_to_fmt", |s| s.op_push_to_fmt),
+    ("op_push_refspecs_to_fmt", |s| s.op_push_refspecs_to_fmt),
+    ("op_push_matching_branches_to_fmt", |s| {
+        s.op_push_matching_branches_to_fmt
+    }),
+    ("op_push_tag_fmt", |s| s.op_push_tag_fmt),
+    ("op_pull_from_fmt", |s| s.op_pull_from_fmt),
+    ("op_rebase_onto_fmt", |s| s.op_rebase_onto_fmt),
+    ("op_rebase_subset_onto_fmt", |s| s.op_rebase_subset_onto_fmt),
 ];
+
+/// `*_fmt` fields that take exactly two `{}` placeholders via fmt2().
+const FMT2_FIELDS: [(&str, fn(&Strings) -> &'static str); 1] =
+    [("op_push_local_to_fmt", |s| s.op_push_local_to_fmt)];
+
+#[test]
+fn test_fmt2_fields_have_exactly_two_placeholders_in_all_languages() {
+    for (lang_name, strings) in [("english", i18n::english()), ("swedish", i18n::swedish())] {
+        for (field_name, get) in FMT2_FIELDS {
+            let value = get(&strings);
+            assert_eq!(
+                value.matches("{}").count(),
+                2,
+                "{}::{} must contain exactly two {{}} placeholders, got: {:?}",
+                lang_name,
+                field_name,
+                value
+            );
+        }
+    }
+}
 
 #[test]
 fn test_fmt_fields_have_exactly_one_placeholder_in_all_languages() {
@@ -240,6 +274,61 @@ fn test_swedish_fmt1() {
     assert_eq!(
         s.fmt1(s.completed_successfully_fmt, "Ombasera"),
         "Ombasera slutfördes"
+    );
+}
+
+#[test]
+fn test_english_operation_names() {
+    let s = i18n::english();
+    assert_eq!(s.op_apply, "Apply");
+    assert_eq!(s.op_merge, "Merge");
+    assert_eq!(s.op_push, "Push");
+    assert_eq!(s.op_rebase, "Rebase");
+    assert_eq!(s.op_revert, "Revert");
+    assert_eq!(s.op_stash, "Stash");
+    assert_eq!(s.op_stash_keeping_index, "Stash keeping index");
+    assert_eq!(s.op_drop_all_stashes, "Drop all stashes");
+    // The operation name is interpolated into the success toast.
+    assert_eq!(
+        s.fmt1(s.completed_successfully_fmt, s.op_merge),
+        "Merge completed successfully"
+    );
+    assert_eq!(
+        s.fmt1(s.op_push_to_fmt, "origin/main"),
+        "Push to origin/main"
+    );
+    assert_eq!(s.fmt1(s.op_pull_from_fmt, "origin"), "Pull from origin");
+    assert_eq!(s.fmt1(s.op_rebase_onto_fmt, "main"), "Rebase onto main");
+    assert_eq!(
+        s.fmt2(s.op_push_local_to_fmt, "topic", "origin"),
+        "Push topic to origin"
+    );
+}
+
+#[test]
+fn test_swedish_operation_names() {
+    let s = i18n::swedish();
+    assert_eq!(s.op_apply, "Applicera");
+    assert_eq!(s.op_merge, "Sammanfoga");
+    assert_eq!(s.op_push, "Knuffa");
+    assert_eq!(s.op_rebase, "Ympa");
+    assert_eq!(s.op_revert, "Återgå");
+    assert_eq!(s.op_stash, "Gömma");
+    assert_eq!(s.op_stash_keeping_index, "Gömma med behållet register");
+    assert_eq!(s.op_drop_all_stashes, "Fimpa alla gömmor");
+    assert_eq!(
+        s.fmt1(s.completed_successfully_fmt, s.op_merge),
+        "Sammanfoga slutfördes"
+    );
+    assert_eq!(
+        s.fmt1(s.op_push_to_fmt, "origin/main"),
+        "Knuffa till origin/main"
+    );
+    assert_eq!(s.fmt1(s.op_pull_from_fmt, "origin"), "Rycka från origin");
+    assert_eq!(s.fmt1(s.op_rebase_onto_fmt, "main"), "Ympa på main");
+    assert_eq!(
+        s.fmt2(s.op_push_local_to_fmt, "topic", "origin"),
+        "Knuffa topic till origin"
     );
 }
 

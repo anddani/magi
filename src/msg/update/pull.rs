@@ -3,6 +3,7 @@ use crate::{
         config::set_push_remote,
         push::{get_current_branch, parse_remote_branch, set_upstream_branch},
     },
+    i18n,
     model::{
         Model,
         arguments::{Arguments::PullArguments, PopupArgument},
@@ -68,7 +69,10 @@ fn pull_from_push_remote(
 
     args.extend(extra_args);
 
-    let operation_name = format!("Pull from {}/{}", remote, current_branch);
+    let operation_name = i18n::t().fmt1(
+        i18n::t().op_pull_from_fmt,
+        &format!("{remote}/{current_branch}"),
+    );
 
     execute_pty_command(model, args, operation_name)
 }
@@ -99,7 +103,11 @@ fn pull_from_upstream(model: &mut Model, extra_args: Vec<String>) -> Option<Mess
 
     args.extend(extra_args);
 
-    execute_pty_command(model, args, format!("Pull from {}", upstream))
+    execute_pty_command(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_pull_from_fmt, &upstream),
+    )
 }
 
 /// Pull from a remote branch (e.g. "origin/main") without modifying any git config.
@@ -119,7 +127,11 @@ fn pull_from_elsewhere(
 
     args.extend(extra_args);
 
-    execute_pty_command(model, args, format!("Pull from {}", upstream))
+    execute_pty_command(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_pull_from_fmt, &upstream),
+    )
 }
 
 fn pull_from_up_stream_setting(
@@ -146,7 +158,7 @@ fn pull_from_up_stream_setting(
 
     args.extend(extra_args);
 
-    let operation_name = format!("Pull from {}", upstream);
+    let operation_name = i18n::t().fmt1(i18n::t().op_pull_from_fmt, &upstream);
 
     execute_pty_command(model, args, operation_name)
 }

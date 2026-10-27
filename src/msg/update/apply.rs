@@ -1,4 +1,5 @@
 use crate::{
+    i18n,
     model::Model,
     msg::{ApplyCommand, Message, update::pty_helper::execute_pty_command},
 };
@@ -20,7 +21,7 @@ fn pick(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
     }
     let mut args = vec!["cherry-pick".to_string()];
     args.extend(hashes);
-    execute_pty_command(model, args, "Apply".to_string())
+    execute_pty_command(model, args, i18n::t().op_apply.to_string())
 }
 
 fn apply_no_commit(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
@@ -29,14 +30,14 @@ fn apply_no_commit(model: &mut Model, hashes: Vec<String>) -> Option<Message> {
     }
     let mut args = vec!["cherry-pick".to_string(), "--no-commit".to_string()];
     args.extend(hashes);
-    execute_pty_command(model, args, "Apply".to_string())
+    execute_pty_command(model, args, i18n::t().op_apply.to_string())
 }
 
 fn squash(model: &mut Model, hash: String) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["merge".to_string(), "--squash".to_string(), hash],
-        "Apply".to_string(),
+        i18n::t().op_apply.to_string(),
     )
 }
 
@@ -44,7 +45,7 @@ fn continue_apply(model: &mut Model) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["cherry-pick".to_string(), "--continue".to_string()],
-        "Apply".to_string(),
+        i18n::t().op_apply.to_string(),
     )
 }
 
@@ -52,7 +53,7 @@ fn skip_apply(model: &mut Model) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["cherry-pick".to_string(), "--skip".to_string()],
-        "Apply".to_string(),
+        i18n::t().op_apply.to_string(),
     )
 }
 
@@ -60,6 +61,6 @@ fn abort_apply(model: &mut Model) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["cherry-pick".to_string(), "--abort".to_string()],
-        "Apply".to_string(),
+        i18n::t().op_apply.to_string(),
     )
 }

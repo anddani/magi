@@ -6,6 +6,7 @@ use crate::{
         push::{get_current_branch, set_upstream_branch},
         rebase::{self, CommitResult},
     },
+    i18n,
     model::{
         Model, Toast, ToastStyle, ViewMode,
         arguments::{Arguments::RebaseArguments, PopupArgument},
@@ -190,7 +191,7 @@ fn elsewhere(model: &mut Model, target: String, extra_args: Vec<String>) -> Opti
     let mut args = vec!["rebase".to_string()];
     args.extend(extra_args);
     args.push(target);
-    execute_pty_command(model, args, "Rebase".to_string())
+    execute_pty_command(model, args, i18n::t().op_rebase.to_string())
 }
 
 /// Rebase a subset of the current branch's history onto a new base:
@@ -209,7 +210,11 @@ fn subset(
     } else {
         args.push("--root".to_string());
     }
-    execute_pty_command(model, args, format!("Rebase subset onto {}", newbase))
+    execute_pty_command(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_rebase_subset_onto_fmt, &newbase),
+    )
 }
 
 /// Rebase the current branch onto its push remote branch.
@@ -238,7 +243,11 @@ fn onto_push_remote(model: &mut Model, remote: String, extra_args: Vec<String>) 
     args.extend(extra_args);
     args.push(target.clone());
 
-    execute_pty_command(model, args, format!("Rebase onto {}", target))
+    execute_pty_command(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_rebase_onto_fmt, &target),
+    )
 }
 
 /// Rebase the current branch onto its configured upstream branch.
@@ -254,7 +263,11 @@ fn onto_upstream(model: &mut Model, extra_args: Vec<String>) -> Option<Message> 
     let mut args = vec!["rebase".to_string()];
     args.extend(extra_args);
     args.push(upstream.clone());
-    execute_pty_command(model, args, format!("Rebase onto {}", upstream))
+    execute_pty_command(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_rebase_onto_fmt, &upstream),
+    )
 }
 
 /// Rebase the current branch onto the given remote branch (e.g. "origin/main"),
@@ -274,7 +287,11 @@ fn onto_upstream_setting(
     let mut args = vec!["rebase".to_string()];
     args.extend(extra_args);
     args.push(upstream.clone());
-    execute_pty_command(model, args, format!("Rebase onto {}", upstream))
+    execute_pty_command(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_rebase_onto_fmt, &upstream),
+    )
 }
 
 const TOAST_DURATION: Duration = Duration::from_secs(5);
@@ -306,7 +323,7 @@ fn skip_rebase(model: &mut Model) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["rebase".to_string(), "--skip".to_string()],
-        "Rebase".to_string(),
+        i18n::t().op_rebase.to_string(),
     )
 }
 
@@ -314,6 +331,6 @@ fn abort_rebase(model: &mut Model) -> Option<Message> {
     execute_pty_command(
         model,
         vec!["rebase".to_string(), "--abort".to_string()],
-        "Rebase".to_string(),
+        i18n::t().op_rebase.to_string(),
     )
 }
