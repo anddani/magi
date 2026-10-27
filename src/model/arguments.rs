@@ -8,6 +8,7 @@ pub enum Arguments {
     PushArguments(HashSet<PushArgument>),
     PullArguments(HashSet<PullArgument>),
     StashArguments(HashSet<StashArgument>),
+    StashPushArguments(HashSet<StashPushArgument>),
     RevertArguments(HashSet<RevertArgument>),
     LogArguments(HashSet<LogArgument>),
     TagArguments {
@@ -30,6 +31,7 @@ pub enum Argument {
     Push(PushArgument),
     Pull(PullArgument),
     Stash(StashArgument),
+    StashPush(StashPushArgument),
     Revert(RevertArgument),
     Log(LogArgument),
     Tag(TagArgument),
@@ -135,6 +137,22 @@ impl Arguments {
 
     pub fn stash_mut(&mut self) -> Option<&mut HashSet<StashArgument>> {
         if let Arguments::StashArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn stash_push(&self) -> Option<&HashSet<StashPushArgument>> {
+        if let Arguments::StashPushArguments(args) = self {
+            Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn stash_push_mut(&mut self) -> Option<&mut HashSet<StashPushArgument>> {
+        if let Arguments::StashPushArguments(args) = self {
             Some(args)
         } else {
             None
@@ -522,6 +540,62 @@ impl PopupArgument for StashArgument {
         match self {
             StashArgument::IncludeUntracked => "--include-untracked",
             StashArgument::All => "--all",
+        }
+    }
+}
+
+/// Arguments for the "Stash push" popup (`git stash push`). Unlike the main
+/// stash popup, this one also exposes the keep-index switches, matching
+/// magit's dedicated `magit-stash-push` transient.
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+pub enum StashPushArgument {
+    IncludeUntracked,
+    All,
+    KeepIndex,
+    NoKeepIndex,
+}
+
+impl StashPushArgument {
+    pub fn from_key(key: char) -> Option<StashPushArgument> {
+        Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+impl PopupArgument for StashPushArgument {
+    fn all() -> Vec<StashPushArgument> {
+        vec![
+            StashPushArgument::IncludeUntracked,
+            StashPushArgument::All,
+            StashPushArgument::KeepIndex,
+            StashPushArgument::NoKeepIndex,
+        ]
+    }
+
+    fn key(&self) -> char {
+        match self {
+            StashPushArgument::IncludeUntracked => 'u',
+            StashPushArgument::All => 'a',
+            StashPushArgument::KeepIndex => 'k',
+            StashPushArgument::NoKeepIndex => 'K',
+        }
+    }
+
+    fn description(&self) -> &'static str {
+        let t = i18n::t();
+        match self {
+            StashPushArgument::IncludeUntracked => t.arg_stash_include_untracked,
+            StashPushArgument::All => t.arg_stash_all,
+            StashPushArgument::KeepIndex => t.arg_stash_keep_index,
+            StashPushArgument::NoKeepIndex => t.arg_stash_no_keep_index,
+        }
+    }
+
+    fn flag(&self) -> &'static str {
+        match self {
+            StashPushArgument::IncludeUntracked => "--include-untracked",
+            StashPushArgument::All => "--all",
+            StashPushArgument::KeepIndex => "--keep-index",
+            StashPushArgument::NoKeepIndex => "--no-keep-index",
         }
     }
 }

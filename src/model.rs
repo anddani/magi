@@ -17,6 +17,7 @@ pub mod arguments;
 pub mod cursor_context;
 pub mod input_field;
 pub mod log_view;
+pub mod multi_select_popup;
 pub mod popup;
 pub mod pty_state;
 pub mod rebase_todo;

@@ -9,6 +9,7 @@ use magi::{
             Arguments, LogArgument, MergeArgument, PushArgument, RebaseArgument, RebaseMergesMode,
             TagArgument,
         },
+        multi_select_popup::{MultiSelectPopupState, OnMultiSelect},
         popup::{
             ApplyPopupState, CommitPopupState, ConfirmAction, ConfirmPopupState,
             CredentialPopupState, FetchPopupState, InputContext, InputPopupState, MergePopupState,
@@ -428,6 +429,34 @@ fn snapshot_log_popup_equals_arg_mode() {
 fn snapshot_stash_popup() {
     let test_repo = TestRepo::new();
     let model = create_command_popup_model(&test_repo, PopupContentCommand::Stash);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_stash_push_popup() {
+    let test_repo = TestRepo::new();
+    let model = create_command_popup_model(&test_repo, PopupContentCommand::StashPush);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_multi_select_popup() {
+    let test_repo = TestRepo::new();
+    let mut state = MultiSelectPopupState::new(
+        "Select files to stash (SPACE toggles, RET confirms)".to_string(),
+        vec![
+            "src/main.rs".to_string(),
+            "src/model.rs".to_string(),
+            "README.md".to_string(),
+        ],
+        OnMultiSelect::StashPushFiles {
+            flags: vec!["--include-untracked".to_string()],
+        },
+    );
+    // Check the first and third file so the checkboxes render.
+    state.checked.insert(0);
+    state.checked.insert(2);
+    let model = create_command_popup_model(&test_repo, PopupContentCommand::MultiSelect(state));
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 
