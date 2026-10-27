@@ -412,12 +412,51 @@ pub struct Strings {
     pub completed_successfully_fmt: &'static str,
     /// Fallback operation name used when none is available.
     pub operation_fallback: &'static str,
+
+    // Operation names interpolated into `completed_successfully_fmt` (and shown
+    // as the PTY panel title). Static names plus `*_fmt` templates — the latter
+    // use fmt1()/fmt2(); add new one-placeholder `*_fmt` fields to FMT_FIELDS in
+    // tests/i18n.rs.
+    pub op_apply: &'static str,
+    pub op_fetch_all: &'static str,
+    pub op_fetch_submodules: &'static str,
+    pub op_merge: &'static str,
+    pub op_push: &'static str,
+    pub op_push_tags: &'static str,
+    pub op_rebase: &'static str,
+    pub op_revert: &'static str,
+    pub op_stash: &'static str,
+    pub op_stash_index: &'static str,
+    pub op_stash_worktree: &'static str,
+    pub op_stash_keeping_index: &'static str,
+    pub op_stash_branch: &'static str,
+    pub op_stash_branch_here: &'static str,
+    pub op_stash_apply: &'static str,
+    pub op_stash_pop: &'static str,
+    pub op_drop_stash: &'static str,
+    pub op_drop_all_stashes: &'static str,
+    pub op_fetch_from_fmt: &'static str,
+    pub op_fetch_refspecs_from_fmt: &'static str,
+    pub op_push_to_fmt: &'static str,
+    pub op_push_refspecs_to_fmt: &'static str,
+    pub op_push_matching_branches_to_fmt: &'static str,
+    pub op_push_tag_fmt: &'static str,
+    /// Two placeholders (local ref, remote) — use fmt2().
+    pub op_push_local_to_fmt: &'static str,
+    pub op_pull_from_fmt: &'static str,
+    pub op_rebase_onto_fmt: &'static str,
+    pub op_rebase_subset_onto_fmt: &'static str,
 }
 
 impl Strings {
     /// Replace the first `{}` placeholder in `template` with `arg`.
     pub fn fmt1(&self, template: &'static str, arg: &str) -> String {
         template.replacen("{}", arg, 1)
+    }
+
+    /// Replace the first two `{}` placeholders in `template` with `a` then `b`.
+    pub fn fmt2(&self, template: &'static str, a: &str, b: &str) -> String {
+        template.replacen("{}", a, 1).replacen("{}", b, 1)
     }
 }
 
@@ -774,6 +813,35 @@ static ENGLISH: Strings = Strings {
 
     completed_successfully_fmt: "{} completed successfully",
     operation_fallback: "Operation",
+
+    op_apply: "Apply",
+    op_fetch_all: "Fetch all",
+    op_fetch_submodules: "Fetch submodules",
+    op_merge: "Merge",
+    op_push: "Push",
+    op_push_tags: "Push tags",
+    op_rebase: "Rebase",
+    op_revert: "Revert",
+    op_stash: "Stash",
+    op_stash_index: "Stash index",
+    op_stash_worktree: "Stash worktree",
+    op_stash_keeping_index: "Stash keeping index",
+    op_stash_branch: "Stash branch",
+    op_stash_branch_here: "Stash branch here",
+    op_stash_apply: "Stash apply",
+    op_stash_pop: "Stash pop",
+    op_drop_stash: "Drop stash",
+    op_drop_all_stashes: "Drop all stashes",
+    op_fetch_from_fmt: "Fetch from {}",
+    op_fetch_refspecs_from_fmt: "Fetch refspecs from {}",
+    op_push_to_fmt: "Push to {}",
+    op_push_refspecs_to_fmt: "Push refspecs to {}",
+    op_push_matching_branches_to_fmt: "Push matching branches to {}",
+    op_push_tag_fmt: "Push tag {}",
+    op_push_local_to_fmt: "Push {} to {}",
+    op_pull_from_fmt: "Pull from {}",
+    op_rebase_onto_fmt: "Rebase onto {}",
+    op_rebase_subset_onto_fmt: "Rebase subset onto {}",
 };
 
 static SWEDISH: Strings = Strings {
@@ -1129,6 +1197,35 @@ static SWEDISH: Strings = Strings {
 
     completed_successfully_fmt: "{} slutfördes",
     operation_fallback: "Åtgärd",
+
+    op_apply: "Applicera",
+    op_fetch_all: "Hämta alla",
+    op_fetch_submodules: "Hämta undermoduler",
+    op_merge: "Sammanfoga",
+    op_push: "Knuffa",
+    op_push_tags: "Knuffa märken",
+    op_rebase: "Ympa",
+    op_revert: "Återgå",
+    op_stash: "Gömma",
+    op_stash_index: "Gömma register",
+    op_stash_worktree: "Gömma arbetsträd",
+    op_stash_keeping_index: "Gömma med behållet register",
+    op_stash_branch: "Grena gömma",
+    op_stash_branch_here: "Grena gömma här",
+    op_stash_apply: "Applicera gömma",
+    op_stash_pop: "Plocka gömma",
+    op_drop_stash: "Fimpa gömma",
+    op_drop_all_stashes: "Fimpa alla gömmor",
+    op_fetch_from_fmt: "Hämta från {}",
+    op_fetch_refspecs_from_fmt: "Hämta refspecer från {}",
+    op_push_to_fmt: "Knuffa till {}",
+    op_push_refspecs_to_fmt: "Knuffa refspecer till {}",
+    op_push_matching_branches_to_fmt: "Knuffa matchande grenar till {}",
+    op_push_tag_fmt: "Knuffa märke {}",
+    op_push_local_to_fmt: "Knuffa {} till {}",
+    op_pull_from_fmt: "Rycka från {}",
+    op_rebase_onto_fmt: "Ympa på {}",
+    op_rebase_subset_onto_fmt: "Ympa delmängd på {}",
 };
 
 static ACTIVE: OnceLock<Language> = OnceLock::new();

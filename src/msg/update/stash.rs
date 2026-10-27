@@ -9,6 +9,7 @@ use crate::{
         wip::commit_to_wip_refs,
         worktree_stash::create_worktree_stash,
     },
+    i18n,
     model::{Model, popup::PopupContent},
     msg::{Message, StashCommand, StashType, update::pty_helper::execute_pty_command},
 };
@@ -50,7 +51,7 @@ fn branch(model: &mut Model, stash_ref: String, branch_name: String) -> Option<M
         branch_name,
         stash_ref,
     ];
-    execute_pty_command(model, args, "Stash branch".to_string())
+    execute_pty_command(model, args, i18n::t().op_stash_branch.to_string())
 }
 
 fn branch_here(model: &mut Model, stash_ref: String, branch_name: String) -> Option<Message> {
@@ -59,7 +60,7 @@ fn branch_here(model: &mut Model, stash_ref: String, branch_name: String) -> Opt
     match checkout_new_branch(&model.workdir, &branch_name, "HEAD") {
         Ok(CheckoutResult::Success) => {
             let args = vec!["stash".to_string(), "pop".to_string(), stash_ref];
-            execute_pty_command(model, args, "Stash branch here".to_string())
+            execute_pty_command(model, args, i18n::t().op_stash_branch_here.to_string())
         }
         Ok(CheckoutResult::Error(message)) => {
             model.popup = Some(PopupContent::Error { message });
@@ -128,25 +129,25 @@ fn push(
 fn apply(model: &mut Model, stash_ref: String, extra_args: Vec<String>) -> Option<Message> {
     let mut args = vec!["stash".to_string(), "apply".to_string(), stash_ref];
     args.extend(extra_args);
-    execute_pty_command(model, args, "Stash apply".to_string())
+    execute_pty_command(model, args, i18n::t().op_stash_apply.to_string())
 }
 
 fn pop(model: &mut Model, stash_ref: String, extra_args: Vec<String>) -> Option<Message> {
     let mut args = vec!["stash".to_string(), "pop".to_string(), stash_ref];
     args.extend(extra_args);
-    execute_pty_command(model, args, "Stash pop".to_string())
+    execute_pty_command(model, args, i18n::t().op_stash_pop.to_string())
 }
 
 fn drop(model: &mut Model, stash_ref: String) -> Option<Message> {
     let (args, title) = if &stash_ref == "all" {
         (
             vec!["stash".to_string(), "clear".to_string()],
-            "Drop all stashes".to_string(),
+            i18n::t().op_drop_all_stashes.to_string(),
         )
     } else {
         (
             vec!["stash".to_string(), "drop".to_string(), stash_ref],
-            "Drop stash".to_string(),
+            i18n::t().op_drop_stash.to_string(),
         )
     };
     execute_pty_command(model, args, title)

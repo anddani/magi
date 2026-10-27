@@ -3,6 +3,7 @@ use crate::{
         config::set_push_remote,
         push::{get_current_branch, get_upstream_branch, parse_remote_branch},
     },
+    i18n,
     model::{
         Model,
         arguments::{Arguments::PushArguments, PopupArgument},
@@ -52,11 +53,11 @@ fn push_to_upstream(model: &mut Model, extra_args: Vec<String>) -> Option<Messag
             let refspec = format!("HEAD:{}", remote_branch);
             let mut args = vec![remote, refspec];
             args.extend(extra_args);
-            return execute_push(model, args, "Push".to_string());
+            return execute_push(model, args, i18n::t().op_push.to_string());
         }
     }
 
-    execute_push(model, extra_args, "Push".to_string())
+    execute_push(model, extra_args, i18n::t().op_push.to_string())
 }
 
 fn push_to_upstream_setting(
@@ -74,7 +75,7 @@ fn push_to_upstream_setting(
 
     args.extend(extra_args);
 
-    let operation_name = format!("Push to {}", upstream);
+    let operation_name = i18n::t().fmt1(i18n::t().op_push_to_fmt, &upstream);
 
     execute_push(model, args, operation_name)
 }
@@ -103,7 +104,10 @@ fn push_to_push_remote(
         return None;
     }
 
-    let operation_name = format!("Push to {}/{}", remote, current_branch);
+    let operation_name = i18n::t().fmt1(
+        i18n::t().op_push_to_fmt,
+        &format!("{remote}/{current_branch}"),
+    );
 
     let mut args = vec![remote, current_branch];
     args.extend(extra_args);
@@ -114,7 +118,7 @@ fn push_to_push_remote(
 fn push_all_tags(model: &mut Model, remote: String, extra_args: Vec<String>) -> Option<Message> {
     let mut args = vec![remote, "--tags".to_string()];
     args.extend(extra_args);
-    execute_push(model, args, "Push tags".to_string())
+    execute_push(model, args, i18n::t().op_push_tags.to_string())
 }
 
 fn push_to_elsewhere(
@@ -129,7 +133,11 @@ fn push_to_elsewhere(
         vec![remote, format!("HEAD:{}", branch)]
     };
     args.extend(extra_args);
-    execute_push(model, args, format!("Push to {}", upstream))
+    execute_push(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_push_to_fmt, &upstream),
+    )
 }
 
 fn push_refspecs(
@@ -146,7 +154,11 @@ fn push_refspecs(
         }
     }
     args.extend(extra_args);
-    execute_push(model, args, format!("Push refspecs to {}", remote))
+    execute_push(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_push_refspecs_to_fmt, &remote),
+    )
 }
 
 fn push_other_branch(
@@ -162,20 +174,28 @@ fn push_other_branch(
         vec![remote_name, format!("{}:{}", local, branch)]
     };
     args.extend(extra_args);
-    execute_push(model, args, format!("Push {} to {}", local, remote))
+    execute_push(
+        model,
+        args,
+        i18n::t().fmt2(i18n::t().op_push_local_to_fmt, &local, &remote),
+    )
 }
 
 fn push_matching(model: &mut Model, remote: String, extra_args: Vec<String>) -> Option<Message> {
     let mut args = vec![remote.clone(), ":".to_string()];
     args.extend(extra_args);
-    execute_push(model, args, format!("Push matching branches to {}", remote))
+    execute_push(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_push_matching_branches_to_fmt, &remote),
+    )
 }
 
 fn push_tag(model: &mut Model, tag: String, extra_args: Vec<String>) -> Option<Message> {
     let mut args = vec!["origin".to_string(), tag.clone()];
     args.extend(extra_args);
 
-    execute_push(model, args, format!("Push tag {}", tag))
+    execute_push(model, args, i18n::t().fmt1(i18n::t().op_push_tag_fmt, &tag))
 }
 
 /// Execute a push command with the given extra arguments.

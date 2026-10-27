@@ -3,6 +3,7 @@ use crate::{
         config::set_push_remote,
         push::{get_current_branch, parse_remote_branch},
     },
+    i18n,
     model::{
         Model,
         arguments::{Arguments::FetchArguments, PopupArgument},
@@ -64,7 +65,11 @@ fn fetch_upstream(model: &mut Model, extra_args: Vec<String>) -> Option<Message>
 
     args.extend(extra_args);
 
-    execute_pty_command(model, args, format!("Fetch from {}", upstream))
+    execute_pty_command(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_fetch_from_fmt, &upstream),
+    )
 }
 
 fn fetch_from_remote_branch(
@@ -83,7 +88,7 @@ fn fetch_from_remote_branch(
 
     args.extend(extra_args);
 
-    let operation_name = format!("Fetch from {}", remote_branch);
+    let operation_name = i18n::t().fmt1(i18n::t().op_fetch_from_fmt, &remote_branch);
 
     execute_pty_command(model, args, operation_name)
 }
@@ -117,7 +122,7 @@ fn fetch_from_push_remote(
 
     args.extend(extra_args);
 
-    let operation_name = format!("Fetch from {}", remote);
+    let operation_name = i18n::t().fmt1(i18n::t().op_fetch_from_fmt, &remote);
 
     execute_pty_command(model, args, operation_name)
 }
@@ -127,7 +132,7 @@ fn fetch_from_all_remotes(model: &mut Model, extra_args: Vec<String>) -> Option<
 
     args.extend(extra_args);
 
-    execute_pty_command(model, args, "Fetch all".to_string())
+    execute_pty_command(model, args, i18n::t().op_fetch_all.to_string())
 }
 
 fn fetch_refspecs(
@@ -144,7 +149,11 @@ fn fetch_refspecs(
         }
     }
     args.extend(extra_args);
-    execute_pty_command(model, args, format!("Fetch refspecs from {}", remote))
+    execute_pty_command(
+        model,
+        args,
+        i18n::t().fmt1(i18n::t().op_fetch_refspecs_from_fmt, &remote),
+    )
 }
 
 fn fetch_submodules(model: &mut Model, extra_args: Vec<String>) -> Option<Message> {
@@ -156,5 +165,5 @@ fn fetch_submodules(model: &mut Model, extra_args: Vec<String>) -> Option<Messag
 
     args.extend(extra_args);
 
-    execute_pty_command(model, args, "Fetch submodules".to_string())
+    execute_pty_command(model, args, i18n::t().op_fetch_submodules.to_string())
 }
