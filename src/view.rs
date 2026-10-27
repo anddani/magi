@@ -35,6 +35,7 @@ mod staged_file;
 mod stash;
 mod unmerged_into_section_header;
 mod unpulled_section_header;
+mod unpushed_section_header;
 mod unstaged_file;
 mod untracked_file;
 
@@ -150,6 +151,9 @@ pub fn view(model: &Model, frame: &mut Frame) {
             }
             crate::model::LineContent::UnpulledSectionHeader { remote_name, count } => {
                 unpulled_section_header::get_lines(remote_name, *count, is_section_collapsed, theme)
+            }
+            crate::model::LineContent::UnpushedSectionHeader { remote_name, count } => {
+                unpushed_section_header::get_lines(remote_name, *count, is_section_collapsed, theme)
             }
             crate::model::LineContent::UnmergedIntoSectionHeader { branch_name, count } => {
                 unmerged_into_section_header::get_lines(
