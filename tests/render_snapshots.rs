@@ -733,6 +733,20 @@ fn snapshot_merge_popup_with_strategy() {
 }
 
 #[test]
+fn snapshot_merge_popup_ignore_all_space_selected() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Merge(MergePopupState { in_progress: false }),
+    );
+    model.arguments = Some(Arguments::merge_args(HashSet::from([
+        MergeArgument::IgnoreAllSpace,
+    ])));
+    // The -w flag is rendered as active (-Xignore-all-space) below -b.
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_merge_strategy_select_popup() {
     let test_repo = TestRepo::new();
     let mut model = create_command_popup_model(

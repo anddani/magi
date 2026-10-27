@@ -726,6 +726,7 @@ pub enum MergeArgument {
     FfOnly,
     NoFf,
     IgnoreSpaceChange,
+    IgnoreAllSpace,
 }
 
 impl MergeArgument {
@@ -740,6 +741,7 @@ impl PopupArgument for MergeArgument {
             MergeArgument::FfOnly,
             MergeArgument::NoFf,
             MergeArgument::IgnoreSpaceChange,
+            MergeArgument::IgnoreAllSpace,
         ]
     }
 
@@ -748,6 +750,7 @@ impl PopupArgument for MergeArgument {
             MergeArgument::FfOnly => 'f',
             MergeArgument::NoFf => 'n',
             MergeArgument::IgnoreSpaceChange => 'b',
+            MergeArgument::IgnoreAllSpace => 'w',
         }
     }
 
@@ -757,6 +760,7 @@ impl PopupArgument for MergeArgument {
             MergeArgument::FfOnly => t.arg_merge_ff_only,
             MergeArgument::NoFf => t.arg_merge_no_ff,
             MergeArgument::IgnoreSpaceChange => t.arg_merge_ignore_space_change,
+            MergeArgument::IgnoreAllSpace => t.arg_merge_ignore_all_space,
         }
     }
 
@@ -765,6 +769,7 @@ impl PopupArgument for MergeArgument {
             MergeArgument::FfOnly => "--ff-only",
             MergeArgument::NoFf => "--no-ff",
             MergeArgument::IgnoreSpaceChange => "-Xignore-space-change",
+            MergeArgument::IgnoreAllSpace => "-Xignore-all-space",
         }
     }
 }
@@ -1034,12 +1039,27 @@ mod tests {
         assert_eq!(MergeArgument::FfOnly.flag(), "--ff-only");
         assert_eq!(MergeArgument::NoFf.key(), 'n');
         assert_eq!(MergeArgument::NoFf.flag(), "--no-ff");
+        assert_eq!(MergeArgument::IgnoreSpaceChange.key(), 'b');
+        assert_eq!(
+            MergeArgument::IgnoreSpaceChange.flag(),
+            "-Xignore-space-change"
+        );
+        assert_eq!(MergeArgument::IgnoreAllSpace.key(), 'w');
+        assert_eq!(MergeArgument::IgnoreAllSpace.flag(), "-Xignore-all-space");
     }
 
     #[test]
     fn test_merge_argument_from_key() {
         assert_eq!(MergeArgument::from_key('f'), Some(MergeArgument::FfOnly));
         assert_eq!(MergeArgument::from_key('n'), Some(MergeArgument::NoFf));
+        assert_eq!(
+            MergeArgument::from_key('b'),
+            Some(MergeArgument::IgnoreSpaceChange)
+        );
+        assert_eq!(
+            MergeArgument::from_key('w'),
+            Some(MergeArgument::IgnoreAllSpace)
+        );
         assert_eq!(MergeArgument::from_key('x'), None);
     }
 
@@ -1047,6 +1067,8 @@ mod tests {
     fn test_merge_argument_all_contains_all_variants() {
         assert!(MergeArgument::all().contains(&MergeArgument::FfOnly));
         assert!(MergeArgument::all().contains(&MergeArgument::NoFf));
+        assert!(MergeArgument::all().contains(&MergeArgument::IgnoreSpaceChange));
+        assert!(MergeArgument::all().contains(&MergeArgument::IgnoreAllSpace));
     }
 
     #[test]
