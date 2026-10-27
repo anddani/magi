@@ -1,4 +1,5 @@
 use crate::{
+    i18n,
     model::{Model, arguments::RebaseArgument},
     msg::{Message, OnSelect, OptionsSource, ShowSelectPopupConfig},
 };
@@ -24,7 +25,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
     }
 
     Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-        title: "Rebase merges".to_string(),
+        title: i18n::t().title_rebase_merges.to_string(),
         source: OptionsSource::RebaseMergesModes,
         on_select: OnSelect::RebaseMergesMode,
     }))

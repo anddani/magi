@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    i18n,
     model::arguments::{Argument::Stash, StashArgument},
     msg::{
         LogType, Message, OnSelect, OptionsSource, ShowSelectPopupConfig, StashCommand, StashType,
@@ -27,38 +28,38 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('W') => Some(Message::Stash(StashCommand::SnapshotWorktree)),
         KeyCode::Char('r') => Some(Message::Stash(StashCommand::ToWipRef)),
         KeyCode::Char('a') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Apply stash".to_string(),
+            title: i18n::t().title_apply_stash.to_string(),
             source: OptionsSource::Stashes,
             on_select: OnSelect::ApplyStash,
         })),
         KeyCode::Char('p') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Pop stash".to_string(),
+            title: i18n::t().title_pop_stash.to_string(),
             source: OptionsSource::Stashes,
             on_select: OnSelect::PopStash,
         })),
         KeyCode::Char('k') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Drop stash".to_string(),
+            title: i18n::t().title_drop_stash.to_string(),
             source: OptionsSource::Stashes,
             on_select: OnSelect::DropStash,
         })),
         KeyCode::Char('b') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Branch stash".to_string(),
+            title: i18n::t().title_branch_stash.to_string(),
             source: OptionsSource::Stashes,
             on_select: OnSelect::BranchStash,
         })),
         KeyCode::Char('B') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Branch stash here".to_string(),
+            title: i18n::t().title_branch_stash_here.to_string(),
             source: OptionsSource::Stashes,
             on_select: OnSelect::BranchStashHere,
         })),
         KeyCode::Char('f') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Format patch".to_string(),
+            title: i18n::t().title_format_patch.to_string(),
             source: OptionsSource::Stashes,
             on_select: OnSelect::FormatPatchStash,
         })),
         KeyCode::Char('l') => Some(Message::ShowLog(LogType::Stashes)),
         KeyCode::Char('v') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Show stash".to_string(),
+            title: i18n::t().title_show_stash.to_string(),
             source: OptionsSource::Stashes,
             on_select: OnSelect::ShowStash,
         })),
@@ -79,7 +80,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Show stash".to_string(),
+                title: i18n::t().title_show_stash.to_string(),
                 source: OptionsSource::Stashes,
                 on_select: OnSelect::ShowStash,
             }))
@@ -93,7 +94,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Branch stash here".to_string(),
+                title: i18n::t().title_branch_stash_here.to_string(),
                 source: OptionsSource::Stashes,
                 on_select: OnSelect::BranchStashHere,
             }))
@@ -107,7 +108,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Branch stash".to_string(),
+                title: i18n::t().title_branch_stash.to_string(),
                 source: OptionsSource::Stashes,
                 on_select: OnSelect::BranchStash,
             }))
@@ -121,7 +122,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Format patch".to_string(),
+                title: i18n::t().title_format_patch.to_string(),
                 source: OptionsSource::Stashes,
                 on_select: OnSelect::FormatPatchStash,
             }))

@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    i18n,
     model::{
         arguments::{Argument::Fetch, FetchArgument},
         popup::FetchPopupState,
@@ -24,7 +25,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
                 Some(Message::Fetch(FetchCommand::FetchUpstream))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Fetch from".to_string(),
+                    title: i18n::t().title_fetch_from.to_string(),
                     source: OptionsSource::UpstreamBranches,
                     on_select: OnSelect::FetchUpstream,
                 }))
@@ -37,7 +38,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
                 )))
             } else {
                 Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                    title: "Fetch from push remote".to_string(),
+                    title: i18n::t().title_fetch_from_push_remote.to_string(),
                     source: OptionsSource::Remotes,
                     on_select: OnSelect::FetchPushRemote,
                 }))
@@ -45,18 +46,18 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
         }
         KeyCode::Char('a') => Some(Message::Fetch(FetchCommand::FetchAllRemotes)),
         KeyCode::Char('e') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Fetch from".to_string(),
+            title: i18n::t().title_fetch_from.to_string(),
             source: OptionsSource::Remotes,
             on_select: OnSelect::FetchElsewhere,
         })),
         KeyCode::Char('o') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Fetch branch from".to_string(),
+            title: i18n::t().title_fetch_branch_from.to_string(),
             source: OptionsSource::Remotes,
             on_select: OnSelect::FetchAnotherBranchRemote,
         })),
         KeyCode::Char('m') => Some(Message::Fetch(FetchCommand::FetchModules)),
         KeyCode::Char('r') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Fetch from remote".to_string(),
+            title: i18n::t().title_fetch_from_remote.to_string(),
             source: OptionsSource::Remotes,
             on_select: OnSelect::FetchRefspecRemotePick,
         })),

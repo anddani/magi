@@ -1,6 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
+    i18n,
     model::arguments::{Argument::Tag, TagArgument},
     msg::{Message, OnSelect, OptionsSource, ShowSelectPopupConfig},
 };
@@ -20,12 +21,12 @@ pub fn keys(key: KeyEvent, arg_mode: bool) -> Option<Message> {
         KeyCode::Char('t') => Some(Message::ShowCreateTagInput),
         KeyCode::Char('r') => Some(Message::ShowTagReleaseInput),
         KeyCode::Char('x') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Delete tag".to_string(),
+            title: i18n::t().title_delete_tag.to_string(),
             source: OptionsSource::Tags,
             on_select: OnSelect::DeleteTag,
         })),
         KeyCode::Char('p') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Prune tags against".to_string(),
+            title: i18n::t().title_prune_tags_against.to_string(),
             source: OptionsSource::Remotes,
             on_select: OnSelect::PruneTagsRemotePick,
         })),

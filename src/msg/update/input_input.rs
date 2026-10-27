@@ -1,4 +1,5 @@
 use crate::{
+    i18n,
     model::{
         EditOp, Model,
         popup::{InputContext, PopupContent, PopupContentCommand},
@@ -108,7 +109,7 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
             }))
         }
         InputContext::CreateTag => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-            title: "Create tag at".to_string(),
+            title: i18n::t().title_create_tag_at.to_string(),
             source: OptionsSource::BranchesAndTags,
             on_select: OnSelect::CreateTagTarget { name: input },
         })),

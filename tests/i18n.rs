@@ -5,7 +5,7 @@ use magi::i18n::{self, Language, Strings};
 /// is enforced by the compiler (every `Strings` field must be populated), but
 /// nothing stops a translation from dropping the placeholder — this list does.
 /// Keep in sync with the `*_fmt` fields in src/i18n.rs.
-const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 11] = [
+const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 12] = [
     ("input_rename_branch_fmt", |s| s.input_rename_branch_fmt),
     ("help_version_fmt", |s| s.help_version_fmt),
     ("input_worktree_path_fmt", |s| s.input_worktree_path_fmt),
@@ -24,6 +24,9 @@ const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 11] = [
     }),
     ("title_pick_rebase_subset_fmt", |s| {
         s.title_pick_rebase_subset_fmt
+    }),
+    ("title_fetch_branch_from_fmt", |s| {
+        s.title_fetch_branch_from_fmt
     }),
 ];
 
@@ -137,6 +140,59 @@ fn test_swedish_popup_titles() {
     assert_eq!(s.popup_merging, "Sammanfogar");
     assert_eq!(s.popup_error, "Fel");
     assert_eq!(s.popup_help, "Hjälp");
+}
+
+#[test]
+fn test_english_select_popup_titles() {
+    let s = i18n::english();
+    assert_eq!(s.title_checkout, "Checkout");
+    assert_eq!(
+        s.title_create_branch_starting_at,
+        "Create branch starting at"
+    );
+    assert_eq!(s.title_push_to, "Push to");
+    assert_eq!(s.title_push_to_push_remote, "Push to push remote");
+    assert_eq!(s.title_pull_from, "Pull from");
+    assert_eq!(s.title_fetch_from, "Fetch from");
+    assert_eq!(s.title_merge_branch_no_commit, "Merge branch (no commit)");
+    assert_eq!(s.title_rebase_subset_onto, "Rebase subset onto");
+    assert_eq!(s.title_apply_cherry_pick, "Apply (cherry-pick)");
+    assert_eq!(s.title_mixed_reset_to, "Mixed reset to");
+    assert_eq!(s.title_delete_tag, "Delete tag");
+    assert_eq!(s.title_create_tag_at, "Create tag at");
+    assert_eq!(s.title_rebase_merges, "Rebase merges");
+    assert_eq!(
+        s.fmt1(s.title_fetch_branch_from_fmt, "origin"),
+        "Fetch branch from origin"
+    );
+}
+
+#[test]
+fn test_swedish_select_popup_titles() {
+    let s = i18n::swedish();
+    assert_eq!(s.title_checkout, "Byt till");
+    assert_eq!(
+        s.title_create_branch_starting_at,
+        "Skapa gren som utgår från"
+    );
+    assert_eq!(s.title_push_to, "Knuffa till");
+    assert_eq!(s.title_push_to_push_remote, "Knuffa till knuffjärr");
+    assert_eq!(s.title_pull_from, "Rycka från");
+    assert_eq!(s.title_fetch_from, "Hämta från");
+    assert_eq!(
+        s.title_merge_branch_no_commit,
+        "Sammanfoga gren (ingen förbindelse)"
+    );
+    assert_eq!(s.title_rebase_subset_onto, "Ympa delmängd på");
+    assert_eq!(s.title_apply_cherry_pick, "Applicera (plocka russin)");
+    assert_eq!(s.title_mixed_reset_to, "Blandat återställ till");
+    assert_eq!(s.title_delete_tag, "Fimpa märke");
+    assert_eq!(s.title_create_tag_at, "Skapa märke vid");
+    assert_eq!(s.title_rebase_merges, "Ympa sammanslagningar");
+    assert_eq!(
+        s.fmt1(s.title_fetch_branch_from_fmt, "origin"),
+        "Hämta gren från origin"
+    );
 }
 
 #[test]

@@ -569,7 +569,7 @@ fn handle_skip_if_one(
         }),
         OnSelect::FetchAnotherBranchRemote => with_single_remote(model, |remote| {
             Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: format!("Fetch branch from {}", remote),
+                title: i18n::t().fmt1(i18n::t().title_fetch_branch_from_fmt, &remote),
                 source: OptionsSource::RemoteBranches {
                     remote: remote.clone(),
                 },

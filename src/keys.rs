@@ -349,6 +349,7 @@ mod tests {
     use crate::config::Theme;
     use crate::git::GitInfo;
     use crate::git::test_repo::TestRepo;
+    use crate::i18n;
     use crate::model::arguments::Argument::{Fetch, Push};
     use crate::model::arguments::{FetchArgument, PushArgument};
     use crate::model::popup::PopupContentCommand;
@@ -634,7 +635,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Push to".to_string(),
+                title: i18n::t().title_push_to.to_string(),
                 source: OptionsSource::UpstreamBranches,
                 on_select: OnSelect::PushUpstream,
             }))
@@ -659,7 +660,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Push tags to".to_string(),
+                title: i18n::t().title_push_tags_to.to_string(),
                 source: OptionsSource::Remotes,
                 on_select: OnSelect::PushAllTags,
             }))
@@ -684,7 +685,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Push tag".to_string(),
+                title: i18n::t().title_push_tag.to_string(),
                 source: OptionsSource::Tags,
                 on_select: OnSelect::PushTag,
             }))
@@ -750,7 +751,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Push to push remote".to_string(),
+                title: i18n::t().title_push_to_push_remote.to_string(),
                 source: OptionsSource::Remotes,
                 on_select: OnSelect::PushPushRemote,
             }))
@@ -1004,7 +1005,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Rename branch".to_string(),
+                title: i18n::t().title_rename_branch.to_string(),
                 source: OptionsSource::LocalBranches,
                 on_select: OnSelect::RenameBranch,
             }))
@@ -1038,7 +1039,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Checkout".to_string(),
+                title: i18n::t().title_checkout.to_string(),
                 source: OptionsSource::LocalAndRemoteBranches,
                 on_select: OnSelect::CheckoutBranch,
             }))
@@ -1054,7 +1055,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Create branch starting at".to_string(),
+                title: i18n::t().title_create_branch_starting_at.to_string(),
                 source: OptionsSource::BranchesAndTags,
                 on_select: OnSelect::CreateNewBranchBase { checkout: true },
             }))
@@ -1070,7 +1071,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Checkout local".to_string(),
+                title: i18n::t().title_checkout_local.to_string(),
                 source: OptionsSource::LocalBranches,
                 on_select: OnSelect::CheckoutLocalBranch,
             }))
@@ -1108,7 +1109,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Worktree checkout".to_string(),
+                title: i18n::t().title_worktree_checkout.to_string(),
                 source: OptionsSource::BranchesAndTagsExcludingCheckedOut,
                 on_select: OnSelect::WorktreeAdd { checkout: true },
             }))
@@ -1124,7 +1125,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Create branch starting at".to_string(),
+                title: i18n::t().title_create_branch_starting_at.to_string(),
                 source: OptionsSource::BranchesAndTags,
                 on_select: OnSelect::WorktreeBranch,
             }))
@@ -1266,7 +1267,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Fetch from".to_string(),
+                title: i18n::t().title_fetch_from.to_string(),
                 source: OptionsSource::UpstreamBranches,
                 on_select: OnSelect::FetchUpstream,
             }))
@@ -1434,7 +1435,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Fetch from push remote".to_string(),
+                title: i18n::t().title_fetch_from_push_remote.to_string(),
                 source: OptionsSource::Remotes,
                 on_select: OnSelect::FetchPushRemote,
             }))
@@ -1516,7 +1517,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Pull from push remote".to_string(),
+                title: i18n::t().title_pull_from_push_remote.to_string(),
                 source: OptionsSource::Remotes,
                 on_select: OnSelect::PullPushRemote,
             }))
@@ -1582,7 +1583,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Pull from".to_string(),
+                title: i18n::t().title_pull_from.to_string(),
                 source: OptionsSource::UpstreamBranches,
                 on_select: OnSelect::PullUpstream,
             }))
@@ -1884,7 +1885,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Log revision".to_string(),
+                title: i18n::t().title_log_revision.to_string(),
                 source: OptionsSource::AllRefs,
                 on_select: OnSelect::LogOther,
             }))
@@ -1902,7 +1903,7 @@ mod tests {
         assert_eq!(
             result,
             Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
-                title: "Show reflog for".to_string(),
+                title: i18n::t().title_show_reflog_for.to_string(),
                 source: OptionsSource::AllRefs,
                 on_select: OnSelect::ReflogOther,
             }))
