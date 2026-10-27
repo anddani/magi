@@ -983,6 +983,18 @@ fn snapshot_error_popup() {
 }
 
 #[test]
+fn snapshot_error_popup_short_message() {
+    // A message narrower than the dismiss hint: the popup must still be wide
+    // enough for "Press Enter or Esc to dismiss" not to be truncated.
+    let test_repo = TestRepo::new();
+    let mut model = create_snapshot_model(&test_repo);
+    model.popup = Some(PopupContent::Error {
+        message: "No tags found".to_string(),
+    });
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
 fn snapshot_merge_conflict_error_popup() {
     let test_repo = TestRepo::new();
     let mut model = create_snapshot_model(&test_repo);
