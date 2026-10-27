@@ -381,6 +381,7 @@ pub struct Strings {
     pub arg_merge_ff_only: &'static str,
     pub arg_merge_no_ff: &'static str,
     pub arg_merge_ignore_space_change: &'static str,
+    pub arg_merge_ignore_all_space: &'static str,
     pub arg_merge_strategy: &'static str,
     pub select_merge_strategy: &'static str,
 
@@ -788,6 +789,7 @@ static ENGLISH: Strings = Strings {
     arg_merge_ff_only: "Fast-forward only",
     arg_merge_no_ff: "No fast-forward",
     arg_merge_ignore_space_change: "Ignore changes in amount of whitespace",
+    arg_merge_ignore_all_space: "Ignore whitespace when comparing lines",
     arg_merge_strategy: "Strategy",
     select_merge_strategy: "Merge strategy",
 
@@ -1172,6 +1174,7 @@ static SWEDISH: Strings = Strings {
     arg_merge_ff_only: "Endast snabbspola",
     arg_merge_no_ff: "Ingen snabbspolning",
     arg_merge_ignore_space_change: "Ignorera ändringar i mängden blanksteg",
+    arg_merge_ignore_all_space: "Ignorera blanksteg vid jämförelse av rader",
     arg_merge_strategy: "Strategi",
     select_merge_strategy: "Sammanslagningsstrategi",
 

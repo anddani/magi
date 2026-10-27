@@ -1808,7 +1808,7 @@ mod tests {
             MergePopupState { in_progress: false },
         )));
 
-        let key = create_key_event(NONE, Char('w'));
+        let key = create_key_event(NONE, Char('z'));
         let result = handle_key(key, &model);
         assert_eq!(result, Some(Message::ExitArgMode));
     }

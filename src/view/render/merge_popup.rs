@@ -64,6 +64,15 @@ pub fn content<'a>(
         merge_args.is_some_and(|s| s.contains(&MergeArgument::IgnoreSpaceChange)),
     ));
 
+    arguments.push(argument_line(
+        theme,
+        MergeArgument::IgnoreAllSpace.key(),
+        t.arg_merge_ignore_all_space,
+        MergeArgument::IgnoreAllSpace.flag(),
+        model.arg_mode,
+        merge_args.is_some_and(|s| s.contains(&MergeArgument::IgnoreAllSpace)),
+    ));
+
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),
         content: arguments,
