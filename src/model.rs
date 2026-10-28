@@ -150,6 +150,9 @@ pub enum ViewMode {
         /// Whether diffs are shown inline for each commit (--patch); used when
         /// refreshing
         patch: bool,
+        /// Whether diffstats are shown for each commit (--stat); used when
+        /// refreshing
+        stat: bool,
         /// Whether signature statuses are shown (--show-signature); used when
         /// refreshing
         show_signature: bool,

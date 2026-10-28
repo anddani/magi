@@ -17,7 +17,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     let args = model.arguments.as_ref().and_then(|a| a.log());
     let dim_commands = model.arg_mode || model.equals_arg_mode;
 
-    // LogArgument::all() order: Graph, Color, Decorate, ShowHeader, Patch
+    // LogArgument::all() order: Graph, Color, Decorate, ShowHeader, Patch, Stat
     // Insert =S after Decorate (index 2), before ShowHeader
     let mut formatting: Vec<Line<'_>> = argument_lines::<LogArgument>(theme, model.arg_mode, args);
     formatting.insert(

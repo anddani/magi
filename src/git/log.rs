@@ -13,8 +13,8 @@ const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
 /// Fetches git log entries, optionally with graph, colored graph lines,
-/// refnames (--decorate), revision headers (++header), inline diffs (--patch)
-/// and signature statuses (--show-signature)
+/// refnames (--decorate), revision headers (++header), inline diffs (--patch),
+/// diffstats (--stat) and signature statuses (--show-signature)
 #[allow(clippy::too_many_arguments)]
 pub fn get_log_entries(
     repository: &Repository,
@@ -24,6 +24,7 @@ pub fn get_log_entries(
     decorate: bool,
     show_header: bool,
     patch: bool,
+    stat: bool,
     show_signature: bool,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
@@ -109,6 +110,10 @@ pub fn get_log_entries(
 
     if patch {
         args.push("--patch".to_string());
+    }
+
+    if stat {
+        args.push("--stat".to_string());
     }
 
     match log_type {
@@ -506,6 +511,7 @@ mod tests {
             false,
             false,
             false,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -530,6 +536,7 @@ mod tests {
             true,
             false,
             true,
+            false,
             false,
             false,
             false,
@@ -564,6 +571,7 @@ mod tests {
             false,
             false,
             false,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -590,6 +598,7 @@ mod tests {
             true,
             false,
             true,
+            false,
             false,
             false,
             false,
@@ -624,6 +633,7 @@ mod tests {
             false,
             false,
             false,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -648,6 +658,7 @@ mod tests {
             true,
             false,
             true,
+            false,
             false,
             false,
             false,
@@ -808,6 +819,7 @@ mod tests {
             false,
             false,
             false,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -883,6 +895,7 @@ mod tests {
             false,
             false,
             false,
+            false,
         )
         .unwrap();
 
@@ -908,6 +921,7 @@ mod tests {
             false,
             false,
             false,
+            false,
         )
         .unwrap();
 
@@ -927,6 +941,7 @@ mod tests {
             &test_repo.repo,
             &LogType::Current,
             true,
+            false,
             false,
             false,
             false,
@@ -956,6 +971,7 @@ mod tests {
             true,
             false,
             false,
+            false,
             true,
         )
         .unwrap();
@@ -978,6 +994,7 @@ mod tests {
             true,
             false,
             true,
+            false,
             false,
             false,
             false,
@@ -1004,6 +1021,7 @@ mod tests {
             false,
             true,
             true,
+            false,
             false,
             false,
         )
@@ -1053,6 +1071,7 @@ mod tests {
             true,
             false,
             false,
+            false,
         )
         .unwrap();
 
@@ -1086,6 +1105,7 @@ mod tests {
             false,
             false,
             false,
+            false,
         )
         .unwrap();
 
@@ -1110,6 +1130,7 @@ mod tests {
             false,
             true,
             true,
+            false,
             false,
             false,
         )

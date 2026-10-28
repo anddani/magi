@@ -135,6 +135,7 @@ fn test_show_preview_on_graph_only_log_line_is_noop() {
         decorate: true,
         show_header: false,
         patch: false,
+        stat: false,
         show_signature: false,
     };
 

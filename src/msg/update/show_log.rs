@@ -11,18 +11,19 @@ use crate::{
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
     // Graph and refnames are shown by default; only disabled when toggled off
     // in the log popup
-    let (graph, color, decorate, show_header, patch, show_signature) = match model.arguments.take()
-    {
-        Some(LogArguments(args)) => (
-            args.contains(&LogArgument::Graph),
-            args.contains(&LogArgument::Color),
-            args.contains(&LogArgument::Decorate),
-            args.contains(&LogArgument::ShowHeader),
-            args.contains(&LogArgument::Patch),
-            args.contains(&LogArgument::ShowSignature),
-        ),
-        _ => (true, false, true, false, false, false),
-    };
+    let (graph, color, decorate, show_header, patch, stat, show_signature) =
+        match model.arguments.take() {
+            Some(LogArguments(args)) => (
+                args.contains(&LogArgument::Graph),
+                args.contains(&LogArgument::Color),
+                args.contains(&LogArgument::Decorate),
+                args.contains(&LogArgument::ShowHeader),
+                args.contains(&LogArgument::Patch),
+                args.contains(&LogArgument::Stat),
+                args.contains(&LogArgument::ShowSignature),
+            ),
+            _ => (true, false, true, false, false, false, false),
+        };
     let reflog = matches!(
         log_type,
         LogType::Reflog | LogType::ReflogOther(_) | LogType::Stashes
@@ -39,6 +40,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         decorate,
         show_header,
         patch,
+        stat,
         show_signature,
     ) {
         Ok(entries) => {
@@ -69,6 +71,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 decorate,
                 show_header,
                 patch,
+                stat,
                 show_signature,
             };
 
