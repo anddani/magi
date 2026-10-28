@@ -82,6 +82,15 @@ pub fn content<'a>(
             RebaseArgument::DisableHooks,
         ],
     ));
+    argument_content.push(argument_value_line(
+        theme,
+        '-',
+        'S',
+        t.arg_rebase_gpg_sign,
+        "--gpg-sign=",
+        model.arguments.as_ref().and_then(|a| a.rebase_gpg_sign()),
+        model.arg_mode,
+    ));
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),
         content: argument_content,

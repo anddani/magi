@@ -97,6 +97,8 @@ pub enum OnSelect {
     RebaseUpstream,
     /// Select the mode for the `--rebase-merges=` rebase argument
     RebaseMergesMode,
+    /// Select the gpg key for the `--gpg-sign=` rebase argument
+    RebaseGpgSign,
     /// Select a local branch to reset (step 1 of 2)
     ResetBranchPick,
     /// Select a target to reset the given branch to (step 2 of 2, carries branch name)

@@ -459,6 +459,9 @@ pub enum Message {
     /// Toggle the rebase `--rebase-merges=` argument: unsets it when set,
     /// otherwise asks for the mode with a select popup
     ToggleRebaseMerges,
+    /// Show select popup for picking the -S gpg signing key for a rebase
+    /// (`--gpg-sign=`), or clear it if one is already set
+    ShowRebaseGpgSignSelect,
     ExitArgMode,
 
     /// Select popup messages

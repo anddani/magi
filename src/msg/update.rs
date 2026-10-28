@@ -81,6 +81,7 @@ mod show_preview;
 mod show_prune_tags_confirm;
 mod show_pull_popup;
 mod show_push_popup;
+mod show_rebase_gpg_sign_select;
 mod show_rebase_popup;
 mod show_reset_popup;
 mod show_revert_gpg_sign_select;
@@ -189,6 +190,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ExitArgMode => exit_arg_mode::update(model),
         Message::ToggleArgument(argument) => toggle_argument::update(model, argument),
         Message::ToggleRebaseMerges => toggle_rebase_merges::update(model),
+        Message::ShowRebaseGpgSignSelect => show_rebase_gpg_sign_select::update(model),
         Message::Select(select_msg) => match select_msg {
             SelectMessage::Edit(op) => select_edit::update(model, op),
             SelectMessage::MoveUp => select_move_up::update(model),
