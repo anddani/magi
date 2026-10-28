@@ -2,6 +2,11 @@ use std::{collections::HashSet, hash::Hash};
 
 use crate::i18n;
 
+/// Default maximum number of commits shown in the log view, used when the `-n`
+/// argument is left at its default (mirrors git's own lack of a limit while
+/// keeping the view responsive, like Magit's default).
+pub const DEFAULT_LOG_LIMIT: usize = 256;
+
 pub enum Arguments {
     CommitArguments(HashSet<CommitArgument>),
     FetchArguments(HashSet<FetchArgument>),
@@ -10,7 +15,12 @@ pub enum Arguments {
     StashArguments(HashSet<StashArgument>),
     StashPushArguments(HashSet<StashPushArgument>),
     RevertArguments(HashSet<RevertArgument>),
-    LogArguments(HashSet<LogArgument>),
+    LogArguments {
+        args: HashSet<LogArgument>,
+        /// Maximum number of commits to show, set via the `-n` argument (`-n<N>`).
+        /// Defaults to [`DEFAULT_LOG_LIMIT`].
+        limit: usize,
+    },
     TagArguments {
         args: HashSet<TagArgument>,
         /// Key to sign the tag with, set via the `-u` argument (`--local-user=`)
@@ -99,9 +109,33 @@ impl Arguments {
         }
     }
 
+    /// Log arguments with the commit limit at its default ([`DEFAULT_LOG_LIMIT`])
+    pub fn log_args(args: HashSet<LogArgument>) -> Arguments {
+        Arguments::LogArguments {
+            args,
+            limit: DEFAULT_LOG_LIMIT,
+        }
+    }
+
     pub fn log(&self) -> Option<&HashSet<LogArgument>> {
-        if let Arguments::LogArguments(args) = self {
+        if let Arguments::LogArguments { args, .. } = self {
             Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn log_limit(&self) -> Option<usize> {
+        if let Arguments::LogArguments { limit, .. } = self {
+            Some(*limit)
+        } else {
+            None
+        }
+    }
+
+    pub fn log_limit_mut(&mut self) -> Option<&mut usize> {
+        if let Arguments::LogArguments { limit, .. } = self {
+            Some(limit)
         } else {
             None
         }
@@ -172,7 +206,7 @@ impl Arguments {
     }
 
     pub fn log_mut(&mut self) -> Option<&mut HashSet<LogArgument>> {
-        if let Arguments::LogArguments(args) = self {
+        if let Arguments::LogArguments { args, .. } = self {
             Some(args)
         } else {
             None
@@ -1312,6 +1346,25 @@ mod tests {
         let arguments = Arguments::tag_args([TagArgument::Force].into_iter().collect());
         assert_eq!(arguments.tag_local_user(), None);
         assert!(arguments.tag().unwrap().contains(&TagArgument::Force));
+    }
+
+    #[test]
+    fn test_log_args_defaults_to_default_limit() {
+        let arguments = Arguments::log_args(HashSet::new());
+        assert_eq!(arguments.log_limit(), Some(DEFAULT_LOG_LIMIT));
+    }
+
+    #[test]
+    fn test_log_limit_mut_sets_value() {
+        let mut arguments = Arguments::log_args(HashSet::new());
+        *arguments.log_limit_mut().unwrap() = 42;
+        assert_eq!(arguments.log_limit(), Some(42));
+    }
+
+    #[test]
+    fn test_log_limit_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.log_limit(), None);
     }
 
     #[test]

@@ -175,15 +175,19 @@ pub fn command_description<'a>(
     ])
 }
 
-pub fn argument_value_line<'a>(
+/// Renders an argument whose flag carries a value, e.g. ` -n Limit number of
+/// commits (-n256)`. All string inputs are copied into owned spans, so the
+/// returned line is `'static` and does not borrow from `value` (which may be a
+/// short-lived local such as a formatted number).
+pub fn argument_value_line(
     theme: &Theme,
     prefix: char,
     key: char,
-    description: &'a str,
-    flag_prefix: &'a str,
-    value: Option<&'a str>,
+    description: &str,
+    flag_prefix: &str,
+    value: Option<&str>,
     prefix_pressed: bool,
-) -> Line<'a> {
+) -> Line<'static> {
     let faded_style = Style::default().fg(theme.dim_text);
     let desc_style = Style::default();
     let key_style = Style::default()

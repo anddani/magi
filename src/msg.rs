@@ -305,6 +305,8 @@ pub enum Message {
     /// Interactive rebase todo editor messages
     RebaseTodo(RebaseTodoMessage),
 
+    /// Show input popup for entering the -n commit limit for the log
+    ShowLogLimitInput,
     /// Show revert popup
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert

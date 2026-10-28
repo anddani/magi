@@ -5,6 +5,7 @@ use crate::{
     i18n,
     model::{
         Line, LineContent, Model, Toast, ToastStyle, ViewMode,
+        arguments::DEFAULT_LOG_LIMIT,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent},
         select_popup::OnSelect,
     },
@@ -208,6 +209,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
         false,
         false,
         false,
+        DEFAULT_LOG_LIMIT,
     ) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
@@ -239,6 +241,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
                     patch: false,
                     stat: false,
                     show_signature: false,
+                    limit: DEFAULT_LOG_LIMIT,
                 };
                 model.popup = None;
                 model.log_pick_on_select = Some(on_select);

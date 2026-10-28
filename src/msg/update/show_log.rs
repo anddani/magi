@@ -3,7 +3,7 @@ use crate::{
     i18n,
     model::{
         Line, LineContent, Model, PopupContent, ViewMode,
-        arguments::{Arguments::LogArguments, LogArgument},
+        arguments::{Arguments::LogArguments, DEFAULT_LOG_LIMIT, LogArgument},
     },
     msg::{LogType, Message},
 };
@@ -11,9 +11,9 @@ use crate::{
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
     // Graph and refnames are shown by default; only disabled when toggled off
     // in the log popup
-    let (graph, color, decorate, show_header, patch, stat, show_signature) =
+    let (graph, color, decorate, show_header, patch, stat, show_signature, limit) =
         match model.arguments.take() {
-            Some(LogArguments(args)) => (
+            Some(LogArguments { args, limit }) => (
                 args.contains(&LogArgument::Graph),
                 args.contains(&LogArgument::Color),
                 args.contains(&LogArgument::Decorate),
@@ -21,8 +21,18 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 args.contains(&LogArgument::Patch),
                 args.contains(&LogArgument::Stat),
                 args.contains(&LogArgument::ShowSignature),
+                limit,
             ),
-            _ => (true, false, true, false, false, false, false),
+            _ => (
+                true,
+                false,
+                true,
+                false,
+                false,
+                false,
+                false,
+                DEFAULT_LOG_LIMIT,
+            ),
         };
     let reflog = matches!(
         log_type,
@@ -42,6 +52,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         patch,
         stat,
         show_signature,
+        limit,
     ) {
         Ok(entries) => {
             // Convert log entries to lines
@@ -73,6 +84,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 patch,
                 stat,
                 show_signature,
+                limit,
             };
 
             // Dismiss the log popup

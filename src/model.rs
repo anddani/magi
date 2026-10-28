@@ -156,6 +156,8 @@ pub enum ViewMode {
         /// Whether signature statuses are shown (--show-signature); used when
         /// refreshing
         show_signature: bool,
+        /// Maximum number of commits shown (`-n<limit>`); used when refreshing
+        limit: usize,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,

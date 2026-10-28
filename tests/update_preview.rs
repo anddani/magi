@@ -137,6 +137,7 @@ fn test_show_preview_on_graph_only_log_line_is_noop() {
         patch: false,
         stat: false,
         show_signature: false,
+        limit: 256,
     };
 
     let result = update(&mut model, Message::ShowPreview);

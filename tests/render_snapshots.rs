@@ -226,7 +226,7 @@ fn snapshot_log_view_with_header() {
         .commit_file("second.txt", "two", "Add second file");
 
     let mut model = create_snapshot_model(&test_repo);
-    model.arguments = Some(Arguments::LogArguments(HashSet::from([
+    model.arguments = Some(Arguments::log_args(HashSet::from([
         LogArgument::Graph,
         LogArgument::Decorate,
         LogArgument::ShowHeader,
@@ -490,7 +490,7 @@ fn snapshot_log_popup_arg_mode() {
     let mut model = create_command_popup_model(&test_repo, PopupContentCommand::Log);
     model.arg_mode = true;
     // Graph and decorate are the defaults set when the popup opens
-    model.arguments = Some(Arguments::LogArguments(HashSet::from([
+    model.arguments = Some(Arguments::log_args(HashSet::from([
         LogArgument::Graph,
         LogArgument::Decorate,
     ])));
@@ -504,7 +504,7 @@ fn snapshot_log_popup_equals_arg_mode() {
     let test_repo = TestRepo::new();
     let mut model = create_command_popup_model(&test_repo, PopupContentCommand::Log);
     model.equals_arg_mode = true;
-    model.arguments = Some(Arguments::LogArguments(HashSet::from([
+    model.arguments = Some(Arguments::log_args(HashSet::from([
         LogArgument::Graph,
         LogArgument::Decorate,
         LogArgument::ShowSignature,

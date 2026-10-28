@@ -10,6 +10,8 @@ use crate::{
 pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Message> {
     if arg_mode {
         return match key.code {
+            // `-n` takes a value: open the numeric input popup instead of toggling
+            KeyCode::Char('n') => Some(Message::ShowLogLimitInput),
             KeyCode::Char(c) => LogArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Log(arg)))
                 .or(Some(Message::ExitArgMode)),

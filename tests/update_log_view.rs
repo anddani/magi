@@ -2,9 +2,10 @@ use magi::{
     git::test_repo::TestRepo,
     model::{
         LineContent, ViewMode,
-        arguments::{Arguments, LogArgument},
+        arguments::{Arguments, DEFAULT_LOG_LIMIT, LogArgument},
+        popup::{InputContext, InputPopupState, PopupContent, PopupContentCommand},
     },
-    msg::{CommitSelect, FixupType, LogType, Message, SelectMessage, update::update},
+    msg::{CommitSelect, FixupType, InputMessage, LogType, Message, SelectMessage, update::update},
 };
 
 mod utils;
@@ -108,7 +109,7 @@ fn test_show_log_with_show_signature_argument() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::LogArguments(
+    model.arguments = Some(Arguments::log_args(
         [
             LogArgument::Graph,
             LogArgument::Decorate,
@@ -149,7 +150,7 @@ fn test_show_log_with_show_header_argument() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::LogArguments(
+    model.arguments = Some(Arguments::log_args(
         [
             LogArgument::Graph,
             LogArgument::Decorate,
@@ -211,7 +212,7 @@ fn test_show_log_reflog_ignores_show_header_argument() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::LogArguments(
+    model.arguments = Some(Arguments::log_args(
         [
             LogArgument::Graph,
             LogArgument::Decorate,
@@ -267,7 +268,7 @@ fn test_show_log_with_patch_argument() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::LogArguments(
+    model.arguments = Some(Arguments::log_args(
         [
             LogArgument::Graph,
             LogArgument::Decorate,
@@ -305,7 +306,7 @@ fn test_show_log_with_stat_argument() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let mut model = create_model_from_test_repo(&test_repo);
-    model.arguments = Some(Arguments::LogArguments(
+    model.arguments = Some(Arguments::log_args(
         [LogArgument::Graph, LogArgument::Decorate, LogArgument::Stat]
             .into_iter()
             .collect(),
@@ -337,4 +338,141 @@ fn test_show_log_without_stat_argument() {
     update(&mut model, Message::ShowLog(LogType::Current));
 
     assert!(matches!(model.view_mode, ViewMode::Log { stat: false, .. }));
+}
+
+// ── Commit limiting argument (-n, -n<N>) ──────────────────────────────────────
+
+/// Counts the log lines that represent an actual commit (have a hash).
+fn commit_count(model: &magi::model::Model) -> usize {
+    model
+        .ui_model
+        .lines
+        .iter()
+        .filter(|line| match &line.content {
+            LineContent::LogLine(entry) => entry.hash.is_some(),
+            _ => false,
+        })
+        .count()
+}
+
+#[test]
+fn test_show_log_defaults_to_default_limit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            limit: DEFAULT_LOG_LIMIT,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_show_log_respects_custom_limit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "First commit");
+    test_repo.commit_file("b.txt", "b", "Second commit");
+    test_repo.commit_file("c.txt", "c", "Third commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // Graph off so each commit maps to exactly one log line
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_limit_mut().unwrap() = 2;
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    // The limit is remembered for refreshing...
+    assert!(matches!(model.view_mode, ViewMode::Log { limit: 2, .. }));
+    // ...and only two of the three commits are shown
+    assert_eq!(commit_count(&model), 2);
+}
+
+#[test]
+fn test_log_limit_input_confirm_updates_arguments_and_reopens_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Graph, LogArgument::Decorate]
+            .into_iter()
+            .collect(),
+    ));
+    // Simulate the input popup opened via `-n` with the user having typed "10"
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogLimit,
+        "10",
+    )));
+    model.arg_mode = true;
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    // The new limit is stored and the log popup is reopened
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.log_limit()),
+        Some(10)
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_log_limit_input_confirm_ignores_invalid_input() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Graph, LogArgument::Decorate]
+            .into_iter()
+            .collect(),
+    ));
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogLimit,
+        "notanumber",
+    )));
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    // Invalid input keeps the current (default) limit and still reopens the popup
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.log_limit()),
+        Some(DEFAULT_LOG_LIMIT)
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+}
+
+#[test]
+fn test_show_log_limit_input_prefills_current_limit() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_limit_mut().unwrap() = 77;
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+
+    update(&mut model, Message::ShowLogLimitInput);
+
+    match &model.popup {
+        Some(PopupContent::Input(state)) => {
+            assert_eq!(state.context, InputContext::LogLimit);
+            assert_eq!(state.input.as_str(), "77");
+        }
+        other => panic!("expected input popup, got {other:?}"),
+    }
 }

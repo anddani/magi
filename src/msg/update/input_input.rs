@@ -32,6 +32,21 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         )));
     }
 
+    // LogLimit: write the parsed number back into the log arguments and reopen
+    // the log popup. Empty or invalid input keeps the current limit.
+    if let InputContext::LogLimit = state.context {
+        let input = state.input.as_str().trim();
+        if let Ok(limit) = input.parse::<usize>()
+            && limit > 0
+            && let Some(current) = model.arguments.as_mut().and_then(|a| a.log_limit_mut())
+        {
+            *current = limit;
+        }
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+        model.arg_mode = false;
+        return None;
+    }
+
     // RevertMainline allows empty input (empty = clear the mainline value)
     if let InputContext::RevertMainline { mut revert_state } = state.context {
         let input = state.input.as_str().trim().to_string();
@@ -124,6 +139,8 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
                 branch_name: input,
             }))
         }
-        InputContext::Stash(_) | InputContext::RevertMainline { .. } => unreachable!(),
+        InputContext::Stash(_) | InputContext::RevertMainline { .. } | InputContext::LogLimit => {
+            unreachable!()
+        }
     }
 }
