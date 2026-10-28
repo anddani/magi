@@ -21,6 +21,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             grep,
             search_changes,
             search_occurrences,
+            trace_lines,
             ..
         } => refresh_log(
             model,
@@ -37,6 +38,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             grep,
             search_changes,
             search_occurrences,
+            trace_lines,
         ),
         // In preview mode, refresh is a no-op (preview content is static)
         ViewMode::Preview => {}
@@ -125,6 +127,7 @@ fn refresh_log(
     grep: Option<String>,
     search_changes: Option<String>,
     search_occurrences: Option<String>,
+    trace_lines: Option<String>,
 ) {
     if let Ok(entries) = get_log_entries(
         &model.git_info.repository,
@@ -141,6 +144,7 @@ fn refresh_log(
         grep.as_deref(),
         search_changes.as_deref(),
         search_occurrences.as_deref(),
+        trace_lines.as_deref(),
     ) {
         let lines: Vec<Line> = entries
             .into_iter()

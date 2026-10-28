@@ -32,6 +32,9 @@ pub enum Arguments {
         /// Pattern to search changed occurrences for, set via the `-S`
         /// argument (`-S<pattern>`). `None` means no occurrence search.
         search_occurrences: Option<String>,
+        /// Line range to trace the evolution of, set via the `-L` argument
+        /// (`-L<start>,<end>:<file>`). `None` means no line trace.
+        trace_lines: Option<String>,
     },
     TagArguments {
         args: HashSet<TagArgument>,
@@ -135,6 +138,7 @@ impl Arguments {
             grep: None,
             search_changes: None,
             search_occurrences: None,
+            trace_lines: None,
         }
     }
 
@@ -227,6 +231,22 @@ impl Arguments {
         } = self
         {
             Some(search_occurrences)
+        } else {
+            None
+        }
+    }
+
+    pub fn log_trace_lines(&self) -> Option<&str> {
+        if let Arguments::LogArguments { trace_lines, .. } = self {
+            trace_lines.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn log_trace_lines_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::LogArguments { trace_lines, .. } = self {
+            Some(trace_lines)
         } else {
             None
         }
@@ -1612,6 +1632,28 @@ mod tests {
     fn test_log_search_occurrences_on_other_arguments_is_none() {
         let arguments = Arguments::CommitArguments(HashSet::new());
         assert_eq!(arguments.log_search_occurrences(), None);
+    }
+
+    #[test]
+    fn test_log_args_defaults_to_no_trace_lines() {
+        let arguments = Arguments::log_args(HashSet::new());
+        assert_eq!(arguments.log_trace_lines(), None);
+    }
+
+    #[test]
+    fn test_log_trace_lines_mut_sets_and_clears() {
+        let mut arguments = Arguments::log_args(HashSet::new());
+        *arguments.log_trace_lines_mut().unwrap() = Some("1,10:src/main.rs".to_string());
+        assert_eq!(arguments.log_trace_lines(), Some("1,10:src/main.rs"));
+
+        *arguments.log_trace_lines_mut().unwrap() = None;
+        assert_eq!(arguments.log_trace_lines(), None);
+    }
+
+    #[test]
+    fn test_log_trace_lines_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.log_trace_lines(), None);
     }
 
     #[test]

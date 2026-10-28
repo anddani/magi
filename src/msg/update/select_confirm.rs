@@ -755,6 +755,7 @@ mod tests {
             grep: None,
             search_changes: None,
             search_occurrences: None,
+            trace_lines: None,
         };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
@@ -794,6 +795,7 @@ mod tests {
             grep: None,
             search_changes: None,
             search_occurrences: None,
+            trace_lines: None,
         };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
@@ -832,6 +834,7 @@ mod tests {
             grep: None,
             search_changes: None,
             search_occurrences: None,
+            trace_lines: None,
         };
         model.ui_model.lines = vec![Line {
             content: LineContent::LogLine(LogEntry {
@@ -875,6 +878,7 @@ mod tests {
             grep: None,
             search_changes: None,
             search_occurrences: None,
+            trace_lines: None,
         };
         model.ui_model.lines = vec![make_log_line("deadbeef", "Some commit")];
         model.ui_model.cursor_position = 0;
@@ -983,6 +987,7 @@ mod tests {
             grep: None,
             search_changes: None,
             search_occurrences: None,
+            trace_lines: None,
         };
         model.ui_model.lines = vec![make_log_line("abc1234", "First commit")];
         model.log_pick_on_select = Some(OnSelect::FixupCommit(FixupType::Fixup));
@@ -1009,6 +1014,7 @@ mod tests {
                 grep: None,
                 search_changes: None,
                 search_occurrences: None,
+                trace_lines: None,
             }
         );
         // log_pick_on_select still set (not consumed)

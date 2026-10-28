@@ -214,6 +214,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
         None,
         None,
         None,
+        None,
     ) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
@@ -250,6 +251,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
                     grep: None,
                     search_changes: None,
                     search_occurrences: None,
+                    trace_lines: None,
                 };
                 model.popup = None;
                 model.log_pick_on_select = Some(on_select);

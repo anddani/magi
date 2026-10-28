@@ -142,6 +142,7 @@ fn test_show_preview_on_graph_only_log_line_is_noop() {
         grep: None,
         search_changes: None,
         search_occurrences: None,
+        trace_lines: None,
     };
 
     let result = update(&mut model, Message::ShowPreview);

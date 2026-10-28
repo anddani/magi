@@ -170,6 +170,9 @@ pub enum ViewMode {
         /// Occurrence pattern the log is filtered by (`-S`); used when
         /// refreshing. `None` means no occurrence search
         search_occurrences: Option<String>,
+        /// Line range the log traces the evolution of (`-L`); used when
+        /// refreshing. `None` means no line trace
+        trace_lines: Option<String>,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,

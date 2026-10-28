@@ -1016,3 +1016,140 @@ fn test_show_log_search_occurrences_input_prefills_current() {
         other => panic!("expected input popup, got {other:?}"),
     }
 }
+
+// ── Line-trace argument (-L, -L<range>) ───────────────────────────────────────
+
+#[test]
+fn test_show_log_defaults_to_no_trace_lines() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            trace_lines: None,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_show_log_respects_trace_lines_filter() {
+    let test_repo = TestRepo::new();
+    // -L traces the evolution of a line range in a file: only commits touching
+    // those lines of a.txt appear
+    test_repo.commit_file("a.txt", "line1\nline2\nline3\n", "Add a");
+    test_repo.commit_file("b.txt", "unrelated\n", "Add b");
+    test_repo.commit_file("a.txt", "line1\nline2 changed\nline3\n", "Edit a line2");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_trace_lines_mut().unwrap() = Some("2,2:a.txt".to_string());
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            trace_lines: Some(ref l),
+            ..
+        } if l == "2,2:a.txt"
+    ));
+    // The two commits that introduced/changed line 2 of a.txt appear; the
+    // unrelated b.txt commit does not
+    let shown: Vec<String> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|line| match &line.content {
+            LineContent::LogLine(entry) if entry.is_commit() => entry.message.clone(),
+            _ => None,
+        })
+        .collect();
+    assert!(shown.iter().any(|m| m.contains("Add a")));
+    assert!(shown.iter().any(|m| m.contains("Edit a line2")));
+    assert!(!shown.iter().any(|m| m.contains("Add b")));
+}
+
+#[test]
+fn test_log_trace_lines_input_confirm_sets_and_reopens_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Graph, LogArgument::Decorate]
+            .into_iter()
+            .collect(),
+    ));
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogTraceLines,
+        "1,10:src/main.rs",
+    )));
+    model.arg_mode = true;
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.log_trace_lines()),
+        Some("1,10:src/main.rs")
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_log_trace_lines_input_confirm_empty_clears() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_trace_lines_mut().unwrap() = Some("1,10:src/main.rs".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogTraceLines,
+        "",
+    )));
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.log_trace_lines()),
+        None
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+}
+
+#[test]
+fn test_show_log_trace_lines_input_prefills_current() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_trace_lines_mut().unwrap() = Some(":main:src/main.rs".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+
+    update(&mut model, Message::ShowLogTraceLinesInput);
+
+    match &model.popup {
+        Some(PopupContent::Input(state)) => {
+            assert_eq!(state.context, InputContext::LogTraceLines);
+            assert_eq!(state.input.as_str(), ":main:src/main.rs");
+        }
+        other => panic!("expected input popup, got {other:?}"),
+    }
+}

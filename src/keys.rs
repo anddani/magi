@@ -2059,6 +2059,16 @@ mod tests {
     }
 
     #[test]
+    fn test_shift_l_in_log_arg_mode_opens_trace_lines_input() {
+        let mut model = create_log_popup_model();
+        model.arg_mode = true;
+
+        let key = create_key_event(NONE, Char('L'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowLogTraceLinesInput));
+    }
+
+    #[test]
     fn test_other_key_in_log_arg_mode_exits_arg_mode() {
         let mut model = create_log_popup_model();
         model.arg_mode = true;
@@ -2142,6 +2152,7 @@ mod tests {
             grep: None,
             search_changes: None,
             search_occurrences: None,
+            trace_lines: None,
         };
         model
     }
@@ -2232,6 +2243,7 @@ mod tests {
             grep: None,
             search_changes: None,
             search_occurrences: None,
+            trace_lines: None,
         };
         model
     }
@@ -2658,6 +2670,7 @@ mod tests {
             grep: None,
             search_changes: None,
             search_occurrences: None,
+            trace_lines: None,
         };
         model.ui_model.lines = vec![crate::model::Line {
             content: crate::model::LineContent::LogLine(LogEntry::new(
