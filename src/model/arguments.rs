@@ -20,6 +20,9 @@ pub enum Arguments {
         /// Maximum number of commits to show, set via the `-n` argument (`-n<N>`).
         /// Defaults to [`DEFAULT_LOG_LIMIT`].
         limit: usize,
+        /// Author pattern to limit the log to, set via the `-A` argument
+        /// (`--author=<pattern>`). `None` means no author filter.
+        author: Option<String>,
     },
     TagArguments {
         args: HashSet<TagArgument>,
@@ -114,10 +117,12 @@ impl Arguments {
     }
 
     /// Log arguments with the commit limit at its default ([`DEFAULT_LOG_LIMIT`])
+    /// and no author filter
     pub fn log_args(args: HashSet<LogArgument>) -> Arguments {
         Arguments::LogArguments {
             args,
             limit: DEFAULT_LOG_LIMIT,
+            author: None,
         }
     }
 
@@ -140,6 +145,22 @@ impl Arguments {
     pub fn log_limit_mut(&mut self) -> Option<&mut usize> {
         if let Arguments::LogArguments { limit, .. } = self {
             Some(limit)
+        } else {
+            None
+        }
+    }
+
+    pub fn log_author(&self) -> Option<&str> {
+        if let Arguments::LogArguments { author, .. } = self {
+            author.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn log_author_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::LogArguments { author, .. } = self {
+            Some(author)
         } else {
             None
         }
@@ -1437,6 +1458,28 @@ mod tests {
     fn test_log_limit_on_other_arguments_is_none() {
         let arguments = Arguments::CommitArguments(HashSet::new());
         assert_eq!(arguments.log_limit(), None);
+    }
+
+    #[test]
+    fn test_log_args_defaults_to_no_author() {
+        let arguments = Arguments::log_args(HashSet::new());
+        assert_eq!(arguments.log_author(), None);
+    }
+
+    #[test]
+    fn test_log_author_mut_sets_and_clears() {
+        let mut arguments = Arguments::log_args(HashSet::new());
+        *arguments.log_author_mut().unwrap() = Some("Ada".to_string());
+        assert_eq!(arguments.log_author(), Some("Ada"));
+
+        *arguments.log_author_mut().unwrap() = None;
+        assert_eq!(arguments.log_author(), None);
+    }
+
+    #[test]
+    fn test_log_author_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.log_author(), None);
     }
 
     #[test]

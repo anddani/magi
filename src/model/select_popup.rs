@@ -166,6 +166,9 @@ pub enum OnSelect {
     ApplyApply,
     /// Select a ref to squash-merge into the working tree (`git merge --squash`)
     ApplySquash,
+    /// Select an author to limit the log to (`--author=`); the value is stored
+    /// in the log arguments and the log popup is restored
+    LogAuthor,
     /// Select a branch/revision to show the log for
     LogOther,
     /// Select a branch/ref to show the reflog for

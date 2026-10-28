@@ -499,6 +499,21 @@ fn route_result(
         (Some(OnSelect::ApplySquash), SelectResult::Selected(hash)) => {
             Some(Message::Apply(ApplyCommand::Squash(hash)))
         }
+        (Some(OnSelect::LogAuthor), result) => {
+            // Enter on an empty filter clears the author; a selection (or a
+            // typed pattern matching nothing) sets it
+            let author = match result {
+                SelectResult::Selected(author) => Some(author),
+                _ => None,
+            };
+            if let Some(slot) = model.arguments.as_mut().and_then(|a| a.log_author_mut()) {
+                *slot = author;
+            }
+            // Return to the log popup, now showing the argument as set (reopened
+            // directly so the log arguments, including the author, are preserved)
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+            None
+        }
         (Some(OnSelect::LogOther), SelectResult::Selected(revision)) => {
             Some(Message::ShowLog(LogType::Other(revision)))
         }
@@ -736,6 +751,7 @@ mod tests {
             stat: false,
             show_signature: false,
             limit: 256,
+            author: None,
         };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
@@ -771,6 +787,7 @@ mod tests {
             stat: false,
             show_signature: false,
             limit: 256,
+            author: None,
         };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
@@ -805,6 +822,7 @@ mod tests {
             stat: false,
             show_signature: false,
             limit: 256,
+            author: None,
         };
         model.ui_model.lines = vec![Line {
             content: LineContent::LogLine(LogEntry {
@@ -844,6 +862,7 @@ mod tests {
             stat: false,
             show_signature: false,
             limit: 256,
+            author: None,
         };
         model.ui_model.lines = vec![make_log_line("deadbeef", "Some commit")];
         model.ui_model.cursor_position = 0;
@@ -948,6 +967,7 @@ mod tests {
             stat: false,
             show_signature: false,
             limit: 256,
+            author: None,
         };
         model.ui_model.lines = vec![make_log_line("abc1234", "First commit")];
         model.log_pick_on_select = Some(OnSelect::FixupCommit(FixupType::Fixup));
@@ -970,6 +990,7 @@ mod tests {
                 stat: false,
                 show_signature: false,
                 limit: 256,
+                author: None,
             }
         );
         // log_pick_on_select still set (not consumed)

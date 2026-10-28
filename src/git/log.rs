@@ -14,7 +14,8 @@ const SEPARATOR: char = '\x0c'; // Form feed character
 /// Fetches git log entries, optionally with graph, colored graph lines,
 /// refnames (--decorate), revision headers (++header), inline diffs (--patch),
 /// diffstats (--stat) and signature statuses (--show-signature). `limit` caps
-/// the number of commits shown (`-n<limit>`)
+/// the number of commits shown (`-n<limit>`); `author`, when set, limits the log
+/// to commits by a matching author (`--author=<author>`)
 #[allow(clippy::too_many_arguments)]
 pub fn get_log_entries(
     repository: &Repository,
@@ -27,6 +28,7 @@ pub fn get_log_entries(
     stat: bool,
     show_signature: bool,
     limit: usize,
+    author: Option<&str>,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
@@ -115,6 +117,11 @@ pub fn get_log_entries(
 
     if stat {
         args.push("--stat".to_string());
+    }
+
+    // Limit to commits whose author matches the pattern, like magit's `--author=`
+    if let Some(author) = author.filter(|a| !a.is_empty()) {
+        args.push(format!("--author={}", author));
     }
 
     match log_type {
@@ -514,6 +521,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -543,6 +551,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -576,6 +585,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -607,6 +617,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -640,6 +651,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -669,6 +681,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
         assert!(entries.is_empty());
@@ -828,6 +841,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -905,6 +919,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
 
@@ -932,6 +947,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
 
@@ -958,6 +974,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
 
@@ -985,6 +1002,7 @@ mod tests {
             false,
             true,
             256,
+            None,
         )
         .unwrap();
 
@@ -1011,6 +1029,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
 
@@ -1038,6 +1057,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
 
@@ -1087,6 +1107,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
 
@@ -1122,6 +1143,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
 
@@ -1150,6 +1172,7 @@ mod tests {
             false,
             false,
             256,
+            None,
         )
         .unwrap();
 

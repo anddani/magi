@@ -20,25 +20,37 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     let args = model.arguments.as_ref().and_then(|a| a.log());
     let dim_commands = model.arg_mode || model.equals_arg_mode;
 
-    // Commit limiting section (top): the `-n` argument carries a value (the
-    // commit count), so it is rendered with its current value like magit's `-n`
+    // Commit limiting section (top): the `-n` and `-A` arguments carry values,
+    // so they are rendered with their current value like magit's `-n`/`-A`
     let limit = model
         .arguments
         .as_ref()
         .and_then(|a| a.log_limit())
         .unwrap_or(DEFAULT_LOG_LIMIT)
         .to_string();
+    let author = model.arguments.as_ref().and_then(|a| a.log_author());
     let commit_limiting_col = PopupColumn {
         title: Some(t.col_commit_limiting.into()),
-        content: vec![argument_value_line(
-            theme,
-            '-',
-            'n',
-            t.arg_log_limit,
-            "-n",
-            Some(&limit),
-            model.arg_mode,
-        )],
+        content: vec![
+            argument_value_line(
+                theme,
+                '-',
+                'n',
+                t.arg_log_limit,
+                "-n",
+                Some(&limit),
+                model.arg_mode,
+            ),
+            argument_value_line(
+                theme,
+                '-',
+                'A',
+                t.arg_log_author,
+                "--author=",
+                author,
+                model.arg_mode,
+            ),
+        ],
     };
 
     // LogArgument::all() order: Graph, Color, Decorate, ShowHeader, Patch, Stat

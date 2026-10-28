@@ -71,6 +71,7 @@ mod show_commit_select;
 mod show_fetch_popup;
 mod show_input_popup;
 mod show_log;
+mod show_log_author_select;
 mod show_log_limit_input;
 mod show_log_popup;
 mod show_merge_diff_algorithm_select;
@@ -234,6 +235,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowRevertPopup => show_revert_popup::update(model),
         Message::ShowRevertMainlineInput => show_revert_mainline_input::update(model),
         Message::ShowLogLimitInput => show_log_limit_input::update(model),
+        Message::ShowLogAuthorSelect => show_log_author_select::update(model),
         Message::ShowRevertStrategySelect => show_revert_strategy_select::update(model),
         Message::ShowRevertGpgSignSelect => show_revert_gpg_sign_select::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),

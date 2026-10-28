@@ -4,6 +4,7 @@ use magi::{
         LineContent, ViewMode,
         arguments::{Arguments, DEFAULT_LOG_LIMIT, LogArgument},
         popup::{InputContext, InputPopupState, PopupContent, PopupContentCommand},
+        select_popup::{OnSelect, SelectPopupState},
     },
     msg::{CommitSelect, FixupType, InputMessage, LogType, Message, SelectMessage, update::update},
 };
@@ -475,4 +476,164 @@ fn test_show_log_limit_input_prefills_current_limit() {
         }
         other => panic!("expected input popup, got {other:?}"),
     }
+}
+
+// ── Author argument (-A, --author=) ───────────────────────────────────────────
+
+#[test]
+fn test_show_log_defaults_to_no_author() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log { author: None, .. }
+    ));
+}
+
+#[test]
+fn test_show_log_respects_author_filter() {
+    let test_repo = TestRepo::new();
+    // All commits are authored by "Test" (see TestRepo)
+    test_repo.commit_file("a.txt", "a", "First commit");
+    test_repo.commit_file("b.txt", "b", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    // A pattern matching no author filters everything out
+    *args.log_author_mut().unwrap() = Some("ZZZ-nobody".to_string());
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            author: Some(ref a),
+            ..
+        } if a == "ZZZ-nobody"
+    ));
+    assert_eq!(commit_count(&model), 0);
+}
+
+#[test]
+fn test_show_log_matching_author_shows_commits() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_author_mut().unwrap() = Some("Test".to_string());
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(commit_count(&model) > 0);
+}
+
+#[test]
+fn test_show_log_author_select_opens_author_picker() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Decorate].into_iter().collect(),
+    ));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+    model.arg_mode = true;
+
+    update(&mut model, Message::ShowLogAuthorSelect);
+
+    match &model.popup {
+        Some(PopupContent::Command(PopupContentCommand::Select(state))) => {
+            assert_eq!(state.on_select, OnSelect::LogAuthor);
+            // The repo's author ("Test") is offered in the pickable list
+            assert!(state.all_options.iter().any(|a| a.contains("Test")));
+        }
+        other => panic!("expected author select popup, got {other:?}"),
+    }
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_show_log_author_select_clears_when_already_set() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_author_mut().unwrap() = Some("Ada".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+
+    update(&mut model, Message::ShowLogAuthorSelect);
+
+    // Pressing -A while set clears the filter and stays on the log popup
+    assert_eq!(model.arguments.as_ref().and_then(|a| a.log_author()), None);
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+}
+
+#[test]
+fn test_log_author_select_confirm_sets_author_and_reopens_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Graph, LogArgument::Decorate]
+            .into_iter()
+            .collect(),
+    ));
+    let select_state = SelectPopupState::new(
+        "Limit to author".to_string(),
+        vec!["Ada Lovelace <ada@example.com>".to_string()],
+        OnSelect::LogAuthor,
+    );
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        select_state,
+    )));
+
+    update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.log_author()),
+        Some("Ada Lovelace <ada@example.com>")
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+}
+
+#[test]
+fn test_log_author_select_confirm_empty_clears_author() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_author_mut().unwrap() = Some("Ada".to_string());
+    model.arguments = Some(args);
+    // An empty picker with no typed text confirms to "none", clearing the filter
+    let select_state =
+        SelectPopupState::new("Limit to author".to_string(), vec![], OnSelect::LogAuthor);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        select_state,
+    )));
+
+    update(&mut model, Message::Select(SelectMessage::Confirm));
+
+    assert_eq!(model.arguments.as_ref().and_then(|a| a.log_author()), None);
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
 }

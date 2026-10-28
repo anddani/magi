@@ -307,6 +307,8 @@ pub enum Message {
 
     /// Show input popup for entering the -n commit limit for the log
     ShowLogLimitInput,
+    /// Show author picker for the -A author filter for the log
+    ShowLogAuthorSelect,
     /// Show revert popup
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert
