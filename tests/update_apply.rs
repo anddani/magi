@@ -381,6 +381,7 @@ fn test_show_apply_popup_cursor_on_log_line_collects_hash() {
         false,
         false,
         false,
+        false,
     )
     .unwrap()
     .into_iter()

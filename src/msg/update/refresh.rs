@@ -14,6 +14,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             decorate,
             show_header,
             patch,
+            stat,
             show_signature,
             ..
         } => refresh_log(
@@ -24,6 +25,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             decorate,
             show_header,
             patch,
+            stat,
             show_signature,
         ),
         // In preview mode, refresh is a no-op (preview content is static)
@@ -106,6 +108,7 @@ fn refresh_log(
     decorate: bool,
     show_header: bool,
     patch: bool,
+    stat: bool,
     show_signature: bool,
 ) {
     if let Ok(entries) = get_log_entries(
@@ -116,6 +119,7 @@ fn refresh_log(
         decorate,
         show_header,
         patch,
+        stat,
         show_signature,
     ) {
         let lines: Vec<Line> = entries

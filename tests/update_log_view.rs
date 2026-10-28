@@ -296,3 +296,45 @@ fn test_show_log_without_patch_argument() {
         ViewMode::Log { patch: false, .. }
     ));
 }
+
+// ── Stat argument (-s, --stat) ────────────────────────────────────────────────
+
+#[test]
+fn test_show_log_with_stat_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::LogArguments(
+        [LogArgument::Graph, LogArgument::Decorate, LogArgument::Stat]
+            .into_iter()
+            .collect(),
+    ));
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(model.view_mode, ViewMode::Log { stat: true, .. }));
+
+    // --stat emits a diffstat summary line listing the changed file
+    assert!(model.ui_model.lines.iter().any(|line| {
+        match &line.content {
+            LineContent::LogLine(entry) => entry
+                .hash
+                .as_deref()
+                .is_some_and(|text| text.contains("file1.txt")),
+            _ => false,
+        }
+    }));
+}
+
+#[test]
+fn test_show_log_without_stat_argument() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(model.view_mode, ViewMode::Log { stat: false, .. }));
+}

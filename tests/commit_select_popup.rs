@@ -22,6 +22,7 @@ fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> 
         false,
         false,
         false,
+        false,
     )
     .unwrap();
     entries.retain(|e| e.is_commit());
@@ -101,6 +102,7 @@ fn test_commit_select_popup_confirm_returns_hash() {
             decorate: true,
             show_header: false,
             patch: false,
+            stat: false,
             show_signature: false
         }
     ));
@@ -154,6 +156,7 @@ fn test_commit_select_popup_navigation() {
             decorate: true,
             show_header: false,
             patch: false,
+            stat: false,
             show_signature: false
         }
     ));

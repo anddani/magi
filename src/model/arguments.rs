@@ -658,6 +658,7 @@ pub enum LogArgument {
     Decorate,
     ShowHeader,
     Patch,
+    Stat,
     ShowSignature,
 }
 
@@ -677,6 +678,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Decorate,
             LogArgument::ShowHeader,
             LogArgument::Patch,
+            LogArgument::Stat,
         ]
     }
 
@@ -687,6 +689,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Decorate => 'd',
             LogArgument::ShowHeader => 'h',
             LogArgument::Patch => 'p',
+            LogArgument::Stat => 's',
             LogArgument::ShowSignature => 'S',
         }
     }
@@ -699,6 +702,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Decorate => t.arg_log_decorate,
             LogArgument::ShowHeader => t.arg_log_show_header,
             LogArgument::Patch => t.arg_log_patch,
+            LogArgument::Stat => t.arg_log_stat,
             LogArgument::ShowSignature => t.arg_log_show_signature,
         }
     }
@@ -710,6 +714,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Decorate => "--decorate",
             LogArgument::ShowHeader => "++header",
             LogArgument::Patch => "--patch",
+            LogArgument::Stat => "--stat",
             LogArgument::ShowSignature => "--show-signature",
         }
     }
@@ -1143,6 +1148,7 @@ mod tests {
         assert_eq!(LogArgument::from_key('c'), Some(LogArgument::Color));
         assert_eq!(LogArgument::from_key('d'), Some(LogArgument::Decorate));
         assert_eq!(LogArgument::from_key('h'), Some(LogArgument::ShowHeader));
+        assert_eq!(LogArgument::from_key('s'), Some(LogArgument::Stat));
         assert_eq!(LogArgument::from_key('x'), None);
     }
 
@@ -1150,6 +1156,12 @@ mod tests {
     fn test_log_argument_show_header_key_and_flag() {
         assert_eq!(LogArgument::ShowHeader.key(), 'h');
         assert_eq!(LogArgument::ShowHeader.flag(), "++header");
+    }
+
+    #[test]
+    fn test_log_argument_stat_key_and_flag() {
+        assert_eq!(LogArgument::Stat.key(), 's');
+        assert_eq!(LogArgument::Stat.flag(), "--stat");
     }
 
     #[test]
@@ -1174,6 +1186,7 @@ mod tests {
                 LogArgument::Decorate,
                 LogArgument::ShowHeader,
                 LogArgument::Patch,
+                LogArgument::Stat,
             ]
         );
     }
