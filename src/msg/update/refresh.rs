@@ -22,6 +22,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             search_changes,
             search_occurrences,
             trace_lines,
+            simplify_by_decoration,
             ..
         } => refresh_log(
             model,
@@ -39,6 +40,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             search_changes,
             search_occurrences,
             trace_lines,
+            simplify_by_decoration,
         ),
         // In preview mode, refresh is a no-op (preview content is static)
         ViewMode::Preview => {}
@@ -128,6 +130,7 @@ fn refresh_log(
     search_changes: Option<String>,
     search_occurrences: Option<String>,
     trace_lines: Option<String>,
+    simplify_by_decoration: bool,
 ) {
     if let Ok(entries) = get_log_entries(
         &model.git_info.repository,
@@ -145,6 +148,7 @@ fn refresh_log(
         search_changes.as_deref(),
         search_occurrences.as_deref(),
         trace_lines.as_deref(),
+        simplify_by_decoration,
     ) {
         let lines: Vec<Line> = entries
             .into_iter()

@@ -829,6 +829,7 @@ pub enum LogArgument {
     Patch,
     Stat,
     ShowSignature,
+    SimplifyByDecoration,
 }
 
 impl LogArgument {
@@ -838,8 +839,11 @@ impl LogArgument {
 }
 
 impl PopupArgument for LogArgument {
+    /// `all()` holds only the `-` toggles rendered in the Formatting section.
     /// ShowSignature is excluded: it uses the `=` prefix (magit's `=S`), so it
     /// is rendered with `prefixed_argument_line` and toggled in equals-arg mode.
+    /// SimplifyByDecoration is excluded too: it lives in its own "History
+    /// simplification" section and is toggled via an explicit `-D` key handler.
     fn all() -> Vec<LogArgument> {
         vec![
             LogArgument::Graph,
@@ -860,6 +864,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Patch => 'p',
             LogArgument::Stat => 's',
             LogArgument::ShowSignature => 'S',
+            LogArgument::SimplifyByDecoration => 'D',
         }
     }
 
@@ -873,6 +878,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Patch => t.arg_log_patch,
             LogArgument::Stat => t.arg_log_stat,
             LogArgument::ShowSignature => t.arg_log_show_signature,
+            LogArgument::SimplifyByDecoration => t.arg_log_simplify_by_decoration,
         }
     }
 
@@ -885,6 +891,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Patch => "--patch",
             LogArgument::Stat => "--stat",
             LogArgument::ShowSignature => "--show-signature",
+            LogArgument::SimplifyByDecoration => "--simplify-by-decoration",
         }
     }
 }
@@ -1387,6 +1394,22 @@ mod tests {
     fn test_log_argument_show_signature_not_toggled_via_from_key() {
         // 'S' is handled in equals-arg mode (`=S`), not the generic `-` toggle
         assert_eq!(LogArgument::from_key('S'), None);
+    }
+
+    #[test]
+    fn test_log_argument_simplify_by_decoration_key_and_flag() {
+        assert_eq!(LogArgument::SimplifyByDecoration.key(), 'D');
+        assert_eq!(
+            LogArgument::SimplifyByDecoration.flag(),
+            "--simplify-by-decoration"
+        );
+    }
+
+    #[test]
+    fn test_log_argument_simplify_by_decoration_not_toggled_via_from_key() {
+        // 'D' is handled by an explicit key binding (its own section), not the
+        // generic `-` toggle driven by `all()`
+        assert_eq!(LogArgument::from_key('D'), None);
     }
 
     #[test]

@@ -25,6 +25,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         search_changes,
         search_occurrences,
         trace_lines,
+        simplify_by_decoration,
     ) = match model.arguments.take() {
         Some(LogArguments {
             args,
@@ -48,6 +49,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             search_changes,
             search_occurrences,
             trace_lines,
+            args.contains(&LogArgument::SimplifyByDecoration),
         ),
         _ => (
             true,
@@ -63,6 +65,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             None,
             None,
             None,
+            false,
         ),
     };
     let reflog = matches!(
@@ -89,6 +92,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         search_changes.as_deref(),
         search_occurrences.as_deref(),
         trace_lines.as_deref(),
+        simplify_by_decoration,
     ) {
         Ok(entries) => {
             // Convert log entries to lines
@@ -126,6 +130,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 search_changes,
                 search_occurrences,
                 trace_lines,
+                simplify_by_decoration,
             };
 
             // Dismiss the log popup

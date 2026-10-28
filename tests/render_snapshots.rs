@@ -481,7 +481,7 @@ fn snapshot_worktree_popup() {
 fn snapshot_log_popup() {
     let test_repo = TestRepo::new();
     let model = create_command_popup_model(&test_repo, PopupContentCommand::Log);
-    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+    assert_frame_snapshot!(render_to_string(&model, 80, 40));
 }
 
 #[test]
@@ -496,7 +496,7 @@ fn snapshot_log_popup_arg_mode() {
     ])));
     // Argument mode only changes styling (key highlights, selected flags), so
     // snapshot the styled buffer instead of the plain-text frame.
-    assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+    assert_frame_snapshot!(render_to_styled_string(&model, 80, 40));
 }
 
 #[test]
@@ -511,7 +511,7 @@ fn snapshot_log_popup_equals_arg_mode() {
     ])));
     // Equals-arg mode only changes styling (key highlights, selected flags),
     // so snapshot the styled buffer instead of the plain-text frame.
-    assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+    assert_frame_snapshot!(render_to_styled_string(&model, 80, 40));
 }
 
 #[test]

@@ -17,6 +17,11 @@ pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Mess
             KeyCode::Char('G') => Some(Message::ShowLogSearchChangesInput),
             KeyCode::Char('S') => Some(Message::ShowLogSearchOccurrencesInput),
             KeyCode::Char('L') => Some(Message::ShowLogTraceLinesInput),
+            // `-D` is a toggle in its own section (excluded from `all()`), so it
+            // is dispatched explicitly rather than through `from_key`
+            KeyCode::Char('D') => Some(Message::ToggleArgument(Log(
+                LogArgument::SimplifyByDecoration,
+            ))),
             KeyCode::Char(c) => LogArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Log(arg)))
                 .or(Some(Message::ExitArgMode)),

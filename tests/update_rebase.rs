@@ -364,6 +364,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
         None,
         None,
         None,
+        false,
     )
     .unwrap();
     commits.retain(|e| e.is_commit());
@@ -397,6 +398,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
         search_changes: None,
         search_occurrences: None,
         trace_lines: None,
+        simplify_by_decoration: false,
     };
     model.log_pick_on_select = Some(OnSelect::RebaseElsewhere);
 
@@ -684,6 +686,7 @@ fn test_select_confirm_rebase_subset_start_returns_rebase_message() {
         None,
         None,
         None,
+        false,
     )
     .unwrap();
     commits.retain(|e| e.is_commit());
@@ -716,6 +719,7 @@ fn test_select_confirm_rebase_subset_start_returns_rebase_message() {
         search_changes: None,
         search_occurrences: None,
         trace_lines: None,
+        simplify_by_decoration: false,
     };
     model.log_pick_on_select = Some(OnSelect::RebaseSubsetStart {
         newbase: "origin/main".to_string(),
@@ -1522,6 +1526,7 @@ fn test_select_confirm_modify_commit_returns_rebase_message() {
         None,
         None,
         None,
+        false,
     )
     .unwrap();
     commits.retain(|e| e.is_commit());
@@ -1554,6 +1559,7 @@ fn test_select_confirm_modify_commit_returns_rebase_message() {
         search_changes: None,
         search_occurrences: None,
         trace_lines: None,
+        simplify_by_decoration: false,
     };
     model.log_pick_on_select = Some(OnSelect::ModifyCommit);
 
@@ -1717,6 +1723,7 @@ fn test_select_confirm_reword_commit_returns_rebase_message() {
         None,
         None,
         None,
+        false,
     )
     .unwrap();
     commits.retain(|e| e.is_commit());
@@ -1749,6 +1756,7 @@ fn test_select_confirm_reword_commit_returns_rebase_message() {
         search_changes: None,
         search_occurrences: None,
         trace_lines: None,
+        simplify_by_decoration: false,
     };
     model.log_pick_on_select = Some(OnSelect::RewordCommit);
 
@@ -1928,6 +1936,7 @@ fn test_select_confirm_remove_commit_returns_rebase_message() {
         None,
         None,
         None,
+        false,
     )
     .unwrap();
     commits.retain(|e| e.is_commit());
@@ -1960,6 +1969,7 @@ fn test_select_confirm_remove_commit_returns_rebase_message() {
         search_changes: None,
         search_occurrences: None,
         trace_lines: None,
+        simplify_by_decoration: false,
     };
     model.log_pick_on_select = Some(OnSelect::RemoveCommit);
 
@@ -2129,6 +2139,7 @@ fn test_select_confirm_autosquash_returns_autosquash_into_message() {
         None,
         None,
         None,
+        false,
     )
     .unwrap();
     commits.retain(|e| e.is_commit());
@@ -2161,6 +2172,7 @@ fn test_select_confirm_autosquash_returns_autosquash_into_message() {
         search_changes: None,
         search_occurrences: None,
         trace_lines: None,
+        simplify_by_decoration: false,
     };
     model.log_pick_on_select = Some(OnSelect::AutosquashCommit);
 

@@ -26,6 +26,7 @@ fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> 
         None,
         None,
         None,
+        false,
     )
     .unwrap();
     entries.retain(|e| e.is_commit());
