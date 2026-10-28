@@ -313,6 +313,8 @@ pub enum Message {
     ShowLogGrepInput,
     /// Show input popup for entering the -G change search pattern for the log
     ShowLogSearchChangesInput,
+    /// Show input popup for entering the -S occurrence search pattern for the log
+    ShowLogSearchOccurrencesInput,
     /// Show revert popup
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert

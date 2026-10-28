@@ -23,6 +23,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         author,
         grep,
         search_changes,
+        search_occurrences,
     ) = match model.arguments.take() {
         Some(LogArguments {
             args,
@@ -30,6 +31,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             author,
             grep,
             search_changes,
+            search_occurrences,
         }) => (
             args.contains(&LogArgument::Graph),
             args.contains(&LogArgument::Color),
@@ -42,6 +44,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             author,
             grep,
             search_changes,
+            search_occurrences,
         ),
         _ => (
             true,
@@ -52,6 +55,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             false,
             false,
             DEFAULT_LOG_LIMIT,
+            None,
             None,
             None,
             None,
@@ -79,6 +83,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         author.as_deref(),
         grep.as_deref(),
         search_changes.as_deref(),
+        search_occurrences.as_deref(),
     ) {
         Ok(entries) => {
             // Convert log entries to lines
@@ -114,6 +119,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 author,
                 grep,
                 search_changes,
+                search_occurrences,
             };
 
             // Dismiss the log popup

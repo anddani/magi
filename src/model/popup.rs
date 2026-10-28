@@ -193,6 +193,8 @@ pub enum InputContext {
     LogGrep,
     /// Entering the pattern to search added/removed changes for in the log (`-G`)
     LogSearchChanges,
+    /// Entering the pattern to search changed occurrences for in the log (`-S`)
+    LogSearchOccurrences,
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -254,6 +256,7 @@ impl InputPopupState {
             InputContext::LogLimit => t.input_log_limit.to_string(),
             InputContext::LogGrep => t.input_log_grep.to_string(),
             InputContext::LogSearchChanges => t.input_log_search_changes.to_string(),
+            InputContext::LogSearchOccurrences => t.input_log_search_occurrences.to_string(),
         }
     }
 }

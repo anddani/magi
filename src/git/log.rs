@@ -18,7 +18,9 @@ const SEPARATOR: char = '\x0c'; // Form feed character
 /// to commits by a matching author (`--author=<author>`); `grep`, when set,
 /// limits the log to commits whose message matches (`--grep=<grep>`);
 /// `search_changes`, when set, limits the log to commits that add or remove a
-/// line matching the pattern (`-G<search_changes>`)
+/// line matching the pattern (`-G<search_changes>`); `search_occurrences`, when
+/// set, limits the log to commits that change the number of occurrences of the
+/// pattern (`-S<search_occurrences>`)
 #[allow(clippy::too_many_arguments)]
 pub fn get_log_entries(
     repository: &Repository,
@@ -34,6 +36,7 @@ pub fn get_log_entries(
     author: Option<&str>,
     grep: Option<&str>,
     search_changes: Option<&str>,
+    search_occurrences: Option<&str>,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
@@ -138,6 +141,12 @@ pub fn get_log_entries(
     // like magit's `-G`
     if let Some(search_changes) = search_changes.filter(|g| !g.is_empty()) {
         args.push(format!("-G{}", search_changes));
+    }
+
+    // Limit to commits that change the number of occurrences of the pattern
+    // (pickaxe), like magit's `-S`
+    if let Some(search_occurrences) = search_occurrences.filter(|s| !s.is_empty()) {
+        args.push(format!("-S{}", search_occurrences));
     }
 
     match log_type {
@@ -540,6 +549,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -569,6 +579,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -608,6 +619,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -639,6 +651,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -678,6 +691,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -707,6 +721,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -872,6 +887,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -952,6 +968,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -982,6 +999,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -1008,6 +1026,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -1041,6 +1060,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -1067,6 +1087,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -1097,6 +1118,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -1152,6 +1174,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -1190,6 +1213,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -1218,6 +1242,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
