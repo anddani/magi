@@ -73,6 +73,19 @@ pub fn content<'a>(
         merge_args.is_some_and(|s| s.contains(&MergeArgument::IgnoreAllSpace)),
     ));
 
+    arguments.push(argument_value_line(
+        theme,
+        '-',
+        'A',
+        t.arg_merge_diff_algorithm,
+        "-Xdiff-algorithm=",
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.merge_diff_algorithm()),
+        model.arg_mode,
+    ));
+
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),
         content: arguments,

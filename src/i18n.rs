@@ -395,6 +395,8 @@ pub struct Strings {
     pub arg_merge_ignore_all_space: &'static str,
     pub arg_merge_strategy: &'static str,
     pub select_merge_strategy: &'static str,
+    pub arg_merge_diff_algorithm: &'static str,
+    pub select_merge_diff_algorithm: &'static str,
 
     // Mode labels shown in the status bar
     pub mode_normal: &'static str,
@@ -913,6 +915,8 @@ static ENGLISH: Strings = Strings {
     arg_merge_ignore_all_space: "Ignore whitespace when comparing lines",
     arg_merge_strategy: "Strategy",
     select_merge_strategy: "Merge strategy",
+    arg_merge_diff_algorithm: "Diff algorithm",
+    select_merge_diff_algorithm: "Diff algorithm",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUAL",
@@ -1401,6 +1405,8 @@ static SWEDISH: Strings = Strings {
     arg_merge_ignore_all_space: "Ignorera blanksteg vid jämförelse av rader",
     arg_merge_strategy: "Strategi",
     select_merge_strategy: "Sammanslagningsstrategi",
+    arg_merge_diff_algorithm: "Diff-algoritm",
+    select_merge_diff_algorithm: "Diff-algoritm",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUELL",

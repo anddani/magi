@@ -152,6 +152,9 @@ pub enum OnSelect {
     /// Select the merge strategy for a merge (`--strategy=`); the value is
     /// stored in the merge arguments and the merge popup is restored
     MergeStrategy,
+    /// Select the diff algorithm for a merge (`-Xdiff-algorithm=`); the value
+    /// is stored in the merge arguments and the merge popup is restored
+    MergeDiffAlgorithm,
     /// Select a commit to cherry-pick onto the current branch
     ApplyPick,
     /// Select a commit to apply (--no-commit) onto the current branch

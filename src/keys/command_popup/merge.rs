@@ -22,6 +22,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &MergePopupState) -> Option<Me
     if arg_mode {
         return match key.code {
             KeyCode::Char('s') => Some(Message::ShowMergeStrategySelect),
+            KeyCode::Char('A') => Some(Message::ShowMergeDiffAlgorithmSelect),
             KeyCode::Char(c) => MergeArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Merge(arg)))
                 .or(Some(Message::ExitArgMode)),
