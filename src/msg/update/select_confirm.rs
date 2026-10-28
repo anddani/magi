@@ -403,6 +403,7 @@ fn route_result(
                         args: Default::default(),
                         strategy,
                         diff_algorithm: None,
+                        gpg_sign: None,
                     })
                 }
             }
@@ -426,6 +427,36 @@ fn route_result(
                         args: Default::default(),
                         strategy: None,
                         diff_algorithm,
+                        gpg_sign: None,
+                    })
+                }
+            }
+            // Return to the merge popup, now showing the argument as set
+            Some(Message::ShowMergePopup)
+        }
+        (Some(OnSelect::MergeGpgSign), result) => {
+            // Options are "<keyid> <user id>" entries; only the leading keyid
+            // is passed to git. Enter on an empty filter clears the key.
+            let gpg_sign = match result {
+                SelectResult::Selected(key) => key
+                    .split_whitespace()
+                    .next()
+                    .filter(|keyid| !keyid.is_empty())
+                    .map(|keyid| keyid.to_string()),
+                _ => None,
+            };
+            match model
+                .arguments
+                .as_mut()
+                .and_then(|a| a.merge_gpg_sign_mut())
+            {
+                Some(slot) => *slot = gpg_sign,
+                None => {
+                    model.arguments = Some(Arguments::MergeArguments {
+                        args: Default::default(),
+                        strategy: None,
+                        diff_algorithm: None,
+                        gpg_sign,
                     })
                 }
             }
