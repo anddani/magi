@@ -11,7 +11,10 @@ use crate::{
     },
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::{argument_lines, argument_value_line, command_description, prefixed_argument_line},
+        util::{
+            argument_line, argument_lines, argument_value_line, command_description,
+            prefixed_argument_line,
+        },
     },
 };
 
@@ -100,6 +103,20 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         ],
     };
 
+    // History simplification section: the `-D` toggle lives here (not in
+    // Formatting), rendered with the `-` prefix like the other toggles
+    let history_simplification_col = PopupColumn {
+        title: Some(t.col_history_simplification.into()),
+        content: vec![argument_line(
+            theme,
+            'D',
+            t.arg_log_simplify_by_decoration,
+            "--simplify-by-decoration",
+            model.arg_mode,
+            args.is_some_and(|a| a.contains(&LogArgument::SimplifyByDecoration)),
+        )],
+    };
+
     // LogArgument::all() order: Graph, Color, Decorate, ShowHeader, Patch, Stat
     // Insert =S after Decorate (index 2), before ShowHeader
     let mut formatting: Vec<Line<'_>> = argument_lines::<LogArgument>(theme, model.arg_mode, args);
@@ -147,6 +164,9 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         rows: vec![
             PopupRow {
                 columns: vec![commit_limiting_col],
+            },
+            PopupRow {
+                columns: vec![history_simplification_col],
             },
             PopupRow {
                 columns: vec![formatting_col],

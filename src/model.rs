@@ -173,6 +173,9 @@ pub enum ViewMode {
         /// Line range the log traces the evolution of (`-L`); used when
         /// refreshing. `None` means no line trace
         trace_lines: Option<String>,
+        /// Whether history is simplified by decoration (--simplify-by-decoration);
+        /// used when refreshing
+        simplify_by_decoration: bool,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,

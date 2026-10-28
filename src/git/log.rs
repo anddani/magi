@@ -21,7 +21,9 @@ const SEPARATOR: char = '\x0c'; // Form feed character
 /// line matching the pattern (`-G<search_changes>`); `search_occurrences`, when
 /// set, limits the log to commits that change the number of occurrences of the
 /// pattern (`-S<search_occurrences>`); `trace_lines`, when set, traces the
-/// evolution of a line range (`-L<trace_lines>`)
+/// evolution of a line range (`-L<trace_lines>`); `simplify_by_decoration`
+/// limits the log to commits that are referenced by some branch or tag
+/// (--simplify-by-decoration)
 #[allow(clippy::too_many_arguments)]
 pub fn get_log_entries(
     repository: &Repository,
@@ -39,6 +41,7 @@ pub fn get_log_entries(
     search_changes: Option<&str>,
     search_occurrences: Option<&str>,
     trace_lines: Option<&str>,
+    simplify_by_decoration: bool,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
@@ -154,6 +157,12 @@ pub fn get_log_entries(
     // Trace the evolution of a line range in a file, like magit's `-L`
     if let Some(trace_lines) = trace_lines.filter(|l| !l.is_empty()) {
         args.push(format!("-L{}", trace_lines));
+    }
+
+    // Simplify history to commits referenced by a branch or tag, like magit's
+    // `-D`
+    if simplify_by_decoration {
+        args.push("--simplify-by-decoration".to_string());
     }
 
     match log_type {
@@ -558,6 +567,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -592,6 +602,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -630,6 +641,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -666,6 +678,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -704,6 +717,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -738,6 +752,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
         assert!(entries.is_empty());
@@ -902,6 +917,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -984,6 +1000,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
 
@@ -1016,6 +1033,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
 
@@ -1047,6 +1065,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
 
@@ -1079,6 +1098,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
 
@@ -1110,6 +1130,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
 
@@ -1142,6 +1163,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
 
@@ -1196,6 +1218,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
 
@@ -1236,6 +1259,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
 
@@ -1269,6 +1293,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         )
         .unwrap();
 

@@ -1153,3 +1153,72 @@ fn test_show_log_trace_lines_input_prefills_current() {
         other => panic!("expected input popup, got {other:?}"),
     }
 }
+
+// ── Simplify-by-decoration argument (-D, --simplify-by-decoration) ─────────────
+
+#[test]
+fn test_show_log_defaults_to_no_simplify_by_decoration() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            simplify_by_decoration: false,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_show_log_respects_simplify_by_decoration() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "1", "First commit");
+    let first = test_repo.head_hash();
+    test_repo.commit_file("b.txt", "2", "Second commit");
+    test_repo.commit_file("c.txt", "3", "Third commit");
+    // Decorate the first commit with a branch so it survives simplification
+    let first_commit = test_repo
+        .repo
+        .revparse_single(&first)
+        .unwrap()
+        .peel_to_commit()
+        .unwrap();
+    test_repo.repo.branch("mark", &first_commit, false).unwrap();
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    args.log_mut()
+        .unwrap()
+        .insert(LogArgument::SimplifyByDecoration);
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            simplify_by_decoration: true,
+            ..
+        }
+    ));
+
+    let shown: Vec<String> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|line| match &line.content {
+            LineContent::LogLine(entry) if entry.is_commit() => entry.message.clone(),
+            _ => None,
+        })
+        .collect();
+    // The decorated commit (branch "mark") and HEAD remain; the undecorated
+    // middle commit is simplified away
+    assert!(shown.iter().any(|m| m.contains("First commit")));
+    assert!(shown.iter().any(|m| m.contains("Third commit")));
+    assert!(!shown.iter().any(|m| m.contains("Second commit")));
+}
