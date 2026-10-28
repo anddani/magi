@@ -20,9 +20,9 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     let args = model.arguments.as_ref().and_then(|a| a.log());
     let dim_commands = model.arg_mode || model.equals_arg_mode;
 
-    // Commit limiting section (top): the `-n`, `-A`, `-F`, `-G` and `-S`
+    // Commit limiting section (top): the `-n`, `-A`, `-F`, `-G`, `-S` and `-L`
     // arguments carry values, so they are rendered with their current value
-    // like magit's `-n`/`-A`/`-F`/`-G`/`-S`
+    // like magit's `-n`/`-A`/`-F`/`-G`/`-S`/`-L`
     let limit = model
         .arguments
         .as_ref()
@@ -39,6 +39,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         .arguments
         .as_ref()
         .and_then(|a| a.log_search_occurrences());
+    let trace_lines = model.arguments.as_ref().and_then(|a| a.log_trace_lines());
     let commit_limiting_col = PopupColumn {
         title: Some(t.col_commit_limiting.into()),
         content: vec![
@@ -85,6 +86,15 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
                 t.arg_log_search_occurrences,
                 "-S",
                 search_occurrences,
+                model.arg_mode,
+            ),
+            argument_value_line(
+                theme,
+                '-',
+                'L',
+                t.arg_log_trace_lines,
+                "-L",
+                trace_lines,
                 model.arg_mode,
             ),
         ],

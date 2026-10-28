@@ -20,7 +20,8 @@ const SEPARATOR: char = '\x0c'; // Form feed character
 /// `search_changes`, when set, limits the log to commits that add or remove a
 /// line matching the pattern (`-G<search_changes>`); `search_occurrences`, when
 /// set, limits the log to commits that change the number of occurrences of the
-/// pattern (`-S<search_occurrences>`)
+/// pattern (`-S<search_occurrences>`); `trace_lines`, when set, traces the
+/// evolution of a line range (`-L<trace_lines>`)
 #[allow(clippy::too_many_arguments)]
 pub fn get_log_entries(
     repository: &Repository,
@@ -37,6 +38,7 @@ pub fn get_log_entries(
     grep: Option<&str>,
     search_changes: Option<&str>,
     search_occurrences: Option<&str>,
+    trace_lines: Option<&str>,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
@@ -147,6 +149,11 @@ pub fn get_log_entries(
     // (pickaxe), like magit's `-S`
     if let Some(search_occurrences) = search_occurrences.filter(|s| !s.is_empty()) {
         args.push(format!("-S{}", search_occurrences));
+    }
+
+    // Trace the evolution of a line range in a file, like magit's `-L`
+    if let Some(trace_lines) = trace_lines.filter(|l| !l.is_empty()) {
+        args.push(format!("-L{}", trace_lines));
     }
 
     match log_type {
@@ -550,6 +557,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -579,6 +587,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -620,6 +629,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -651,6 +661,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -692,6 +703,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -721,6 +733,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -888,6 +901,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -969,6 +983,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -1000,6 +1015,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -1026,6 +1042,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -1061,6 +1078,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -1087,6 +1105,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -1118,6 +1137,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,
@@ -1175,6 +1195,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -1214,6 +1235,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -1242,6 +1264,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
             None,
             None,

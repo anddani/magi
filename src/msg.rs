@@ -315,6 +315,8 @@ pub enum Message {
     ShowLogSearchChangesInput,
     /// Show input popup for entering the -S occurrence search pattern for the log
     ShowLogSearchOccurrencesInput,
+    /// Show input popup for entering the -L line-trace range for the log
+    ShowLogTraceLinesInput,
     /// Show revert popup
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert
