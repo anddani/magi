@@ -29,6 +29,9 @@ pub enum Arguments {
         /// Pattern to search added/removed changes for, set via the `-G`
         /// argument (`-G<pattern>`). `None` means no change search.
         search_changes: Option<String>,
+        /// Pattern to search changed occurrences for, set via the `-S`
+        /// argument (`-S<pattern>`). `None` means no occurrence search.
+        search_occurrences: Option<String>,
     },
     TagArguments {
         args: HashSet<TagArgument>,
@@ -131,6 +134,7 @@ impl Arguments {
             author: None,
             grep: None,
             search_changes: None,
+            search_occurrences: None,
         }
     }
 
@@ -201,6 +205,28 @@ impl Arguments {
     pub fn log_search_changes_mut(&mut self) -> Option<&mut Option<String>> {
         if let Arguments::LogArguments { search_changes, .. } = self {
             Some(search_changes)
+        } else {
+            None
+        }
+    }
+
+    pub fn log_search_occurrences(&self) -> Option<&str> {
+        if let Arguments::LogArguments {
+            search_occurrences, ..
+        } = self
+        {
+            search_occurrences.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn log_search_occurrences_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::LogArguments {
+            search_occurrences, ..
+        } = self
+        {
+            Some(search_occurrences)
         } else {
             None
         }
@@ -1564,6 +1590,28 @@ mod tests {
     fn test_log_search_changes_on_other_arguments_is_none() {
         let arguments = Arguments::CommitArguments(HashSet::new());
         assert_eq!(arguments.log_search_changes(), None);
+    }
+
+    #[test]
+    fn test_log_args_defaults_to_no_search_occurrences() {
+        let arguments = Arguments::log_args(HashSet::new());
+        assert_eq!(arguments.log_search_occurrences(), None);
+    }
+
+    #[test]
+    fn test_log_search_occurrences_mut_sets_and_clears() {
+        let mut arguments = Arguments::log_args(HashSet::new());
+        *arguments.log_search_occurrences_mut().unwrap() = Some("foo".to_string());
+        assert_eq!(arguments.log_search_occurrences(), Some("foo"));
+
+        *arguments.log_search_occurrences_mut().unwrap() = None;
+        assert_eq!(arguments.log_search_occurrences(), None);
+    }
+
+    #[test]
+    fn test_log_search_occurrences_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.log_search_occurrences(), None);
     }
 
     #[test]

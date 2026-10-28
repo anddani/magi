@@ -167,6 +167,9 @@ pub enum ViewMode {
         /// Change pattern the log is filtered by (`-G`); used when refreshing.
         /// `None` means no change search
         search_changes: Option<String>,
+        /// Occurrence pattern the log is filtered by (`-S`); used when
+        /// refreshing. `None` means no occurrence search
+        search_occurrences: Option<String>,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,

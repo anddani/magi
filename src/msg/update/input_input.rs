@@ -83,6 +83,26 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         return None;
     }
 
+    // LogSearchOccurrences: write the occurrence-search pattern back into the
+    // log arguments and reopen the log popup. Empty input clears it.
+    if let InputContext::LogSearchOccurrences = state.context {
+        let input = state.input.as_str().trim();
+        if let Some(current) = model
+            .arguments
+            .as_mut()
+            .and_then(|a| a.log_search_occurrences_mut())
+        {
+            *current = if input.is_empty() {
+                None
+            } else {
+                Some(input.to_string())
+            };
+        }
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+        model.arg_mode = false;
+        return None;
+    }
+
     // RevertMainline allows empty input (empty = clear the mainline value)
     if let InputContext::RevertMainline { mut revert_state } = state.context {
         let input = state.input.as_str().trim().to_string();
@@ -179,7 +199,8 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         | InputContext::RevertMainline { .. }
         | InputContext::LogLimit
         | InputContext::LogGrep
-        | InputContext::LogSearchChanges => {
+        | InputContext::LogSearchChanges
+        | InputContext::LogSearchOccurrences => {
             unreachable!()
         }
     }

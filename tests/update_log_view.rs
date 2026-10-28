@@ -887,3 +887,132 @@ fn test_show_log_search_changes_input_prefills_current() {
         other => panic!("expected input popup, got {other:?}"),
     }
 }
+
+// ── Occurrence search argument (-S, -S<pattern>) ──────────────────────────────
+
+#[test]
+fn test_show_log_defaults_to_no_search_occurrences() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            search_occurrences: None,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_show_log_respects_search_occurrences_filter() {
+    let test_repo = TestRepo::new();
+    // -S matches commits that change the number of occurrences of the pattern
+    test_repo.commit_file("a.txt", "needle alpha", "Add a");
+    test_repo.commit_file("b.txt", "other beta", "Add b");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_search_occurrences_mut().unwrap() = Some("needle".to_string());
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            search_occurrences: Some(ref s),
+            ..
+        } if s == "needle"
+    ));
+    // Only the commit that changed the count of "needle" matches
+    assert_eq!(commit_count(&model), 1);
+}
+
+#[test]
+fn test_log_search_occurrences_input_confirm_sets_and_reopens_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Graph, LogArgument::Decorate]
+            .into_iter()
+            .collect(),
+    ));
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogSearchOccurrences,
+        "foo",
+    )));
+    model.arg_mode = true;
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.log_search_occurrences()),
+        Some("foo")
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_log_search_occurrences_input_confirm_empty_clears() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_search_occurrences_mut().unwrap() = Some("foo".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogSearchOccurrences,
+        "",
+    )));
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.log_search_occurrences()),
+        None
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+}
+
+#[test]
+fn test_show_log_search_occurrences_input_prefills_current() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_search_occurrences_mut().unwrap() = Some("TODO".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+
+    update(&mut model, Message::ShowLogSearchOccurrencesInput);
+
+    match &model.popup {
+        Some(PopupContent::Input(state)) => {
+            assert_eq!(state.context, InputContext::LogSearchOccurrences);
+            assert_eq!(state.input.as_str(), "TODO");
+        }
+        other => panic!("expected input popup, got {other:?}"),
+    }
+}
