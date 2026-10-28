@@ -79,6 +79,7 @@ pub fn content<'a>(
             RebaseArgument::IgnoreDate,
             RebaseArgument::Autosquash,
             RebaseArgument::Autostash,
+            RebaseArgument::DisableHooks,
         ],
     ));
     let arguments_col = PopupColumn {

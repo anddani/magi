@@ -818,6 +818,7 @@ pub enum RebaseArgument {
     IgnoreDate,
     Autosquash,
     Autostash,
+    DisableHooks,
 }
 
 impl RebaseArgument {
@@ -837,6 +838,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::IgnoreDate,
             RebaseArgument::Autosquash,
             RebaseArgument::Autostash,
+            RebaseArgument::DisableHooks,
         ]
     }
 
@@ -849,6 +851,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::IgnoreDate => 't',
             RebaseArgument::Autosquash => 'a',
             RebaseArgument::Autostash => 'A',
+            RebaseArgument::DisableHooks => 'h',
         }
     }
 
@@ -862,6 +865,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::IgnoreDate => t.arg_rebase_ignore_date,
             RebaseArgument::Autosquash => t.arg_rebase_autosquash,
             RebaseArgument::Autostash => t.arg_rebase_autostash,
+            RebaseArgument::DisableHooks => t.arg_rebase_disable_hooks,
         }
     }
 
@@ -879,6 +883,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::IgnoreDate => "--ignore-date",
             RebaseArgument::Autosquash => "--autosquash",
             RebaseArgument::Autostash => "--autostash",
+            RebaseArgument::DisableHooks => "--no-verify",
         }
     }
 }
@@ -1115,6 +1120,7 @@ mod tests {
                 RebaseArgument::IgnoreDate,
                 RebaseArgument::Autosquash,
                 RebaseArgument::Autostash,
+                RebaseArgument::DisableHooks,
             ]
         );
     }
@@ -1132,6 +1138,16 @@ mod tests {
         assert_eq!(
             RebaseArgument::from_key('A'),
             Some(RebaseArgument::Autostash)
+        );
+    }
+
+    #[test]
+    fn test_rebase_argument_disable_hooks_key_and_flag() {
+        assert_eq!(RebaseArgument::DisableHooks.key(), 'h');
+        assert_eq!(RebaseArgument::DisableHooks.flag(), "--no-verify");
+        assert_eq!(
+            RebaseArgument::from_key('h'),
+            Some(RebaseArgument::DisableHooks)
         );
     }
 
