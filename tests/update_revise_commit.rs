@@ -28,6 +28,7 @@ fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> 
         256,
         None,
         None,
+        None,
     )
     .unwrap();
     entries.retain(|e| e.is_commit());
@@ -184,6 +185,7 @@ fn test_revise_commit_select_confirm_routes_to_revise() {
         limit: 256,
         author: None,
         grep: None,
+        search_changes: None,
     };
     model.ui_model.lines = vec![make_log_line(&commit_hash, "First commit")];
     model.ui_model.cursor_position = 0;

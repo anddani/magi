@@ -191,6 +191,8 @@ pub enum InputContext {
     LogLimit,
     /// Entering the pattern to search commit messages for in the log (`-F`)
     LogGrep,
+    /// Entering the pattern to search added/removed changes for in the log (`-G`)
+    LogSearchChanges,
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -251,6 +253,7 @@ impl InputPopupState {
             InputContext::RevertMainline { .. } => t.input_revert_mainline.to_string(),
             InputContext::LogLimit => t.input_log_limit.to_string(),
             InputContext::LogGrep => t.input_log_grep.to_string(),
+            InputContext::LogSearchChanges => t.input_log_search_changes.to_string(),
         }
     }
 }

@@ -164,6 +164,9 @@ pub enum ViewMode {
         /// Message pattern the log is filtered by (`--grep=`); used when
         /// refreshing. `None` means no message filter
         grep: Option<String>,
+        /// Change pattern the log is filtered by (`-G`); used when refreshing.
+        /// `None` means no change search
+        search_changes: Option<String>,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,

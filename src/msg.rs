@@ -311,6 +311,8 @@ pub enum Message {
     ShowLogAuthorSelect,
     /// Show input popup for entering the -F message search pattern for the log
     ShowLogGrepInput,
+    /// Show input popup for entering the -G change search pattern for the log
+    ShowLogSearchChangesInput,
     /// Show revert popup
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert

@@ -11,38 +11,52 @@ use crate::{
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
     // Graph and refnames are shown by default; only disabled when toggled off
     // in the log popup
-    let (graph, color, decorate, show_header, patch, stat, show_signature, limit, author, grep) =
-        match model.arguments.take() {
-            Some(LogArguments {
-                args,
-                limit,
-                author,
-                grep,
-            }) => (
-                args.contains(&LogArgument::Graph),
-                args.contains(&LogArgument::Color),
-                args.contains(&LogArgument::Decorate),
-                args.contains(&LogArgument::ShowHeader),
-                args.contains(&LogArgument::Patch),
-                args.contains(&LogArgument::Stat),
-                args.contains(&LogArgument::ShowSignature),
-                limit,
-                author,
-                grep,
-            ),
-            _ => (
-                true,
-                false,
-                true,
-                false,
-                false,
-                false,
-                false,
-                DEFAULT_LOG_LIMIT,
-                None,
-                None,
-            ),
-        };
+    let (
+        graph,
+        color,
+        decorate,
+        show_header,
+        patch,
+        stat,
+        show_signature,
+        limit,
+        author,
+        grep,
+        search_changes,
+    ) = match model.arguments.take() {
+        Some(LogArguments {
+            args,
+            limit,
+            author,
+            grep,
+            search_changes,
+        }) => (
+            args.contains(&LogArgument::Graph),
+            args.contains(&LogArgument::Color),
+            args.contains(&LogArgument::Decorate),
+            args.contains(&LogArgument::ShowHeader),
+            args.contains(&LogArgument::Patch),
+            args.contains(&LogArgument::Stat),
+            args.contains(&LogArgument::ShowSignature),
+            limit,
+            author,
+            grep,
+            search_changes,
+        ),
+        _ => (
+            true,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            DEFAULT_LOG_LIMIT,
+            None,
+            None,
+            None,
+        ),
+    };
     let reflog = matches!(
         log_type,
         LogType::Reflog | LogType::ReflogOther(_) | LogType::Stashes
@@ -64,6 +78,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         limit,
         author.as_deref(),
         grep.as_deref(),
+        search_changes.as_deref(),
     ) {
         Ok(entries) => {
             // Convert log entries to lines
@@ -98,6 +113,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 limit,
                 author,
                 grep,
+                search_changes,
             };
 
             // Dismiss the log popup
