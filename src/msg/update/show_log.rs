@@ -11,12 +11,13 @@ use crate::{
 pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
     // Graph and refnames are shown by default; only disabled when toggled off
     // in the log popup
-    let (graph, color, decorate, show_header, patch, stat, show_signature, limit, author) =
+    let (graph, color, decorate, show_header, patch, stat, show_signature, limit, author, grep) =
         match model.arguments.take() {
             Some(LogArguments {
                 args,
                 limit,
                 author,
+                grep,
             }) => (
                 args.contains(&LogArgument::Graph),
                 args.contains(&LogArgument::Color),
@@ -27,6 +28,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 args.contains(&LogArgument::ShowSignature),
                 limit,
                 author,
+                grep,
             ),
             _ => (
                 true,
@@ -37,6 +39,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 false,
                 false,
                 DEFAULT_LOG_LIMIT,
+                None,
                 None,
             ),
         };
@@ -60,6 +63,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
         show_signature,
         limit,
         author.as_deref(),
+        grep.as_deref(),
     ) {
         Ok(entries) => {
             // Convert log entries to lines
@@ -93,6 +97,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
                 show_signature,
                 limit,
                 author,
+                grep,
             };
 
             // Dismiss the log popup

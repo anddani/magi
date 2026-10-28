@@ -637,3 +637,124 @@ fn test_log_author_select_confirm_empty_clears_author() {
         Some(PopupContent::Command(PopupContentCommand::Log))
     );
 }
+
+// ── Message search argument (-F, --grep=) ─────────────────────────────────────
+
+#[test]
+fn test_show_log_defaults_to_no_grep() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(model.view_mode, ViewMode::Log { grep: None, .. }));
+}
+
+#[test]
+fn test_show_log_respects_grep_filter() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "Add feature");
+    test_repo.commit_file("b.txt", "b", "Fix the bug");
+    test_repo.commit_file("c.txt", "c", "Fix another bug");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_grep_mut().unwrap() = Some("Fix".to_string());
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            grep: Some(ref g),
+            ..
+        } if g == "Fix"
+    ));
+    // Only the two "Fix ..." commits match
+    assert_eq!(commit_count(&model), 2);
+    assert!(model.ui_model.lines.iter().all(|line| match &line.content {
+        LineContent::LogLine(entry) => match &entry.message {
+            Some(m) => m.contains("Fix"),
+            None => true,
+        },
+        _ => true,
+    }));
+}
+
+#[test]
+fn test_log_grep_input_confirm_sets_grep_and_reopens_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Graph, LogArgument::Decorate]
+            .into_iter()
+            .collect(),
+    ));
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogGrep,
+        "WIP",
+    )));
+    model.arg_mode = true;
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.log_grep()),
+        Some("WIP")
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_log_grep_input_confirm_empty_clears_grep() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_grep_mut().unwrap() = Some("WIP".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogGrep,
+        "",
+    )));
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(model.arguments.as_ref().and_then(|a| a.log_grep()), None);
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+}
+
+#[test]
+fn test_show_log_grep_input_prefills_current_grep() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_grep_mut().unwrap() = Some("hotfix".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+
+    update(&mut model, Message::ShowLogGrepInput);
+
+    match &model.popup {
+        Some(PopupContent::Input(state)) => {
+            assert_eq!(state.context, InputContext::LogGrep);
+            assert_eq!(state.input.as_str(), "hotfix");
+        }
+        other => panic!("expected input popup, got {other:?}"),
+    }
+}

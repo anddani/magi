@@ -309,6 +309,8 @@ pub enum Message {
     ShowLogLimitInput,
     /// Show author picker for the -A author filter for the log
     ShowLogAuthorSelect,
+    /// Show input popup for entering the -F message search pattern for the log
+    ShowLogGrepInput,
     /// Show revert popup
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert

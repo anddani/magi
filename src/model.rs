@@ -161,6 +161,9 @@ pub enum ViewMode {
         /// Author pattern the log is limited to (`--author=`); used when
         /// refreshing. `None` means no author filter
         author: Option<String>,
+        /// Message pattern the log is filtered by (`--grep=`); used when
+        /// refreshing. `None` means no message filter
+        grep: Option<String>,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,

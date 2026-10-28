@@ -25,6 +25,7 @@ fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> 
         false,
         256,
         None,
+        None,
     )
     .unwrap();
     entries.retain(|e| e.is_commit());
@@ -108,6 +109,7 @@ fn test_commit_select_popup_confirm_returns_hash() {
             show_signature: false,
             limit: 256,
             author: None,
+            grep: None,
         }
     ));
 
@@ -164,6 +166,7 @@ fn test_commit_select_popup_navigation() {
             show_signature: false,
             limit: 256,
             author: None,
+            grep: None,
         }
     ));
     assert_eq!(model.ui_model.cursor_position, 0);
