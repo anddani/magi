@@ -47,6 +47,7 @@ fn commit_hash(test_repo: &TestRepo, message: &str) -> String {
         256,
         None,
         None,
+        None,
     )
     .unwrap();
     log.iter()

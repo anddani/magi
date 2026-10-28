@@ -2,12 +2,12 @@
 source: tests/render_snapshots.rs
 expression: "render_to_string(&model, 80, 24)"
 ---
-"┌Magi───────────────────────────────────────────────────────────────/repo/magi/┐"
 "┌Log───────────────────────────────────────────────────────────────────────────┐"
 "│Commit limiting                                                               │"
 "│ -n Limit number of commits (-n256)                                           │"
 "│ -A Limit to author (--author=)                                               │"
 "│ -F Search messages (--grep=)                                                 │"
+"│ -G Search changes (-G)                                                       │"
 "│                                                                              │"
 "│Formatting                                                                    │"
 "│ -g Show graph (--graph)                                                      │"

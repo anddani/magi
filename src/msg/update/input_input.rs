@@ -63,6 +63,26 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         return None;
     }
 
+    // LogSearchChanges: write the change-search pattern back into the log
+    // arguments and reopen the log popup. Empty input clears the change search.
+    if let InputContext::LogSearchChanges = state.context {
+        let input = state.input.as_str().trim();
+        if let Some(current) = model
+            .arguments
+            .as_mut()
+            .and_then(|a| a.log_search_changes_mut())
+        {
+            *current = if input.is_empty() {
+                None
+            } else {
+                Some(input.to_string())
+            };
+        }
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+        model.arg_mode = false;
+        return None;
+    }
+
     // RevertMainline allows empty input (empty = clear the mainline value)
     if let InputContext::RevertMainline { mut revert_state } = state.context {
         let input = state.input.as_str().trim().to_string();
@@ -158,7 +178,8 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         InputContext::Stash(_)
         | InputContext::RevertMainline { .. }
         | InputContext::LogLimit
-        | InputContext::LogGrep => {
+        | InputContext::LogGrep
+        | InputContext::LogSearchChanges => {
             unreachable!()
         }
     }

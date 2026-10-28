@@ -758,3 +758,132 @@ fn test_show_log_grep_input_prefills_current_grep() {
         other => panic!("expected input popup, got {other:?}"),
     }
 }
+
+// ── Change search argument (-G, -G<pattern>) ──────────────────────────────────
+
+#[test]
+fn test_show_log_defaults_to_no_search_changes() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            search_changes: None,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_show_log_respects_search_changes_filter() {
+    let test_repo = TestRepo::new();
+    // -G matches commits that add/remove a line containing the pattern
+    test_repo.commit_file("a.txt", "needle alpha", "Add a");
+    test_repo.commit_file("b.txt", "other beta", "Add b");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_search_changes_mut().unwrap() = Some("needle".to_string());
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            search_changes: Some(ref g),
+            ..
+        } if g == "needle"
+    ));
+    // Only the commit that introduced the "needle" line matches
+    assert_eq!(commit_count(&model), 1);
+}
+
+#[test]
+fn test_log_search_changes_input_confirm_sets_and_reopens_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Graph, LogArgument::Decorate]
+            .into_iter()
+            .collect(),
+    ));
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogSearchChanges,
+        "TODO",
+    )));
+    model.arg_mode = true;
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.log_search_changes()),
+        Some("TODO")
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_log_search_changes_input_confirm_empty_clears() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_search_changes_mut().unwrap() = Some("TODO".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogSearchChanges,
+        "",
+    )));
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.log_search_changes()),
+        None
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+}
+
+#[test]
+fn test_show_log_search_changes_input_prefills_current() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_search_changes_mut().unwrap() = Some("unwrap(".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+
+    update(&mut model, Message::ShowLogSearchChangesInput);
+
+    match &model.popup {
+        Some(PopupContent::Input(state)) => {
+            assert_eq!(state.context, InputContext::LogSearchChanges);
+            assert_eq!(state.input.as_str(), "unwrap(");
+        }
+        other => panic!("expected input popup, got {other:?}"),
+    }
+}

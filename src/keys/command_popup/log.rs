@@ -10,10 +10,11 @@ use crate::{
 pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Message> {
     if arg_mode {
         return match key.code {
-            // `-n`/`-F` take typed values; `-A` opens an author picker
+            // `-n`/`-F`/`-G` take typed values; `-A` opens an author picker
             KeyCode::Char('n') => Some(Message::ShowLogLimitInput),
             KeyCode::Char('A') => Some(Message::ShowLogAuthorSelect),
             KeyCode::Char('F') => Some(Message::ShowLogGrepInput),
+            KeyCode::Char('G') => Some(Message::ShowLogSearchChangesInput),
             KeyCode::Char(c) => LogArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Log(arg)))
                 .or(Some(Message::ExitArgMode)),
