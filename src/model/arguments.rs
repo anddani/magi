@@ -21,6 +21,8 @@ pub enum Arguments {
         args: HashSet<MergeArgument>,
         /// Merge strategy set via the `-s` argument (`--strategy=`)
         strategy: Option<String>,
+        /// Diff algorithm set via the `-A` argument (`-Xdiff-algorithm=`)
+        diff_algorithm: Option<String>,
     },
 }
 
@@ -231,11 +233,12 @@ impl Arguments {
         }
     }
 
-    /// Merge arguments with no `--strategy=` override set
+    /// Merge arguments with no `--strategy=` or `-Xdiff-algorithm=` override set
     pub fn merge_args(args: HashSet<MergeArgument>) -> Arguments {
         Arguments::MergeArguments {
             args,
             strategy: None,
+            diff_algorithm: None,
         }
     }
 
@@ -266,6 +269,22 @@ impl Arguments {
     pub fn merge_strategy_mut(&mut self) -> Option<&mut Option<String>> {
         if let Arguments::MergeArguments { strategy, .. } = self {
             Some(strategy)
+        } else {
+            None
+        }
+    }
+
+    pub fn merge_diff_algorithm(&self) -> Option<&str> {
+        if let Arguments::MergeArguments { diff_algorithm, .. } = self {
+            diff_algorithm.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn merge_diff_algorithm_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::MergeArguments { diff_algorithm, .. } = self {
+            Some(diff_algorithm)
         } else {
             None
         }
@@ -1182,6 +1201,38 @@ mod tests {
     fn test_merge_strategy_on_other_arguments_is_none() {
         let arguments = Arguments::CommitArguments(HashSet::new());
         assert_eq!(arguments.merge_strategy(), None);
+    }
+
+    #[test]
+    fn test_merge_args_has_no_diff_algorithm() {
+        let arguments = Arguments::merge_args([MergeArgument::NoFf].into_iter().collect());
+        assert_eq!(arguments.merge_diff_algorithm(), None);
+        assert!(arguments.merge().unwrap().contains(&MergeArgument::NoFf));
+    }
+
+    #[test]
+    fn test_merge_diff_algorithm_mut_sets_and_clears() {
+        let mut arguments = Arguments::merge_args(HashSet::new());
+        *arguments.merge_diff_algorithm_mut().unwrap() = Some("histogram".to_string());
+        assert_eq!(arguments.merge_diff_algorithm(), Some("histogram"));
+
+        *arguments.merge_diff_algorithm_mut().unwrap() = None;
+        assert_eq!(arguments.merge_diff_algorithm(), None);
+    }
+
+    #[test]
+    fn test_merge_diff_algorithm_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.merge_diff_algorithm(), None);
+    }
+
+    #[test]
+    fn test_merge_strategy_and_diff_algorithm_are_independent() {
+        let mut arguments = Arguments::merge_args(HashSet::new());
+        *arguments.merge_strategy_mut().unwrap() = Some("ours".to_string());
+        *arguments.merge_diff_algorithm_mut().unwrap() = Some("patience".to_string());
+        assert_eq!(arguments.merge_strategy(), Some("ours"));
+        assert_eq!(arguments.merge_diff_algorithm(), Some("patience"));
     }
 
     #[test]

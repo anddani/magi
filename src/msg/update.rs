@@ -72,6 +72,7 @@ mod show_fetch_popup;
 mod show_input_popup;
 mod show_log;
 mod show_log_popup;
+mod show_merge_diff_algorithm_select;
 mod show_merge_popup;
 mod show_merge_strategy_select;
 mod show_preview;
@@ -253,6 +254,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         } => cherry_spinoff::update(model, commits, branch, root),
         Message::ShowMergePopup => show_merge_popup::update(model),
         Message::ShowMergeStrategySelect => show_merge_strategy_select::update(model),
+        Message::ShowMergeDiffAlgorithmSelect => show_merge_diff_algorithm_select::update(model),
         Message::ShowTagPopup => show_tag_popup::update(model),
         Message::ShowTagSignAsSelect => show_tag_sign_as_select::update(model),
         Message::ShowCreateTagInput => show_input_popup::update(model, InputContext::CreateTag),

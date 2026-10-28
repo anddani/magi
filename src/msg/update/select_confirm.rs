@@ -402,6 +402,30 @@ fn route_result(
                     model.arguments = Some(Arguments::MergeArguments {
                         args: Default::default(),
                         strategy,
+                        diff_algorithm: None,
+                    })
+                }
+            }
+            // Return to the merge popup, now showing the argument as set
+            Some(Message::ShowMergePopup)
+        }
+        (Some(OnSelect::MergeDiffAlgorithm), result) => {
+            // Enter on an empty filter clears the algorithm; a selection sets it
+            let diff_algorithm = match result {
+                SelectResult::Selected(diff_algorithm) => Some(diff_algorithm),
+                _ => None,
+            };
+            match model
+                .arguments
+                .as_mut()
+                .and_then(|a| a.merge_diff_algorithm_mut())
+            {
+                Some(slot) => *slot = diff_algorithm,
+                None => {
+                    model.arguments = Some(Arguments::MergeArguments {
+                        args: Default::default(),
+                        strategy: None,
+                        diff_algorithm,
                     })
                 }
             }

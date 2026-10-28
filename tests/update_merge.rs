@@ -779,6 +779,7 @@ fn test_show_merge_strategy_select_clears_already_set_strategy() {
     model.arguments = Some(Arguments::MergeArguments {
         args: HashSet::new(),
         strategy: Some("ours".to_string()),
+        diff_algorithm: None,
     });
 
     let result = update(&mut model, Message::ShowMergeStrategySelect);
@@ -811,6 +812,7 @@ fn test_merge_branch_with_strategy_ours_ignores_their_changes() {
     model.arguments = Some(Arguments::MergeArguments {
         args: HashSet::new(),
         strategy: Some("ours".to_string()),
+        diff_algorithm: None,
     });
 
     let result = update(
@@ -827,6 +829,179 @@ fn test_merge_branch_with_strategy_ours_ignores_their_changes() {
     assert_eq!(head.parent_count(), 2);
     let content = std::fs::read_to_string(test_repo.repo_path().join("conflict.txt")).unwrap();
     assert_eq!(content, "main content\n");
+    // The arguments are consumed by the merge.
+    assert!(model.arguments.is_none());
+}
+
+// ── Merge popup — -A diff algorithm argument ──────────────────────────────────
+
+#[test]
+fn test_capital_a_in_arg_mode_shows_diff_algorithm_select() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('A')), &model);
+    assert_eq!(result, Some(Message::ShowMergeDiffAlgorithmSelect));
+}
+
+#[test]
+fn test_show_merge_diff_algorithm_select_opens_picker_with_algorithms() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arg_mode = true;
+
+    let result = update(&mut model, Message::ShowMergeDiffAlgorithmSelect);
+    assert_eq!(result, None);
+    assert!(!model.arg_mode);
+
+    let state = expect_select_popup(&model);
+    assert_eq!(
+        state.all_options,
+        vec!["default", "minimal", "patience", "histogram"]
+    );
+    assert_eq!(state.on_select, OnSelect::MergeDiffAlgorithm);
+}
+
+#[test]
+fn test_confirming_diff_algorithm_select_sets_argument_and_restores_merge_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    update(&mut model, Message::ShowMergeDiffAlgorithmSelect);
+
+    // First option ("default") is selected by default
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(result, Some(Message::ShowMergePopup));
+    assert_eq!(
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.merge_diff_algorithm()),
+        Some("default")
+    );
+
+    let result = update(&mut model, Message::ShowMergePopup);
+    assert_eq!(result, None);
+    assert!(matches!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Merge(_)))
+    ));
+}
+
+#[test]
+fn test_show_merge_diff_algorithm_select_clears_already_set_algorithm() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: None,
+        diff_algorithm: Some("histogram".to_string()),
+    });
+
+    let result = update(&mut model, Message::ShowMergeDiffAlgorithmSelect);
+    assert_eq!(result, None);
+
+    // The value is cleared and the merge popup stays open
+    assert_eq!(
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.merge_diff_algorithm()),
+        None
+    );
+    assert!(matches!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Merge(_)))
+    ));
+}
+
+#[test]
+fn test_diff_algorithm_select_preserves_existing_strategy() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: Some("ours".to_string()),
+        diff_algorithm: None,
+    });
+    update(&mut model, Message::ShowMergeDiffAlgorithmSelect);
+
+    // "patience" is the third option
+    update(&mut model, Message::Select(SelectMessage::MoveDown));
+    update(&mut model, Message::Select(SelectMessage::MoveDown));
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(result, Some(Message::ShowMergePopup));
+
+    // Both the pre-existing strategy and the new diff algorithm are set.
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.merge_strategy()),
+        Some("ours")
+    );
+    assert_eq!(
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.merge_diff_algorithm()),
+        Some("patience")
+    );
+}
+
+#[test]
+fn test_merge_branch_with_diff_algorithm_histogram_succeeds() {
+    let test_repo = TestRepo::new();
+    disable_editor(&test_repo);
+    // Divergent branches touching different files: merges cleanly. Setting
+    // `-Xdiff-algorithm=histogram` must be accepted by git (an invalid flag
+    // would make the merge fail).
+    setup_divergent_branches(
+        &test_repo,
+        ("main.txt", "main content\n"),
+        ("feature.txt", "feature content\n"),
+    );
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: None,
+        diff_algorithm: Some("histogram".to_string()),
+    });
+
+    let result = update(
+        &mut model,
+        Message::Merge(MergeCommand::Branch("feature".to_string())),
+    );
+
+    assert_eq!(result, Some(Message::Refresh));
+    let toast = model.toast.expect("Expected a toast after merging");
+    assert_eq!(toast.style, ToastStyle::Success);
+
+    let head = test_repo.repo.head().unwrap().peel_to_commit().unwrap();
+    assert_eq!(head.parent_count(), 2);
     // The arguments are consumed by the merge.
     assert!(model.arguments.is_none());
 }

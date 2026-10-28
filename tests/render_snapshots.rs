@@ -866,6 +866,7 @@ fn snapshot_merge_popup_with_strategy() {
     model.arguments = Some(Arguments::MergeArguments {
         args: HashSet::new(),
         strategy: Some("recursive".to_string()),
+        diff_algorithm: None,
     });
     // The selected strategy is rendered as the flag value (--strategy=<value>)
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
@@ -893,6 +894,34 @@ fn snapshot_merge_strategy_select_popup() {
         PopupContentCommand::Merge(MergePopupState { in_progress: false }),
     );
     update(&mut model, Message::ShowMergeStrategySelect);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_merge_popup_with_diff_algorithm() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Merge(MergePopupState { in_progress: false }),
+    );
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: None,
+        diff_algorithm: Some("histogram".to_string()),
+    });
+    // The selected algorithm is rendered as the flag value
+    // (-Xdiff-algorithm=<value>) on the -A line.
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_merge_diff_algorithm_select_popup() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Merge(MergePopupState { in_progress: false }),
+    );
+    update(&mut model, Message::ShowMergeDiffAlgorithmSelect);
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 
