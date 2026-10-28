@@ -176,6 +176,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
         false,
         256,
         None,
+        None,
     )
     .unwrap()
     .into_iter()
@@ -210,6 +211,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
         show_signature: false,
         limit: 256,
         author: None,
+        grep: None,
     };
     model.ui_model.cursor_position = log_commit_pos;
 

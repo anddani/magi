@@ -189,6 +189,8 @@ pub enum InputContext {
     RevertMainline { revert_state: RevertPopupState },
     /// Entering the maximum number of commits to show in the log (`-n`)
     LogLimit,
+    /// Entering the pattern to search commit messages for in the log (`-F`)
+    LogGrep,
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -248,6 +250,7 @@ impl InputPopupState {
             },
             InputContext::RevertMainline { .. } => t.input_revert_mainline.to_string(),
             InputContext::LogLimit => t.input_log_limit.to_string(),
+            InputContext::LogGrep => t.input_log_grep.to_string(),
         }
     }
 }

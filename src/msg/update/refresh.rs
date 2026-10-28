@@ -18,6 +18,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             show_signature,
             limit,
             author,
+            grep,
             ..
         } => refresh_log(
             model,
@@ -31,6 +32,7 @@ pub fn update(model: &mut Model) -> Option<Message> {
             show_signature,
             limit,
             author,
+            grep,
         ),
         // In preview mode, refresh is a no-op (preview content is static)
         ViewMode::Preview => {}
@@ -116,6 +118,7 @@ fn refresh_log(
     show_signature: bool,
     limit: usize,
     author: Option<String>,
+    grep: Option<String>,
 ) {
     if let Ok(entries) = get_log_entries(
         &model.git_info.repository,
@@ -129,6 +132,7 @@ fn refresh_log(
         show_signature,
         limit,
         author.as_deref(),
+        grep.as_deref(),
     ) {
         let lines: Vec<Line> = entries
             .into_iter()

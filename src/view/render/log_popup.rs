@@ -20,8 +20,9 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     let args = model.arguments.as_ref().and_then(|a| a.log());
     let dim_commands = model.arg_mode || model.equals_arg_mode;
 
-    // Commit limiting section (top): the `-n` and `-A` arguments carry values,
-    // so they are rendered with their current value like magit's `-n`/`-A`
+    // Commit limiting section (top): the `-n`, `-A` and `-F` arguments carry
+    // values, so they are rendered with their current value like magit's
+    // `-n`/`-A`/`-F`
     let limit = model
         .arguments
         .as_ref()
@@ -29,6 +30,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         .unwrap_or(DEFAULT_LOG_LIMIT)
         .to_string();
     let author = model.arguments.as_ref().and_then(|a| a.log_author());
+    let grep = model.arguments.as_ref().and_then(|a| a.log_grep());
     let commit_limiting_col = PopupColumn {
         title: Some(t.col_commit_limiting.into()),
         content: vec![
@@ -48,6 +50,15 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
                 t.arg_log_author,
                 "--author=",
                 author,
+                model.arg_mode,
+            ),
+            argument_value_line(
+                theme,
+                '-',
+                'F',
+                t.arg_log_grep,
+                "--grep=",
+                grep,
                 model.arg_mode,
             ),
         ],

@@ -23,6 +23,9 @@ pub enum Arguments {
         /// Author pattern to limit the log to, set via the `-A` argument
         /// (`--author=<pattern>`). `None` means no author filter.
         author: Option<String>,
+        /// Pattern to search commit messages for, set via the `-F` argument
+        /// (`--grep=<pattern>`). `None` means no message filter.
+        grep: Option<String>,
     },
     TagArguments {
         args: HashSet<TagArgument>,
@@ -123,6 +126,7 @@ impl Arguments {
             args,
             limit: DEFAULT_LOG_LIMIT,
             author: None,
+            grep: None,
         }
     }
 
@@ -161,6 +165,22 @@ impl Arguments {
     pub fn log_author_mut(&mut self) -> Option<&mut Option<String>> {
         if let Arguments::LogArguments { author, .. } = self {
             Some(author)
+        } else {
+            None
+        }
+    }
+
+    pub fn log_grep(&self) -> Option<&str> {
+        if let Arguments::LogArguments { grep, .. } = self {
+            grep.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn log_grep_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::LogArguments { grep, .. } = self {
+            Some(grep)
         } else {
             None
         }
@@ -1480,6 +1500,28 @@ mod tests {
     fn test_log_author_on_other_arguments_is_none() {
         let arguments = Arguments::CommitArguments(HashSet::new());
         assert_eq!(arguments.log_author(), None);
+    }
+
+    #[test]
+    fn test_log_args_defaults_to_no_grep() {
+        let arguments = Arguments::log_args(HashSet::new());
+        assert_eq!(arguments.log_grep(), None);
+    }
+
+    #[test]
+    fn test_log_grep_mut_sets_and_clears() {
+        let mut arguments = Arguments::log_args(HashSet::new());
+        *arguments.log_grep_mut().unwrap() = Some("fix".to_string());
+        assert_eq!(arguments.log_grep(), Some("fix"));
+
+        *arguments.log_grep_mut().unwrap() = None;
+        assert_eq!(arguments.log_grep(), None);
+    }
+
+    #[test]
+    fn test_log_grep_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.log_grep(), None);
     }
 
     #[test]

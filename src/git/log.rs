@@ -15,7 +15,8 @@ const SEPARATOR: char = '\x0c'; // Form feed character
 /// refnames (--decorate), revision headers (++header), inline diffs (--patch),
 /// diffstats (--stat) and signature statuses (--show-signature). `limit` caps
 /// the number of commits shown (`-n<limit>`); `author`, when set, limits the log
-/// to commits by a matching author (`--author=<author>`)
+/// to commits by a matching author (`--author=<author>`); `grep`, when set,
+/// limits the log to commits whose message matches (`--grep=<grep>`)
 #[allow(clippy::too_many_arguments)]
 pub fn get_log_entries(
     repository: &Repository,
@@ -29,6 +30,7 @@ pub fn get_log_entries(
     show_signature: bool,
     limit: usize,
     author: Option<&str>,
+    grep: Option<&str>,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
@@ -122,6 +124,11 @@ pub fn get_log_entries(
     // Limit to commits whose author matches the pattern, like magit's `--author=`
     if let Some(author) = author.filter(|a| !a.is_empty()) {
         args.push(format!("--author={}", author));
+    }
+
+    // Limit to commits whose message matches the pattern, like magit's `--grep=`
+    if let Some(grep) = grep.filter(|g| !g.is_empty()) {
+        args.push(format!("--grep={}", grep));
     }
 
     match log_type {
@@ -522,6 +529,7 @@ mod tests {
             false,
             256,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -551,6 +559,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
         )
         .unwrap();
@@ -586,6 +595,7 @@ mod tests {
             false,
             256,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -617,6 +627,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
         )
         .unwrap();
@@ -652,6 +663,7 @@ mod tests {
             false,
             256,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -681,6 +693,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
         )
         .unwrap();
@@ -842,6 +855,7 @@ mod tests {
             false,
             256,
             None,
+            None,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -920,6 +934,7 @@ mod tests {
             false,
             256,
             None,
+            None,
         )
         .unwrap();
 
@@ -948,6 +963,7 @@ mod tests {
             false,
             256,
             None,
+            None,
         )
         .unwrap();
 
@@ -974,6 +990,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
         )
         .unwrap();
@@ -1003,6 +1020,7 @@ mod tests {
             true,
             256,
             None,
+            None,
         )
         .unwrap();
 
@@ -1029,6 +1047,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
         )
         .unwrap();
@@ -1057,6 +1076,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
         )
         .unwrap();
@@ -1108,6 +1128,7 @@ mod tests {
             false,
             256,
             None,
+            None,
         )
         .unwrap();
 
@@ -1144,6 +1165,7 @@ mod tests {
             false,
             256,
             None,
+            None,
         )
         .unwrap();
 
@@ -1172,6 +1194,7 @@ mod tests {
             false,
             false,
             256,
+            None,
             None,
         )
         .unwrap();

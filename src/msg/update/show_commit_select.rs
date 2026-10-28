@@ -211,6 +211,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
         false,
         DEFAULT_LOG_LIMIT,
         None,
+        None,
     ) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
@@ -244,6 +245,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
                     show_signature: false,
                     limit: DEFAULT_LOG_LIMIT,
                     author: None,
+                    grep: None,
                 };
                 model.popup = None;
                 model.log_pick_on_select = Some(on_select);
