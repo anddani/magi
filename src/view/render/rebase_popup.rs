@@ -78,6 +78,7 @@ pub fn content<'a>(
             RebaseArgument::CommitterDateIsAuthorDate,
             RebaseArgument::IgnoreDate,
             RebaseArgument::Autosquash,
+            RebaseArgument::Autostash,
         ],
     ));
     let arguments_col = PopupColumn {

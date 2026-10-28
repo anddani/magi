@@ -758,6 +758,7 @@ pub enum RebaseArgument {
     CommitterDateIsAuthorDate,
     IgnoreDate,
     Autosquash,
+    Autostash,
 }
 
 impl RebaseArgument {
@@ -776,6 +777,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::CommitterDateIsAuthorDate,
             RebaseArgument::IgnoreDate,
             RebaseArgument::Autosquash,
+            RebaseArgument::Autostash,
         ]
     }
 
@@ -787,6 +789,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::CommitterDateIsAuthorDate => 'd',
             RebaseArgument::IgnoreDate => 't',
             RebaseArgument::Autosquash => 'a',
+            RebaseArgument::Autostash => 'A',
         }
     }
 
@@ -799,6 +802,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::CommitterDateIsAuthorDate => t.arg_rebase_committer_date_is_author_date,
             RebaseArgument::IgnoreDate => t.arg_rebase_ignore_date,
             RebaseArgument::Autosquash => t.arg_rebase_autosquash,
+            RebaseArgument::Autostash => t.arg_rebase_autostash,
         }
     }
 
@@ -815,6 +819,7 @@ impl PopupArgument for RebaseArgument {
             RebaseArgument::CommitterDateIsAuthorDate => "--committer-date-is-author-date",
             RebaseArgument::IgnoreDate => "--ignore-date",
             RebaseArgument::Autosquash => "--autosquash",
+            RebaseArgument::Autostash => "--autostash",
         }
     }
 }
@@ -1050,6 +1055,7 @@ mod tests {
                 RebaseArgument::CommitterDateIsAuthorDate,
                 RebaseArgument::IgnoreDate,
                 RebaseArgument::Autosquash,
+                RebaseArgument::Autostash,
             ]
         );
     }
@@ -1058,6 +1064,16 @@ mod tests {
     fn test_rebase_argument_autosquash_key_and_flag() {
         assert_eq!(RebaseArgument::Autosquash.key(), 'a');
         assert_eq!(RebaseArgument::Autosquash.flag(), "--autosquash");
+    }
+
+    #[test]
+    fn test_rebase_argument_autostash_key_and_flag() {
+        assert_eq!(RebaseArgument::Autostash.key(), 'A');
+        assert_eq!(RebaseArgument::Autostash.flag(), "--autostash");
+        assert_eq!(
+            RebaseArgument::from_key('A'),
+            Some(RebaseArgument::Autostash)
+        );
     }
 
     #[test]
