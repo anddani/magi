@@ -397,6 +397,8 @@ pub struct Strings {
     pub select_merge_strategy: &'static str,
     pub arg_merge_diff_algorithm: &'static str,
     pub select_merge_diff_algorithm: &'static str,
+    pub arg_merge_gpg_sign: &'static str,
+    pub select_merge_gpg_sign: &'static str,
 
     // Mode labels shown in the status bar
     pub mode_normal: &'static str,
@@ -917,6 +919,8 @@ static ENGLISH: Strings = Strings {
     select_merge_strategy: "Merge strategy",
     arg_merge_diff_algorithm: "Diff algorithm",
     select_merge_diff_algorithm: "Diff algorithm",
+    arg_merge_gpg_sign: "Sign using gpg",
+    select_merge_gpg_sign: "Sign with key",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUAL",
@@ -1407,6 +1411,8 @@ static SWEDISH: Strings = Strings {
     select_merge_strategy: "Sammanslagningsstrategi",
     arg_merge_diff_algorithm: "Diff-algoritm",
     select_merge_diff_algorithm: "Diff-algoritm",
+    arg_merge_gpg_sign: "Signera med gpg",
+    select_merge_gpg_sign: "Signera med nyckel",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUELL",

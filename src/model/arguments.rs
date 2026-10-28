@@ -23,6 +23,8 @@ pub enum Arguments {
         strategy: Option<String>,
         /// Diff algorithm set via the `-A` argument (`-Xdiff-algorithm=`)
         diff_algorithm: Option<String>,
+        /// GPG signing key set via the `-S` argument (`--gpg-sign=`)
+        gpg_sign: Option<String>,
     },
 }
 
@@ -233,12 +235,14 @@ impl Arguments {
         }
     }
 
-    /// Merge arguments with no `--strategy=` or `-Xdiff-algorithm=` override set
+    /// Merge arguments with no `--strategy=`, `-Xdiff-algorithm=`, or
+    /// `--gpg-sign=` override set
     pub fn merge_args(args: HashSet<MergeArgument>) -> Arguments {
         Arguments::MergeArguments {
             args,
             strategy: None,
             diff_algorithm: None,
+            gpg_sign: None,
         }
     }
 
@@ -285,6 +289,22 @@ impl Arguments {
     pub fn merge_diff_algorithm_mut(&mut self) -> Option<&mut Option<String>> {
         if let Arguments::MergeArguments { diff_algorithm, .. } = self {
             Some(diff_algorithm)
+        } else {
+            None
+        }
+    }
+
+    pub fn merge_gpg_sign(&self) -> Option<&str> {
+        if let Arguments::MergeArguments { gpg_sign, .. } = self {
+            gpg_sign.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn merge_gpg_sign_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::MergeArguments { gpg_sign, .. } = self {
+            Some(gpg_sign)
         } else {
             None
         }
@@ -1233,6 +1253,29 @@ mod tests {
         *arguments.merge_diff_algorithm_mut().unwrap() = Some("patience".to_string());
         assert_eq!(arguments.merge_strategy(), Some("ours"));
         assert_eq!(arguments.merge_diff_algorithm(), Some("patience"));
+    }
+
+    #[test]
+    fn test_merge_args_has_no_gpg_sign() {
+        let arguments = Arguments::merge_args([MergeArgument::NoFf].into_iter().collect());
+        assert_eq!(arguments.merge_gpg_sign(), None);
+        assert!(arguments.merge().unwrap().contains(&MergeArgument::NoFf));
+    }
+
+    #[test]
+    fn test_merge_gpg_sign_mut_sets_and_clears() {
+        let mut arguments = Arguments::merge_args(HashSet::new());
+        *arguments.merge_gpg_sign_mut().unwrap() = Some("ABCD1234".to_string());
+        assert_eq!(arguments.merge_gpg_sign(), Some("ABCD1234"));
+
+        *arguments.merge_gpg_sign_mut().unwrap() = None;
+        assert_eq!(arguments.merge_gpg_sign(), None);
+    }
+
+    #[test]
+    fn test_merge_gpg_sign_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.merge_gpg_sign(), None);
     }
 
     #[test]

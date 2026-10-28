@@ -780,6 +780,7 @@ fn test_show_merge_strategy_select_clears_already_set_strategy() {
         args: HashSet::new(),
         strategy: Some("ours".to_string()),
         diff_algorithm: None,
+        gpg_sign: None,
     });
 
     let result = update(&mut model, Message::ShowMergeStrategySelect);
@@ -813,6 +814,7 @@ fn test_merge_branch_with_strategy_ours_ignores_their_changes() {
         args: HashSet::new(),
         strategy: Some("ours".to_string()),
         diff_algorithm: None,
+        gpg_sign: None,
     });
 
     let result = update(
@@ -916,6 +918,7 @@ fn test_show_merge_diff_algorithm_select_clears_already_set_algorithm() {
         args: HashSet::new(),
         strategy: None,
         diff_algorithm: Some("histogram".to_string()),
+        gpg_sign: None,
     });
 
     let result = update(&mut model, Message::ShowMergeDiffAlgorithmSelect);
@@ -948,6 +951,7 @@ fn test_diff_algorithm_select_preserves_existing_strategy() {
         args: HashSet::new(),
         strategy: Some("ours".to_string()),
         diff_algorithm: None,
+        gpg_sign: None,
     });
     update(&mut model, Message::ShowMergeDiffAlgorithmSelect);
 
@@ -989,6 +993,7 @@ fn test_merge_branch_with_diff_algorithm_histogram_succeeds() {
         args: HashSet::new(),
         strategy: None,
         diff_algorithm: Some("histogram".to_string()),
+        gpg_sign: None,
     });
 
     let result = update(
@@ -1004,6 +1009,146 @@ fn test_merge_branch_with_diff_algorithm_histogram_succeeds() {
     assert_eq!(head.parent_count(), 2);
     // The arguments are consumed by the merge.
     assert!(model.arguments.is_none());
+}
+
+// ── Merge popup — -S gpg sign argument ────────────────────────────────────────
+
+#[test]
+fn test_capital_s_in_arg_mode_shows_gpg_sign_select() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('S')), &model);
+    assert_eq!(result, Some(Message::ShowMergeGpgSignSelect));
+}
+
+#[test]
+fn test_show_merge_gpg_sign_select_opens_picker() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arg_mode = true;
+
+    let result = update(&mut model, Message::ShowMergeGpgSignSelect);
+    assert_eq!(result, None);
+    assert!(!model.arg_mode);
+
+    let state = expect_select_popup(&model);
+    assert_eq!(state.on_select, OnSelect::MergeGpgSign);
+}
+
+#[test]
+fn test_confirming_gpg_sign_select_sets_keyid_and_restores_merge_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // Construct the select popup directly with a fixed option list, since
+    // the real one is populated from the host's gpg keyring
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        magi::model::select_popup::SelectPopupState::new(
+            "Sign with key".to_string(),
+            vec!["ABCD1234 Test User <test@example.com>".to_string()],
+            OnSelect::MergeGpgSign,
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(result, Some(Message::ShowMergePopup));
+
+    // Only the leading keyid is kept, not the user id
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.merge_gpg_sign()),
+        Some("ABCD1234")
+    );
+
+    let result = update(&mut model, Message::ShowMergePopup);
+    assert_eq!(result, None);
+    assert!(matches!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Merge(_)))
+    ));
+}
+
+#[test]
+fn test_show_merge_gpg_sign_select_clears_already_set_key() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Merge(
+        MergePopupState { in_progress: false },
+    )));
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: None,
+        diff_algorithm: None,
+        gpg_sign: Some("ABCD1234".to_string()),
+    });
+
+    let result = update(&mut model, Message::ShowMergeGpgSignSelect);
+    assert_eq!(result, None);
+
+    // The value is cleared and the merge popup stays open
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.merge_gpg_sign()),
+        None
+    );
+    assert!(matches!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Merge(_)))
+    ));
+}
+
+#[test]
+fn test_gpg_sign_select_preserves_existing_strategy_and_diff_algorithm() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: Some("ours".to_string()),
+        diff_algorithm: Some("histogram".to_string()),
+        gpg_sign: None,
+    });
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        magi::model::select_popup::SelectPopupState::new(
+            "Sign with key".to_string(),
+            vec!["ABCD1234 Test User <test@example.com>".to_string()],
+            OnSelect::MergeGpgSign,
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(result, Some(Message::ShowMergePopup));
+
+    // The pre-existing strategy and diff algorithm are preserved alongside the key.
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.merge_strategy()),
+        Some("ours")
+    );
+    assert_eq!(
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.merge_diff_algorithm()),
+        Some("histogram")
+    );
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.merge_gpg_sign()),
+        Some("ABCD1234")
+    );
 }
 
 // ── MergeCommand::EditMessage — execution ─────────────────────────────────────

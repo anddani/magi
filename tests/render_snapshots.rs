@@ -867,6 +867,7 @@ fn snapshot_merge_popup_with_strategy() {
         args: HashSet::new(),
         strategy: Some("recursive".to_string()),
         diff_algorithm: None,
+        gpg_sign: None,
     });
     // The selected strategy is rendered as the flag value (--strategy=<value>)
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
@@ -908,6 +909,7 @@ fn snapshot_merge_popup_with_diff_algorithm() {
         args: HashSet::new(),
         strategy: None,
         diff_algorithm: Some("histogram".to_string()),
+        gpg_sign: None,
     });
     // The selected algorithm is rendered as the flag value
     // (-Xdiff-algorithm=<value>) on the -A line.
@@ -922,6 +924,24 @@ fn snapshot_merge_diff_algorithm_select_popup() {
         PopupContentCommand::Merge(MergePopupState { in_progress: false }),
     );
     update(&mut model, Message::ShowMergeDiffAlgorithmSelect);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_merge_popup_with_gpg_sign() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Merge(MergePopupState { in_progress: false }),
+    );
+    model.arguments = Some(Arguments::MergeArguments {
+        args: HashSet::new(),
+        strategy: None,
+        diff_algorithm: None,
+        gpg_sign: Some("ABCD1234".to_string()),
+    });
+    // The selected key is rendered as the flag value (--gpg-sign=<keyid>)
+    // on the -S line.
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 

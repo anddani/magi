@@ -21,6 +21,7 @@ pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
         args,
         strategy,
         diff_algorithm,
+        gpg_sign,
     }) = model.arguments.take()
     {
         let mut extra_args: Vec<String> = args.into_iter().map(|a| a.flag().to_string()).collect();
@@ -29,6 +30,9 @@ pub fn update(model: &mut Model, cmd: MergeCommand) -> Option<Message> {
         }
         if let Some(diff_algorithm) = diff_algorithm {
             extra_args.push(format!("-Xdiff-algorithm={diff_algorithm}"));
+        }
+        if let Some(gpg_sign) = gpg_sign {
+            extra_args.push(format!("--gpg-sign={gpg_sign}"));
         }
         extra_args
     } else {

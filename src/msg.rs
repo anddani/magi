@@ -361,6 +361,9 @@ pub enum Message {
     /// Show select popup for picking the -A diff algorithm for a merge
     /// (`-Xdiff-algorithm=`), or clear it if one is already set
     ShowMergeDiffAlgorithmSelect,
+    /// Show select popup for picking the -S gpg signing key for a merge
+    /// (`--gpg-sign=`), or clear it if one is already set
+    ShowMergeGpgSignSelect,
     /// Show tag popup
     ShowTagPopup,
     /// Show the gpg key picker for the tag `-u` argument, or clear the

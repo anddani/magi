@@ -86,6 +86,16 @@ pub fn content<'a>(
         model.arg_mode,
     ));
 
+    arguments.push(argument_value_line(
+        theme,
+        '-',
+        'S',
+        t.arg_merge_gpg_sign,
+        "--gpg-sign=",
+        model.arguments.as_ref().and_then(|a| a.merge_gpg_sign()),
+        model.arg_mode,
+    ));
+
     let arguments_col = PopupColumn {
         title: Some(t.col_arguments.into()),
         content: arguments,

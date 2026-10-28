@@ -155,6 +155,9 @@ pub enum OnSelect {
     /// Select the diff algorithm for a merge (`-Xdiff-algorithm=`); the value
     /// is stored in the merge arguments and the merge popup is restored
     MergeDiffAlgorithm,
+    /// Select the gpg signing key for a merge (`--gpg-sign=`); the value is
+    /// stored in the merge arguments and the merge popup is restored
+    MergeGpgSign,
     /// Select a commit to cherry-pick onto the current branch
     ApplyPick,
     /// Select a commit to apply (--no-commit) onto the current branch
