@@ -187,6 +187,8 @@ pub enum InputContext {
     },
     /// Entering the mainline parent number for a revert of a merge commit
     RevertMainline { revert_state: RevertPopupState },
+    /// Entering the maximum number of commits to show in the log (`-n`)
+    LogLimit,
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -245,6 +247,7 @@ impl InputPopupState {
                 None => t.input_first_release_tag.to_string(),
             },
             InputContext::RevertMainline { .. } => t.input_revert_mainline.to_string(),
+            InputContext::LogLimit => t.input_log_limit.to_string(),
         }
     }
 }

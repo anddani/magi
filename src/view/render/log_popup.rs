@@ -5,10 +5,13 @@ use super::popup_content::CommandPopupContent;
 use crate::{
     config::Theme,
     i18n,
-    model::{Model, arguments::LogArgument},
+    model::{
+        Model,
+        arguments::{DEFAULT_LOG_LIMIT, LogArgument},
+    },
     view::render::{
         popup_content::{PopupColumn, PopupRow},
-        util::{argument_lines, command_description, prefixed_argument_line},
+        util::{argument_lines, argument_value_line, command_description, prefixed_argument_line},
     },
 };
 
@@ -16,6 +19,27 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     let t = i18n::t();
     let args = model.arguments.as_ref().and_then(|a| a.log());
     let dim_commands = model.arg_mode || model.equals_arg_mode;
+
+    // Commit limiting section (top): the `-n` argument carries a value (the
+    // commit count), so it is rendered with its current value like magit's `-n`
+    let limit = model
+        .arguments
+        .as_ref()
+        .and_then(|a| a.log_limit())
+        .unwrap_or(DEFAULT_LOG_LIMIT)
+        .to_string();
+    let commit_limiting_col = PopupColumn {
+        title: Some(t.col_commit_limiting.into()),
+        content: vec![argument_value_line(
+            theme,
+            '-',
+            'n',
+            t.arg_log_limit,
+            "-n",
+            Some(&limit),
+            model.arg_mode,
+        )],
+    };
 
     // LogArgument::all() order: Graph, Color, Decorate, ShowHeader, Patch, Stat
     // Insert =S after Decorate (index 2), before ShowHeader
@@ -62,6 +86,9 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     CommandPopupContent {
         title: t.popup_log,
         rows: vec![
+            PopupRow {
+                columns: vec![commit_limiting_col],
+            },
             PopupRow {
                 columns: vec![formatting_col],
             },

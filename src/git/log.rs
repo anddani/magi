@@ -9,12 +9,12 @@ use crate::{
 
 use super::commit_utils::{build_push_remote_map, enrich_refs_with_push_remote, sort_refs};
 
-const MAX_LOG_ENTRIES: usize = 256;
 const SEPARATOR: char = '\x0c'; // Form feed character
 
 /// Fetches git log entries, optionally with graph, colored graph lines,
 /// refnames (--decorate), revision headers (++header), inline diffs (--patch),
-/// diffstats (--stat) and signature statuses (--show-signature)
+/// diffstats (--stat) and signature statuses (--show-signature). `limit` caps
+/// the number of commits shown (`-n<limit>`)
 #[allow(clippy::too_many_arguments)]
 pub fn get_log_entries(
     repository: &Repository,
@@ -26,6 +26,7 @@ pub fn get_log_entries(
     patch: bool,
     stat: bool,
     show_signature: bool,
+    limit: usize,
 ) -> MagiResult<Vec<LogEntry>> {
     let workdir = repository
         .workdir()
@@ -89,7 +90,7 @@ pub fn get_log_entries(
     let mut args = vec![
         "log".to_string(),
         format!("--format={}", format),
-        format!("-n{}", MAX_LOG_ENTRIES),
+        format!("-n{}", limit),
     ];
 
     if decorate {
@@ -512,6 +513,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -540,6 +542,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -572,6 +575,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -602,6 +606,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -634,6 +639,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -662,6 +668,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
         assert!(entries.is_empty());
@@ -820,6 +827,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -896,6 +904,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
 
@@ -922,6 +931,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
 
@@ -947,6 +957,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
 
@@ -973,6 +984,7 @@ mod tests {
             false,
             false,
             true,
+            256,
         )
         .unwrap();
 
@@ -998,6 +1010,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
 
@@ -1024,6 +1037,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
 
@@ -1072,6 +1086,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
 
@@ -1106,6 +1121,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
 
@@ -1133,6 +1149,7 @@ mod tests {
             false,
             false,
             false,
+            256,
         )
         .unwrap();
 

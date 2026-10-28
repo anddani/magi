@@ -1,15 +1,16 @@
 use crate::{
     model::{
         Model,
-        arguments::{Arguments::LogArguments, LogArgument},
+        arguments::{Arguments, LogArgument},
         popup::{PopupContent, PopupContentCommand},
     },
     msg::Message,
 };
 
 pub fn update(model: &mut Model) -> Option<Message> {
-    // Show graph and show refnames are enabled by default
-    model.arguments = Some(LogArguments(
+    // Show graph and show refnames are enabled by default; the commit limit
+    // starts at its default (-n256)
+    model.arguments = Some(Arguments::log_args(
         [LogArgument::Graph, LogArgument::Decorate]
             .into_iter()
             .collect(),
