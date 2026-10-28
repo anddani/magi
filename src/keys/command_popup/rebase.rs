@@ -12,6 +12,8 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &RebasePopupState) -> Option<M
         return match key.code {
             // RebaseMerges carries a mode, so it has its own toggle message
             KeyCode::Char('r') => Some(Message::ToggleRebaseMerges),
+            // GpgSign carries a key value, so it has its own select message
+            KeyCode::Char('S') => Some(Message::ShowRebaseGpgSignSelect),
             KeyCode::Char(c) => RebaseArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Rebase(arg)))
                 .or(Some(Message::ExitArgMode)),

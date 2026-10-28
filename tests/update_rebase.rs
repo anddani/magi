@@ -2555,7 +2555,7 @@ fn test_toggle_rebase_merges_when_set_removes_it_and_keeps_other_arguments() {
         rebase_popup_state(),
     )));
     model.arg_mode = true;
-    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
         RebaseArgument::KeepEmpty,
         RebaseArgument::RebaseMerges(RebaseMergesMode::RebaseCousins),
     ])));
@@ -2639,5 +2639,130 @@ fn test_autosquash_into_update_squashes_into_selected_commit() {
     assert_eq!(
         std::fs::read_to_string(workdir.join("file1.txt")).unwrap(),
         "fixed"
+    );
+}
+
+// ── Rebase popup — -S gpg sign argument ───────────────────────────────────────
+
+#[test]
+fn test_capital_s_in_rebase_arg_mode_shows_gpg_sign_select() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    let result = handle_key(key(KeyCode::Char('S')), &model);
+    assert_eq!(result, Some(Message::ShowRebaseGpgSignSelect));
+}
+
+#[test]
+fn test_show_rebase_gpg_sign_select_opens_picker() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arg_mode = true;
+
+    let result = update(&mut model, Message::ShowRebaseGpgSignSelect);
+    assert_eq!(result, None);
+    assert!(!model.arg_mode);
+
+    let state = expect_select_popup(&model);
+    assert_eq!(state.on_select, OnSelect::RebaseGpgSign);
+}
+
+#[test]
+fn test_confirming_rebase_gpg_sign_select_sets_keyid_and_restores_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // Construct the select popup directly with a fixed option list, since
+    // the real one is populated from the host's gpg keyring
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Sign with key".to_string(),
+            vec!["ABCD1234 Test User <test@example.com>".to_string()],
+            OnSelect::RebaseGpgSign,
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(result, Some(Message::ShowRebasePopup));
+
+    // Only the leading keyid is kept, not the user id
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.rebase_gpg_sign()),
+        Some("ABCD1234")
+    );
+}
+
+#[test]
+fn test_show_rebase_gpg_sign_select_clears_already_set_key() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Rebase(
+        rebase_popup_state(),
+    )));
+    model.arguments = Some(Arguments::RebaseArguments {
+        args: HashSet::new(),
+        gpg_sign: Some("ABCD1234".to_string()),
+    });
+
+    let result = update(&mut model, Message::ShowRebaseGpgSignSelect);
+    assert_eq!(result, None);
+
+    // The value is cleared and the rebase popup stays open
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.rebase_gpg_sign()),
+        None
+    );
+    assert!(matches!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Rebase(_)))
+    ));
+}
+
+#[test]
+fn test_rebase_gpg_sign_select_preserves_existing_boolean_arguments() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
+        RebaseArgument::Autostash,
+    ])));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Select(
+        SelectPopupState::new(
+            "Sign with key".to_string(),
+            vec!["ABCD1234 Test User <test@example.com>".to_string()],
+            OnSelect::RebaseGpgSign,
+        ),
+    )));
+
+    let result = update(&mut model, Message::Select(SelectMessage::Confirm));
+    assert_eq!(result, Some(Message::ShowRebasePopup));
+
+    // The pre-existing boolean argument is preserved alongside the key.
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.rebase_gpg_sign()),
+        Some("ABCD1234")
+    );
+    assert!(
+        model
+            .arguments
+            .as_ref()
+            .and_then(|a| a.rebase())
+            .unwrap()
+            .contains(&RebaseArgument::Autostash)
     );
 }

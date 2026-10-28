@@ -248,7 +248,34 @@ fn route_result(
                 if let Some(args) = model.arguments.as_mut().and_then(|a| a.rebase_mut()) {
                     args.insert(arg);
                 } else {
-                    model.arguments = Some(Arguments::RebaseArguments([arg].into_iter().collect()));
+                    model.arguments = Some(Arguments::rebase_args([arg].into_iter().collect()));
+                }
+            }
+            // Return to the rebase popup, now showing the argument as set
+            Some(Message::ShowRebasePopup)
+        }
+        (Some(OnSelect::RebaseGpgSign), result) => {
+            // Options are "<keyid> <user id>" entries; only the leading keyid
+            // is passed to git. Enter on an empty filter clears the key.
+            let gpg_sign = match result {
+                SelectResult::Selected(key) => key
+                    .split_whitespace()
+                    .next()
+                    .filter(|keyid| !keyid.is_empty())
+                    .map(|keyid| keyid.to_string()),
+                _ => None,
+            };
+            match model
+                .arguments
+                .as_mut()
+                .and_then(|a| a.rebase_gpg_sign_mut())
+            {
+                Some(slot) => *slot = gpg_sign,
+                None => {
+                    model.arguments = Some(Arguments::RebaseArguments {
+                        args: Default::default(),
+                        gpg_sign,
+                    })
                 }
             }
             // Return to the rebase popup, now showing the argument as set

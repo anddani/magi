@@ -26,7 +26,11 @@ pub enum Arguments {
         /// Key to sign the tag with, set via the `-u` argument (`--local-user=`)
         local_user: Option<String>,
     },
-    RebaseArguments(HashSet<RebaseArgument>),
+    RebaseArguments {
+        args: HashSet<RebaseArgument>,
+        /// GPG signing key set via the `-S` argument (`--gpg-sign=`)
+        gpg_sign: Option<String>,
+    },
     MergeArguments {
         args: HashSet<MergeArgument>,
         /// Merge strategy set via the `-s` argument (`--strategy=`)
@@ -253,8 +257,16 @@ impl Arguments {
         }
     }
 
+    /// Rebase arguments with no `--gpg-sign=` override set
+    pub fn rebase_args(args: HashSet<RebaseArgument>) -> Arguments {
+        Arguments::RebaseArguments {
+            args,
+            gpg_sign: None,
+        }
+    }
+
     pub fn rebase(&self) -> Option<&HashSet<RebaseArgument>> {
-        if let Arguments::RebaseArguments(args) = self {
+        if let Arguments::RebaseArguments { args, .. } = self {
             Some(args)
         } else {
             None
@@ -262,8 +274,24 @@ impl Arguments {
     }
 
     pub fn rebase_mut(&mut self) -> Option<&mut HashSet<RebaseArgument>> {
-        if let Arguments::RebaseArguments(args) = self {
+        if let Arguments::RebaseArguments { args, .. } = self {
             Some(args)
+        } else {
+            None
+        }
+    }
+
+    pub fn rebase_gpg_sign(&self) -> Option<&str> {
+        if let Arguments::RebaseArguments { gpg_sign, .. } = self {
+            gpg_sign.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn rebase_gpg_sign_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::RebaseArguments { gpg_sign, .. } = self {
+            Some(gpg_sign)
         } else {
             None
         }
@@ -1149,6 +1177,34 @@ mod tests {
             RebaseArgument::from_key('h'),
             Some(RebaseArgument::DisableHooks)
         );
+    }
+
+    #[test]
+    fn test_rebase_args_has_no_gpg_sign() {
+        let arguments = Arguments::rebase_args([RebaseArgument::Autostash].into_iter().collect());
+        assert_eq!(arguments.rebase_gpg_sign(), None);
+        assert!(
+            arguments
+                .rebase()
+                .unwrap()
+                .contains(&RebaseArgument::Autostash)
+        );
+    }
+
+    #[test]
+    fn test_rebase_gpg_sign_mut_sets_and_clears() {
+        let mut arguments = Arguments::rebase_args(HashSet::new());
+        *arguments.rebase_gpg_sign_mut().unwrap() = Some("ABCD1234".to_string());
+        assert_eq!(arguments.rebase_gpg_sign(), Some("ABCD1234"));
+
+        *arguments.rebase_gpg_sign_mut().unwrap() = None;
+        assert_eq!(arguments.rebase_gpg_sign(), None);
+    }
+
+    #[test]
+    fn test_rebase_gpg_sign_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.rebase_gpg_sign(), None);
     }
 
     #[test]

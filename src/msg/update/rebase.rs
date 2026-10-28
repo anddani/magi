@@ -16,11 +16,14 @@ use crate::{
 };
 
 pub fn update(model: &mut Model, rebase_command: RebaseCommand) -> Option<Message> {
-    let extra_args: Vec<String> = if let Some(RebaseArguments(arguments)) = model.arguments.take() {
-        arguments
-            .into_iter()
-            .map(|a| a.flag().to_string())
-            .collect()
+    let extra_args: Vec<String> = if let Some(RebaseArguments { args, gpg_sign }) =
+        model.arguments.take()
+    {
+        let mut extra_args: Vec<String> = args.into_iter().map(|a| a.flag().to_string()).collect();
+        if let Some(gpg_sign) = gpg_sign {
+            extra_args.push(format!("--gpg-sign={gpg_sign}"));
+        }
+        extra_args
     } else {
         vec![]
     };

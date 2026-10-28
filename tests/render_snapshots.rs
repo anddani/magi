@@ -618,7 +618,7 @@ fn snapshot_rebase_popup_arg_mode() {
         }),
     );
     model.arg_mode = true;
-    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
         RebaseArgument::KeepEmpty,
     ])));
     // Argument mode only changes styling (key highlights, selected flags), so
@@ -639,7 +639,7 @@ fn snapshot_rebase_popup_rebase_merges_selected() {
             sole_remote: None,
         }),
     );
-    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
         RebaseArgument::RebaseMerges(RebaseMergesMode::NoRebaseCousins),
     ])));
     // The selected mode is rendered as the flag value (--rebase-merges=<mode>)
@@ -660,7 +660,7 @@ fn snapshot_rebase_popup_update_refs_selected() {
         }),
     );
     model.arg_mode = true;
-    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
         RebaseArgument::UpdateRefs,
     ])));
     // Styled buffer shows the selected --update-refs flag highlighted
@@ -681,7 +681,7 @@ fn snapshot_rebase_popup_committer_date_is_author_date_selected() {
         }),
     );
     model.arg_mode = true;
-    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
         RebaseArgument::CommitterDateIsAuthorDate,
     ])));
     // Styled buffer shows the selected --committer-date-is-author-date flag highlighted
@@ -702,7 +702,7 @@ fn snapshot_rebase_popup_ignore_date_selected() {
         }),
     );
     model.arg_mode = true;
-    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
         RebaseArgument::IgnoreDate,
     ])));
     // Styled buffer shows the selected --ignore-date flag highlighted
@@ -723,7 +723,7 @@ fn snapshot_rebase_popup_autosquash_selected() {
         }),
     );
     model.arg_mode = true;
-    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
         RebaseArgument::Autosquash,
     ])));
     // Styled buffer shows the selected --autosquash flag highlighted
@@ -744,7 +744,7 @@ fn snapshot_rebase_popup_autostash_selected() {
         }),
     );
     model.arg_mode = true;
-    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
         RebaseArgument::Autostash,
     ])));
     // Styled buffer shows the selected --autostash flag highlighted
@@ -765,11 +765,33 @@ fn snapshot_rebase_popup_disable_hooks_selected() {
         }),
     );
     model.arg_mode = true;
-    model.arguments = Some(Arguments::RebaseArguments(HashSet::from([
+    model.arguments = Some(Arguments::rebase_args(HashSet::from([
         RebaseArgument::DisableHooks,
     ])));
     // Styled buffer shows the selected --no-verify flag highlighted
     assert_frame_snapshot!(render_to_styled_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_rebase_popup_with_gpg_sign() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Rebase(RebasePopupState {
+            branch: "main".to_string(),
+            in_progress: false,
+            upstream: None,
+            push_remote: None,
+            sole_remote: None,
+        }),
+    );
+    model.arguments = Some(Arguments::RebaseArguments {
+        args: HashSet::new(),
+        gpg_sign: Some("ABCD1234".to_string()),
+    });
+    // The selected key is rendered as the flag value (--gpg-sign=<keyid>)
+    // on the -S line.
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 
 #[test]

@@ -69,7 +69,7 @@ pub fn update(model: &mut Model, argument: Argument) -> Option<Message> {
             &mut model.arguments,
             arg,
             |a| a.rebase_mut(),
-            Arguments::RebaseArguments,
+            Arguments::rebase_args,
         ),
         Argument::Merge(arg) => toggle_set(
             &mut model.arguments,
