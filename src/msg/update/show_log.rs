@@ -21,6 +21,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             search_occurrences,
             trace_lines,
             files,
+            order,
         }) => LogOptions {
             graph: args.contains(&LogArgument::Graph),
             color: args.contains(&LogArgument::Color),
@@ -38,6 +39,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             search_occurrences,
             trace_lines,
             files,
+            order,
         },
         _ => LogOptions::default(),
     };

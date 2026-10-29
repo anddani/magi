@@ -13,7 +13,7 @@ use crate::{
         popup_content::{PopupColumn, PopupRow},
         util::{
             argument_line, argument_lines, argument_value_line, command_description,
-            prefixed_argument_line,
+            commit_order_line, prefixed_argument_line,
         },
     },
 };
@@ -138,6 +138,19 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         ],
     };
 
+    // Commit ordering section: the `-o` switch cycles through orderings,
+    // rendered with a custom `--[topo|author-date|date]-order` line
+    let order = model.arguments.as_ref().and_then(|a| a.log_order());
+    let commit_ordering_col = PopupColumn {
+        title: Some(t.col_commit_ordering.into()),
+        content: vec![commit_order_line(
+            theme,
+            t.arg_log_order,
+            order,
+            model.arg_mode,
+        )],
+    };
+
     // LogArgument::all() order: Graph, Color, Decorate, ShowHeader, Patch, Stat
     // Insert =S after Decorate (index 2), before ShowHeader
     let mut formatting: Vec<Line<'_>> = argument_lines::<LogArgument>(theme, model.arg_mode, args);
@@ -188,6 +201,9 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
             },
             PopupRow {
                 columns: vec![history_simplification_col],
+            },
+            PopupRow {
+                columns: vec![commit_ordering_col],
             },
             PopupRow {
                 columns: vec![formatting_col],

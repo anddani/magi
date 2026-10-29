@@ -6,8 +6,8 @@ use magi::{
     model::{
         Line, LineContent, PreviewLineType, ViewMode,
         arguments::{
-            Arguments, LogArgument, MergeArgument, PushArgument, RebaseArgument, RebaseMergesMode,
-            TagArgument,
+            Arguments, CommitOrder, LogArgument, MergeArgument, PushArgument, RebaseArgument,
+            RebaseMergesMode, TagArgument,
         },
         multi_select_popup::{MultiSelectPopupState, OnMultiSelect},
         popup::{
@@ -496,6 +496,18 @@ fn snapshot_log_popup_arg_mode() {
     ])));
     // Argument mode only changes styling (key highlights, selected flags), so
     // snapshot the styled buffer instead of the plain-text frame.
+    assert_frame_snapshot!(render_to_styled_string(&model, 80, 40));
+}
+
+#[test]
+fn snapshot_log_popup_commit_order_selected() {
+    let test_repo = TestRepo::new();
+    let mut model = create_command_popup_model(&test_repo, PopupContentCommand::Log);
+    // With an ordering selected, `--`, the chosen option and `-order` render in
+    // green while the other options stay dim. Snapshot the styled buffer.
+    let mut args = Arguments::log_args(HashSet::from([LogArgument::Graph, LogArgument::Decorate]));
+    *args.log_order_mut().unwrap() = Some(CommitOrder::AuthorDate);
+    model.arguments = Some(args);
     assert_frame_snapshot!(render_to_styled_string(&model, 80, 40));
 }
 

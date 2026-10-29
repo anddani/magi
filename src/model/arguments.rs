@@ -38,6 +38,9 @@ pub enum Arguments {
         /// Pathspec(s) to limit the log to, set via the `--` argument.
         /// `None` means no file filter.
         files: Option<String>,
+        /// Commit ordering set via the `-o` argument (`--<order>-order`).
+        /// `None` means git's default ordering.
+        order: Option<CommitOrder>,
     },
     TagArguments {
         args: HashSet<TagArgument>,
@@ -143,6 +146,7 @@ impl Arguments {
             search_occurrences: None,
             trace_lines: None,
             files: None,
+            order: None,
         }
     }
 
@@ -267,6 +271,22 @@ impl Arguments {
     pub fn log_files_mut(&mut self) -> Option<&mut Option<String>> {
         if let Arguments::LogArguments { files, .. } = self {
             Some(files)
+        } else {
+            None
+        }
+    }
+
+    pub fn log_order(&self) -> Option<CommitOrder> {
+        if let Arguments::LogArguments { order, .. } = self {
+            *order
+        } else {
+            None
+        }
+    }
+
+    pub fn log_order_mut(&mut self) -> Option<&mut Option<CommitOrder>> {
+        if let Arguments::LogArguments { order, .. } = self {
+            Some(order)
         } else {
             None
         }
@@ -837,6 +857,48 @@ pub enum RevertArgument {
 impl RevertArgument {
     pub fn from_key(key: char) -> Option<RevertArgument> {
         Self::all().into_iter().find(|arg| arg.key() == key)
+    }
+}
+
+/// Commit ordering for the log, set via the `-o` argument. Cycles through the
+/// variants (and back to "none"/git-default) in [`CommitOrder::next`].
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum CommitOrder {
+    /// `--topo-order`
+    Topo,
+    /// `--author-date-order`
+    AuthorDate,
+    /// `--date-order`
+    Date,
+}
+
+impl CommitOrder {
+    /// Advances the cycle: `None` → Topo → AuthorDate → Date → `None`.
+    pub fn next(current: Option<CommitOrder>) -> Option<CommitOrder> {
+        match current {
+            None => Some(CommitOrder::Topo),
+            Some(CommitOrder::Topo) => Some(CommitOrder::AuthorDate),
+            Some(CommitOrder::AuthorDate) => Some(CommitOrder::Date),
+            Some(CommitOrder::Date) => None,
+        }
+    }
+
+    /// The `git log` flag for this ordering.
+    pub fn flag(&self) -> &'static str {
+        match self {
+            CommitOrder::Topo => "--topo-order",
+            CommitOrder::AuthorDate => "--author-date-order",
+            CommitOrder::Date => "--date-order",
+        }
+    }
+
+    /// The short label shown inside the `[…]` in the popup.
+    pub fn label(&self) -> &'static str {
+        match self {
+            CommitOrder::Topo => "topo",
+            CommitOrder::AuthorDate => "author-date",
+            CommitOrder::Date => "date",
+        }
     }
 }
 
@@ -1737,6 +1799,52 @@ mod tests {
     fn test_log_files_on_other_arguments_is_none() {
         let arguments = Arguments::CommitArguments(HashSet::new());
         assert_eq!(arguments.log_files(), None);
+    }
+
+    #[test]
+    fn test_commit_order_cycles() {
+        assert_eq!(CommitOrder::next(None), Some(CommitOrder::Topo));
+        assert_eq!(
+            CommitOrder::next(Some(CommitOrder::Topo)),
+            Some(CommitOrder::AuthorDate)
+        );
+        assert_eq!(
+            CommitOrder::next(Some(CommitOrder::AuthorDate)),
+            Some(CommitOrder::Date)
+        );
+        assert_eq!(CommitOrder::next(Some(CommitOrder::Date)), None);
+    }
+
+    #[test]
+    fn test_commit_order_flag_and_label() {
+        assert_eq!(CommitOrder::Topo.flag(), "--topo-order");
+        assert_eq!(CommitOrder::AuthorDate.flag(), "--author-date-order");
+        assert_eq!(CommitOrder::Date.flag(), "--date-order");
+        assert_eq!(CommitOrder::Topo.label(), "topo");
+        assert_eq!(CommitOrder::AuthorDate.label(), "author-date");
+        assert_eq!(CommitOrder::Date.label(), "date");
+    }
+
+    #[test]
+    fn test_log_args_defaults_to_no_order() {
+        let arguments = Arguments::log_args(HashSet::new());
+        assert_eq!(arguments.log_order(), None);
+    }
+
+    #[test]
+    fn test_log_order_mut_sets_and_clears() {
+        let mut arguments = Arguments::log_args(HashSet::new());
+        *arguments.log_order_mut().unwrap() = Some(CommitOrder::AuthorDate);
+        assert_eq!(arguments.log_order(), Some(CommitOrder::AuthorDate));
+
+        *arguments.log_order_mut().unwrap() = None;
+        assert_eq!(arguments.log_order(), None);
+    }
+
+    #[test]
+    fn test_log_order_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.log_order(), None);
     }
 
     #[test]

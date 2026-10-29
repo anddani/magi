@@ -2,7 +2,7 @@ use magi::{
     git::test_repo::TestRepo,
     model::{
         LineContent, LogOptions, ViewMode,
-        arguments::{Arguments, DEFAULT_LOG_LIMIT, LogArgument},
+        arguments::{Arguments, CommitOrder, DEFAULT_LOG_LIMIT, LogArgument},
         popup::{InputContext, InputPopupState, PopupContent, PopupContentCommand},
         select_popup::{OnSelect, SelectPopupState},
     },
@@ -1506,4 +1506,83 @@ fn test_show_log_follow_crosses_rename() {
         }
     ));
     assert!(shown(&model).iter().any(|m| m.contains("Add old.txt")));
+}
+
+// ── Commit ordering argument (-o, --<order>-order) ────────────────────────────
+
+#[test]
+fn test_show_log_defaults_to_no_order() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { order: None, .. },
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_cycle_log_order_cycles_through_orderings() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Graph, LogArgument::Decorate]
+            .into_iter()
+            .collect(),
+    ));
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+
+    let order = |m: &magi::model::Model| m.arguments.as_ref().and_then(|a| a.log_order());
+
+    assert_eq!(order(&model), None);
+    update(&mut model, Message::CycleLogOrder);
+    assert_eq!(order(&model), Some(CommitOrder::Topo));
+    update(&mut model, Message::CycleLogOrder);
+    assert_eq!(order(&model), Some(CommitOrder::AuthorDate));
+    update(&mut model, Message::CycleLogOrder);
+    assert_eq!(order(&model), Some(CommitOrder::Date));
+    update(&mut model, Message::CycleLogOrder);
+    assert_eq!(order(&model), None);
+    // The log popup stays open while cycling
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+}
+
+#[test]
+fn test_show_log_applies_order() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "First commit");
+    test_repo.commit_file("b.txt", "b", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_order_mut().unwrap() = Some(CommitOrder::Date);
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    // The ordering is stored (and `--date-order` was accepted by git, so the
+    // view switched to Log rather than showing an error)
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions {
+                order: Some(CommitOrder::Date),
+                ..
+            },
+            ..
+        }
+    ));
+    assert!(commit_count(&model) >= 2);
 }
