@@ -3,7 +3,7 @@ use magi::{
     git::{cherry_pick::cherry_pick_in_progress, log::get_log_entries, test_repo::TestRepo},
     keys::handle_key,
     model::{
-        Line, LineContent,
+        Line, LineContent, LogOptions,
         popup::{ApplyPopupState, PopupContent, PopupContentCommand},
         select_popup::OnSelect,
     },
@@ -372,31 +372,14 @@ fn test_show_apply_popup_cursor_on_log_line_collects_hash() {
 
     // Switch to log view
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let log_lines: Vec<Line> = get_log_entries(
-        &repo,
-        &LogType::Current,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        256,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    )
-    .unwrap()
-    .into_iter()
-    .map(|entry| Line {
-        content: LineContent::LogLine(entry),
-        section: None,
-    })
-    .collect();
+    let log_lines: Vec<Line> = get_log_entries(&repo, &LogType::Current, &LogOptions::default())
+        .unwrap()
+        .into_iter()
+        .map(|entry| Line {
+            content: LineContent::LogLine(entry),
+            section: None,
+        })
+        .collect();
 
     let log_commit_pos = log_lines
         .iter()

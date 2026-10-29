@@ -127,6 +127,69 @@ pub enum PreviewLineType {
     Context,
 }
 
+/// Display and filtering options for the git log, shared by [`get_log_entries`]
+/// and the [`ViewMode::Log`] view (so a refresh reproduces the same log).
+///
+/// [`get_log_entries`]: crate::git::log::get_log_entries
+///
+/// `Default` is the "natural" log: graph and refnames shown, the default commit
+/// limit, and no filters — matching how the log popup opens. Construct partial
+/// overrides with struct update syntax, e.g.
+/// `LogOptions { stat: true, ..Default::default() }`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LogOptions {
+    /// Show the commit graph (--graph)
+    pub graph: bool,
+    /// Color the graph (--color)
+    pub color: bool,
+    /// Show refnames (--decorate)
+    pub decorate: bool,
+    /// Show revision headers after each commit (++header)
+    pub show_header: bool,
+    /// Show inline diffs for each commit (--patch)
+    pub patch: bool,
+    /// Show diffstats for each commit (--stat)
+    pub stat: bool,
+    /// Show signature statuses (--show-signature)
+    pub show_signature: bool,
+    /// Maximum number of commits to show (`-n<limit>`)
+    pub limit: usize,
+    /// Limit to a matching author (`--author=`); `None` means no author filter
+    pub author: Option<String>,
+    /// Limit to commits whose message matches (`--grep=`); `None` means no filter
+    pub grep: Option<String>,
+    /// Limit to commits adding/removing a matching line (`-G`); `None` disables
+    pub search_changes: Option<String>,
+    /// Limit to commits changing the occurrence count of a pattern (`-S`)
+    pub search_occurrences: Option<String>,
+    /// Trace the evolution of a line range (`-L<start>,<end>:<file>`)
+    pub trace_lines: Option<String>,
+    /// Simplify history to commits referenced by a branch or tag
+    /// (--simplify-by-decoration)
+    pub simplify_by_decoration: bool,
+}
+
+impl Default for LogOptions {
+    fn default() -> Self {
+        Self {
+            graph: true,
+            color: false,
+            decorate: true,
+            show_header: false,
+            patch: false,
+            stat: false,
+            show_signature: false,
+            limit: arguments::DEFAULT_LOG_LIMIT,
+            author: None,
+            grep: None,
+            search_changes: None,
+            search_occurrences: None,
+            trace_lines: None,
+            simplify_by_decoration: false,
+        }
+    }
+}
+
 /// The current view mode of the application
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum ViewMode {
@@ -138,44 +201,8 @@ pub enum ViewMode {
         log_type: crate::msg::LogType,
         /// Whether the view is in "picking" mode (selecting a commit)
         picking: bool,
-        /// Whether the commit graph is shown (--graph); used when refreshing
-        graph: bool,
-        /// Whether git colors the graph (--color); used when refreshing
-        color: bool,
-        /// Whether refnames are shown (--decorate); used when refreshing
-        decorate: bool,
-        /// Whether revision headers are shown after each commit (++header);
-        /// used when refreshing
-        show_header: bool,
-        /// Whether diffs are shown inline for each commit (--patch); used when
-        /// refreshing
-        patch: bool,
-        /// Whether diffstats are shown for each commit (--stat); used when
-        /// refreshing
-        stat: bool,
-        /// Whether signature statuses are shown (--show-signature); used when
-        /// refreshing
-        show_signature: bool,
-        /// Maximum number of commits shown (`-n<limit>`); used when refreshing
-        limit: usize,
-        /// Author pattern the log is limited to (`--author=`); used when
-        /// refreshing. `None` means no author filter
-        author: Option<String>,
-        /// Message pattern the log is filtered by (`--grep=`); used when
-        /// refreshing. `None` means no message filter
-        grep: Option<String>,
-        /// Change pattern the log is filtered by (`-G`); used when refreshing.
-        /// `None` means no change search
-        search_changes: Option<String>,
-        /// Occurrence pattern the log is filtered by (`-S`); used when
-        /// refreshing. `None` means no occurrence search
-        search_occurrences: Option<String>,
-        /// Line range the log traces the evolution of (`-L`); used when
-        /// refreshing. `None` means no line trace
-        trace_lines: Option<String>,
-        /// Whether history is simplified by decoration (--simplify-by-decoration);
-        /// used when refreshing
-        simplify_by_decoration: bool,
+        /// The display/filter options the log was shown with; reused on refresh
+        options: LogOptions,
     },
     /// Preview mode showing diff/show output for a commit or stash.
     Preview,

@@ -3,7 +3,7 @@ use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
     keys::handle_key,
     model::{
-        Line, LineContent, ToastStyle, ViewMode,
+        Line, LineContent, LogOptions, ToastStyle, ViewMode,
         arguments::{Argument, Arguments, RevertArgument},
         popup::{PopupContent, PopupContentCommand, RevertPopupState},
     },
@@ -164,31 +164,14 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
 
     // Populate the model with log-view lines (as ShowLog does)
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let log_lines: Vec<Line> = get_log_entries(
-        &repo,
-        &LogType::Current,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        256,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    )
-    .unwrap()
-    .into_iter()
-    .map(|entry| Line {
-        content: LineContent::LogLine(entry),
-        section: None,
-    })
-    .collect();
+    let log_lines: Vec<Line> = get_log_entries(&repo, &LogType::Current, &LogOptions::default())
+        .unwrap()
+        .into_iter()
+        .map(|entry| Line {
+            content: LineContent::LogLine(entry),
+            section: None,
+        })
+        .collect();
 
     // Find a log line that has a hash
     let log_commit_pos = log_lines
@@ -206,20 +189,7 @@ fn test_show_revert_popup_on_log_line_selects_hash() {
     model.view_mode = ViewMode::Log {
         log_type: LogType::Current,
         picking: false,
-        graph: true,
-        color: false,
-        decorate: true,
-        show_header: false,
-        patch: false,
-        stat: false,
-        show_signature: false,
-        limit: 256,
-        author: None,
-        grep: None,
-        search_changes: None,
-        search_occurrences: None,
-        trace_lines: None,
-        simplify_by_decoration: false,
+        options: LogOptions::default(),
     };
     model.ui_model.cursor_position = log_commit_pos;
 

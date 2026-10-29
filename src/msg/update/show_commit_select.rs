@@ -4,8 +4,7 @@ use crate::{
     git::{log::get_log_entries, rebase::get_upstream_merge_base},
     i18n,
     model::{
-        Line, LineContent, Model, Toast, ToastStyle, ViewMode,
-        arguments::DEFAULT_LOG_LIMIT,
+        Line, LineContent, LogOptions, Model, Toast, ToastStyle, ViewMode,
         popup::{ConfirmAction, ConfirmPopupState, PopupContent},
         select_popup::OnSelect,
     },
@@ -198,25 +197,9 @@ pub fn show_select_revise_commit(model: &mut Model) -> Option<Message> {
 }
 
 fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) -> Option<Message> {
-    // Commit picking always shows the graph and refnames, without color
-    match get_log_entries(
-        &model.git_info.repository,
-        &log_type,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        DEFAULT_LOG_LIMIT,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    ) {
+    // Commit picking shows the default log (graph + refnames, no color/filters)
+    let options = LogOptions::default();
+    match get_log_entries(&model.git_info.repository, &log_type, &options) {
         Ok(mut commits) => {
             commits.retain(|entry| entry.is_commit());
 
@@ -240,20 +223,7 @@ fn show_log_select(model: &mut Model, log_type: LogType, on_select: OnSelect) ->
                 model.view_mode = ViewMode::Log {
                     log_type,
                     picking: true,
-                    graph: true,
-                    color: false,
-                    decorate: true,
-                    show_header: false,
-                    patch: false,
-                    stat: false,
-                    show_signature: false,
-                    limit: DEFAULT_LOG_LIMIT,
-                    author: None,
-                    grep: None,
-                    search_changes: None,
-                    search_occurrences: None,
-                    trace_lines: None,
-                    simplify_by_decoration: false,
+                    options,
                 };
                 model.popup = None;
                 model.log_pick_on_select = Some(on_select);

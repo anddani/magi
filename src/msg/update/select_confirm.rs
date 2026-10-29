@@ -688,6 +688,7 @@ mod tests {
     use crate::config::Theme;
     use crate::git::GitInfo;
     use crate::git::test_repo::TestRepo;
+    use crate::model::LogOptions;
     use crate::model::log_view::LogEntry;
     use crate::model::select_popup::OnSelect;
     use crate::model::{Line, LineContent, RunningState, UiModel, ViewMode};
@@ -743,20 +744,7 @@ mod tests {
         model.view_mode = ViewMode::Log {
             log_type: LogType::Current,
             picking: true,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            options: LogOptions::default(),
         };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
@@ -784,20 +772,7 @@ mod tests {
         model.view_mode = ViewMode::Log {
             log_type: LogType::Current,
             picking: true,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            options: LogOptions::default(),
         };
         model.ui_model.lines = vec![
             make_log_line("abc1234", "First commit"),
@@ -824,20 +799,7 @@ mod tests {
         model.view_mode = ViewMode::Log {
             log_type: LogType::Current,
             picking: true,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            options: LogOptions::default(),
         };
         model.ui_model.lines = vec![Line {
             content: LineContent::LogLine(LogEntry {
@@ -869,20 +831,7 @@ mod tests {
         model.view_mode = ViewMode::Log {
             log_type: LogType::AllReferences,
             picking: true,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            options: LogOptions::default(),
         };
         model.ui_model.lines = vec![make_log_line("deadbeef", "Some commit")];
         model.ui_model.cursor_position = 0;
@@ -979,20 +928,7 @@ mod tests {
         model.view_mode = ViewMode::Log {
             log_type: LogType::Current,
             picking: false,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            options: LogOptions::default(),
         };
         model.ui_model.lines = vec![make_log_line("abc1234", "First commit")];
         model.log_pick_on_select = Some(OnSelect::FixupCommit(FixupType::Fixup));
@@ -1007,20 +943,7 @@ mod tests {
             ViewMode::Log {
                 log_type: LogType::Current,
                 picking: false,
-                graph: true,
-                color: false,
-                decorate: true,
-                show_header: false,
-                patch: false,
-                stat: false,
-                show_signature: false,
-                limit: 256,
-                author: None,
-                grep: None,
-                search_changes: None,
-                search_occurrences: None,
-                trace_lines: None,
-                simplify_by_decoration: false,
+                options: LogOptions::default()
             }
         );
         // log_pick_on_select still set (not consumed)

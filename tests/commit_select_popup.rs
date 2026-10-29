@@ -1,7 +1,7 @@
 use magi::model::InputField;
 use magi::{
     git::{log::get_log_entries, test_repo::TestRepo},
-    model::{ViewMode, popup::CommitSelectPopupState, select_popup::OnSelect},
+    model::{LogOptions, ViewMode, popup::CommitSelectPopupState, select_popup::OnSelect},
     msg::{
         CommitSelect, FixupType, LogType, Message, NavigationAction, SelectMessage, update::update,
     },
@@ -13,25 +13,7 @@ use utils::create_model_from_test_repo;
 /// Helper to get log entries for testing (filters out graph-only entries)
 fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<magi::model::LogEntry> {
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut entries = get_log_entries(
-        &repo,
-        &LogType::Current,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        256,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    )
-    .unwrap();
+    let mut entries = get_log_entries(&repo, &LogType::Current, &LogOptions::default()).unwrap();
     entries.retain(|e| e.is_commit());
     entries
 }
@@ -104,20 +86,7 @@ fn test_commit_select_popup_confirm_returns_hash() {
         ViewMode::Log {
             log_type: LogType::Current,
             picking: true,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            ..
         }
     ));
 
@@ -165,20 +134,7 @@ fn test_commit_select_popup_navigation() {
         ViewMode::Log {
             log_type: LogType::Current,
             picking: true,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            ..
         }
     ));
     assert_eq!(model.ui_model.cursor_position, 0);

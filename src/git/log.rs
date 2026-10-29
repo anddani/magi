@@ -3,7 +3,7 @@ use git2::Repository;
 use crate::{
     errors::MagiResult,
     git::{CommitRef, CommitRefType},
-    model::LogEntry,
+    model::{LogEntry, LogOptions},
     msg::LogType,
 };
 
@@ -11,38 +11,31 @@ use super::commit_utils::{build_push_remote_map, enrich_refs_with_push_remote, s
 
 const SEPARATOR: char = '\x0c'; // Form feed character
 
-/// Fetches git log entries, optionally with graph, colored graph lines,
-/// refnames (--decorate), revision headers (++header), inline diffs (--patch),
-/// diffstats (--stat) and signature statuses (--show-signature). `limit` caps
-/// the number of commits shown (`-n<limit>`); `author`, when set, limits the log
-/// to commits by a matching author (`--author=<author>`); `grep`, when set,
-/// limits the log to commits whose message matches (`--grep=<grep>`);
-/// `search_changes`, when set, limits the log to commits that add or remove a
-/// line matching the pattern (`-G<search_changes>`); `search_occurrences`, when
-/// set, limits the log to commits that change the number of occurrences of the
-/// pattern (`-S<search_occurrences>`); `trace_lines`, when set, traces the
-/// evolution of a line range (`-L<trace_lines>`); `simplify_by_decoration`
-/// limits the log to commits that are referenced by some branch or tag
-/// (--simplify-by-decoration)
-#[allow(clippy::too_many_arguments)]
+/// Fetches git log entries for `log_type`, shaped by `options` (graph, colored
+/// graph lines, refnames, revision headers, inline diffs, diffstats, signature
+/// statuses, commit limit, author/message/change/occurrence filters, line trace
+/// and decoration-based simplification). See [`LogOptions`].
 pub fn get_log_entries(
     repository: &Repository,
     log_type: &LogType,
-    graph: bool,
-    color: bool,
-    decorate: bool,
-    show_header: bool,
-    patch: bool,
-    stat: bool,
-    show_signature: bool,
-    limit: usize,
-    author: Option<&str>,
-    grep: Option<&str>,
-    search_changes: Option<&str>,
-    search_occurrences: Option<&str>,
-    trace_lines: Option<&str>,
-    simplify_by_decoration: bool,
+    options: &LogOptions,
 ) -> MagiResult<Vec<LogEntry>> {
+    // Pull the fields out of the borrow: `Copy` flags/limit by value, the
+    // `Option<String>` filters as `Option<&str>` via `as_deref()`.
+    let graph = options.graph;
+    let color = options.color;
+    let decorate = options.decorate;
+    let show_header = options.show_header;
+    let patch = options.patch;
+    let stat = options.stat;
+    let show_signature = options.show_signature;
+    let simplify_by_decoration = options.simplify_by_decoration;
+    let limit = options.limit;
+    let author = options.author.as_deref();
+    let grep = options.grep.as_deref();
+    let search_changes = options.search_changes.as_deref();
+    let search_occurrences = options.search_occurrences.as_deref();
+    let trace_lines = options.trace_lines.as_deref();
     let workdir = repository
         .workdir()
         .ok_or_else(|| git2::Error::from_str("No working directory"))?;
@@ -554,20 +547,7 @@ mod tests {
         let entries = get_log_entries(
             &test_repo.repo,
             &LogType::Other("feature".to_string()),
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions::default(),
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -586,25 +566,8 @@ mod tests {
             .stage_files(&["file.txt"])
             .commit("Second commit");
 
-        let entries = get_log_entries(
-            &test_repo.repo,
-            &LogType::Reflog,
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
-        )
-        .unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Reflog, &LogOptions::default()).unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         // Reflog entries use the reflog subject ("<command>: <rest>")
@@ -628,20 +591,7 @@ mod tests {
         let entries = get_log_entries(
             &test_repo.repo,
             &LogType::ReflogOther("feature".to_string()),
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions::default(),
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -665,20 +615,7 @@ mod tests {
         let entries = get_log_entries(
             &test_repo.repo,
             &LogType::ReflogOther("HEAD".to_string()),
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions::default(),
         )
         .unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
@@ -701,25 +638,8 @@ mod tests {
             .write_file_content("file.txt", "second")
             .create_stash("Second stash");
 
-        let entries = get_log_entries(
-            &test_repo.repo,
-            &LogType::Stashes,
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
-        )
-        .unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Stashes, &LogOptions::default()).unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         // Both stashes are listed, most recent first
@@ -736,25 +656,8 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries = get_log_entries(
-            &test_repo.repo,
-            &LogType::Stashes,
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
-        )
-        .unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Stashes, &LogOptions::default()).unwrap();
         assert!(entries.is_empty());
     }
 
@@ -901,25 +804,8 @@ mod tests {
             .stage_files(&["file.txt"])
             .commit("Second commit");
 
-        let entries = get_log_entries(
-            &test_repo.repo,
-            &LogType::Related,
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
-        )
-        .unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Related, &LogOptions::default()).unwrap();
         let messages: Vec<String> = entries.iter().filter_map(|e| e.message.clone()).collect();
 
         assert!(messages.contains(&"Initial commit".to_string()));
@@ -987,20 +873,10 @@ mod tests {
         let entries = get_log_entries(
             &test_repo.repo,
             &LogType::Current,
-            true,
-            true,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions {
+                color: true,
+                ..Default::default()
+            },
         )
         .unwrap();
 
@@ -1017,25 +893,8 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries = get_log_entries(
-            &test_repo.repo,
-            &LogType::Current,
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
-        )
-        .unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Current, &LogOptions::default()).unwrap();
 
         // HEAD is on main, so the commit is decorated with the branch name
         let entry = entries.first().unwrap();
@@ -1052,20 +911,10 @@ mod tests {
         let entries = get_log_entries(
             &test_repo.repo,
             &LogType::Current,
-            true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions {
+                decorate: false,
+                ..Default::default()
+            },
         )
         .unwrap();
 
@@ -1085,20 +934,10 @@ mod tests {
         let entries = get_log_entries(
             &test_repo.repo,
             &LogType::Current,
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            true,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions {
+                show_signature: true,
+                ..Default::default()
+            },
         )
         .unwrap();
 
@@ -1114,25 +953,8 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries = get_log_entries(
-            &test_repo.repo,
-            &LogType::Current,
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
-        )
-        .unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Current, &LogOptions::default()).unwrap();
 
         assert_eq!(entries.first().unwrap().signature, None);
     }
@@ -1150,20 +972,10 @@ mod tests {
         let entries = get_log_entries(
             &test_repo.repo,
             &LogType::Current,
-            true,
-            false,
-            true,
-            true,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions {
+                show_header: true,
+                ..Default::default()
+            },
         )
         .unwrap();
 
@@ -1205,20 +1017,10 @@ mod tests {
         let entries = get_log_entries(
             &test_repo.repo,
             &LogType::Current,
-            true,
-            false,
-            true,
-            true,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions {
+                show_header: true,
+                ..Default::default()
+            },
         )
         .unwrap();
 
@@ -1243,25 +1045,8 @@ mod tests {
 
         let test_repo = TestRepo::new();
 
-        let entries = get_log_entries(
-            &test_repo.repo,
-            &LogType::Current,
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
-        )
-        .unwrap();
+        let entries =
+            get_log_entries(&test_repo.repo, &LogType::Current, &LogOptions::default()).unwrap();
 
         // Without ++header every entry is a commit line
         assert!(entries.iter().all(|e| e.is_commit()));
@@ -1280,20 +1065,10 @@ mod tests {
         let entries = get_log_entries(
             &test_repo.repo,
             &LogType::Reflog,
-            true,
-            false,
-            true,
-            true,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions {
+                show_header: true,
+                ..Default::default()
+            },
         )
         .unwrap();
 

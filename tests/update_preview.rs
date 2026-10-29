@@ -1,6 +1,6 @@
 use magi::{
     git::test_repo::TestRepo,
-    model::{Line, LineContent, ViewMode},
+    model::{Line, LineContent, LogOptions, ViewMode},
     msg::{LogType, Message, update::update},
 };
 
@@ -130,20 +130,7 @@ fn test_show_preview_on_graph_only_log_line_is_noop() {
     model.view_mode = ViewMode::Log {
         log_type: LogType::Current,
         picking: false,
-        graph: true,
-        color: false,
-        decorate: true,
-        show_header: false,
-        patch: false,
-        stat: false,
-        show_signature: false,
-        limit: 256,
-        author: None,
-        grep: None,
-        search_changes: None,
-        search_occurrences: None,
-        trace_lines: None,
-        simplify_by_decoration: false,
+        options: LogOptions::default(),
     };
 
     let result = update(&mut model, Message::ShowPreview);

@@ -1,7 +1,7 @@
 use magi::{
     git::test_repo::TestRepo,
     model::{
-        LineContent, ViewMode,
+        LineContent, LogOptions, ViewMode,
         arguments::{Arguments, DEFAULT_LOG_LIMIT, LogArgument},
         popup::{InputContext, InputPopupState, PopupContent, PopupContentCommand},
         select_popup::{OnSelect, SelectPopupState},
@@ -125,7 +125,10 @@ fn test_show_log_with_show_signature_argument() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            show_signature: true,
+            options: LogOptions {
+                show_signature: true,
+                ..
+            },
             ..
         }
     ));
@@ -166,7 +169,10 @@ fn test_show_log_with_show_header_argument() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            show_header: true,
+            options: LogOptions {
+                show_header: true,
+                ..
+            },
             ..
         }
     ));
@@ -196,7 +202,10 @@ fn test_show_log_without_show_header_argument() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            show_header: false,
+            options: LogOptions {
+                show_header: false,
+                ..
+            },
             ..
         }
     ));
@@ -229,7 +238,10 @@ fn test_show_log_reflog_ignores_show_header_argument() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            show_header: false,
+            options: LogOptions {
+                show_header: false,
+                ..
+            },
             ..
         }
     ));
@@ -251,7 +263,10 @@ fn test_show_log_without_show_signature_argument() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            show_signature: false,
+            options: LogOptions {
+                show_signature: false,
+                ..
+            },
             ..
         }
     ));
@@ -281,7 +296,13 @@ fn test_show_log_with_patch_argument() {
 
     update(&mut model, Message::ShowLog(LogType::Current));
 
-    assert!(matches!(model.view_mode, ViewMode::Log { patch: true, .. }));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { patch: true, .. },
+            ..
+        }
+    ));
 }
 
 #[test]
@@ -295,7 +316,10 @@ fn test_show_log_without_patch_argument() {
 
     assert!(matches!(
         model.view_mode,
-        ViewMode::Log { patch: false, .. }
+        ViewMode::Log {
+            options: LogOptions { patch: false, .. },
+            ..
+        }
     ));
 }
 
@@ -315,7 +339,13 @@ fn test_show_log_with_stat_argument() {
 
     update(&mut model, Message::ShowLog(LogType::Current));
 
-    assert!(matches!(model.view_mode, ViewMode::Log { stat: true, .. }));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { stat: true, .. },
+            ..
+        }
+    ));
 
     // --stat emits a diffstat summary line listing the changed file
     assert!(model.ui_model.lines.iter().any(|line| {
@@ -338,7 +368,13 @@ fn test_show_log_without_stat_argument() {
 
     update(&mut model, Message::ShowLog(LogType::Current));
 
-    assert!(matches!(model.view_mode, ViewMode::Log { stat: false, .. }));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { stat: false, .. },
+            ..
+        }
+    ));
 }
 
 // ── Commit limiting argument (-n, -n<N>) ──────────────────────────────────────
@@ -368,7 +404,10 @@ fn test_show_log_defaults_to_default_limit() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            limit: DEFAULT_LOG_LIMIT,
+            options: LogOptions {
+                limit: DEFAULT_LOG_LIMIT,
+                ..
+            },
             ..
         }
     ));
@@ -390,7 +429,13 @@ fn test_show_log_respects_custom_limit() {
     update(&mut model, Message::ShowLog(LogType::Current));
 
     // The limit is remembered for refreshing...
-    assert!(matches!(model.view_mode, ViewMode::Log { limit: 2, .. }));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { limit: 2, .. },
+            ..
+        }
+    ));
     // ...and only two of the three commits are shown
     assert_eq!(commit_count(&model), 2);
 }
@@ -491,7 +536,10 @@ fn test_show_log_defaults_to_no_author() {
 
     assert!(matches!(
         model.view_mode,
-        ViewMode::Log { author: None, .. }
+        ViewMode::Log {
+            options: LogOptions { author: None, .. },
+            ..
+        }
     ));
 }
 
@@ -512,10 +560,7 @@ fn test_show_log_respects_author_filter() {
 
     assert!(matches!(
         model.view_mode,
-        ViewMode::Log {
-            author: Some(ref a),
-            ..
-        } if a == "ZZZ-nobody"
+        ViewMode::Log { options: LogOptions { author: Some(ref a), .. }, .. } if a == "ZZZ-nobody"
     ));
     assert_eq!(commit_count(&model), 0);
 }
@@ -649,7 +694,13 @@ fn test_show_log_defaults_to_no_grep() {
 
     update(&mut model, Message::ShowLog(LogType::Current));
 
-    assert!(matches!(model.view_mode, ViewMode::Log { grep: None, .. }));
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { grep: None, .. },
+            ..
+        }
+    ));
 }
 
 #[test]
@@ -668,10 +719,7 @@ fn test_show_log_respects_grep_filter() {
 
     assert!(matches!(
         model.view_mode,
-        ViewMode::Log {
-            grep: Some(ref g),
-            ..
-        } if g == "Fix"
+        ViewMode::Log { options: LogOptions { grep: Some(ref g), .. }, .. } if g == "Fix"
     ));
     // Only the two "Fix ..." commits match
     assert_eq!(commit_count(&model), 2);
@@ -773,7 +821,10 @@ fn test_show_log_defaults_to_no_search_changes() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            search_changes: None,
+            options: LogOptions {
+                search_changes: None,
+                ..
+            },
             ..
         }
     ));
@@ -795,10 +846,7 @@ fn test_show_log_respects_search_changes_filter() {
 
     assert!(matches!(
         model.view_mode,
-        ViewMode::Log {
-            search_changes: Some(ref g),
-            ..
-        } if g == "needle"
+        ViewMode::Log { options: LogOptions { search_changes: Some(ref g), .. }, .. } if g == "needle"
     ));
     // Only the commit that introduced the "needle" line matches
     assert_eq!(commit_count(&model), 1);
@@ -902,7 +950,10 @@ fn test_show_log_defaults_to_no_search_occurrences() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            search_occurrences: None,
+            options: LogOptions {
+                search_occurrences: None,
+                ..
+            },
             ..
         }
     ));
@@ -924,10 +975,7 @@ fn test_show_log_respects_search_occurrences_filter() {
 
     assert!(matches!(
         model.view_mode,
-        ViewMode::Log {
-            search_occurrences: Some(ref s),
-            ..
-        } if s == "needle"
+        ViewMode::Log { options: LogOptions { search_occurrences: Some(ref s), .. }, .. } if s == "needle"
     ));
     // Only the commit that changed the count of "needle" matches
     assert_eq!(commit_count(&model), 1);
@@ -1031,7 +1079,10 @@ fn test_show_log_defaults_to_no_trace_lines() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            trace_lines: None,
+            options: LogOptions {
+                trace_lines: None,
+                ..
+            },
             ..
         }
     ));
@@ -1055,10 +1106,7 @@ fn test_show_log_respects_trace_lines_filter() {
 
     assert!(matches!(
         model.view_mode,
-        ViewMode::Log {
-            trace_lines: Some(ref l),
-            ..
-        } if l == "2,2:a.txt"
+        ViewMode::Log { options: LogOptions { trace_lines: Some(ref l), .. }, .. } if l == "2,2:a.txt"
     ));
     // The two commits that introduced/changed line 2 of a.txt appear; the
     // unrelated b.txt commit does not
@@ -1168,7 +1216,10 @@ fn test_show_log_defaults_to_no_simplify_by_decoration() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            simplify_by_decoration: false,
+            options: LogOptions {
+                simplify_by_decoration: false,
+                ..
+            },
             ..
         }
     ));
@@ -1202,7 +1253,10 @@ fn test_show_log_respects_simplify_by_decoration() {
     assert!(matches!(
         model.view_mode,
         ViewMode::Log {
-            simplify_by_decoration: true,
+            options: LogOptions {
+                simplify_by_decoration: true,
+                ..
+            },
             ..
         }
     ));

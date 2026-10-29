@@ -1,6 +1,6 @@
 use crate::{
     git::log::get_log_entries,
-    model::{Line, LineContent, Model, ViewMode},
+    model::{Line, LineContent, LogOptions, Model, ViewMode},
     msg::Message,
 };
 
@@ -8,40 +8,8 @@ pub fn update(model: &mut Model) -> Option<Message> {
     match model.view_mode.clone() {
         ViewMode::Status => refresh_status(model),
         ViewMode::Log {
-            log_type,
-            graph,
-            color,
-            decorate,
-            show_header,
-            patch,
-            stat,
-            show_signature,
-            limit,
-            author,
-            grep,
-            search_changes,
-            search_occurrences,
-            trace_lines,
-            simplify_by_decoration,
-            ..
-        } => refresh_log(
-            model,
-            &log_type,
-            graph,
-            color,
-            decorate,
-            show_header,
-            patch,
-            stat,
-            show_signature,
-            limit,
-            author,
-            grep,
-            search_changes,
-            search_occurrences,
-            trace_lines,
-            simplify_by_decoration,
-        ),
+            log_type, options, ..
+        } => refresh_log(model, &log_type, &options),
         // In preview mode, refresh is a no-op (preview content is static)
         ViewMode::Preview => {}
         // The rebase todo editor holds in-memory state; nothing to refresh
@@ -113,43 +81,8 @@ fn refresh_status(model: &mut Model) {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-fn refresh_log(
-    model: &mut Model,
-    log_type: &crate::msg::LogType,
-    graph: bool,
-    color: bool,
-    decorate: bool,
-    show_header: bool,
-    patch: bool,
-    stat: bool,
-    show_signature: bool,
-    limit: usize,
-    author: Option<String>,
-    grep: Option<String>,
-    search_changes: Option<String>,
-    search_occurrences: Option<String>,
-    trace_lines: Option<String>,
-    simplify_by_decoration: bool,
-) {
-    if let Ok(entries) = get_log_entries(
-        &model.git_info.repository,
-        log_type,
-        graph,
-        color,
-        decorate,
-        show_header,
-        patch,
-        stat,
-        show_signature,
-        limit,
-        author.as_deref(),
-        grep.as_deref(),
-        search_changes.as_deref(),
-        search_occurrences.as_deref(),
-        trace_lines.as_deref(),
-        simplify_by_decoration,
-    ) {
+fn refresh_log(model: &mut Model, log_type: &crate::msg::LogType, options: &LogOptions) {
+    if let Ok(entries) = get_log_entries(&model.git_info.repository, log_type, options) {
         let lines: Vec<Line> = entries
             .into_iter()
             .map(|entry| Line {
