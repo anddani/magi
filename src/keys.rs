@@ -354,7 +354,7 @@ mod tests {
     use crate::model::arguments::{FetchArgument, PushArgument};
     use crate::model::popup::PopupContentCommand;
     use crate::model::select_popup::OnSelect;
-    use crate::model::{EditOp, InputField, RunningState, UiModel};
+    use crate::model::{EditOp, InputField, LogOptions, RunningState, UiModel};
     use crate::msg::{
         FetchCommand, NavigationAction, OptionsSource, PullCommand, PushCommand, SelectMessage,
         ShowSelectPopupConfig,
@@ -2157,20 +2157,7 @@ mod tests {
         model.view_mode = ViewMode::Log {
             log_type: LogType::Current,
             picking: false,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            options: LogOptions::default(),
         };
         model
     }
@@ -2249,20 +2236,7 @@ mod tests {
         model.view_mode = ViewMode::Log {
             log_type: LogType::Current,
             picking: true,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            options: LogOptions::default(),
         };
         model
     }
@@ -2677,20 +2651,7 @@ mod tests {
         model.view_mode = ViewMode::Log {
             log_type: LogType::Current,
             picking: false,
-            graph: true,
-            color: false,
-            decorate: true,
-            show_header: false,
-            patch: false,
-            stat: false,
-            show_signature: false,
-            limit: 256,
-            author: None,
-            grep: None,
-            search_changes: None,
-            search_occurrences: None,
-            trace_lines: None,
-            simplify_by_decoration: false,
+            options: LogOptions::default(),
         };
         model.ui_model.lines = vec![crate::model::Line {
             content: crate::model::LineContent::LogLine(LogEntry::new(

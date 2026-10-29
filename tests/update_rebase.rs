@@ -9,7 +9,7 @@ use magi::{
     },
     keys::handle_key,
     model::{
-        Line, LineContent, Model, SectionType, ViewMode,
+        Line, LineContent, LogOptions, Model, SectionType, ViewMode,
         arguments::{Argument, Arguments, RebaseArgument, RebaseMergesMode},
         popup::{ConfirmAction, PopupContent, PopupContentCommand, RebasePopupState},
         select_popup::{OnSelect, SelectPopupState},
@@ -348,25 +348,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(
-        &repo,
-        &LogType::Current,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        256,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    )
-    .unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, &LogOptions::default()).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -385,20 +367,7 @@ fn test_select_confirm_rebase_elsewhere_context_returns_rebase_message() {
     model.view_mode = ViewMode::Log {
         log_type: LogType::AllReferences,
         picking: true,
-        graph: true,
-        color: false,
-        decorate: true,
-        show_header: false,
-        patch: false,
-        stat: false,
-        show_signature: false,
-        limit: 256,
-        author: None,
-        grep: None,
-        search_changes: None,
-        search_occurrences: None,
-        trace_lines: None,
-        simplify_by_decoration: false,
+        options: LogOptions::default(),
     };
     model.log_pick_on_select = Some(OnSelect::RebaseElsewhere);
 
@@ -670,25 +639,7 @@ fn test_select_confirm_rebase_subset_start_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(
-        &repo,
-        &LogType::Current,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        256,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    )
-    .unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, &LogOptions::default()).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -706,20 +657,7 @@ fn test_select_confirm_rebase_subset_start_returns_rebase_message() {
     model.view_mode = ViewMode::Log {
         log_type: LogType::Current,
         picking: true,
-        graph: true,
-        color: false,
-        decorate: true,
-        show_header: false,
-        patch: false,
-        stat: false,
-        show_signature: false,
-        limit: 256,
-        author: None,
-        grep: None,
-        search_changes: None,
-        search_occurrences: None,
-        trace_lines: None,
-        simplify_by_decoration: false,
+        options: LogOptions::default(),
     };
     model.log_pick_on_select = Some(OnSelect::RebaseSubsetStart {
         newbase: "origin/main".to_string(),
@@ -1510,25 +1448,7 @@ fn test_select_confirm_modify_commit_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(
-        &repo,
-        &LogType::Current,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        256,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    )
-    .unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, &LogOptions::default()).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -1546,20 +1466,7 @@ fn test_select_confirm_modify_commit_returns_rebase_message() {
     model.view_mode = ViewMode::Log {
         log_type: LogType::Current,
         picking: true,
-        graph: true,
-        color: false,
-        decorate: true,
-        show_header: false,
-        patch: false,
-        stat: false,
-        show_signature: false,
-        limit: 256,
-        author: None,
-        grep: None,
-        search_changes: None,
-        search_occurrences: None,
-        trace_lines: None,
-        simplify_by_decoration: false,
+        options: LogOptions::default(),
     };
     model.log_pick_on_select = Some(OnSelect::ModifyCommit);
 
@@ -1707,25 +1614,7 @@ fn test_select_confirm_reword_commit_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(
-        &repo,
-        &LogType::Current,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        256,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    )
-    .unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, &LogOptions::default()).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -1743,20 +1632,7 @@ fn test_select_confirm_reword_commit_returns_rebase_message() {
     model.view_mode = ViewMode::Log {
         log_type: LogType::Current,
         picking: true,
-        graph: true,
-        color: false,
-        decorate: true,
-        show_header: false,
-        patch: false,
-        stat: false,
-        show_signature: false,
-        limit: 256,
-        author: None,
-        grep: None,
-        search_changes: None,
-        search_occurrences: None,
-        trace_lines: None,
-        simplify_by_decoration: false,
+        options: LogOptions::default(),
     };
     model.log_pick_on_select = Some(OnSelect::RewordCommit);
 
@@ -1920,25 +1796,7 @@ fn test_select_confirm_remove_commit_returns_rebase_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(
-        &repo,
-        &LogType::Current,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        256,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    )
-    .unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, &LogOptions::default()).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -1956,20 +1814,7 @@ fn test_select_confirm_remove_commit_returns_rebase_message() {
     model.view_mode = ViewMode::Log {
         log_type: LogType::Current,
         picking: true,
-        graph: true,
-        color: false,
-        decorate: true,
-        show_header: false,
-        patch: false,
-        stat: false,
-        show_signature: false,
-        limit: 256,
-        author: None,
-        grep: None,
-        search_changes: None,
-        search_occurrences: None,
-        trace_lines: None,
-        simplify_by_decoration: false,
+        options: LogOptions::default(),
     };
     model.log_pick_on_select = Some(OnSelect::RemoveCommit);
 
@@ -2123,25 +1968,7 @@ fn test_select_confirm_autosquash_returns_autosquash_into_message() {
     test_repo.commit_file("file1.txt", "content1", "First commit");
 
     let repo = git2::Repository::open(test_repo.repo_path()).unwrap();
-    let mut commits = get_log_entries(
-        &repo,
-        &LogType::Current,
-        true,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        256,
-        None,
-        None,
-        None,
-        None,
-        None,
-        false,
-    )
-    .unwrap();
+    let mut commits = get_log_entries(&repo, &LogType::Current, &LogOptions::default()).unwrap();
     commits.retain(|e| e.is_commit());
 
     let mut model = create_model_from_test_repo(&test_repo);
@@ -2159,20 +1986,7 @@ fn test_select_confirm_autosquash_returns_autosquash_into_message() {
     model.view_mode = ViewMode::Log {
         log_type: LogType::Current,
         picking: true,
-        graph: true,
-        color: false,
-        decorate: true,
-        show_header: false,
-        patch: false,
-        stat: false,
-        show_signature: false,
-        limit: 256,
-        author: None,
-        grep: None,
-        search_changes: None,
-        search_occurrences: None,
-        trace_lines: None,
-        simplify_by_decoration: false,
+        options: LogOptions::default(),
     };
     model.log_pick_on_select = Some(OnSelect::AutosquashCommit);
 

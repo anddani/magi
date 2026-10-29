@@ -261,6 +261,7 @@ pub fn run_alter_commit<P: AsRef<Path>>(
 mod tests {
     use super::*;
     use crate::git::test_repo::TestRepo;
+    use crate::model::LogOptions;
 
     /// Helper to get log entries for testing (filters out graph-only entries)
     fn get_log_entries_for_test(test_repo: &TestRepo) -> Vec<crate::model::LogEntry> {
@@ -268,20 +269,7 @@ mod tests {
         let mut entries = super::super::log::get_log_entries(
             &repo,
             &crate::msg::LogType::Current,
-            true,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            256,
-            None,
-            None,
-            None,
-            None,
-            None,
-            false,
+            &LogOptions::default(),
         )
         .unwrap();
         entries.retain(|e| e.is_commit());
