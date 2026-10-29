@@ -428,6 +428,28 @@ pub struct Strings {
     pub arg_merge_gpg_sign: &'static str,
     pub select_merge_gpg_sign: &'static str,
 
+    // Configure popup (git-config editor)
+    /// Action label in fetch/pull/push popups ("Set variables…")
+    pub cmd_set_variables: &'static str,
+    /// Action label in the branch popup ("Configure…")
+    pub cmd_configure: &'static str,
+    /// Column header for the branch-scoped variables
+    pub col_configure: &'static str,
+    /// Column header for repository-default variables
+    pub col_configure_defaults: &'static str,
+    /// Column header for branch-creation defaults
+    pub col_configure_creation: &'static str,
+    /// Shown as the value of an unset config variable
+    pub configure_unset: &'static str,
+    /// Configure popup title — use fmt1() with the branch name.
+    pub configure_scope_fmt: &'static str,
+    /// Description input popup title — use fmt1() with the branch name.
+    pub input_config_description_fmt: &'static str,
+    /// Local-branch picker title when choosing which branch to configure
+    pub title_configure_branch: &'static str,
+    /// Upstream picker title — use fmt1() with the branch name.
+    pub title_configure_upstream_fmt: &'static str,
+
     // Mode labels shown in the status bar
     pub mode_normal: &'static str,
     pub mode_visual: &'static str,
@@ -978,6 +1000,17 @@ static ENGLISH: Strings = Strings {
     arg_merge_gpg_sign: "Sign using gpg",
     select_merge_gpg_sign: "Sign with key",
 
+    cmd_set_variables: "Set variables…",
+    cmd_configure: "Configure…",
+    col_configure: "Configure",
+    col_configure_defaults: "Configure repository defaults",
+    col_configure_creation: "Configure branch creation",
+    configure_unset: "unset",
+    configure_scope_fmt: "Configure {}",
+    input_config_description_fmt: "Description for {}",
+    title_configure_branch: "Configure branch",
+    title_configure_upstream_fmt: "Set upstream of {} to",
+
     mode_normal: "NORMAL",
     mode_visual: "VISUAL",
     mode_search: "SEARCH",
@@ -1497,6 +1530,17 @@ static SWEDISH: Strings = Strings {
     select_merge_diff_algorithm: "Diff-algoritm",
     arg_merge_gpg_sign: "Signera med gpg",
     select_merge_gpg_sign: "Signera med nyckel",
+
+    cmd_set_variables: "Ställ in variabler…",
+    cmd_configure: "Konfigurera…",
+    col_configure: "Konfigurera",
+    col_configure_defaults: "Konfigurera standardvärden för arkivet",
+    col_configure_creation: "Konfigurera grenskapande",
+    configure_unset: "ej satt",
+    configure_scope_fmt: "Konfigurera {}",
+    input_config_description_fmt: "Beskrivning för {}",
+    title_configure_branch: "Konfigurera gren",
+    title_configure_upstream_fmt: "Sätt uppström för {} till",
 
     mode_normal: "NORMAL",
     mode_visual: "VISUELL",

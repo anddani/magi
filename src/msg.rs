@@ -511,6 +511,41 @@ pub enum Message {
 
     /// Revise (reword) a specific commit via `git commit --fixup=reword:<hash> --edit`
     ReviseCommit(String),
+
+    /// Open the Configure popup (git-config editor) for a branch. When
+    /// `force_pick` is true (or HEAD is detached), a local-branch picker is
+    /// shown first; otherwise the current branch is used.
+    ShowConfigurePopup {
+        force_pick: bool,
+    },
+    /// An action taken inside the Configure popup
+    ConfigAction(ConfigAction),
+}
+
+/// Actions taken inside the Configure popup (git-config editor). Each one reads
+/// the scoped branch from the popup state and writes git config immediately.
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+pub enum ConfigAction {
+    /// Begin the `a` branch-creation prefix (await `m`/`r`)
+    SetPendingA,
+    /// Abort the `a` prefix without doing anything
+    ClearPendingA,
+    /// Toggle the branch's upstream: unset it if set, else open the picker
+    ToggleUpstream,
+    /// Edit the branch description (`branch.<b>.description`) via input popup
+    EditDescription,
+    /// Cycle `branch.<b>.rebase` (unset → true → false → unset)
+    CycleBranchRebase,
+    /// Cycle `branch.<b>.pushRemote` through the configured remotes
+    CycleBranchPushRemote,
+    /// Cycle `pull.rebase` (unset → true → false → unset)
+    CyclePullRebase,
+    /// Cycle `remote.pushDefault` through the configured remotes
+    CyclePushDefault,
+    /// Cycle `branch.autoSetupMerge` (unset → always → true → false → unset)
+    CycleAutoSetupMerge,
+    /// Cycle `branch.autoSetupRebase` (unset → always → local → remote → never → unset)
+    CycleAutoSetupRebase,
 }
 
 #[derive(PartialEq, Eq, Debug)]

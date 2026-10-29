@@ -6,6 +6,7 @@ use crate::msg::{Message, OnSelect, OptionsSource, ShowSelectPopupConfig};
 pub fn keys(key: KeyEvent) -> Option<Message> {
     match key.code {
         KeyCode::Char('q') => Some(Message::DismissPopup),
+        KeyCode::Char('C') => Some(Message::ShowConfigurePopup { force_pick: true }),
         KeyCode::Char('b') => Some(Message::ShowSelectPopup(ShowSelectPopupConfig {
             title: i18n::t().title_checkout.to_string(),
             source: OptionsSource::LocalAndRemoteBranches,

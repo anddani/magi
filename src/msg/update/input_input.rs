@@ -1,8 +1,9 @@
 use crate::{
+    git::config::{set_local_config, unset_local_config},
     i18n,
     model::{
         EditOp, Model,
-        popup::{InputContext, PopupContent, PopupContentCommand},
+        popup::{ConfigurePopupState, InputContext, PopupContent, PopupContentCommand},
     },
     msg::{
         FetchCommand, Message, OnSelect, OptionsSource, PushCommand, ShowSelectPopupConfig,
@@ -139,6 +140,25 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         return None;
     }
 
+    // ConfigDescription: set or unset `branch.<b>.description`, then reopen the
+    // Configure popup. Empty input clears the description.
+    if let InputContext::ConfigDescription { branch } = state.context {
+        let input = state.input.as_str().trim();
+        let key = format!("branch.{}.description", branch);
+        if input.is_empty() {
+            let _ = unset_local_config(&model.workdir, &key);
+        } else {
+            let _ = set_local_config(&model.workdir, &key, input);
+        }
+        model.popup = Some(PopupContent::Command(PopupContentCommand::Configure(
+            ConfigurePopupState {
+                branch,
+                pending_a: false,
+            },
+        )));
+        return None;
+    }
+
     // RevertMainline allows empty input (empty = clear the mainline value)
     if let InputContext::RevertMainline { mut revert_state } = state.context {
         let input = state.input.as_str().trim().to_string();
@@ -238,7 +258,8 @@ pub fn confirm(model: &mut Model) -> Option<Message> {
         | InputContext::LogSearchChanges
         | InputContext::LogSearchOccurrences
         | InputContext::LogTraceLines
-        | InputContext::LogFiles => {
+        | InputContext::LogFiles
+        | InputContext::ConfigDescription { .. } => {
             unreachable!()
         }
     }

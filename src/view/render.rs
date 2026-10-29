@@ -18,6 +18,7 @@ use crate::{
 mod apply_popup;
 mod branch_popup;
 mod commit_popup;
+mod configure_popup;
 mod credential_popup;
 mod fetch_popup;
 mod help_popup;
@@ -105,6 +106,9 @@ pub fn render_popup(
                 PopupContentCommand::Fetch(state) => fetch_popup::content(theme, model, state),
                 PopupContentCommand::Pull(state) => pull_popup::content(theme, model, state),
                 PopupContentCommand::Branch => branch_popup::content(theme),
+                PopupContentCommand::Configure(state) => {
+                    configure_popup::content(theme, model, state)
+                }
                 PopupContentCommand::Log => log_popup::content(theme, model),
                 PopupContentCommand::Stash => stash_popup::content(theme, model),
                 PopupContentCommand::StashPush => stash_push_popup::content(theme, model),

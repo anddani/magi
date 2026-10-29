@@ -11,10 +11,10 @@ use magi::{
         },
         multi_select_popup::{MultiSelectPopupState, OnMultiSelect},
         popup::{
-            ApplyPopupState, CommitPopupState, ConfirmAction, ConfirmPopupState,
-            CredentialPopupState, FetchPopupState, InputContext, InputPopupState, MergePopupState,
-            PopupContent, PopupContentCommand, PullPopupState, PushPopupState, RebasePopupState,
-            RevertPopupState,
+            ApplyPopupState, CommitPopupState, ConfigurePopupState, ConfirmAction,
+            ConfirmPopupState, CredentialPopupState, FetchPopupState, InputContext,
+            InputPopupState, MergePopupState, PopupContent, PopupContentCommand, PullPopupState,
+            PushPopupState, RebasePopupState, RevertPopupState,
         },
         select_popup::{OnSelect, SelectPopupState},
     },
@@ -467,6 +467,21 @@ fn snapshot_pull_popup() {
 fn snapshot_branch_popup() {
     let test_repo = TestRepo::new();
     let model = create_command_popup_model(&test_repo, PopupContentCommand::Branch);
+    assert_frame_snapshot!(render_to_string(&model, 80, 24));
+}
+
+#[test]
+fn snapshot_configure_popup() {
+    let test_repo = TestRepo::new();
+    // The fake workdir means `git config` reads find nothing, so every variable
+    // renders in its unset/default state — the layout we want to lock in.
+    let model = create_command_popup_model(
+        &test_repo,
+        PopupContentCommand::Configure(ConfigurePopupState {
+            branch: "main".to_string(),
+            pending_a: false,
+        }),
+    );
     assert_frame_snapshot!(render_to_string(&model, 80, 24));
 }
 

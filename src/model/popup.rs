@@ -105,6 +105,18 @@ pub struct PullPopupState {
     pub sole_remote: Option<String>,
 }
 
+/// State for the Configure popup (editing git config for a branch), reached
+/// via `C` from the fetch/pull/push/branch popups. Mirrors magit's
+/// `magit-branch-configure` transient.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigurePopupState {
+    /// The local branch whose config is being edited
+    pub branch: String,
+    /// Whether the `a` (branch-creation) prefix has been pressed and we're
+    /// waiting for the second key (`m`/`r`). Mirrors magit's `a m`/`a r`.
+    pub pending_a: bool,
+}
+
 /// Context for what action the input popup is performing
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InputContext {
@@ -199,6 +211,11 @@ pub enum InputContext {
     LogTraceLines,
     /// Entering the pathspec(s) to limit the log to (`--`)
     LogFiles,
+    /// Entering the description for a branch (`branch.<b>.description`)
+    ConfigDescription {
+        /// The branch whose description is being edited
+        branch: String,
+    },
 }
 
 /// State for text input popups (e.g., new branch name)
@@ -263,6 +280,9 @@ impl InputPopupState {
             InputContext::LogSearchOccurrences => t.input_log_search_occurrences.to_string(),
             InputContext::LogTraceLines => t.input_log_trace_lines.to_string(),
             InputContext::LogFiles => t.input_log_files.to_string(),
+            InputContext::ConfigDescription { branch } => {
+                t.fmt1(t.input_config_description_fmt, branch)
+            }
         }
     }
 }
@@ -424,6 +444,8 @@ pub enum PopupContentCommand {
     Fetch(FetchPopupState),
     Pull(PullPopupState),
     Branch,
+    /// Git-config editor scoped to a branch (magit's `magit-branch-configure`)
+    Configure(ConfigurePopupState),
     Log,
     Stash,
     /// The nested "Stash push" popup (`git stash push`), with its own

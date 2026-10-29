@@ -5,7 +5,7 @@ use magi::i18n::{self, Language, Strings};
 /// is enforced by the compiler (every `Strings` field must be populated), but
 /// nothing stops a translation from dropping the placeholder — this list does.
 /// Keep in sync with the `*_fmt` fields in src/i18n.rs.
-const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 35] = [
+const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 38] = [
     ("input_rename_branch_fmt", |s| s.input_rename_branch_fmt),
     ("help_version_fmt", |s| s.help_version_fmt),
     ("input_worktree_path_fmt", |s| s.input_worktree_path_fmt),
@@ -73,6 +73,13 @@ const FMT_FIELDS: [(&str, fn(&Strings) -> &'static str); 35] = [
         s.err_worktree_does_not_exist_fmt
     }),
     ("err_commit_failed_fmt", |s| s.err_commit_failed_fmt),
+    ("configure_scope_fmt", |s| s.configure_scope_fmt),
+    ("input_config_description_fmt", |s| {
+        s.input_config_description_fmt
+    }),
+    ("title_configure_upstream_fmt", |s| {
+        s.title_configure_upstream_fmt
+    }),
 ];
 
 /// `*_fmt` fields that take exactly two `{}` placeholders via fmt2().

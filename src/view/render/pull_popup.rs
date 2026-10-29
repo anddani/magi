@@ -61,6 +61,16 @@ pub fn content<'a>(
         ],
     };
 
+    let configure_col = PopupColumn {
+        title: Some(t.col_configure.into()),
+        content: vec![command_description(
+            theme,
+            model.arg_mode,
+            "C",
+            t.cmd_set_variables,
+        )],
+    };
+
     CommandPopupContent {
         title: t.popup_pull,
         rows: vec![
@@ -69,6 +79,9 @@ pub fn content<'a>(
             },
             PopupRow {
                 columns: vec![pull_into_col],
+            },
+            PopupRow {
+                columns: vec![configure_col],
             },
         ],
     }

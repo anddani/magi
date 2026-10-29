@@ -1,12 +1,14 @@
 use crate::{
-    git::{reset::has_uncommitted_changes, worktree::worktree_has_changes},
+    git::{
+        config::set_branch_upstream, reset::has_uncommitted_changes, worktree::worktree_has_changes,
+    },
     i18n,
     model::{
         LineContent, Model, ViewMode,
         arguments::{Arguments, RebaseArgument, RebaseMergesMode},
         popup::{
-            CommitPopupState, ConfirmAction, ConfirmPopupState, InputContext, PopupContent,
-            PopupContentCommand, SelectResult,
+            CommitPopupState, ConfigurePopupState, ConfirmAction, ConfirmPopupState, InputContext,
+            PopupContent, PopupContentCommand, SelectResult,
         },
         select_popup::OnSelect,
     },
@@ -665,6 +667,25 @@ fn route_result(
             };
             model.popup = Some(PopupContent::Command(PopupContentCommand::Revert(
                 revert_state,
+            )));
+            None
+        }
+        (Some(OnSelect::ConfigureBranch), SelectResult::Selected(branch)) => {
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Configure(
+                ConfigurePopupState {
+                    branch,
+                    pending_a: false,
+                },
+            )));
+            None
+        }
+        (Some(OnSelect::ConfigSetUpstream { branch }), SelectResult::Selected(upstream)) => {
+            let _ = set_branch_upstream(&model.workdir, &branch, &upstream);
+            model.popup = Some(PopupContent::Command(PopupContentCommand::Configure(
+                ConfigurePopupState {
+                    branch,
+                    pending_a: false,
+                },
             )));
             None
         }
