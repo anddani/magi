@@ -1652,3 +1652,35 @@ fn test_show_log_reverse_reverses_order_and_drops_graph() {
     let pos = |needle: &str| msgs.iter().position(|m| m.contains(needle));
     assert!(pos("First commit") < pos("Third commit"));
 }
+
+// ── Shortlog action (Other section: s) ────────────────────────────────────────
+
+#[test]
+fn test_show_shortlog_enters_preview_with_summary() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "First commit");
+    test_repo.commit_file("b.txt", "b", "Second commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+
+    update(&mut model, Message::ShowShortlog);
+
+    // The log popup is dismissed and the shortlog summary is shown in Preview
+    assert!(model.popup.is_none());
+    assert_eq!(model.view_mode, ViewMode::Preview);
+
+    let text: String = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|line| match &line.content {
+            LineContent::PreviewLine { content, .. } => Some(content.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    // `git shortlog` groups commit subjects by author
+    assert!(text.contains("First commit"));
+    assert!(text.contains("Second commit"));
+}

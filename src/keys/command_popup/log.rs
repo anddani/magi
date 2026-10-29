@@ -60,6 +60,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Mess
             on_select: OnSelect::ReflogOther,
         })),
         KeyCode::Char('H') => Some(Message::ShowLog(LogType::ReflogOther("HEAD".to_string()))),
+        KeyCode::Char('s') => Some(Message::ShowShortlog),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         KeyCode::Char('=') => Some(Message::EnterEqualsArgMode),
         _ => None,

@@ -56,6 +56,28 @@ pub fn get_commit_preview_lines(workdir: &Path, hash: &str) -> Vec<Line> {
     parse_preview_output(&output)
 }
 
+/// Returns preview lines for `git shortlog HEAD` — a history summary grouping
+/// commit subjects by author. The output is plain text, so every line is
+/// rendered as a header (no diff coloring).
+pub fn get_shortlog_preview_lines(workdir: &Path) -> Vec<Line> {
+    let output = git_cmd(workdir, &["shortlog", "HEAD"])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+        .unwrap_or_default();
+    output
+        .lines()
+        .map(|line| Line {
+            content: LineContent::PreviewLine {
+                content: line.to_string(),
+                line_type: PreviewLineType::Header,
+            },
+            section: None,
+        })
+        .collect()
+}
+
 /// Returns preview lines showing what merging `branch` into `head_name`
 /// (the checked-out branch) would produce, without touching the working
 /// tree or the index. Builds the merge result with

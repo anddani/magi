@@ -502,6 +502,8 @@ pub enum Message {
 
     /// Enter preview mode for the commit/stash under cursor
     ShowPreview,
+    /// Show `git shortlog` output (history summary) in the preview view
+    ShowShortlog,
     /// Enter preview mode for a specific stash (by index)
     ShowStashDiff(usize),
     /// Exit preview mode and return to previous view

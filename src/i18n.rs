@@ -92,6 +92,7 @@ pub struct Strings {
     pub col_apply_here: &'static str,
     pub col_apply_elsewhere: &'static str,
     pub col_reflog: &'static str,
+    pub col_other: &'static str,
     pub col_inspect: &'static str,
     pub col_transform: &'static str,
 
@@ -256,6 +257,7 @@ pub struct Strings {
     pub cmd_current: &'static str,
     pub cmd_other: &'static str,
     pub cmd_head: &'static str,
+    pub cmd_shortlog: &'static str,
     pub cmd_related: &'static str,
     pub cmd_local_branches: &'static str,
     pub cmd_all_branches: &'static str,
@@ -664,6 +666,7 @@ static ENGLISH: Strings = Strings {
     col_apply_here: "Apply here",
     col_apply_elsewhere: "Apply elsewhere",
     col_reflog: "Reflog",
+    col_other: "Other",
     col_inspect: "Inspect",
     col_transform: "Transform",
 
@@ -808,6 +811,7 @@ static ENGLISH: Strings = Strings {
     cmd_current: "Current",
     cmd_other: "Other",
     cmd_head: "HEAD",
+    cmd_shortlog: "shortlog",
     cmd_related: "Related",
     cmd_local_branches: "Local branches",
     cmd_all_branches: "All branches",
@@ -1182,6 +1186,7 @@ static SWEDISH: Strings = Strings {
     col_apply_here: "Plocka russin här",
     col_apply_elsewhere: "Plocka russin någon annanstans",
     col_reflog: "Reflogg",
+    col_other: "Övrigt",
     col_inspect: "Inspektera",
     col_transform: "Transformera",
 
@@ -1326,6 +1331,7 @@ static SWEDISH: Strings = Strings {
     cmd_current: "Nuvarande",
     cmd_other: "Annan",
     cmd_head: "HEAD",
+    cmd_shortlog: "shortlog",
     cmd_related: "Relaterade",
     cmd_local_branches: "Lokala grenar",
     cmd_all_branches: "Alla grenar",
