@@ -19,6 +19,7 @@ mod confirm_reverse;
 mod create_tag;
 mod create_tag_release;
 mod credentials_input;
+mod cycle_log_order;
 mod delete_branch;
 mod delete_tag;
 mod discard_selected;
@@ -246,6 +247,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowLogSearchOccurrencesInput => show_log_search_occurrences_input::update(model),
         Message::ShowLogTraceLinesInput => show_log_trace_lines_input::update(model),
         Message::ShowLogFilesInput => show_log_files_input::update(model),
+        Message::CycleLogOrder => cycle_log_order::update(model),
         Message::ShowRevertStrategySelect => show_revert_strategy_select::update(model),
         Message::ShowRevertGpgSignSelect => show_revert_gpg_sign_select::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),

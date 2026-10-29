@@ -319,6 +319,8 @@ pub enum Message {
     ShowLogTraceLinesInput,
     /// Show input popup for entering the -- pathspec file filter for the log
     ShowLogFilesInput,
+    /// Cycle the -o commit ordering (none → topo → author-date → date → none)
+    CycleLogOrder,
     /// Show revert popup
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert

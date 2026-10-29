@@ -8,7 +8,10 @@ use ratatui::{
 use crate::{
     config::Theme,
     i18n,
-    model::{Model, arguments::PopupArgument},
+    model::{
+        Model,
+        arguments::{CommitOrder, PopupArgument},
+    },
 };
 
 /// Renders input text with a visible cursor. At the end of the text the
@@ -214,6 +217,60 @@ pub fn argument_value_line(
         Span::styled(flag_text, flag_style),
         Span::styled(")", desc_style),
     ])
+}
+
+/// Renders the `-o` commit-ordering line, e.g.
+/// ` -o Order commits by (--[topo|author-date|date]-order)`. The `--` prefix and
+/// `-order` suffix are green when any ordering is selected; within the brackets
+/// the selected option is green and the rest stay dim.
+pub fn commit_order_line(
+    theme: &Theme,
+    description: &str,
+    selected: Option<CommitOrder>,
+    prefix_pressed: bool,
+) -> Line<'static> {
+    let faded = Style::default().fg(theme.dim_text);
+    let desc_style = Style::default();
+    let key_style = Style::default()
+        .fg(theme.diff_addition)
+        .add_modifier(Modifier::BOLD);
+    let green = Style::default().fg(theme.diff_addition);
+
+    let prefix_style = if prefix_pressed { faded } else { key_style };
+    // `--` / `-order` are green only once an ordering is picked
+    let affix = if selected.is_some() { green } else { faded };
+    let option_style = |order: CommitOrder| {
+        if selected == Some(order) {
+            green
+        } else {
+            faded
+        }
+    };
+
+    let mut spans = vec![
+        Span::styled(" -", prefix_style),
+        Span::styled("o", key_style),
+        Span::styled(format!(" {description} ("), desc_style),
+        Span::styled("--", affix),
+        Span::styled("[", faded),
+    ];
+    for (i, order) in [
+        CommitOrder::Topo,
+        CommitOrder::AuthorDate,
+        CommitOrder::Date,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        if i > 0 {
+            spans.push(Span::styled("|", faded));
+        }
+        spans.push(Span::styled(order.label(), option_style(order)));
+    }
+    spans.push(Span::styled("]", faded));
+    spans.push(Span::styled("-order", affix));
+    spans.push(Span::styled(")", desc_style));
+    Line::from(spans)
 }
 
 pub fn argument_line<'a>(

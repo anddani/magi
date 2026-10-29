@@ -172,6 +172,8 @@ pub struct LogOptions {
     pub files: Option<String>,
     /// Follow file renames in a single-file log (--follow)
     pub follow: bool,
+    /// Commit ordering (`--<order>-order`); `None` means git's default
+    pub order: Option<arguments::CommitOrder>,
 }
 
 impl Default for LogOptions {
@@ -193,6 +195,7 @@ impl Default for LogOptions {
             simplify_by_decoration: false,
             files: None,
             follow: false,
+            order: None,
         }
     }
 }
