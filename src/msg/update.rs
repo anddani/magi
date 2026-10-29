@@ -72,6 +72,7 @@ mod show_fetch_popup;
 mod show_input_popup;
 mod show_log;
 mod show_log_author_select;
+mod show_log_files_input;
 mod show_log_grep_input;
 mod show_log_limit_input;
 mod show_log_popup;
@@ -244,6 +245,7 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ShowLogSearchChangesInput => show_log_search_changes_input::update(model),
         Message::ShowLogSearchOccurrencesInput => show_log_search_occurrences_input::update(model),
         Message::ShowLogTraceLinesInput => show_log_trace_lines_input::update(model),
+        Message::ShowLogFilesInput => show_log_files_input::update(model),
         Message::ShowRevertStrategySelect => show_revert_strategy_select::update(model),
         Message::ShowRevertGpgSignSelect => show_revert_gpg_sign_select::update(model),
         Message::Revert(revert_command) => revert::update(model, revert_command),

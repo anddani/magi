@@ -167,6 +167,9 @@ pub struct LogOptions {
     /// Simplify history to commits referenced by a branch or tag
     /// (--simplify-by-decoration)
     pub simplify_by_decoration: bool,
+    /// Limit the log to commits touching the given pathspec(s) (`-- <files>`);
+    /// `None` means no file filter
+    pub files: Option<String>,
 }
 
 impl Default for LogOptions {
@@ -186,6 +189,7 @@ impl Default for LogOptions {
             search_occurrences: None,
             trace_lines: None,
             simplify_by_decoration: false,
+            files: None,
         }
     }
 }

@@ -317,6 +317,8 @@ pub enum Message {
     ShowLogSearchOccurrencesInput,
     /// Show input popup for entering the -L line-trace range for the log
     ShowLogTraceLinesInput,
+    /// Show input popup for entering the -- pathspec file filter for the log
+    ShowLogFilesInput,
     /// Show revert popup
     ShowRevertPopup,
     /// Show input popup for entering the -m mainline value for a revert

@@ -104,17 +104,30 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
     };
 
     // History simplification section: the `-D` toggle lives here (not in
-    // Formatting), rendered with the `-` prefix like the other toggles
+    // Formatting), rendered with the `-` prefix like the other toggles; `--`
+    // carries a value (the pathspec), rendered like the other value args
+    let files = model.arguments.as_ref().and_then(|a| a.log_files());
     let history_simplification_col = PopupColumn {
         title: Some(t.col_history_simplification.into()),
-        content: vec![argument_line(
-            theme,
-            'D',
-            t.arg_log_simplify_by_decoration,
-            "--simplify-by-decoration",
-            model.arg_mode,
-            args.is_some_and(|a| a.contains(&LogArgument::SimplifyByDecoration)),
-        )],
+        content: vec![
+            argument_line(
+                theme,
+                'D',
+                t.arg_log_simplify_by_decoration,
+                "--simplify-by-decoration",
+                model.arg_mode,
+                args.is_some_and(|a| a.contains(&LogArgument::SimplifyByDecoration)),
+            ),
+            argument_value_line(
+                theme,
+                '-',
+                '-',
+                t.arg_log_files,
+                "--",
+                files,
+                model.arg_mode,
+            ),
+        ],
     };
 
     // LogArgument::all() order: Graph, Color, Decorate, ShowHeader, Patch, Stat

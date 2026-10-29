@@ -10,13 +10,15 @@ use crate::{
 pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Message> {
     if arg_mode {
         return match key.code {
-            // `-n`/`-F`/`-G`/`-S`/`-L` take typed values; `-A` opens an author picker
+            // `-n`/`-F`/`-G`/`-S`/`-L`/`--` take typed values; `-A` opens an author picker
             KeyCode::Char('n') => Some(Message::ShowLogLimitInput),
             KeyCode::Char('A') => Some(Message::ShowLogAuthorSelect),
             KeyCode::Char('F') => Some(Message::ShowLogGrepInput),
             KeyCode::Char('G') => Some(Message::ShowLogSearchChangesInput),
             KeyCode::Char('S') => Some(Message::ShowLogSearchOccurrencesInput),
             KeyCode::Char('L') => Some(Message::ShowLogTraceLinesInput),
+            // `--` (a second `-` in arg mode) limits the log to pathspec(s)
+            KeyCode::Char('-') => Some(Message::ShowLogFilesInput),
             // `-D` is a toggle in its own section (excluded from `all()`), so it
             // is dispatched explicitly rather than through `from_key`
             KeyCode::Char('D') => Some(Message::ToggleArgument(Log(
