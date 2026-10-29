@@ -220,6 +220,12 @@ pub enum OnSelect {
     RevertGpgSign {
         revert_state: crate::model::popup::RevertPopupState,
     },
+    /// Select a local branch to open the Configure popup for (used when HEAD is
+    /// detached or when the branch popup's `C` always prompts)
+    ConfigureBranch,
+    /// Select an upstream branch to set for the given branch
+    /// (`branch.<branch>.merge`/`remote`), then reopen the Configure popup
+    ConfigSetUpstream { branch: String },
 }
 
 /// Data source used to populate select popup options

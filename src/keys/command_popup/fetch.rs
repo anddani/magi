@@ -61,6 +61,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &FetchPopupState) -> Option<Me
             source: OptionsSource::Remotes,
             on_select: OnSelect::FetchRefspecRemotePick,
         })),
+        KeyCode::Char('C') => Some(Message::ShowConfigurePopup { force_pick: false }),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

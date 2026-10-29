@@ -639,6 +639,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::ResetBranchPick
         | OnSelect::MergeAbsorb
         | OnSelect::MergeDissolve
+        | OnSelect::ConfigureBranch
         | OnSelect::PushOtherBranchPick => i18n::t().err_no_local_branches_found.to_string(),
         OnSelect::WorktreeAdd { .. }
         | OnSelect::WorktreeBranch
@@ -695,6 +696,7 @@ fn error_msg(config: &ShowSelectPopupConfig) -> String {
         | OnSelect::RebaseUpstream
         | OnSelect::PullElsewhere
         | OnSelect::PushElsewhere
+        | OnSelect::ConfigSetUpstream { .. }
         | OnSelect::PushOtherBranchTarget { .. } => {
             i18n::t().err_no_remote_branches_found.to_string()
         }

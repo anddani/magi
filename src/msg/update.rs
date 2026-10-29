@@ -11,6 +11,7 @@ mod checkout_new_branch;
 mod cherry_spinoff;
 mod cherry_spinout;
 mod commit;
+mod configure;
 mod confirm_delete_branch;
 mod confirm_discard;
 mod confirm_drop_stash;
@@ -69,6 +70,7 @@ mod show_checkout_new_branch_input;
 mod show_commit_author_select;
 mod show_commit_reuse_message_select;
 mod show_commit_select;
+mod show_configure_popup;
 mod show_fetch_popup;
 mod show_input_popup;
 mod show_log;
@@ -344,5 +346,9 @@ pub fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::ExitPreview => exit_preview::update(model),
         Message::FileCheckout { revision, file } => file_checkout::update(model, revision, file),
         Message::ReviseCommit(hash) => revise_commit::update(model, hash),
+        Message::ShowConfigurePopup { force_pick } => {
+            show_configure_popup::update(model, force_pick)
+        }
+        Message::ConfigAction(action) => configure::update(model, action),
     }
 }

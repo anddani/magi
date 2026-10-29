@@ -49,6 +49,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PullPopupState) -> Option<Mes
             source: OptionsSource::UpstreamBranches,
             on_select: OnSelect::PullElsewhere,
         })),
+        KeyCode::Char('C') => Some(Message::ShowConfigurePopup { force_pick: false }),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }

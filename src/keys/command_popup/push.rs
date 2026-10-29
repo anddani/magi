@@ -78,6 +78,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, state: &PushPopupState) -> Option<Mes
             source: OptionsSource::Tags,
             on_select: OnSelect::PushTag,
         })),
+        KeyCode::Char('C') => Some(Message::ShowConfigurePopup { force_pick: false }),
         KeyCode::Char('-') => Some(Message::EnterArgMode),
         _ => None,
     }
