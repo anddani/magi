@@ -850,6 +850,7 @@ pub enum LogArgument {
     Stat,
     ShowSignature,
     SimplifyByDecoration,
+    Follow,
 }
 
 impl LogArgument {
@@ -862,8 +863,9 @@ impl PopupArgument for LogArgument {
     /// `all()` holds only the `-` toggles rendered in the Formatting section.
     /// ShowSignature is excluded: it uses the `=` prefix (magit's `=S`), so it
     /// is rendered with `prefixed_argument_line` and toggled in equals-arg mode.
-    /// SimplifyByDecoration is excluded too: it lives in its own "History
-    /// simplification" section and is toggled via an explicit `-D` key handler.
+    /// SimplifyByDecoration and Follow are excluded too: they live in the
+    /// "History simplification" section and are toggled via explicit `-D`/`-f`
+    /// key handlers.
     fn all() -> Vec<LogArgument> {
         vec![
             LogArgument::Graph,
@@ -885,6 +887,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Stat => 's',
             LogArgument::ShowSignature => 'S',
             LogArgument::SimplifyByDecoration => 'D',
+            LogArgument::Follow => 'f',
         }
     }
 
@@ -899,6 +902,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Stat => t.arg_log_stat,
             LogArgument::ShowSignature => t.arg_log_show_signature,
             LogArgument::SimplifyByDecoration => t.arg_log_simplify_by_decoration,
+            LogArgument::Follow => t.arg_log_follow,
         }
     }
 
@@ -912,6 +916,7 @@ impl PopupArgument for LogArgument {
             LogArgument::Stat => "--stat",
             LogArgument::ShowSignature => "--show-signature",
             LogArgument::SimplifyByDecoration => "--simplify-by-decoration",
+            LogArgument::Follow => "--follow",
         }
     }
 }
@@ -1430,6 +1435,19 @@ mod tests {
         // 'D' is handled by an explicit key binding (its own section), not the
         // generic `-` toggle driven by `all()`
         assert_eq!(LogArgument::from_key('D'), None);
+    }
+
+    #[test]
+    fn test_log_argument_follow_key_and_flag() {
+        assert_eq!(LogArgument::Follow.key(), 'f');
+        assert_eq!(LogArgument::Follow.flag(), "--follow");
+    }
+
+    #[test]
+    fn test_log_argument_follow_not_toggled_via_from_key() {
+        // 'f' is handled by an explicit key binding (its own section), not the
+        // generic `-` toggle driven by `all()`
+        assert_eq!(LogArgument::from_key('f'), None);
     }
 
     #[test]

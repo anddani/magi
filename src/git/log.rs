@@ -14,7 +14,8 @@ const SEPARATOR: char = '\x0c'; // Form feed character
 /// Fetches git log entries for `log_type`, shaped by `options` (graph, colored
 /// graph lines, refnames, revision headers, inline diffs, diffstats, signature
 /// statuses, commit limit, author/message/change/occurrence filters, line trace,
-/// decoration-based simplification and a pathspec file filter). See [`LogOptions`].
+/// decoration-based simplification, a pathspec file filter and rename-following).
+/// See [`LogOptions`].
 pub fn get_log_entries(
     repository: &Repository,
     log_type: &LogType,
@@ -37,6 +38,7 @@ pub fn get_log_entries(
     let search_occurrences = options.search_occurrences.as_deref();
     let trace_lines = options.trace_lines.as_deref();
     let files = options.files.as_deref();
+    let follow = options.follow;
     let workdir = repository
         .workdir()
         .ok_or_else(|| git2::Error::from_str("No working directory"))?;
@@ -157,6 +159,12 @@ pub fn get_log_entries(
     // `-D`
     if simplify_by_decoration {
         args.push("--simplify-by-decoration".to_string());
+    }
+
+    // Follow renames across a single-file log, like magit's `-f`. git requires
+    // a single pathspec (supplied after `--`) for this to take effect.
+    if follow {
+        args.push("--follow".to_string());
     }
 
     match log_type {

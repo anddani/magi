@@ -127,6 +127,14 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
                 files,
                 model.arg_mode,
             ),
+            argument_line(
+                theme,
+                'f',
+                t.arg_log_follow,
+                "--follow",
+                model.arg_mode,
+                args.is_some_and(|a| a.contains(&LogArgument::Follow)),
+            ),
         ],
     };
 

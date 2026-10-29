@@ -2097,6 +2097,21 @@ mod tests {
     }
 
     #[test]
+    fn test_f_in_log_arg_mode_toggles_follow() {
+        use crate::model::arguments::{Argument::Log, LogArgument};
+
+        let mut model = create_log_popup_model();
+        model.arg_mode = true;
+
+        let key = create_key_event(NONE, Char('f'));
+        let result = handle_key(key, &model);
+        assert_eq!(
+            result,
+            Some(Message::ToggleArgument(Log(LogArgument::Follow)))
+        );
+    }
+
+    #[test]
     fn test_other_key_in_log_arg_mode_exits_arg_mode() {
         let mut model = create_log_popup_model();
         model.arg_mode = true;

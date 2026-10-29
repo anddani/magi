@@ -170,6 +170,8 @@ pub struct LogOptions {
     /// Limit the log to commits touching the given pathspec(s) (`-- <files>`);
     /// `None` means no file filter
     pub files: Option<String>,
+    /// Follow file renames in a single-file log (--follow)
+    pub follow: bool,
 }
 
 impl Default for LogOptions {
@@ -190,6 +192,7 @@ impl Default for LogOptions {
             trace_lines: None,
             simplify_by_decoration: false,
             files: None,
+            follow: false,
         }
     }
 }
