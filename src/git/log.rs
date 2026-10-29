@@ -14,8 +14,8 @@ const SEPARATOR: char = '\x0c'; // Form feed character
 /// Fetches git log entries for `log_type`, shaped by `options` (graph, colored
 /// graph lines, refnames, revision headers, inline diffs, diffstats, signature
 /// statuses, commit limit, author/message/change/occurrence filters, line trace,
-/// decoration-based simplification, a pathspec file filter, rename-following and
-/// commit ordering). See [`LogOptions`].
+/// decoration-based simplification, a pathspec file filter, rename-following,
+/// commit ordering and reversal). See [`LogOptions`].
 pub fn get_log_entries(
     repository: &Repository,
     log_type: &LogType,
@@ -40,6 +40,7 @@ pub fn get_log_entries(
     let files = options.files.as_deref();
     let follow = options.follow;
     let order = options.order;
+    let reverse = options.reverse;
     let workdir = repository
         .workdir()
         .ok_or_else(|| git2::Error::from_str("No working directory"))?;
@@ -109,8 +110,9 @@ pub fn get_log_entries(
         args.push("--decorate=short".to_string());
     }
 
-    // git rejects --graph together with --walk-reflogs
-    if graph && !reflog {
+    // git rejects --graph together with --walk-reflogs and with --reverse, so
+    // the graph is dropped in those cases (magit removes it the same way)
+    if graph && !reflog && !reverse {
         args.push("--graph".to_string());
     }
 
@@ -172,6 +174,12 @@ pub fn get_log_entries(
     // like magit's `-o`
     if let Some(order) = order {
         args.push(order.flag().to_string());
+    }
+
+    // Reverse the order of the output, like magit's `-r` (graph already dropped
+    // above since git rejects --graph with --reverse)
+    if reverse {
+        args.push("--reverse".to_string());
     }
 
     match log_type {

@@ -913,6 +913,7 @@ pub enum LogArgument {
     ShowSignature,
     SimplifyByDecoration,
     Follow,
+    Reverse,
 }
 
 impl LogArgument {
@@ -925,9 +926,9 @@ impl PopupArgument for LogArgument {
     /// `all()` holds only the `-` toggles rendered in the Formatting section.
     /// ShowSignature is excluded: it uses the `=` prefix (magit's `=S`), so it
     /// is rendered with `prefixed_argument_line` and toggled in equals-arg mode.
-    /// SimplifyByDecoration and Follow are excluded too: they live in the
-    /// "History simplification" section and are toggled via explicit `-D`/`-f`
-    /// key handlers.
+    /// SimplifyByDecoration, Follow and Reverse are excluded too: they live in
+    /// the "History simplification"/"Commit ordering" sections and are toggled
+    /// via explicit `-D`/`-f`/`-r` key handlers.
     fn all() -> Vec<LogArgument> {
         vec![
             LogArgument::Graph,
@@ -950,6 +951,7 @@ impl PopupArgument for LogArgument {
             LogArgument::ShowSignature => 'S',
             LogArgument::SimplifyByDecoration => 'D',
             LogArgument::Follow => 'f',
+            LogArgument::Reverse => 'r',
         }
     }
 
@@ -965,6 +967,7 @@ impl PopupArgument for LogArgument {
             LogArgument::ShowSignature => t.arg_log_show_signature,
             LogArgument::SimplifyByDecoration => t.arg_log_simplify_by_decoration,
             LogArgument::Follow => t.arg_log_follow,
+            LogArgument::Reverse => t.arg_log_reverse,
         }
     }
 
@@ -979,6 +982,7 @@ impl PopupArgument for LogArgument {
             LogArgument::ShowSignature => "--show-signature",
             LogArgument::SimplifyByDecoration => "--simplify-by-decoration",
             LogArgument::Follow => "--follow",
+            LogArgument::Reverse => "--reverse",
         }
     }
 }
@@ -1510,6 +1514,19 @@ mod tests {
         // 'f' is handled by an explicit key binding (its own section), not the
         // generic `-` toggle driven by `all()`
         assert_eq!(LogArgument::from_key('f'), None);
+    }
+
+    #[test]
+    fn test_log_argument_reverse_key_and_flag() {
+        assert_eq!(LogArgument::Reverse.key(), 'r');
+        assert_eq!(LogArgument::Reverse.flag(), "--reverse");
+    }
+
+    #[test]
+    fn test_log_argument_reverse_not_toggled_via_from_key() {
+        // 'r' is handled by an explicit key binding (its own section), not the
+        // generic `-` toggle driven by `all()`
+        assert_eq!(LogArgument::from_key('r'), None);
     }
 
     #[test]

@@ -32,6 +32,7 @@ pub fn update(model: &mut Model, log_type: LogType) -> Option<Message> {
             show_signature: args.contains(&LogArgument::ShowSignature),
             simplify_by_decoration: args.contains(&LogArgument::SimplifyByDecoration),
             follow: args.contains(&LogArgument::Follow),
+            reverse: args.contains(&LogArgument::Reverse),
             limit,
             author,
             grep,

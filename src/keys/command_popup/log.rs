@@ -25,6 +25,7 @@ pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Mess
                 LogArgument::SimplifyByDecoration,
             ))),
             KeyCode::Char('f') => Some(Message::ToggleArgument(Log(LogArgument::Follow))),
+            KeyCode::Char('r') => Some(Message::ToggleArgument(Log(LogArgument::Reverse))),
             // `-o` cycles the commit ordering (its own section, not a toggle)
             KeyCode::Char('o') => Some(Message::CycleLogOrder),
             KeyCode::Char(c) => LogArgument::from_key(c)

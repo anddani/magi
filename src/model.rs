@@ -174,6 +174,8 @@ pub struct LogOptions {
     pub follow: bool,
     /// Commit ordering (`--<order>-order`); `None` means git's default
     pub order: Option<arguments::CommitOrder>,
+    /// Reverse the order of the commits shown (--reverse)
+    pub reverse: bool,
 }
 
 impl Default for LogOptions {
@@ -196,6 +198,7 @@ impl Default for LogOptions {
             files: None,
             follow: false,
             order: None,
+            reverse: false,
         }
     }
 }
