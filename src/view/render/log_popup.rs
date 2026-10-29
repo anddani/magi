@@ -138,17 +138,22 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         ],
     };
 
-    // Commit ordering section: the `-o` switch cycles through orderings,
-    // rendered with a custom `--[topo|author-date|date]-order` line
+    // Commit ordering section: the `-o` switch cycles through orderings
+    // (custom `--[topo|author-date|date]-order` line), and `-r` toggles reverse
     let order = model.arguments.as_ref().and_then(|a| a.log_order());
     let commit_ordering_col = PopupColumn {
         title: Some(t.col_commit_ordering.into()),
-        content: vec![commit_order_line(
-            theme,
-            t.arg_log_order,
-            order,
-            model.arg_mode,
-        )],
+        content: vec![
+            commit_order_line(theme, t.arg_log_order, order, model.arg_mode),
+            argument_line(
+                theme,
+                'r',
+                t.arg_log_reverse,
+                "--reverse",
+                model.arg_mode,
+                args.is_some_and(|a| a.contains(&LogArgument::Reverse)),
+            ),
+        ],
     };
 
     // LogArgument::all() order: Graph, Color, Decorate, ShowHeader, Patch, Stat

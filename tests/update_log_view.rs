@@ -1586,3 +1586,69 @@ fn test_show_log_applies_order() {
     ));
     assert!(commit_count(&model) >= 2);
 }
+
+// ── Reverse argument (-r, --reverse) ──────────────────────────────────────────
+
+#[test]
+fn test_show_log_defaults_to_no_reverse() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { reverse: false, .. },
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_show_log_reverse_reverses_order_and_drops_graph() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "First commit");
+    test_repo.commit_file("b.txt", "b", "Second commit");
+    test_repo.commit_file("c.txt", "c", "Third commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    // Graph is on (default) together with Reverse: git rejects that combo, so
+    // the view must still render (graph dropped) rather than erroring.
+    let args = Arguments::log_args(
+        [
+            LogArgument::Graph,
+            LogArgument::Decorate,
+            LogArgument::Reverse,
+        ]
+        .into_iter()
+        .collect(),
+    );
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    // No git error → the view switched to Log with reverse stored
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { reverse: true, .. },
+            ..
+        }
+    ));
+
+    // Oldest commit now appears before the newest
+    let msgs: Vec<String> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|line| match &line.content {
+            LineContent::LogLine(entry) if entry.is_commit() => entry.message.clone(),
+            _ => None,
+        })
+        .collect();
+    let pos = |needle: &str| msgs.iter().position(|m| m.contains(needle));
+    assert!(pos("First commit") < pos("Third commit"));
+}
