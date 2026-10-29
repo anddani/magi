@@ -1842,6 +1842,15 @@ mod tests {
     }
 
     #[test]
+    fn test_s_in_log_popup_shows_shortlog() {
+        let model = create_log_popup_model();
+
+        let key = create_key_event(NONE, Char('s'));
+        let result = handle_key(key, &model);
+        assert_eq!(result, Some(Message::ShowShortlog));
+    }
+
+    #[test]
     fn test_a_in_log_popup_shows_all_refs_log_view() {
         use crate::msg::LogType;
 

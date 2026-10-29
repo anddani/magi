@@ -198,6 +198,16 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
         ],
     };
 
+    let other_col = PopupColumn {
+        title: Some(t.col_other.into()),
+        content: vec![command_description(
+            theme,
+            dim_commands,
+            "s",
+            t.cmd_shortlog,
+        )],
+    };
+
     CommandPopupContent {
         title: t.popup_log,
         rows: vec![
@@ -214,7 +224,7 @@ pub fn content(theme: &Theme, model: &Model) -> CommandPopupContent<'static> {
                 columns: vec![formatting_col],
             },
             PopupRow {
-                columns: vec![log_col, reflog_col],
+                columns: vec![log_col, reflog_col, other_col],
             },
         ],
     }
