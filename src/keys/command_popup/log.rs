@@ -19,11 +19,12 @@ pub fn keys(key: KeyEvent, arg_mode: bool, equals_arg_mode: bool) -> Option<Mess
             KeyCode::Char('L') => Some(Message::ShowLogTraceLinesInput),
             // `--` (a second `-` in arg mode) limits the log to pathspec(s)
             KeyCode::Char('-') => Some(Message::ShowLogFilesInput),
-            // `-D` is a toggle in its own section (excluded from `all()`), so it
-            // is dispatched explicitly rather than through `from_key`
+            // `-D` and `-f` are toggles in their own section (excluded from
+            // `all()`), so they are dispatched explicitly rather than via `from_key`
             KeyCode::Char('D') => Some(Message::ToggleArgument(Log(
                 LogArgument::SimplifyByDecoration,
             ))),
+            KeyCode::Char('f') => Some(Message::ToggleArgument(Log(LogArgument::Follow))),
             KeyCode::Char(c) => LogArgument::from_key(c)
                 .map(|arg| Message::ToggleArgument(Log(arg)))
                 .or(Some(Message::ExitArgMode)),

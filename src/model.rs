@@ -170,6 +170,8 @@ pub struct LogOptions {
     /// Limit the log to commits touching the given pathspec(s) (`-- <files>`);
     /// `None` means no file filter
     pub files: Option<String>,
+    /// Follow file renames in a single-file log (--follow)
+    pub follow: bool,
 }
 
 impl Default for LogOptions {
@@ -190,11 +192,19 @@ impl Default for LogOptions {
             trace_lines: None,
             simplify_by_decoration: false,
             files: None,
+            follow: false,
         }
     }
 }
 
 /// The current view mode of the application
+// `Log` carries `LogOptions` inline, making it much larger than the empty
+// variants. Boxing it would reduce the enum's stack size but ViewMode is a
+// single, rarely-cloned `Model` field (never stored in a collection), so the
+// size is irrelevant here — and boxing would break the ergonomic inline
+// `matches!(view_mode, ViewMode::Log { options: LogOptions { .. }, .. })`
+// patterns used throughout the code and tests (box patterns are unstable).
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum ViewMode {
     /// Default status view showing staged/unstaged changes, commits, etc.

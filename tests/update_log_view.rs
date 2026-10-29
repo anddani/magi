@@ -1437,3 +1437,73 @@ fn test_show_log_files_input_prefills_current() {
         other => panic!("expected input popup, got {other:?}"),
     }
 }
+
+// ── Follow argument (-f, --follow) ────────────────────────────────────────────
+
+#[test]
+fn test_show_log_defaults_to_no_follow() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { follow: false, .. },
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_show_log_follow_crosses_rename() {
+    let test_repo = TestRepo::new();
+    // Create a file, rename it (identical content → 100% rename), then edit it
+    test_repo.commit_file("old.txt", "L1\nL2\nL3\n", "Add old.txt");
+    test_repo
+        .delete_file("old.txt")
+        .write_file_content("new.txt", "L1\nL2\nL3\n")
+        .stage_files(&["old.txt", "new.txt"])
+        .commit("Rename to new.txt");
+    test_repo.commit_file("new.txt", "L1\nL2 edited\nL3\n", "Edit new.txt");
+
+    let shown = |model: &magi::model::Model| -> Vec<String> {
+        model
+            .ui_model
+            .lines
+            .iter()
+            .filter_map(|line| match &line.content {
+                LineContent::LogLine(entry) if entry.is_commit() => entry.message.clone(),
+                _ => None,
+            })
+            .collect()
+    };
+
+    // Without --follow: history stops at the rename (no pre-rename "Add old.txt")
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_files_mut().unwrap() = Some("new.txt".to_string());
+    model.arguments = Some(args);
+    update(&mut model, Message::ShowLog(LogType::Current));
+    assert!(!shown(&model).iter().any(|m| m.contains("Add old.txt")));
+
+    // With --follow: the pre-rename commit is included
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_files_mut().unwrap() = Some("new.txt".to_string());
+    args.log_mut().unwrap().insert(LogArgument::Follow);
+    model.arguments = Some(args);
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { follow: true, .. },
+            ..
+        }
+    ));
+    assert!(shown(&model).iter().any(|m| m.contains("Add old.txt")));
+}
