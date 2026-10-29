@@ -13,8 +13,8 @@ const SEPARATOR: char = '\x0c'; // Form feed character
 
 /// Fetches git log entries for `log_type`, shaped by `options` (graph, colored
 /// graph lines, refnames, revision headers, inline diffs, diffstats, signature
-/// statuses, commit limit, author/message/change/occurrence filters, line trace
-/// and decoration-based simplification). See [`LogOptions`].
+/// statuses, commit limit, author/message/change/occurrence filters, line trace,
+/// decoration-based simplification and a pathspec file filter). See [`LogOptions`].
 pub fn get_log_entries(
     repository: &Repository,
     log_type: &LogType,
@@ -36,6 +36,7 @@ pub fn get_log_entries(
     let search_changes = options.search_changes.as_deref();
     let search_occurrences = options.search_occurrences.as_deref();
     let trace_lines = options.trace_lines.as_deref();
+    let files = options.files.as_deref();
     let workdir = repository
         .workdir()
         .ok_or_else(|| git2::Error::from_str("No working directory"))?;
@@ -191,6 +192,11 @@ pub fn get_log_entries(
     }
 
     args.push("--".to_string());
+
+    // Limit to the given pathspec(s) after the `--` separator, like magit's `--`
+    if let Some(files) = files.filter(|f| !f.is_empty()) {
+        args.extend(files.split_whitespace().map(String::from));
+    }
 
     let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
 

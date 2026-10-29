@@ -35,6 +35,9 @@ pub enum Arguments {
         /// Line range to trace the evolution of, set via the `-L` argument
         /// (`-L<start>,<end>:<file>`). `None` means no line trace.
         trace_lines: Option<String>,
+        /// Pathspec(s) to limit the log to, set via the `--` argument.
+        /// `None` means no file filter.
+        files: Option<String>,
     },
     TagArguments {
         args: HashSet<TagArgument>,
@@ -139,6 +142,7 @@ impl Arguments {
             search_changes: None,
             search_occurrences: None,
             trace_lines: None,
+            files: None,
         }
     }
 
@@ -247,6 +251,22 @@ impl Arguments {
     pub fn log_trace_lines_mut(&mut self) -> Option<&mut Option<String>> {
         if let Arguments::LogArguments { trace_lines, .. } = self {
             Some(trace_lines)
+        } else {
+            None
+        }
+    }
+
+    pub fn log_files(&self) -> Option<&str> {
+        if let Arguments::LogArguments { files, .. } = self {
+            files.as_deref()
+        } else {
+            None
+        }
+    }
+
+    pub fn log_files_mut(&mut self) -> Option<&mut Option<String>> {
+        if let Arguments::LogArguments { files, .. } = self {
+            Some(files)
         } else {
             None
         }
@@ -1677,6 +1697,28 @@ mod tests {
     fn test_log_trace_lines_on_other_arguments_is_none() {
         let arguments = Arguments::CommitArguments(HashSet::new());
         assert_eq!(arguments.log_trace_lines(), None);
+    }
+
+    #[test]
+    fn test_log_args_defaults_to_no_files() {
+        let arguments = Arguments::log_args(HashSet::new());
+        assert_eq!(arguments.log_files(), None);
+    }
+
+    #[test]
+    fn test_log_files_mut_sets_and_clears() {
+        let mut arguments = Arguments::log_args(HashSet::new());
+        *arguments.log_files_mut().unwrap() = Some("src/main.rs".to_string());
+        assert_eq!(arguments.log_files(), Some("src/main.rs"));
+
+        *arguments.log_files_mut().unwrap() = None;
+        assert_eq!(arguments.log_files(), None);
+    }
+
+    #[test]
+    fn test_log_files_on_other_arguments_is_none() {
+        let arguments = Arguments::CommitArguments(HashSet::new());
+        assert_eq!(arguments.log_files(), None);
     }
 
     #[test]

@@ -1276,3 +1276,164 @@ fn test_show_log_respects_simplify_by_decoration() {
     assert!(shown.iter().any(|m| m.contains("Third commit")));
     assert!(!shown.iter().any(|m| m.contains("Second commit")));
 }
+
+// ── Files argument (--, -- <pathspec>) ────────────────────────────────────────
+
+#[test]
+fn test_show_log_defaults_to_no_files() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { files: None, .. },
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_show_log_respects_files_filter() {
+    let test_repo = TestRepo::new();
+    // -- <path> limits the log to commits touching that path
+    test_repo.commit_file("a.txt", "a", "Edit a");
+    test_repo.commit_file("b.txt", "b", "Edit b");
+    test_repo.commit_file("a.txt", "a2", "Edit a again");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_files_mut().unwrap() = Some("a.txt".to_string());
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    assert!(matches!(
+        model.view_mode,
+        ViewMode::Log {
+            options: LogOptions { files: Some(ref f), .. },
+            ..
+        } if f == "a.txt"
+    ));
+    // Only the two commits touching a.txt appear; the b.txt commit does not
+    let shown: Vec<String> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|line| match &line.content {
+            LineContent::LogLine(entry) if entry.is_commit() => entry.message.clone(),
+            _ => None,
+        })
+        .collect();
+    assert!(shown.iter().any(|m| m.contains("Edit a again")));
+    assert!(shown.iter().any(|m| m == "Edit a"));
+    assert!(!shown.iter().any(|m| m.contains("Edit b")));
+}
+
+#[test]
+fn test_show_log_respects_multiple_files_filter() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("a.txt", "a", "Edit a");
+    test_repo.commit_file("b.txt", "b", "Edit b");
+    test_repo.commit_file("c.txt", "c", "Edit c");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    // Space-separated pathspecs
+    *args.log_files_mut().unwrap() = Some("a.txt c.txt".to_string());
+    model.arguments = Some(args);
+
+    update(&mut model, Message::ShowLog(LogType::Current));
+
+    let shown: Vec<String> = model
+        .ui_model
+        .lines
+        .iter()
+        .filter_map(|line| match &line.content {
+            LineContent::LogLine(entry) if entry.is_commit() => entry.message.clone(),
+            _ => None,
+        })
+        .collect();
+    assert!(shown.iter().any(|m| m.contains("Edit a")));
+    assert!(shown.iter().any(|m| m.contains("Edit c")));
+    assert!(!shown.iter().any(|m| m.contains("Edit b")));
+}
+
+#[test]
+fn test_log_files_input_confirm_sets_and_reopens_popup() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    model.arguments = Some(Arguments::log_args(
+        [LogArgument::Graph, LogArgument::Decorate]
+            .into_iter()
+            .collect(),
+    ));
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogFiles,
+        "src/main.rs",
+    )));
+    model.arg_mode = true;
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(
+        model.arguments.as_ref().and_then(|a| a.log_files()),
+        Some("src/main.rs")
+    );
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+    assert!(!model.arg_mode);
+}
+
+#[test]
+fn test_log_files_input_confirm_empty_clears() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_files_mut().unwrap() = Some("src/main.rs".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Input(InputPopupState::with_text(
+        InputContext::LogFiles,
+        "",
+    )));
+
+    update(&mut model, Message::Input(InputMessage::Confirm));
+
+    assert_eq!(model.arguments.as_ref().and_then(|a| a.log_files()), None);
+    assert_eq!(
+        model.popup,
+        Some(PopupContent::Command(PopupContentCommand::Log))
+    );
+}
+
+#[test]
+fn test_show_log_files_input_prefills_current() {
+    let test_repo = TestRepo::new();
+    test_repo.commit_file("file1.txt", "content1", "First commit");
+
+    let mut model = create_model_from_test_repo(&test_repo);
+    let mut args = Arguments::log_args([LogArgument::Decorate].into_iter().collect());
+    *args.log_files_mut().unwrap() = Some("Cargo.toml".to_string());
+    model.arguments = Some(args);
+    model.popup = Some(PopupContent::Command(PopupContentCommand::Log));
+
+    update(&mut model, Message::ShowLogFilesInput);
+
+    match &model.popup {
+        Some(PopupContent::Input(state)) => {
+            assert_eq!(state.context, InputContext::LogFiles);
+            assert_eq!(state.input.as_str(), "Cargo.toml");
+        }
+        other => panic!("expected input popup, got {other:?}"),
+    }
+}
